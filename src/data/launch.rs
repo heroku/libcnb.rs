@@ -1,5 +1,8 @@
 use crate::data::bom;
+use lazy_static::lazy_static;
+use regex::Regex;
 use serde::Serialize;
+use std::convert::TryFrom;
 
 #[derive(Serialize, Debug)]
 pub struct Launch {
@@ -42,4 +45,22 @@ impl Process {
 
 pub struct Slice {
     pub paths: Vec<String>,
+}
+
+struct ProcessType(String);
+
+impl TryFrom<String> for ProcessType {
+    type Error = &'static str;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        lazy_static! {
+            static ref RE: Regex = Regex::new("^[a-zA-Z0-9_-]+$").unwrap();
+        }
+
+        if RE.is_match(&value) {
+            Ok(ProcessType(value))
+        } else {
+            Err("")
+        }
+    }
 }
