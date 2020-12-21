@@ -1,0 +1,11 @@
+[package]
+name = "libcnb"
+version = "0.1.0"
+authors = ["Manuel Fuchs <manuel.fuchs@salesforce.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+toml = "0.5.8"
+serde = { version = "1.0", features = [ "derive" ] }
