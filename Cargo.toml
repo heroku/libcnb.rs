@@ -1,13 +1,15 @@
 [package]
 name = "libcnb"
 version = "0.1.0"
-authors = ["Manuel Fuchs <manuel.fuchs@salesforce.com>"]
+authors = ["Manuel Fuchs <manuel.fuchs@salesforce.com>", "Terence Lee <hone02@gmail.com>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 lazy_static = "1.4.0"
-toml = "0.5.8"
 regex = "1"
-serde = { version = "1.0", features = [ "derive" ] }
+semver = { version = "0.11", features = ["serde"] }
+serde = { version = "1.0", features = ["derive"] }
+thiserror = "1.0"
+toml = "0.5.8"
