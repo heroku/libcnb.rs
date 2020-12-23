@@ -1,4 +1,4 @@
-usse serde::Serialize;
+use serde::Serialize;
 use std::collections::HashMap;
 
 #[derive(Serialize)]

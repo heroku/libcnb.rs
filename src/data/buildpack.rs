@@ -44,31 +44,28 @@ impl FromStr for BuildpackApi {
             static ref RE: Regex = Regex::new(r"^(?P<major>\d+)\.(?P<minor>\d*)$").unwrap();
         }
 
-        let string = String::from(value);
         if let Some(captures) = RE.captures(value) {
             if let Some(major) = captures.name("major") {
                 // these should never panic since we check with the regex unless it's greater than
                 // `std::u32::MAX`
-                let major = match major.as_str().parse::<u32>() {
-                    Ok(parsed) => parsed,
-                    Err(_) => return Err(Error::InvalidBuildpackApi(string)),
-                };
+                let major = major
+                    .as_str()
+                    .parse::<u32>()
+                    .map_err(|_| Error::InvalidBuildpackApi(String::from(value)))?;
+
                 // If no minor version is specified default to 0.
-                let minor = match captures
+                let minor = captures
                     .name("minor")
                     .map(|s| s.as_str())
                     .unwrap_or("0")
                     .parse::<u32>()
-                {
-                    Ok(parsed) => parsed,
-                    Err(_) => return Err(Error::InvalidBuildpackApi(string)),
-                };
+                    .map_err(|_| Error::InvalidBuildpackApi(String::from(value)))?;
 
                 return Ok(BuildpackApi { major, minor });
             }
         }
 
-        Err(Error::InvalidBuildpackApi(string))
+        Err(Error::InvalidBuildpackApi(String::from(value)))
     }
 }
 
