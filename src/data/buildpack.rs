@@ -26,7 +26,7 @@ pub struct Buildpack {
 
 #[derive(Deserialize, Debug)]
 pub struct Stack {
-    pub id: String,
+    pub id: StackId,
     pub mixins: Vec<String>,
 }
 
@@ -37,8 +37,8 @@ pub struct Stack {
 /// use std::str::FromStr;
 /// use libcnb::data::buildpack::BuildpackId;
 ///
-/// let valid = BuildpackId::from_str("heroku/ruby-engine.mri3");
-/// assert_eq!(valid.unwrap().as_str(), "heroku/ruby-engine.mri3");
+/// let valid = BuildpackId::from_str("heroku/ruby-engine.MRI3");
+/// assert_eq!(valid.unwrap().as_str(), "heroku/ruby-engine.MRI3");
 ///
 /// let invalid = BuildpackId::from_str("!nvalid");
 /// assert!(invalid.is_err());
@@ -51,7 +51,7 @@ impl FromStr for BuildpackId {
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         lazy_static! {
-            static ref RE: Regex = Regex::new("^[[:alnum:]./-]+$").unwrap();
+            static ref RE: Regex = Regex::new(r"^[[:alnum:]./-]+$").unwrap();
         }
 
         let string = String::from(value);
@@ -64,6 +64,46 @@ impl FromStr for BuildpackId {
 }
 
 impl BuildpackId {
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+/// buildpack.toml Stack Id. This is a newtype wrapper around a String. It MUST only contain numbers, letters, and the characters ., /, and -. Use [`std::str::FromStr`] to create a new instance of this struct.
+///
+/// # Examples
+/// ```
+/// use std::str::FromStr;
+/// use libcnb::data::buildpack::StackId;
+///
+/// let valid = StackId::from_str("io.buildpacks.bionic/Latest-2020");
+/// assert_eq!(valid.unwrap().as_str(), "io.buildpacks.bionic/Latest-2020");
+///
+/// let invalid = StackId::from_str("!nvalid");
+/// assert!(invalid.is_err());
+/// ```
+
+#[derive(Deserialize, Debug)]
+pub struct StackId(String);
+
+impl FromStr for StackId {
+    type Err = Error;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        lazy_static! {
+            static ref RE: Regex = Regex::new(r"^[[:alnum:]./-]+$").unwrap();
+        }
+
+        let string = String::from(value);
+        if RE.is_match(value) {
+            Ok(StackId(string))
+        } else {
+            Err(Error::InvalidStackId(string))
+        }
+    }
+}
+
+impl StackId {
     pub fn as_str(&self) -> &str {
         &self.0
     }

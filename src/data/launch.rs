@@ -75,7 +75,7 @@ impl FromStr for ProcessType {
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         lazy_static! {
-            static ref RE: Regex = Regex::new("^[[:alnum:]_-]+$").unwrap();
+            static ref RE: Regex = Regex::new(r"^[[:alnum:]_-]+$").unwrap();
         }
 
         let string = String::from(value);
