@@ -1,7 +1,7 @@
 [package]
 name = "libcnb"
 version = "0.1.0"
-authors = ["Manuel Fuchs <manuel.fuchs@salesforce.com>", "Terence Lee <hone02@gmail.com>"]
+authors = ["Manuel Fuchs <malax@malax.de>", "Terence Lee <hone02@gmail.com>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
