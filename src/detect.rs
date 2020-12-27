@@ -1,11 +1,21 @@
 use crate::data::build_plan::BuildPlan;
-use crate::shared::{write_toml_file, BuildFromPath, Platform};
+use crate::platform::{GenericPlatform, Platform};
+use crate::shared::write_toml_file;
+use crate::shared::BuildpackError;
+use serde::export::Formatter;
 use std::env;
+use std::error::Error;
+use std::fmt::Display;
+use std::ops::Not;
 use std::path::PathBuf;
 use std::process;
 
-pub fn cnb_runtime_detect<P: Platform + BuildFromPath>(
-    detect_fn: impl Fn(DetectContext<P>) -> DetectResult,
+pub fn cnb_runtime_detect<
+    P: Platform,
+    E: BuildpackError,
+    F: FnOnce(DetectContext<P>) -> Result<DetectOutcome, E>,
+>(
+    detect_fn: F,
 ) {
     let app_dir = env::current_dir().expect("Could not determine current working directory!");
 
@@ -27,7 +37,7 @@ pub fn cnb_runtime_detect<P: Platform + BuildFromPath>(
             process::exit(1);
         }
 
-        match P::build_from_path(platform_dir.as_path()) {
+        match P::from_path(platform_dir.as_path()) {
             Ok(platform) => platform,
             Err(error) => {
                 eprintln!(
@@ -48,9 +58,9 @@ pub fn cnb_runtime_detect<P: Platform + BuildFromPath>(
     };
 
     match detect_fn(detect_context) {
-        DetectResult::Fail => process::exit(100),
-        DetectResult::Error(code) => process::exit(code),
-        DetectResult::Pass(build_plan) => {
+        Ok(DetectOutcome::Fail) | Err(_) => process::exit(100),
+        Ok(DetectOutcome::Error(code)) => process::exit(code),
+        Ok(DetectOutcome::Pass(build_plan)) => {
             if let Err(error) = write_toml_file(&build_plan, build_plan_path) {
                 eprintln!("Could not write buildplan to disk: {}", error);
                 process::exit(1);
@@ -67,8 +77,10 @@ pub struct DetectContext<P: Platform> {
     pub platform: P,
 }
 
+pub type GenericDetectContext = DetectContext<GenericPlatform>;
+
 #[derive(Debug)]
-pub enum DetectResult {
+pub enum DetectOutcome {
     Pass(BuildPlan),
     Fail,
     Error(i32),

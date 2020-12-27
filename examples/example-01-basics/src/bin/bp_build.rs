@@ -1,15 +1,14 @@
 use libcnb;
-use std::error::Error;
-use libcnb::shared::GenericPlatform;
-use libcnb::shared::Platform;
-use libcnb::shared::BuildFromPath;
 use libcnb::build::BuildContext;
+use libcnb::platform::{GenericPlatform, Platform};
+use libcnb::shared::BuildpackError;
+use std::error::Error;
 
 fn main() {
     libcnb::build::cnb_runtime_build(build);
 }
 
-fn build(context: BuildContext<GenericPlatform>) -> Result<(), Box<dyn Error>> {
+fn build(context: BuildContext<GenericPlatform>) -> Result<(), std::io::Error> {
     println!("Build runs!");
     Ok(())
 }

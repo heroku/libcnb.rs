@@ -1,16 +1,17 @@
 use libcnb;
-use libcnb::detect::{DetectResult, DetectContext};
 use libcnb::data::build_plan::BuildPlan;
+use libcnb::detect::DetectOutcome;
+use libcnb::detect::GenericDetectContext;
+use libcnb::platform::Platform;
 use libcnb::shared;
-use libcnb::shared::GenericPlatform;
-use libcnb::shared::Platform;
+use std::error::Error;
 
 fn main() {
     libcnb::detect::cnb_runtime_detect(detect)
 }
 
-fn detect(_context: DetectContext<GenericPlatform>) -> DetectResult {
+fn detect(_context: GenericDetectContext) -> Result<DetectOutcome, std::io::Error> {
     let mut buildplan = BuildPlan::new();
 
-    DetectResult::Pass(buildplan)
+    Ok(DetectOutcome::Pass(buildplan))
 }
