@@ -12,3 +12,14 @@ pub struct Layer {
     pub cache: bool,
     pub metadata: Table,
 }
+
+impl Layer {
+    pub fn new() -> Self {
+        Layer {
+            launch: defaults::r#false(),
+            build: defaults::r#false(),
+            cache: defaults::r#false(),
+            metadata: Table::new(),
+        }
+    }
+}
