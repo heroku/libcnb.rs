@@ -1,7 +1,9 @@
 use crate::{
     data::{buildpack::BuildpackToml, buildpack_plan::BuildpackPlan},
+    layer::Layer,
     platform::{GenericPlatform, Platform},
     shared::{read_toml_file, BuildpackError},
+    Error,
 };
 use std::{env, path::PathBuf, process};
 
@@ -97,7 +99,7 @@ pub fn cnb_runtime_build<
     };
 }
 
-pub struct BuildContext<P> {
+pub struct BuildContext<P: Platform> {
     layers_dir: PathBuf,
     pub app_dir: PathBuf,
     pub buildpack_dir: PathBuf,
@@ -105,6 +107,12 @@ pub struct BuildContext<P> {
     pub platform: P,
     pub buildpack_plan: BuildpackPlan,
     pub buildpack_descriptor: BuildpackToml,
+}
+
+impl<P: Platform> BuildContext<P> {
+    pub fn layer(&self, name: impl AsRef<str>) -> Result<Layer, Error> {
+        Layer::new(name.as_ref(), self.layers_dir.as_path())
+    }
 }
 
 pub type GenericBuildContext = BuildContext<GenericPlatform>;
