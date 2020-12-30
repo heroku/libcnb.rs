@@ -1,14 +1,13 @@
-use crate::data::build_plan::BuildPlan;
-use crate::platform::{GenericPlatform, Platform};
-use crate::shared::write_toml_file;
-use crate::shared::BuildpackError;
-use serde::export::Formatter;
-use std::env;
-use std::error::Error;
-use std::fmt::Display;
-use std::ops::Not;
-use std::path::PathBuf;
-use std::process;
+use crate::{
+    data::build_plan::BuildPlan,
+    platform::{GenericPlatform, Platform},
+    shared::{write_toml_file, BuildpackError},
+};
+use std::{
+    env,
+    path::{Path, PathBuf},
+    process,
+};
 
 pub fn cnb_runtime_detect<
     P: Platform,
@@ -75,6 +74,16 @@ pub struct DetectContext<P: Platform> {
     app_dir: PathBuf,
     buildpack_dir: PathBuf,
     pub platform: P,
+}
+
+impl<P: Platform> DetectContext<P> {
+    pub fn app_dir(&self) -> &Path {
+        self.app_dir.as_path()
+    }
+
+    pub fn buildpack_dir(&self) -> &Path {
+        self.buildpack_dir.as_path()
+    }
 }
 
 pub type GenericDetectContext = DetectContext<GenericPlatform>;

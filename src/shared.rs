@@ -1,24 +1,16 @@
-use serde::de::DeserializeOwned;
-use serde::Serialize;
-use std::collections::HashMap;
-use std::env::VarError;
-use std::error::Error;
-use std::ffi::{OsStr, OsString};
-use std::fmt::Debug;
-use std::fmt::Display;
-use std::fs;
-use std::io;
-use std::path::{Iter, Path};
+use crate::Error as CrateError;
+use serde::{de::DeserializeOwned, Serialize};
+use std::{error::Error, fmt::Display, fs, path::Path};
 
-pub fn write_toml_file(value: &impl Serialize, path: impl AsRef<Path>) -> io::Result<()> {
-    // TODO: Fix Result type, remove unwrap
-    fs::write(path, toml::to_string(value).unwrap())
+pub fn write_toml_file(value: &impl Serialize, path: impl AsRef<Path>) -> Result<(), CrateError> {
+    fs::write(path, toml::to_string(value)?)?;
+
+    Ok(())
 }
 
-pub fn read_toml_file<A: DeserializeOwned>(path: impl AsRef<Path>) -> io::Result<A> {
-    // TODO: Fix Result type, remove unwrap
-    let file_contents = fs::read_to_string(path)?;
-    Ok(toml::from_str(file_contents.as_str()).unwrap())
+pub fn read_toml_file<A: DeserializeOwned>(path: impl AsRef<Path>) -> Result<A, CrateError> {
+    let contents = fs::read_to_string(path)?;
+    Ok(toml::from_str(&contents)?)
 }
 
 pub trait BuildpackError: Display {}
