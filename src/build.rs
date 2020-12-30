@@ -1,17 +1,17 @@
 use crate::data::buildpack::Buildpack;
 use crate::data::buildpack::BuildpackToml;
 use crate::data::buildpack_plan::BuildpackPlan;
-use crate::shared::Platform;
-use crate::shared::{read_toml_file, BuildFromPath};
+use crate::platform::{GenericPlatform, Platform};
+use crate::shared::{read_toml_file, BuildpackError};
 use std::env;
 use std::fmt::Display;
 use std::path::PathBuf;
 use std::process;
 
 pub fn cnb_runtime_build<
-    E: Display,
+    E: BuildpackError,
     F: Fn(BuildContext<P>) -> Result<(), E>,
-    P: Platform + BuildFromPath,
+    P: Platform,
 >(
     build_fn: F,
 ) {
@@ -41,7 +41,7 @@ pub fn cnb_runtime_build<
             process::exit(1);
         }
 
-        match P::build_from_path(platform_dir.as_path()) {
+        match P::from_path(platform_dir.as_path()) {
             Ok(platform) => platform,
             Err(error) => {
                 eprintln!(
@@ -109,3 +109,5 @@ pub struct BuildContext<P> {
     pub buildpack_plan: BuildpackPlan,
     pub buildpack_descriptor: BuildpackToml,
 }
+
+pub type GenericBuildContext = BuildContext<GenericPlatform>;
