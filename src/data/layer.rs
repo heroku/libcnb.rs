@@ -16,9 +16,9 @@ pub struct Layer {
 impl Layer {
     pub fn new() -> Self {
         Layer {
-            launch: defaults::r#false(),
-            build: defaults::r#false(),
-            cache: defaults::r#false(),
+            launch: false,
+            build: false,
+            cache: false,
             metadata: Table::new(),
         }
     }
