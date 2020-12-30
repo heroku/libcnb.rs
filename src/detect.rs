@@ -3,7 +3,11 @@ use crate::{
     platform::{GenericPlatform, Platform},
     shared::{write_toml_file, BuildpackError},
 };
-use std::{env, path::PathBuf, process};
+use std::{
+    env,
+    path::{Path, PathBuf},
+    process,
+};
 
 pub fn cnb_runtime_detect<
     P: Platform,
@@ -70,6 +74,16 @@ pub struct DetectContext<P: Platform> {
     app_dir: PathBuf,
     buildpack_dir: PathBuf,
     pub platform: P,
+}
+
+impl<P: Platform> DetectContext<P> {
+    pub fn app_dir(&self) -> &Path {
+        self.app_dir.as_path()
+    }
+
+    pub fn buildpack_dir(&self) -> &Path {
+        self.buildpack_dir.as_path()
+    }
 }
 
 pub type GenericDetectContext = DetectContext<GenericPlatform>;
