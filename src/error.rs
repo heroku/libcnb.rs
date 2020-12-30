@@ -16,6 +16,6 @@ pub enum Error {
     TomlSerError(#[from] toml::ser::Error),
     #[error("could not deserialize from TOML")]
     TomlDeError(#[from] toml::de::Error),
-    #[error("I/O Error")]
+    #[error("I/O Error: {0}")]
     IoError(#[from] std::io::Error),
 }
