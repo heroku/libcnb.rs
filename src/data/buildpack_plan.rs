@@ -9,5 +9,5 @@ pub struct BuildpackPlan {
 #[derive(Debug, Deserialize)]
 pub struct Entry {
     pub name: String,
-    pub metadata: toml::value::Table,
+    pub metadata: Table,
 }

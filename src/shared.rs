@@ -1,14 +1,5 @@
-use serde::de::DeserializeOwned;
-use serde::Serialize;
-use std::collections::HashMap;
-use std::env::VarError;
-use std::error::Error;
-use std::ffi::{OsStr, OsString};
-use std::fmt::Debug;
-use std::fmt::Display;
-use std::fs;
-use std::io;
-use std::path::{Iter, Path};
+use serde::{de::DeserializeOwned, Serialize};
+use std::{error::Error, fmt::Display, fs, io, path::Path};
 
 pub fn write_toml_file(value: &impl Serialize, path: impl AsRef<Path>) -> io::Result<()> {
     // TODO: Fix Result type, remove unwrap

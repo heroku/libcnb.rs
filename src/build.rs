@@ -1,12 +1,9 @@
-use crate::data::buildpack::Buildpack;
-use crate::data::buildpack::BuildpackToml;
-use crate::data::buildpack_plan::BuildpackPlan;
-use crate::platform::{GenericPlatform, Platform};
-use crate::shared::{read_toml_file, BuildpackError};
-use std::env;
-use std::fmt::Display;
-use std::path::PathBuf;
-use std::process;
+use crate::{
+    data::{buildpack::BuildpackToml, buildpack_plan::BuildpackPlan},
+    platform::{GenericPlatform, Platform},
+    shared::{read_toml_file, BuildpackError},
+};
+use std::{env, path::PathBuf, process};
 
 pub fn cnb_runtime_build<
     E: BuildpackError,

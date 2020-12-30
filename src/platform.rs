@@ -1,9 +1,10 @@
-use std::collections::HashMap;
-use std::env::VarError;
-use std::ffi::{OsStr, OsString};
-use std::fs;
-use std::io;
-use std::path::Path;
+use std::{
+    collections::HashMap,
+    env::VarError,
+    ffi::{OsStr, OsString},
+    fs, io,
+    path::Path,
+};
 
 /// Represents a Cloud Native Buildpack platform.
 ///
