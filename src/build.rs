@@ -2,13 +2,13 @@ use crate::{
     data::{buildpack::BuildpackToml, buildpack_plan::BuildpackPlan},
     layer::Layer,
     platform::{GenericPlatform, Platform},
-    shared::{read_toml_file, BuildpackError},
+    shared::read_toml_file,
     Error,
 };
 use std::{env, path::PathBuf, process};
 
 pub fn cnb_runtime_build<
-    E: BuildpackError,
+    E: std::fmt::Display,
     F: Fn(BuildContext<P>) -> Result<(), E>,
     P: Platform,
 >(
