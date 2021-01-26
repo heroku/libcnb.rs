@@ -13,3 +13,8 @@ reqwest = { version = "0.10", features = ["blocking"] }
 tar = "0.4"
 tempfile = "3"
 "libcnb" = { path = "../../" }
+
+openssl-sys = "*"
+
+[features]
+vendored-openssl = ["openssl-sys/vendored"]

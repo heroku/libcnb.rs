@@ -2,6 +2,7 @@ use flate2::read::GzDecoder;
 use libcnb::build::{cnb_runtime_build, GenericBuildContext};
 use std::{
     collections::HashMap,
+    env,
     fs::File,
     io,
     path::Path,
@@ -34,17 +35,24 @@ fn build(ctx: GenericBuildContext) -> anyhow::Result<()> {
     }
 
     let mut ruby_env: HashMap<String, String> = HashMap::new();
+    let ruby_bin_path = format!(
+        "{}/.gem/ruby/2.6.6/bin",
+        env::var("HOME").unwrap_or(String::new())
+    );
     ruby_env.insert(
         String::from("PATH"),
         format!(
-            "{}:$PATH",
-            ruby_layer.as_path().join("bin").as_path().to_str().unwrap()
+            "{}:{}:{}",
+            ruby_layer.as_path().join("bin").as_path().to_str().unwrap(),
+            ruby_bin_path,
+            env::var("PATH").unwrap_or(String::new()),
         ),
     );
     ruby_env.insert(
         String::from("LD_LIBRARY_PATH"),
         format!(
-            r#"${{LD_LIBRARY_PATH:+${{LD_LIBRARY_PATH}}:}}"{}""#,
+            "{}:{}",
+            env::var("LD_LIBRARY_PATH").unwrap_or(String::new()),
             ruby_layer
                 .as_path()
                 .join("layer")
@@ -54,29 +62,41 @@ fn build(ctx: GenericBuildContext) -> anyhow::Result<()> {
         ),
     );
     println!("---> Installing bundler");
-    Command::new("gem")
-        .args(&["install", "bundler", "--no-ri", "--no-rdoc"])
-        .envs(&ruby_env)
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit())
-        .spawn()?;
+    {
+        let cmd = Command::new("gem")
+            .args(&["install", "bundler", "--no-ri", "--no-rdoc"])
+            .envs(&ruby_env)
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit())
+            .spawn()?
+            .wait()?;
+        if !cmd.success() {
+            anyhow::anyhow!("Could not install bundler");
+        }
+    }
 
     println!("---> Installing gems");
-    Command::new("bundle")
-        .arg("install")
-        .envs(&ruby_env)
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit())
-        .spawn()?;
+    {
+        let cmd = Command::new("bundle")
+            .arg("install")
+            .envs(&ruby_env)
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit())
+            .spawn()?
+            .wait()?;
+        if !cmd.success() {
+            anyhow::anyhow!("Could not bundle install");
+        }
+    }
 
     Ok(())
 }
 
 fn download(uri: impl AsRef<str>, dst: impl AsRef<Path>) -> anyhow::Result<()> {
     let response = reqwest::blocking::get(uri.as_ref())?;
-    let content = response.text()?;
+    let mut content = io::Cursor::new(response.bytes()?);
     let mut file = File::create(dst.as_ref())?;
-    io::copy(&mut content.as_bytes(), &mut file)?;
+    io::copy(&mut content, &mut file)?;
 
     Ok(())
 }
