@@ -54,12 +54,8 @@ pub fn cnb_runtime_build<
 
     let buildpack_plan = {
         let buildpack_plan_path: PathBuf = args.get(3).unwrap().into();
-        match read_toml_file(buildpack_plan_path) {
-            Ok(Some(buildpack_plan)) => buildpack_plan,
-            Ok(None) => {
-                eprintln!("Buildpack plan is malformed!");
-                process::exit(1);
-            }
+        match read_toml_file(&buildpack_plan_path) {
+            Ok(buildpack_plan) => buildpack_plan,
             Err(error) => {
                 eprintln!("Could not read buildpack plan: {}", error);
                 process::exit(1);
@@ -69,11 +65,7 @@ pub fn cnb_runtime_build<
 
     let buildpack_toml_path = buildpack_dir.join("buildpack.toml");
     let buildpack_descriptor = match read_toml_file(buildpack_toml_path) {
-        Ok(Some(buildpack_descriptor)) => buildpack_descriptor,
-        Ok(None) => {
-            eprintln!("Buildpack descriptor is malformed!");
-            process::exit(1);
-        }
+        Ok(buildpack_descriptor) => buildpack_descriptor,
         Err(error) => {
             eprintln!("Could not read buildpack descriptor: {}", error);
             process::exit(1);
