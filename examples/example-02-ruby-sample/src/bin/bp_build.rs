@@ -94,7 +94,10 @@ fn build(ctx: GenericBuildContext) -> anyhow::Result<()> {
 
     let mut launch_toml = data::launch::Launch::new();
     let web = data::launch::Process::new("web", "bundle", vec!["exec", "ruby", "app.rb"], false)?;
+    let worker =
+        data::launch::Process::new("worker", "bundle", vec!["exec", "ruby", "worker.rb"], false)?;
     launch_toml.processes.push(web);
+    launch_toml.processes.push(worker);
 
     ctx.write_launch(launch_toml)?;
 
