@@ -10,7 +10,9 @@ edition = "2018"
 anyhow = "1"
 flate2 = "1"
 reqwest = { version = "0.10", features = ["blocking"] }
+sha2 = "0.9"
 tar = "0.4"
+toml = "0.5"
 tempfile = "3"
 "libcnb" = { path = "../../" }
 
