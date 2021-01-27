@@ -1,11 +1,11 @@
 use crate::{
-    data::{buildpack::BuildpackToml, buildpack_plan::BuildpackPlan},
+    data::{buildpack::BuildpackToml, buildpack_plan::BuildpackPlan, launch::Launch},
     layer::Layer,
     platform::{GenericPlatform, Platform},
     shared::read_toml_file,
     Error,
 };
-use std::{env, path::PathBuf, process};
+use std::{env, fs, path::PathBuf, process};
 
 pub fn cnb_runtime_build<
     E: std::fmt::Display,
@@ -102,8 +102,16 @@ pub struct BuildContext<P: Platform> {
 }
 
 impl<P: Platform> BuildContext<P> {
+    /// Get access to a new or existing layer
     pub fn layer(&self, name: impl AsRef<str>) -> Result<Layer, Error> {
         Layer::new(name.as_ref(), self.layers_dir.as_path())
+    }
+
+    pub fn write_launch(&self, data: Launch) -> Result<(), Error> {
+        let path = self.layers_dir.join("launch.toml");
+        fs::write(path, toml::to_string(&data)?)?;
+
+        Ok(())
     }
 }
 

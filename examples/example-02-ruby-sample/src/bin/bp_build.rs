@@ -1,5 +1,8 @@
 use flate2::read::GzDecoder;
-use libcnb::build::{cnb_runtime_build, GenericBuildContext};
+use libcnb::{
+    build::{cnb_runtime_build, GenericBuildContext},
+    data,
+};
 use std::{
     collections::HashMap,
     env,
@@ -88,6 +91,12 @@ fn build(ctx: GenericBuildContext) -> anyhow::Result<()> {
             anyhow::anyhow!("Could not bundle install");
         }
     }
+
+    let mut launch_toml = data::launch::Launch::new();
+    let web = data::launch::Process::new("web", "bundle", vec!["exec", "ruby", "app.rb"], false)?;
+    launch_toml.processes.push(web);
+
+    ctx.write_launch(launch_toml)?;
 
     Ok(())
 }
