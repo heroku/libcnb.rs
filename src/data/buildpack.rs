@@ -1,16 +1,46 @@
-use crate::Error;
+use crate::{data::defaults, Error};
 use lazy_static::lazy_static;
 use regex::Regex;
 use semver::Version;
 use serde::{de, Deserialize};
 use std::{fmt, str::FromStr};
 
+/// Data structure for the Buildpack descriptor (buildpack.toml).
+///
+/// # Examples
+/// ```
+/// use libcnb::data::buildpack::BuildpackToml;
+///
+///         let raw = r#"
+/// api = "0.4"
+///
+/// [buildpack]
+/// id = "foo/bar"
+/// name = "Bar Buildpack"
+/// version = "0.0.1"
+/// homepage = "https://www.foo.com/bar"
+/// clear-env = false
+///
+/// [[stacks]]
+/// id = "io.buildpacks.stacks.bionic"
+/// mixins = ["yj", "yq"]
+///
+/// [metadata]
+/// checksum = "awesome"
+/// "#;
+///
+///         let result = toml::from_str::<BuildpackToml>(raw);
+///         assert!(result.is_ok());
+/// ```
 #[derive(Deserialize, Debug)]
 pub struct BuildpackToml {
     // MUST be in form <major>.<minor> or <major>, where <major> is equivalent to <major>.0.
     pub api: BuildpackApi,
     pub buildpack: Buildpack,
     pub stacks: Vec<Stack>,
+    #[serde(default)]
+    pub order: Vec<Order>,
+    #[serde(default)]
     pub metadata: toml::value::Table,
 }
 
@@ -21,13 +51,29 @@ pub struct Buildpack {
     // MUST be in the form <X>.<Y>.<Z> where X, Y, and Z are non-negative integers and must not contain leading zeroes
     pub version: Version,
     pub homepage: Option<String>,
+    #[serde(rename = "clear-env")]
+    #[serde(default = "defaults::r#false")]
     pub clear_env: bool,
 }
 
 #[derive(Deserialize, Debug)]
 pub struct Stack {
     pub id: StackId,
+    #[serde(default)]
     pub mixins: Vec<String>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct Order {
+    group: Vec<Group>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct Group {
+    pub id: BuildpackId,
+    pub version: Version,
+    #[serde(default = "defaults::r#false")]
+    pub optional: bool,
 }
 
 #[derive(Debug)]
@@ -41,7 +87,7 @@ impl FromStr for BuildpackApi {
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         lazy_static! {
-            static ref RE: Regex = Regex::new(r"^(?P<major>\d+)\.(?P<minor>\d*)$").unwrap();
+            static ref RE: Regex = Regex::new(r"^(?P<major>\d+)(\.(?P<minor>\d+))?$").unwrap();
         }
 
         if let Some(captures) = RE.captures(value) {
@@ -190,5 +236,109 @@ mod tests {
     fn buildpack_id_does_not_allow_config() {
         let result = BuildpackId::from_str("config");
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn buildpack_id_from_str_major_minor() {
+        let result = BuildpackApi::from_str("0.4");
+        assert!(result.is_ok());
+        if let Ok(api) = result {
+            assert_eq!(0, api.major);
+            assert_eq!(4, api.minor);
+        }
+    }
+
+    #[test]
+    fn buildpack_id_from_str_major() {
+        let result = BuildpackApi::from_str("1");
+        assert!(result.is_ok());
+        if let Ok(api) = result {
+            assert_eq!(1, api.major);
+            assert_eq!(0, api.minor);
+        }
+    }
+
+    #[test]
+    fn can_serialize_metabuildpack() {
+        let raw = r#"
+api = "0.4"
+
+[buildpack]
+id = "foo/bar"
+name = "Bar Buildpack"
+version = "0.0.1"
+homepage = "https://www.foo.com/bar"
+clear-env = false
+
+[[order]]
+[[order.group]]
+id = "foo/baz"
+version = "0.0.2"
+optional = false
+
+[[stacks]]
+id = "io.buildpacks.stacks.bionic"
+mixins = ["yj", "yq"]
+
+[metadata]
+checksum = "awesome"
+"#;
+
+        let result = toml::from_str::<BuildpackToml>(raw);
+        result.unwrap();
+        //assert!(result.is_ok());
+    }
+
+    #[test]
+    fn can_serialize_minimal_buildpack() {
+        let raw = r#"
+api = "0.4"
+
+[buildpack]
+id = "foo/bar"
+name = "Bar Buildpack"
+version = "0.0.1"
+
+[[stacks]]
+id = "io.buildpacks.stacks.bionic"
+
+[metadata]
+checksum = "awesome"
+"#;
+
+        let result = toml::from_str::<BuildpackToml>(raw);
+        assert!(result.is_ok());
+        if let Ok(toml) = result {
+            assert_eq!(false, toml.buildpack.clear_env);
+        }
+    }
+
+    #[test]
+    fn can_serialize_minimal_metabuildpack() {
+        let raw = r#"
+api = "0.4"
+
+[buildpack]
+id = "foo/bar"
+name = "Bar Buildpack"
+version = "0.0.1"
+
+[[order]]
+[[order.group]]
+id = "foo/baz"
+version = "0.0.2"
+
+[[stacks]]
+id = "io.buildpacks.stacks.bionic"
+"#;
+
+        let result = toml::from_str::<BuildpackToml>(raw);
+        assert!(result.is_ok());
+        if let Ok(toml) = result {
+            assert_eq!(
+                false,
+                toml.order.get(0).unwrap().group.get(0).unwrap().optional
+            );
+        }
     }
 }

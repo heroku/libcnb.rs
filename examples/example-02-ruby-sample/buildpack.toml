@@ -1,0 +1,15 @@
+# Buildpack API version
+api = "0.4"
+
+# Buildpack ID and metadata
+[buildpack]
+id = "com.examples.buildpacks.ruby"
+version = "0.0.1"
+name = "Ruby Buildpack"
+
+# Stacks that the buildpack will work with
+[[stacks]]
+id = "io.buildpacks.stacks.bionic"
+
+[[stacks]]
+id = "heroku-18"

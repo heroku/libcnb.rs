@@ -1,14 +1,14 @@
 use crate::{
-    data::{buildpack::BuildpackToml, buildpack_plan::BuildpackPlan},
+    data::{buildpack::BuildpackToml, buildpack_plan::BuildpackPlan, launch::Launch},
     layer::Layer,
     platform::{GenericPlatform, Platform},
-    shared::{read_toml_file, BuildpackError},
+    shared::read_toml_file,
     Error,
 };
-use std::{env, path::PathBuf, process};
+use std::{env, fs, path::PathBuf, process};
 
 pub fn cnb_runtime_build<
-    E: BuildpackError,
+    E: std::fmt::Display,
     F: Fn(BuildContext<P>) -> Result<(), E>,
     P: Platform,
 >(
@@ -54,12 +54,8 @@ pub fn cnb_runtime_build<
 
     let buildpack_plan = {
         let buildpack_plan_path: PathBuf = args.get(3).unwrap().into();
-        match read_toml_file(buildpack_plan_path) {
-            Ok(Some(buildpack_plan)) => buildpack_plan,
-            Ok(None) => {
-                eprintln!("Buildpack plan is malformed!");
-                process::exit(1);
-            }
+        match read_toml_file(&buildpack_plan_path) {
+            Ok(buildpack_plan) => buildpack_plan,
             Err(error) => {
                 eprintln!("Could not read buildpack plan: {}", error);
                 process::exit(1);
@@ -69,11 +65,7 @@ pub fn cnb_runtime_build<
 
     let buildpack_toml_path = buildpack_dir.join("buildpack.toml");
     let buildpack_descriptor = match read_toml_file(buildpack_toml_path) {
-        Ok(Some(buildpack_descriptor)) => buildpack_descriptor,
-        Ok(None) => {
-            eprintln!("Buildpack descriptor is malformed!");
-            process::exit(1);
-        }
+        Ok(buildpack_descriptor) => buildpack_descriptor,
         Err(error) => {
             eprintln!("Could not read buildpack descriptor: {}", error);
             process::exit(1);
@@ -110,8 +102,16 @@ pub struct BuildContext<P: Platform> {
 }
 
 impl<P: Platform> BuildContext<P> {
+    /// Get access to a new or existing layer
     pub fn layer(&self, name: impl AsRef<str>) -> Result<Layer, Error> {
         Layer::new(name.as_ref(), self.layers_dir.as_path())
+    }
+
+    pub fn write_launch(&self, data: Launch) -> Result<(), Error> {
+        let path = self.layers_dir.join("launch.toml");
+        fs::write(path, toml::to_string(&data)?)?;
+
+        Ok(())
     }
 }
 

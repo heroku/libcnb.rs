@@ -1,7 +1,7 @@
 use crate::{
     data::build_plan::BuildPlan,
     platform::{GenericPlatform, Platform},
-    shared::{write_toml_file, BuildpackError},
+    shared::write_toml_file,
 };
 use std::{
     env,
@@ -11,7 +11,7 @@ use std::{
 
 pub fn cnb_runtime_detect<
     P: Platform,
-    E: BuildpackError,
+    E: std::fmt::Display,
     F: FnOnce(DetectContext<P>) -> Result<DetectOutcome, E>,
 >(
     detect_fn: F,
