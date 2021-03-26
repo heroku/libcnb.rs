@@ -1,12 +1,13 @@
-# libcnb.rs [![Build Status]][ci] [![docs.rs]][docs.rs] [![Latest Version]][crates.io] [![Rustc Version 1.31+]][rustc]
+# libcnb.rs [![Build Status]][ci] [![Docs]][docs.rs] [![Latest Version]][crates.io] [![Rustc Version 1.31+]][rustc]
 
 [Build Status]: https://img.shields.io/github/workflow/status/Malax/libcnb/Rust/master
 [ci]: https://github.com/Malax/libcnb/actions?query=branch%3Amaster
+[Docs]: https://img.shields.io/docsrs/libcnb
+[docs.rs]: https://docs.rs/libcnb/*/libcnb/
 [Latest Version]: https://img.shields.io/crates/v/libcnb.svg
 [crates.io]: https://crates.io/crates/libcnb
 [Rustc Version 1.31+]: https://img.shields.io/badge/rustc-1.31+-lightgray.svg
 [rustc]: https://blog.rust-lang.org/2018/12/06/Rust-1.31-and-rust-2018.html
-[docs.rs]: https://img.shields.io/docsrs/libcnb
 
 `libcnb.rs` is a Rust language binding of the [Cloud Native Buildpacks](https://buildpacks.io) [spec](https://github.com/buildpacks/spec). It is a non-opinionated implementation adding language constructs and convenience methods for working with the spec. It values strong adherence to the spec and data formats.
 
@@ -14,7 +15,7 @@
 
 Here's a [quick start template](https://github.com/Malax/rust-cnb-starter) that can be cloned.
 
-View the [examples] for some buildpack samples.
+View the [examples](./examples) for some buildpack samples.
 
 All spec data files are implemented in the [`libcnb::data`](https://docs.rs/libcnb/*/libcnb/data/index.html) module.
 
