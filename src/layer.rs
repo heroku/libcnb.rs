@@ -12,6 +12,12 @@ pub struct Layer {
     content_metadata: ContentMetadata,
 }
 
+impl AsRef<Path> for Layer {
+    fn as_ref(&self) -> &Path {
+        self.path.as_path()
+    }
+}
+
 impl Layer {
     /// Layer Constructor that makes a ready to go layer:
     /// * create `/<layers_dir>/<layer> if it doesn't exist

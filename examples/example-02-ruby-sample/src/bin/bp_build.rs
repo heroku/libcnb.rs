@@ -33,7 +33,7 @@ fn build(ctx: GenericBuildContext) -> anyhow::Result<()> {
     {
         let ruby_tgz = NamedTempFile::new()?;
         download(RUBY_URL, ruby_tgz.path())?;
-        untar(ruby_tgz.path(), ruby_layer.as_path())?;
+        untar(ruby_tgz.path(), &ruby_layer)?;
     }
 
     let mut ruby_env: HashMap<String, String> = HashMap::new();

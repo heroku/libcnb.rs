@@ -10,12 +10,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "anyhow"
-version = "1.0.37"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee67c11feeac938fae061b232e38e0b6d94f97a9df10e6271319325ac4c56a86"
-
-[[package]]
 name = "example-01-basics"
 version = "0.1.0"
 dependencies = [
@@ -32,7 +26,6 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 name = "libcnb"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "lazy_static",
  "regex",
  "semver",
