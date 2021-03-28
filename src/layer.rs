@@ -68,6 +68,46 @@ impl Layer {
         })
     }
 
+    /// Layer Constructor that uses [`crate::layer::Layer::new`] and takes a [`std::ops::FnOnce`] to
+    /// specifiying Content Metadata and writes it a `<layer>.toml`.
+    ///
+    /// # Examples
+    /// ```
+    /// # use tempfile::tempdir;
+    /// use libcnb::layer::Layer;
+    ///
+    /// # fn main() -> Result<(), libcnb::Error> {
+    /// # let layers_dir = tempdir().unwrap().path().to_owned();
+    /// let layer = Layer::new_with_content_metadata("foo", &layers_dir, |m| {
+    ///   m.launch = true;
+    ///   m.build = true;
+    ///   m.cache = true;
+    ///
+    ///   m.metadata.insert("foo".to_string(), toml::Value::String("bar".to_string()));
+    /// })?;
+    ///
+    /// assert!(layer.as_path().exists());
+    /// assert_eq!(layer.content_metadata().launch, true);
+    /// assert_eq!(layer.content_metadata().build, true);
+    /// assert_eq!(layer.content_metadata().cache, true);
+    /// assert_eq!(layer.content_metadata().metadata.get("foo"),
+    /// Some(&toml::Value::String("bar".to_string())));
+    /// assert!(&layers_dir.join("foo.toml").exists());
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn new_with_content_metadata(
+        name: impl Into<String>,
+        layers_dir: impl AsRef<Path>,
+        func: impl FnOnce(&mut ContentMetadata),
+    ) -> Result<Self, Error> {
+        let mut layer = Self::new(name, layers_dir)?;
+        func(layer.mut_content_metadata());
+        layer.write_content_metadata()?;
+
+        Ok(layer)
+    }
+
     /// Returns the path to the layer contents `/<layers_dir>/<layer>/`.
     pub fn as_path(&self) -> &Path {
         self.path.as_path()
