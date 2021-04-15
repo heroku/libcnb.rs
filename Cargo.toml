@@ -3,6 +3,11 @@ name = "libcnb"
 version = "0.1.0"
 authors = ["Manuel Fuchs <malax@malax.de>", "Terence Lee <hone02@gmail.com>"]
 edition = "2018"
+license = "Apache-2.0"
+description = "Rust language binding of the Cloud Native Buildpack spec."
+repository = "https://github.com/Malax/libcnb.rs"
+documentation = "https://docs.rs/libcnb"
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
