@@ -117,8 +117,17 @@ impl Layer {
         &self.content_metadata
     }
 
+    #[deprecated(
+        since = "0.1.1",
+        note = "Please use content_metadata_mut function intsead"
+    )]
     /// Returns a mutable reference to the [`crate::data::layer::Layer`]
     pub fn mut_content_metadata(&mut self) -> &mut ContentMetadata {
+        self.content_metadata_mut()
+    }
+
+    /// Returns a mutable reference to the [`crate::data::layer::Layer`]
+    pub fn content_metadata_mut(&mut self) -> &mut ContentMetadata {
         &mut self.content_metadata
     }
 
@@ -165,7 +174,7 @@ impl Layer {
         &mut self,
         func: impl FnOnce(&mut ContentMetadata),
     ) -> Result<(), crate::Error> {
-        func(self.mut_content_metadata());
+        func(self.content_metadata_mut());
         self.write_content_metadata()?;
 
         Ok(())
