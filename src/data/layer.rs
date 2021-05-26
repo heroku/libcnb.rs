@@ -10,6 +10,7 @@ pub struct Layer {
     pub build: bool,
     #[serde(default = "defaults::r#false")]
     pub cache: bool,
+    #[serde(default)]
     pub metadata: Table,
 }
 
@@ -21,5 +22,31 @@ impl Layer {
             cache: false,
             metadata: Table::new(),
         }
+    }
+
+    /// Reset flags to false and empty metadata table.
+    pub fn clear(&mut self) {
+        self.launch = false;
+        self.build = false;
+        self.cache = false;
+        self.metadata.clear();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn metadata_is_optional() {
+        let layer: Result<Layer, toml::de::Error> = toml::from_str(
+            r#"
+            launch = true
+            build = true
+            cache = false
+            "#,
+        );
+
+        assert!(!layer.is_err());
     }
 }
