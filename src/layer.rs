@@ -102,8 +102,7 @@ impl Layer {
         func: impl FnOnce(&mut ContentMetadata),
     ) -> Result<Self, Error> {
         let mut layer = Self::new(name, layers_dir)?;
-        func(layer.mut_content_metadata());
-        layer.write_content_metadata()?;
+        layer.write_content_metadata_with_fn(func)?;
 
         Ok(layer)
     }
@@ -129,6 +128,45 @@ impl Layer {
             &self.content_metadata_path,
             toml::to_string(&self.content_metadata)?,
         )?;
+
+        Ok(())
+    }
+
+    /// Mutate [`crate::layer::ContentMetadata`] and write [`crate::data::layer::Layer`] to
+    /// `<layer>.toml`
+    ///
+    /// # Examples
+    /// ```
+    /// # use tempfile::tempdir;
+    /// use libcnb::layer::Layer;
+    ///
+    /// # fn main() -> Result<(), libcnb::Error> {
+    /// # let layers_dir = tempdir().unwrap().path().to_owned();
+    /// let mut layer = Layer::new("foo", &layers_dir)?;
+    /// layer.write_content_metadata_with_fn(|m| {
+    ///   m.launch = true;
+    ///   m.build = true;
+    ///   m.cache = true;
+    ///
+    ///   m.metadata.insert("foo".to_string(), toml::Value::String("bar".to_string()));
+    /// })?;
+    ///
+    /// assert!(layer.as_path().exists());
+    /// assert_eq!(layer.content_metadata().launch, true);
+    /// assert_eq!(layer.content_metadata().build, true);
+    /// assert_eq!(layer.content_metadata().cache, true);
+    /// assert_eq!(layer.content_metadata().metadata.get("foo"),
+    /// Some(&toml::Value::String("bar".to_string())));
+    /// assert!(&layers_dir.join("foo.toml").exists());
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn write_content_metadata_with_fn(
+        &mut self,
+        func: impl FnOnce(&mut ContentMetadata),
+    ) -> Result<(), crate::Error> {
+        func(self.mut_content_metadata());
+        self.write_content_metadata()?;
 
         Ok(())
     }
