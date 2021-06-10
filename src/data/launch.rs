@@ -1,9 +1,9 @@
 use crate::data::bom;
-use crate::Error;
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde::Serialize;
 use std::str::FromStr;
+use thiserror;
 
 #[derive(Serialize, Debug)]
 pub struct Launch {
@@ -16,6 +16,7 @@ pub struct Launch {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub slices: Vec<Slice>,
 }
+
 /// Data Structure for the launch.toml file.
 ///
 /// # Examples
@@ -36,6 +37,16 @@ impl Launch {
             processes: Vec::new(),
             slices: Vec::new(),
         }
+    }
+
+    pub fn process(mut self, process: Process) -> self {
+        self.processes.push(process)
+    }
+}
+
+impl Default for Launch {
+    fn default() -> Self {
+        Launch::new()
     }
 }
 
@@ -59,7 +70,7 @@ impl Process {
         command: impl Into<String>,
         args: impl IntoIterator<Item = impl Into<String>>,
         direct: bool,
-    ) -> Result<Self, Error> {
+    ) -> Result<Self, ProcessTypeError> {
         Ok(Process {
             r#type: ProcessType::from_str(r#type.as_ref())?,
             command: command.into(),
@@ -97,7 +108,7 @@ impl ProcessType {
 }
 
 impl FromStr for ProcessType {
-    type Err = Error;
+    type Err = ProcessTypeError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         lazy_static! {
@@ -108,7 +119,15 @@ impl FromStr for ProcessType {
         if RE.is_match(value) {
             Ok(ProcessType(string))
         } else {
-            Err(Error::InvalidProcessType(string))
+            Err(ProcessTypeError::InvalidProcessType(string))
         }
     }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum ProcessTypeError {
+    #[error(
+        "Found `{0}` but value MUST only contain numbers, letters, and the characters ., _, and -."
+    )]
+    InvalidProcessType(String),
 }

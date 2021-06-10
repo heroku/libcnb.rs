@@ -1,4 +1,5 @@
 use serde::Serialize;
+use std::collections::VecDeque;
 use toml::value::Table;
 
 #[derive(Serialize, Debug)]
@@ -17,6 +18,62 @@ impl BuildPlan {
             provides: vec![],
             requires: vec![],
             or: vec![],
+        }
+    }
+}
+
+pub struct BuildPlanBuilder {
+    acc: VecDeque<(Vec<Provide>, Vec<Require>)>,
+    current_provides: Vec<Provide>,
+    current_requires: Vec<Require>,
+}
+
+impl BuildPlanBuilder {
+    pub fn new() -> Self {
+        BuildPlanBuilder {
+            acc: VecDeque::new(),
+            current_provides: vec![],
+            current_requires: vec![],
+        }
+    }
+
+    pub fn provides(mut self, name: impl AsRef<str>) -> Self {
+        self.current_provides.push(Provide::new(name.as_ref()));
+        self
+    }
+
+    pub fn requires(mut self, name: impl AsRef<str>) -> Self {
+        self.current_requires.push(Require::new(name.as_ref()));
+        self
+    }
+
+    pub fn or(mut self) -> Self {
+        self.acc
+            .push_back((self.current_provides, self.current_requires));
+        self.current_provides = vec![];
+        self.current_requires = vec![];
+
+        self
+    }
+
+    pub fn build(mut self) -> BuildPlan {
+        let mut xyz = self.or();
+
+        if let Some(head) = xyz.acc.pop_front() {
+            let mut build_plan = BuildPlan::new();
+            build_plan.provides = head.0;
+            build_plan.requires = head.1;
+
+            for alternative in xyz.acc {
+                build_plan.or.push(Or {
+                    provides: alternative.0,
+                    requires: alternative.1,
+                })
+            }
+
+            build_plan
+        } else {
+            BuildPlan::new()
         }
     }
 }

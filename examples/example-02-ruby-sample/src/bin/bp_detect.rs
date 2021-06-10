@@ -7,7 +7,7 @@ fn main() {
     cnb_runtime_detect(detect)
 }
 
-fn detect(ctx: GenericDetectContext) -> anyhow::Result<DetectOutcome> {
+fn detect(ctx: GenericDetectContext<Option<toml::value::Table>>) -> anyhow::Result<DetectOutcome> {
     let buildplan = BuildPlan::new();
 
     let outcome = if ctx.app_dir().join("Gemfile.lock").exists() {

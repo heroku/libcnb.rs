@@ -1,15 +1,20 @@
-use flate2::read::GzDecoder;
-use libcnb::{
-    build::{cnb_runtime_build, GenericBuildContext},
-    data,
-};
-use sha2::Digest;
 use std::{
     collections::HashMap,
     env, fs, io,
     path::Path,
     process::{Command, Stdio},
 };
+
+use example_02_ruby_sample::ruby_layer::RubyLayer;
+use flate2::read::GzDecoder;
+use libcnb::data::layer::LayerContentMetadata;
+use libcnb::layer_lifecycle::execute_layer_lifecycle;
+use libcnb::{
+    build::{cnb_runtime_build, GenericBuildContext},
+    data,
+};
+use serde::{Deserialize, Serialize};
+use sha2::Digest;
 use tar::Archive;
 use tempfile::NamedTempFile;
 
@@ -23,69 +28,79 @@ fn main() -> anyhow::Result<()> {
 }
 
 // need to add a logger / printing to stdout?
-fn build(ctx: GenericBuildContext) -> anyhow::Result<()> {
+fn build(context: GenericBuildContext<Option<toml::value::Table>>) -> anyhow::Result<()> {
     println!("---> Ruby Buildpack");
-
     println!("---> Download and extracting Ruby");
-    let mut ruby_layer = ctx.layer("ruby")?;
-    ruby_layer.mut_content_metadata().launch = true;
-    ruby_layer.write_content_metadata()?;
-    {
-        let ruby_tgz = NamedTempFile::new()?;
-        download(RUBY_URL, ruby_tgz.path())?;
-        untar(ruby_tgz.path(), &ruby_layer)?;
-    }
+
+    execute_layer_lifecycle("ruby", RubyLayer {}, context)?;
 
     let mut ruby_env: HashMap<String, String> = HashMap::new();
+
     let ruby_bin_path = format!(
         "{}/.gem/ruby/2.6.6/bin",
         env::var("HOME").unwrap_or(String::new())
     );
+
     ruby_env.insert(
         String::from("PATH"),
         format!(
             "{}:{}:{}",
-            ruby_layer.as_path().join("bin").as_path().to_str().unwrap(),
+            ruby_layer.as_ref().join("bin").as_path().to_str().unwrap(),
             ruby_bin_path,
             env::var("PATH").unwrap_or(String::new()),
         ),
     );
+
     ruby_env.insert(
         String::from("LD_LIBRARY_PATH"),
         format!(
             "{}:{}",
             env::var("LD_LIBRARY_PATH").unwrap_or(String::new()),
             ruby_layer
-                .as_path()
+                .as_ref()
                 .join("layer")
                 .as_path()
                 .to_str()
                 .unwrap()
         ),
     );
+
     println!("---> Installing bundler");
     {
         let cmd = Command::new("gem")
             .args(&["install", "bundler", "--no-ri", "--no-rdoc"])
             .envs(&ruby_env)
-            .stdout(Stdio::inherit())
-            .stderr(Stdio::inherit())
             .spawn()?
             .wait()?;
+
         if !cmd.success() {
             anyhow::anyhow!("Could not install bundler");
         }
     }
 
-    let mut bundler_layer = ctx.layer("bundler")?;
-    let bundler_layer_path = bundler_layer.as_path();
+    let bundler_layer_existed = context.layer_exists("bundler");
+    let local_gemfile_checksum = sha256_checksum(context.app_dir.join("Gemfile.lock"))?;
+
+    let bundler_layer = context.read_or_new_layer(
+        "bundler",
+        LayerContentMetadata::default()
+            .cache(true)
+            .build(true)
+            .metadata(BundlerLayerMetadata {
+                gemfile_lock_checksum: local_gemfile_checksum.clone(),
+            }),
+    )?;
+
+    let bundler_layer_path = bundler_layer.as_ref();
     let bundler_layer_binstubs_path = bundler_layer_path.join("bin");
-    let local_checksum = toml::Value::String(format!(
-        "{:x}",
-        sha2::Sha256::digest(&fs::read("Gemfile.lock")?)
-    ));
-    let last_checksum = bundler_layer.content_metadata().metadata.get("checksum");
-    if last_checksum == Some(&local_checksum) {
+
+    if bundler_layer_existed
+        && bundler_layer
+            .content_metadata
+            .metadata
+            .gemfile_lock_checksum
+            != local_gemfile_checksum
+    {
         println!("---> Reusing gems");
         Command::new("bundle")
             .args(&[
@@ -97,6 +112,7 @@ fn build(ctx: GenericBuildContext) -> anyhow::Result<()> {
             .envs(&ruby_env)
             .spawn()?
             .wait()?;
+
         Command::new("bundle")
             .args(&[
                 "config",
@@ -125,15 +141,6 @@ fn build(ctx: GenericBuildContext) -> anyhow::Result<()> {
         if !cmd.success() {
             anyhow::anyhow!("Could not bundle install");
         }
-
-        let mut content_metadata = bundler_layer.mut_content_metadata();
-
-        content_metadata.launch = true;
-        content_metadata.cache = true;
-        content_metadata
-            .metadata
-            .insert(String::from("checksum"), local_checksum);
-        bundler_layer.write_content_metadata()?;
     }
 
     let mut launch_toml = data::launch::Launch::new();
@@ -143,25 +150,12 @@ fn build(ctx: GenericBuildContext) -> anyhow::Result<()> {
     launch_toml.processes.push(web);
     launch_toml.processes.push(worker);
 
-    ctx.write_launch(launch_toml)?;
+    context.write_launch(launch_toml)?;
 
     Ok(())
 }
 
-fn download(uri: impl AsRef<str>, dst: impl AsRef<Path>) -> anyhow::Result<()> {
-    let response = reqwest::blocking::get(uri.as_ref())?;
-    let mut content = io::Cursor::new(response.bytes()?);
-    let mut file = fs::File::create(dst.as_ref())?;
-    io::copy(&mut content, &mut file)?;
-
-    Ok(())
-}
-
-fn untar(file: impl AsRef<Path>, dst: impl AsRef<Path>) -> anyhow::Result<()> {
-    let tar_gz = fs::File::open(file.as_ref())?;
-    let tar = GzDecoder::new(tar_gz);
-    let mut archive = Archive::new(tar);
-    archive.unpack(dst.as_ref())?;
-
-    Ok(())
+#[derive(Serialize, Deserialize)]
+struct BundlerLayerMetadata {
+    gemfile_lock_checksum: String,
 }
