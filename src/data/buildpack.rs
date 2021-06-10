@@ -1,9 +1,10 @@
-use crate::{data::defaults, Error};
+use crate::data::defaults;
 use lazy_static::lazy_static;
 use regex::Regex;
 use semver::Version;
 use serde::{de, Deserialize};
 use std::{fmt, str::FromStr};
+use thiserror;
 
 /// Data structure for the Buildpack descriptor (buildpack.toml).
 ///
@@ -29,19 +30,18 @@ use std::{fmt, str::FromStr};
 /// checksum = "awesome"
 /// "#;
 ///
-///         let result = toml::from_str::<BuildpackToml>(raw);
+///         let result = toml::from_str::<BuildpackToml<toml::value::Table>>(raw);
 ///         assert!(result.is_ok());
 /// ```
 #[derive(Deserialize, Debug)]
-pub struct BuildpackToml {
+pub struct BuildpackToml<BM> {
     // MUST be in form <major>.<minor> or <major>, where <major> is equivalent to <major>.0.
     pub api: BuildpackApi,
     pub buildpack: Buildpack,
     pub stacks: Vec<Stack>,
     #[serde(default)]
     pub order: Vec<Order>,
-    #[serde(default)]
-    pub metadata: toml::value::Table,
+    pub metadata: BM,
 }
 
 #[derive(Deserialize, Debug)]
@@ -83,7 +83,7 @@ pub struct BuildpackApi {
 }
 
 impl FromStr for BuildpackApi {
-    type Err = Error;
+    type Err = BuildpackTomlError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         lazy_static! {
@@ -97,7 +97,7 @@ impl FromStr for BuildpackApi {
                 let major = major
                     .as_str()
                     .parse::<u32>()
-                    .map_err(|_| Error::InvalidBuildpackApi(String::from(value)))?;
+                    .map_err(|_| BuildpackTomlError::InvalidBuildpackApi(String::from(value)))?;
 
                 // If no minor version is specified default to 0.
                 let minor = captures
@@ -105,13 +105,13 @@ impl FromStr for BuildpackApi {
                     .map(|s| s.as_str())
                     .unwrap_or("0")
                     .parse::<u32>()
-                    .map_err(|_| Error::InvalidBuildpackApi(String::from(value)))?;
+                    .map_err(|_| BuildpackTomlError::InvalidBuildpackApi(String::from(value)))?;
 
                 return Ok(BuildpackApi { major, minor });
             }
         }
 
-        Err(Error::InvalidBuildpackApi(String::from(value)))
+        Err(BuildpackTomlError::InvalidBuildpackApi(String::from(value)))
     }
 }
 
@@ -160,7 +160,7 @@ impl<'de> de::Deserialize<'de> for BuildpackApi {
 pub struct BuildpackId(String);
 
 impl FromStr for BuildpackId {
-    type Err = Error;
+    type Err = BuildpackTomlError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         lazy_static! {
@@ -171,7 +171,7 @@ impl FromStr for BuildpackId {
         if value != "app" && value != "config" && RE.is_match(value) {
             Ok(BuildpackId(string))
         } else {
-            Err(Error::InvalidBuildpackId(string))
+            Err(BuildpackTomlError::InvalidBuildpackId(string))
         }
     }
 }
@@ -200,7 +200,7 @@ impl BuildpackId {
 pub struct StackId(String);
 
 impl FromStr for StackId {
-    type Err = Error;
+    type Err = BuildpackTomlError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         lazy_static! {
@@ -211,7 +211,7 @@ impl FromStr for StackId {
         if RE.is_match(value) {
             Ok(StackId(string))
         } else {
-            Err(Error::InvalidStackId(string))
+            Err(BuildpackTomlError::InvalidStackId(string))
         }
     }
 }
@@ -220,6 +220,20 @@ impl StackId {
     pub fn as_str(&self) -> &str {
         &self.0
     }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum BuildpackTomlError {
+    #[error("Found `{0}` but value MUST only contain numbers, letters, and the characters ., /, and -. Value MUST NOT be 'config' or 'app'.")]
+    InvalidBuildpackApi(String),
+
+    #[error(
+        "Found `{0}` but value MUST only contain numbers, letters, and the characters ., /, and -."
+    )]
+    InvalidStackId(String),
+
+    #[error("Found `{0}` but value MUST only contain numbers, letters, and the characters ., /, and -. Value MUST NOT be 'config' or 'app'.")]
+    InvalidBuildpackId(String),
 }
 
 #[cfg(test)]
@@ -284,7 +298,7 @@ mixins = ["yj", "yq"]
 checksum = "awesome"
 "#;
 
-        let result = toml::from_str::<BuildpackToml>(raw);
+        let result = toml::from_str::<BuildpackToml<toml::value::Table>>(raw);
         result.unwrap();
         //assert!(result.is_ok());
     }
@@ -306,7 +320,7 @@ id = "io.buildpacks.stacks.bionic"
 checksum = "awesome"
 "#;
 
-        let result = toml::from_str::<BuildpackToml>(raw);
+        let result = toml::from_str::<BuildpackToml<toml::value::Table>>(raw);
         assert!(result.is_ok());
         if let Ok(toml) = result {
             assert_eq!(false, toml.buildpack.clear_env);
@@ -332,7 +346,7 @@ version = "0.0.2"
 id = "io.buildpacks.stacks.bionic"
 "#;
 
-        let result = toml::from_str::<BuildpackToml>(raw);
+        let result = toml::from_str::<BuildpackToml<Option<toml::value::Table>>>(raw);
         assert!(result.is_ok());
         if let Ok(toml) = result {
             assert_eq!(

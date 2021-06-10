@@ -27,26 +27,10 @@ where
     /// ```no_run
     ///use libcnb::platform::Platform;
     ///use libcnb::platform::GenericPlatform;
+    /// use libcnb::generic::GenericPlatform;
     ///let platform = GenericPlatform::from_path("/platform").unwrap();
     /// ```
     fn from_path(platform_dir: impl AsRef<Path>) -> io::Result<Self>;
-}
-
-/// A generic platform that only provides access to environment variables.
-pub struct GenericPlatform {
-    env: PlatformEnv,
-}
-
-impl Platform for GenericPlatform {
-    fn env(&self) -> &PlatformEnv {
-        &self.env
-    }
-
-    fn from_path(platform_dir: impl AsRef<Path>) -> io::Result<Self> {
-        Ok(GenericPlatform {
-            env: PlatformEnv::from_path(platform_dir)?,
-        })
-    }
 }
 
 /// Provides access to platform environment variables.
