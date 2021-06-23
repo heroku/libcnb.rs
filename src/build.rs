@@ -9,7 +9,7 @@ use crate::{
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::error::Error;
-use std::fmt::Debug;
+
 use std::{env, fs, path::PathBuf, process};
 
 pub fn cnb_runtime_build<

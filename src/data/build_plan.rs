@@ -56,7 +56,7 @@ impl BuildPlanBuilder {
         self
     }
 
-    pub fn build(mut self) -> BuildPlan {
+    pub fn build(self) -> BuildPlan {
         let mut xyz = self.or();
 
         if let Some(head) = xyz.acc.pop_front() {

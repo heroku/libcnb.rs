@@ -7,7 +7,7 @@ use serde::Serialize;
 
 use crate::build::BuildContext;
 use crate::data::layer::LayerContentMetadata;
-use crate::layer_lifecycle::LayerLifecycleError::MetadataReplaceFailed;
+
 use crate::platform::Platform;
 use crate::shared::TomlFileError;
 use crate::LibCnbError;
@@ -315,20 +315,6 @@ fn handle_layer_update<P: Platform, BM, LM: Serialize + DeserializeOwned, O: Def
         })
 }
 
-fn handle_layer_delete<P: Platform, BM, LM: Serialize + DeserializeOwned, O: Default, E: Error>(
-    layer_name: impl AsRef<str>,
-    _layer_path: &PathBuf,
-    _layer_content_metadata: LayerContentMetadata<LM>,
-    _layer_lifecycle: &impl LayerLifecycle<P, BM, LM, O, E>,
-    context: &BuildContext<P, BM>,
-) -> Result<(), LibCnbError<E>> {
-    context.delete_layer(&layer_name).map_err(|io_error| {
-        LibCnbError::LayerLifecycleError(LayerLifecycleError::CannotDeleteLayerAfterValidate(
-            io_error,
-        ))
-    })
-}
-
 fn metadata_recovery<P: Platform, BM, LM: Serialize + DeserializeOwned, O: Default, E: Error>(
     layer_name: impl AsRef<str>,
     layer_lifecycle: &impl LayerLifecycle<P, BM, LM, O, E>,
@@ -337,7 +323,7 @@ fn metadata_recovery<P: Platform, BM, LM: Serialize + DeserializeOwned, O: Defau
     // Read existing layer content metadata as TOML table, handling potential errors and
     // non-existent metadata so subsequent steps don't have to deal with either.
     let mut layer_content_metadata = {
-        let mut maybe_layer_content_metadata = context
+        let maybe_layer_content_metadata = context
             .read_layer_content_metadata(&layer_name)
             .map_err(|toml_file_error| {
                 LibCnbError::LayerLifecycleError(

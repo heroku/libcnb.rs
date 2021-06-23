@@ -2,7 +2,7 @@ use std::path::Path;
 
 use crate::build::BuildContext;
 use crate::detect::DetectContext;
-use crate::layer_lifecycle::LayerLifecycle;
+
 use crate::platform::{Platform, PlatformEnv};
 
 pub type GenericMetadata = Option<toml::value::Table>;

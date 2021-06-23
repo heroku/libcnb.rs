@@ -1,10 +1,6 @@
-use std::collections::HashMap;
 use std::error::Error;
-use std::ffi::OsStr;
-use std::fmt::{Debug, Display};
-use std::path::Path;
+
 use std::process::exit;
-use std::{env, fs, path::PathBuf, process};
 
 use serde::de::DeserializeOwned;
 
@@ -12,9 +8,7 @@ use crate::build::{cnb_runtime_build, BuildContext};
 use crate::detect::{cnb_runtime_detect, DetectContext, DetectResult};
 use crate::error::LibCnbErrorHandle;
 use crate::{
-    data::{buildpack::BuildpackToml, buildpack_plan::BuildpackPlan, launch::Launch},
     platform::Platform,
-    shared::read_toml_file,
     LibCnbError,
 };
 
