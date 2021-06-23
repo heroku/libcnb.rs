@@ -39,8 +39,9 @@ impl Launch {
         }
     }
 
-    pub fn process(mut self, process: Process) -> self {
-        self.processes.push(process)
+    pub fn process(mut self, process: Process) -> Self {
+        self.processes.push(process);
+        self
     }
 }
 
