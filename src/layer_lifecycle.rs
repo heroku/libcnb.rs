@@ -23,8 +23,8 @@ pub trait LayerLifecycle<P: Platform, BM, LM, O: Default, E: Error> {
     /// only need to care about putting files into `path`.
     fn create(
         &self,
-        path: &Path,
-        context: &BuildContext<P, BM>,
+        layer_path: &Path,
+        build_context: &BuildContext<P, BM>,
     ) -> Result<LayerContentMetadata<LM>, E>;
 
     /// Tries to recover from invalid layer metadata
@@ -62,7 +62,7 @@ pub trait LayerLifecycle<P: Platform, BM, LM, O: Default, E: Error> {
     /// at [`ValidateResult`] for additional validation results and their meanings.
     fn validate(
         &self,
-        #[allow(unused_variables)] path: &Path,
+        #[allow(unused_variables)] layer_path: &Path,
         #[allow(unused_variables)] layer_content_metadata: &LayerContentMetadata<LM>,
         #[allow(unused_variables)] build_context: &BuildContext<P, BM>,
     ) -> ValidateResult {
@@ -73,7 +73,7 @@ pub trait LayerLifecycle<P: Platform, BM, LM, O: Default, E: Error> {
     /// Updates an existing layer
     fn update(
         &self,
-        #[allow(unused_variables)] path: &Path,
+        #[allow(unused_variables)] layer_path: &Path,
         #[allow(unused_variables)] layer_content_metadata: LayerContentMetadata<LM>,
         #[allow(unused_variables)] build_context: &BuildContext<P, BM>,
     ) -> Result<LayerContentMetadata<LM>, E> {
@@ -81,9 +81,9 @@ pub trait LayerLifecycle<P: Platform, BM, LM, O: Default, E: Error> {
         Ok(layer_content_metadata)
     }
 
-    fn output_data(
+    fn layer_lifecycle_data(
         &self,
-        #[allow(unused_variables)] path: &Path,
+        #[allow(unused_variables)] layer_path: &Path,
         #[allow(unused_variables)] layer_content_metadata: LayerContentMetadata<LM>,
     ) -> Result<O, E> {
         Ok(O::default())
@@ -219,7 +219,7 @@ pub fn execute_layer_lifecycle<
             LayerLifecycleError::LayerContentMetadataMissingAfterLifecycle(),
         )),
         Ok(Some(metadata)) => layer_lifecycle
-            .output_data(&layer_path, metadata)
+            .layer_lifecycle_data(&layer_path, metadata)
             .map_err(LibCnbError::BuildpackError),
     }
 }
