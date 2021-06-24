@@ -4,7 +4,7 @@ use std::{env, fs, path::PathBuf, process};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-use crate::data::layer::LayerContentMetadata;
+use crate::data::layer_content_metadata::LayerContentMetadata;
 use crate::error::LibCnbError;
 use crate::shared::{write_toml_file, TomlFileError};
 use crate::{

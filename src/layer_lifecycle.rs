@@ -6,7 +6,7 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 use crate::build::BuildContext;
-use crate::data::layer::LayerContentMetadata;
+use crate::data::layer_content_metadata::LayerContentMetadata;
 
 use crate::error::LibCnbError;
 use crate::platform::Platform;

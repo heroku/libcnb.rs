@@ -5,5 +5,5 @@ pub mod buildpack;
 pub mod buildpack_plan;
 pub mod defaults;
 pub mod launch;
-pub mod layer;
+pub mod layer_content_metadata;
 pub mod store;
