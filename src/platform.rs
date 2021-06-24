@@ -6,6 +6,8 @@ use std::{
     path::Path,
 };
 
+use crate::generic::GenericPlatform;
+
 /// Represents a Cloud Native Buildpack platform.
 ///
 /// Most buildpacks target a generic platform and this library provides a [`GenericPlatform`] for that

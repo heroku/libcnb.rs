@@ -34,8 +34,8 @@ pub trait LayerLifecycle<P: Platform, BM, LM, O: Default, E: Error> {
     /// implementors to recover from this case by, for example, implementing migrations from older
     /// versions of the metadata to the current one.
     ///
-    /// The default implementation returns [`InvalidMetadataRecoveryResult::DeleteLayer`] to signal
-    /// that the existing layer should be deleted in its entirety.
+    /// The default implementation returns [`MetadataRecoveryStrategy::DeleteLayer`] to signal that
+    /// the existing layer should be deleted in its entirety.
     fn recover_from_invalid_metadata(
         &self,
         #[allow(unused_variables)] layer_metadata: &toml::value::Table,
@@ -98,7 +98,7 @@ pub trait LayerLifecycle<P: Platform, BM, LM, O: Default, E: Error> {
 
 /// The result of the recovery process for invalid layer metadata
 ///
-/// See [`LayerLifecycle::invalid_metadata_recovery`]
+/// See [`LayerLifecycle::recover_from_invalid_metadata`]
 pub enum MetadataRecoveryStrategy<M> {
     /// Delete the layer entirely
     DeleteLayer,
