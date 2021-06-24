@@ -14,7 +14,7 @@ use crate::shared::TomlFileError;
 
 /// A lifecycle of a Cloud Native Buildpack layer
 ///
-/// See [`execute_layer_lifecycle`]
+/// Use [`execute_layer_lifecycle`] to execute a layer lifecycle.
 pub trait LayerLifecycle<P: Platform, BM, LM, O: Default, E: Error> {
     /// Creates the layer from scratch
     ///
@@ -126,6 +126,7 @@ pub enum ValidateResult {
     UpdateLayer,
 }
 
+/// Layer lifecycle errors
 #[derive(thiserror::Error, Debug)]
 pub enum LayerLifecycleError {
     #[error("Could not replace layer metadata: {0}")]
@@ -150,6 +151,8 @@ pub enum LayerLifecycleError {
     CannotReadLayerContentMetadata(TomlFileError),
 }
 
+/// Executes a layer lifecycle for a given layer name and [`BuildContext`]
+/// See [`LayerLifecycle`]
 pub fn execute_layer_lifecycle<
     P: Platform,
     BM,

@@ -1,3 +1,5 @@
+//! This crate provides a library to implement [Cloud Native Buildpacks](https://buildpacks.io/).
+
 pub mod build;
 pub mod data;
 pub mod detect;
