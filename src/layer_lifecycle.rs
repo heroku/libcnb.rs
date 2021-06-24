@@ -128,41 +128,26 @@ pub enum ValidateResult {
 
 #[derive(thiserror::Error, Debug)]
 pub enum LayerLifecycleError {
-    #[error("Could not replace metadata after invalid_metadata_recovery: {0}")]
-    MetadataReplaceFailed(TomlFileError),
+    #[error("Could not replace layer metadata: {0}")]
+    CannotReplaceLayerMetadata(TomlFileError),
 
-    #[error("Could not read untyped metadata for invalid_metadata_recovery: {0}")]
-    CouldNotReadUntypedLayerMetadata(TomlFileError),
+    #[error("Could not read untyped layer metadata: {0}")]
+    CannotNotReadUntypedLayerMetadata(TomlFileError),
 
-    #[error("Could not write layer content metadata after creating new layer: {0}")]
-    CouldNotWriteLayerContentMetadataAfterCreate(TomlFileError),
+    #[error("Could not write layer content metadata: {0}")]
+    CannotWriteLayerMetadata(TomlFileError),
 
-    #[error("Could create layer directory before layer lifecycle create: {0}")]
+    #[error("Could create layer directory before layer life cycle create: {0}")]
     CannotCreateLayerDirectoryBeforeCreate(std::io::Error),
 
-    #[error("XXX {0}")]
-    CannotDeleteLayerAfterValidate(std::io::Error),
+    #[error("Could not delete layer: {0}")]
+    CannotDeleteLayer(std::io::Error),
 
-    #[error("XXX {0}")]
-    CannotDeleteLayerAfterMetadataRecovery(std::io::Error),
+    #[error("Layer content metadata is missing after lifecycle")]
+    CannotFindLayerMetadataAfterLifecycle(),
 
-    #[error("XXX {0}")]
-    CannotWriteLayerContentMetadataAfterUpdate(TomlFileError),
-
-    #[error("XXX {0}")]
-    CannotWriteLayerContentMetadataAfterCreateTriggredByRecreate(TomlFileError),
-
-    #[error("XXX {0}")]
-    CannotCreateLayerDirectoryBeforeCreateTriggredByRecreate(std::io::Error),
-
-    #[error("XXX {0}")]
-    CannotDeleteLayerBeforeCreateTriggredByRecreate(std::io::Error),
-
-    #[error("XXX")]
-    LayerContentMetadataMissingAfterLifecycle(),
-
-    #[error("XXX {0}")]
-    LayerContentMetadataIssue(TomlFileError),
+    #[error("Could not read layer content metadata: {0}")]
+    CannotReadLayerContentMetadata(TomlFileError),
 }
 
 pub fn execute_layer_lifecycle<
@@ -213,10 +198,10 @@ pub fn execute_layer_lifecycle<
 
     match context.read_layer_content_metadata(&layer_name) {
         Err(toml_file_error) => Err(LibCnbError::LayerLifecycleError(
-            LayerLifecycleError::LayerContentMetadataIssue(toml_file_error),
+            LayerLifecycleError::CannotReadLayerContentMetadata(toml_file_error),
         )),
         Ok(None) => Err(LibCnbError::LayerLifecycleError(
-            LayerLifecycleError::LayerContentMetadataMissingAfterLifecycle(),
+            LayerLifecycleError::CannotFindLayerMetadataAfterLifecycle(),
         )),
         Ok(Some(metadata)) => layer_lifecycle
             .layer_lifecycle_data(&layer_path, metadata)
@@ -252,7 +237,7 @@ fn handle_layer_create<P: Platform, BM, LM: Serialize + DeserializeOwned, O: Def
 
     context
         .write_layer_content_metadata(&layer_name, &layer_content_metadata)
-        .map_err(LayerLifecycleError::CouldNotWriteLayerContentMetadataAfterCreate)?;
+        .map_err(LayerLifecycleError::CannotWriteLayerMetadata)?;
     Ok(())
 }
 
@@ -271,10 +256,9 @@ fn handle_layer_recreate<
 ) -> Result<(), LibCnbError<E>> {
     context
         .delete_layer(&layer_name)
-        .map_err(LayerLifecycleError::CannotDeleteLayerBeforeCreateTriggredByRecreate)?;
+        .map_err(LayerLifecycleError::CannotDeleteLayer)?;
 
-    std::fs::create_dir_all(&layer_path)
-        .map_err(LayerLifecycleError::CannotCreateLayerDirectoryBeforeCreateTriggredByRecreate)?;
+    std::fs::create_dir_all(&layer_path).map_err(LayerLifecycleError::CannotDeleteLayer)?;
 
     layer_lifecycle.on_create();
 
@@ -285,11 +269,9 @@ fn handle_layer_recreate<
     context
         .write_layer_content_metadata(&layer_name, &content_metadata)
         .map_err(|toml_error| {
-            LibCnbError::LayerLifecycleError(
-                LayerLifecycleError::CannotWriteLayerContentMetadataAfterCreateTriggredByRecreate(
-                    toml_error,
-                ),
-            )
+            LibCnbError::LayerLifecycleError(LayerLifecycleError::CannotWriteLayerMetadata(
+                toml_error,
+            ))
         })
 }
 
@@ -309,9 +291,9 @@ fn handle_layer_update<P: Platform, BM, LM: Serialize + DeserializeOwned, O: Def
     context
         .write_layer_content_metadata(&layer_name, &content_metadata)
         .map_err(|toml_error| {
-            LibCnbError::LayerLifecycleError(
-                LayerLifecycleError::CannotWriteLayerContentMetadataAfterUpdate(toml_error),
-            )
+            LibCnbError::LayerLifecycleError(LayerLifecycleError::CannotWriteLayerMetadata(
+                toml_error,
+            ))
         })
 }
 
@@ -327,7 +309,7 @@ fn metadata_recovery<P: Platform, BM, LM: Serialize + DeserializeOwned, O: Defau
             .read_layer_content_metadata(&layer_name)
             .map_err(|toml_file_error| {
                 LibCnbError::LayerLifecycleError(
-                    LayerLifecycleError::CouldNotReadUntypedLayerMetadata(toml_file_error),
+                    LayerLifecycleError::CannotNotReadUntypedLayerMetadata(toml_file_error),
                 )
             })?;
 
@@ -345,7 +327,7 @@ fn metadata_recovery<P: Platform, BM, LM: Serialize + DeserializeOwned, O: Defau
         MetadataRecoveryStrategy::DeleteLayer => {
             context
                 .delete_layer(&layer_name)
-                .map_err(LayerLifecycleError::CannotDeleteLayerAfterMetadataRecovery)?;
+                .map_err(LayerLifecycleError::CannotDeleteLayer)?;
 
             Ok(None)
         }
@@ -354,7 +336,7 @@ fn metadata_recovery<P: Platform, BM, LM: Serialize + DeserializeOwned, O: Defau
 
             context
                 .write_layer_content_metadata(&layer_name, &updated_metadata)
-                .map_err(LayerLifecycleError::MetadataReplaceFailed)?;
+                .map_err(LayerLifecycleError::CannotReplaceLayerMetadata)?;
 
             Ok(Some(updated_metadata))
         }
