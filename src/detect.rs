@@ -1,12 +1,13 @@
-use crate::data::buildpack::BuildpackToml;
-use crate::shared::read_toml_file;
-use crate::{
-    data::build_plan::BuildPlan, platform::Platform, shared::write_toml_file, LibCnbError,
-};
-use serde::de::DeserializeOwned;
 use std::error::Error;
 use std::fmt::Debug;
 use std::{env, path::PathBuf, process};
+
+use serde::de::DeserializeOwned;
+
+use crate::data::buildpack::BuildpackToml;
+use crate::error::LibCnbError;
+use crate::shared::read_toml_file;
+use crate::{data::build_plan::BuildPlan, platform::Platform, shared::write_toml_file};
 
 pub fn cnb_runtime_detect<
     P: Platform,
@@ -16,49 +17,23 @@ pub fn cnb_runtime_detect<
 >(
     detect_fn: F,
 ) -> Result<(), LibCnbError<E>> {
-    let app_dir = env::current_dir().expect("Could not determine current working directory!");
+    let args = parse_detect_args_or_exit();
 
-    let buildpack_dir: PathBuf = env::var("CNB_BUILDPACK_DIR")
-        .expect("Could not determine buildpack directory!")
-        .into();
+    let app_dir = env::current_dir().map_err(LibCnbError::CannotDetermineAppDirectory)?;
 
-    let args: Vec<String> = env::args().collect();
-    if args.len() != 3 {
-        eprintln!("Usage: detect <platform_dir> <buildplan>");
-        process::exit(1);
-    }
+    let buildpack_dir = env::var("CNB_BUILDPACK_DIR")
+        .map_err(LibCnbError::CannotDetermineBuildpackDirectory)
+        .map(PathBuf::from)?;
 
-    let platform = {
-        let platform_dir = PathBuf::from(args.get(1).unwrap());
+    let stack_id: String = env::var("CNB_STACK_ID").map_err(LibCnbError::CannotDetermineStackId)?;
 
-        if !platform_dir.is_dir() {
-            eprintln!("First argument must be a readable platform directory!");
-            process::exit(1);
-        }
+    let platform =
+        P::from_path(&args.platform_dir_path).map_err(LibCnbError::CannotCreatePlatformFromPath)?;
 
-        match P::from_path(platform_dir.as_path()) {
-            Ok(platform) => platform,
-            Err(error) => {
-                eprintln!(
-                    "Could not create platform from platform directory: {}",
-                    error
-                );
-                process::exit(1);
-            }
-        }
-    };
+    let buildpack_descriptor = read_toml_file(buildpack_dir.join("buildpack.toml"))
+        .map_err(LibCnbError::CannotReadBuildpackDescriptor)?;
 
-    let stack_id = env::var("CNB_STACK_ID").expect("Could not determine CNB stack id!");
-
-    let build_plan_path: PathBuf = PathBuf::from(args.get(2).unwrap());
-
-    let buildpack_descriptor = match read_toml_file(buildpack_dir.join("buildpack.toml")) {
-        Ok(buildpack_descriptor) => buildpack_descriptor,
-        Err(error) => {
-            eprintln!("Could not read buildpack descriptor: {}", error);
-            process::exit(1);
-        }
-    };
+    let build_plan_path = args.build_plan_path;
 
     let detect_context = DetectContext {
         app_dir,
@@ -72,14 +47,32 @@ pub fn cnb_runtime_detect<
         Ok(DetectResult::Fail) | Err(_) => process::exit(100),
         Ok(DetectResult::Error(code)) => process::exit(code),
         Ok(DetectResult::Pass(build_plan)) => {
-            if let Err(error) = write_toml_file(&build_plan, build_plan_path) {
-                eprintln!("Could not write buildplan to disk: {}", error);
-                process::exit(1);
-            }
+            write_toml_file(&build_plan, build_plan_path)
+                .map_err(LibCnbError::CannotWriteBuildPlan)?;
 
             process::exit(0)
         }
     };
+}
+
+struct DetectArgs {
+    pub platform_dir_path: PathBuf,
+    pub build_plan_path: PathBuf,
+}
+
+fn parse_detect_args_or_exit() -> DetectArgs {
+    let args: Vec<String> = env::args().collect();
+    match args.as_slice() {
+        [_, platform_dir_path, build_plan_path] => DetectArgs {
+            platform_dir_path: PathBuf::from(platform_dir_path),
+            build_plan_path: PathBuf::from(build_plan_path),
+        },
+        _ => {
+            eprintln!("Usage: detect <platform_dir> <buildplan>");
+            eprintln!("https://github.com/buildpacks/spec/blob/main/buildpack.md#detection");
+            process::exit(1);
+        }
+    }
 }
 
 pub struct DetectContext<P: Platform, BM> {

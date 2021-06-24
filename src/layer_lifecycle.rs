@@ -8,9 +8,9 @@ use serde::Serialize;
 use crate::build::BuildContext;
 use crate::data::layer::LayerContentMetadata;
 
+use crate::error::LibCnbError;
 use crate::platform::Platform;
 use crate::shared::TomlFileError;
-use crate::LibCnbError;
 
 /// A lifecycle of a Cloud Native Buildpack layer
 ///

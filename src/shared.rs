@@ -1,8 +1,7 @@
 use serde::{de::DeserializeOwned, Serialize};
 use std::{error::Error, fmt::Display, fs, path::Path};
-use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum TomlFileError {
     #[error("IO error while reading/writing TOML file: {0}")]
     IoError(#[from] std::io::Error),
