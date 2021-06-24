@@ -1,15 +1,26 @@
-use crate::data::defaults;
-use crate::generic::GenericMetadata;
 use serde::{Deserialize, Serialize};
 
+use crate::data::defaults;
+use crate::generic::GenericMetadata;
+
+/// Describes Layer Content Metadata
+///
+/// See [Cloud Native Buildpack specification](https://github.com/buildpacks/spec/blob/main/buildpack.md#layer-content-metadata-toml)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LayerContentMetadata<M> {
+    /// Whether the layer is intended for launch.
     #[serde(default = "defaults::r#false")]
     pub launch: bool,
+
+    /// Whether the layer is intended for build.
     #[serde(default = "defaults::r#false")]
     pub build: bool,
+
+    /// Whether the layer is cached.
     #[serde(default = "defaults::r#false")]
     pub cache: bool,
+
+    /// Metadata that describes the layer contents.
     pub metadata: M,
 }
 
