@@ -12,9 +12,9 @@ pub struct DetectContext<P: Platform, BM> {
     pub buildpack_descriptor: BuildpackToml<BM>,
 }
 
-/// Describes the result of the buildpack's detect phase.
+/// Describes the outcome of the buildpack's detect phase.
 #[derive(Debug)]
-pub enum DetectResult {
+pub enum DetectOutcome {
     Pass(BuildPlan),
     Fail,
 }

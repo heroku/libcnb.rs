@@ -6,7 +6,7 @@ use std::process::exit;
 use serde::de::DeserializeOwned;
 
 use crate::build::BuildContext;
-use crate::detect::{DetectContext, DetectResult};
+use crate::detect::{DetectContext, DetectOutcome};
 use crate::error::{Error, ErrorHandler};
 use crate::platform::Platform;
 use crate::toml_file::{read_toml_file, write_toml_file};
@@ -16,11 +16,11 @@ use crate::Result;
 ///
 /// # Example
 /// ```no_run
-/// use libcnb::{GenericErrorHandler, DetectResult, Error, GenericBuildContext, GenericDetectContext, Result};
+/// use libcnb::{GenericErrorHandler, DetectOutcome, Error, GenericBuildContext, GenericDetectContext, Result};
 ///
-/// fn detect(context: GenericDetectContext) -> Result<DetectResult, std::io::Error> {
+/// fn detect(context: GenericDetectContext) -> Result<DetectOutcome, std::io::Error> {
 ///     // ...
-///     Ok(DetectResult::Fail)
+///     Ok(DetectOutcome::Fail)
 /// }
 ///
 /// fn build(context: GenericBuildContext) -> Result<(), std::io::Error> {
@@ -33,7 +33,7 @@ use crate::Result;
 /// }
 /// ```
 pub fn cnb_runtime<P: Platform, BM: DeserializeOwned, E: std::error::Error>(
-    detect_fn: impl Fn(DetectContext<P, BM>) -> Result<DetectResult, E>,
+    detect_fn: impl Fn(DetectContext<P, BM>) -> Result<DetectOutcome, E>,
     build_fn: impl Fn(BuildContext<P, BM>) -> Result<(), E>,
     error_handler: impl ErrorHandler<E>,
 ) {
@@ -59,7 +59,7 @@ fn cnb_runtime_detect<
     P: Platform,
     BM: DeserializeOwned,
     E: std::error::Error,
-    F: FnOnce(DetectContext<P, BM>) -> Result<DetectResult, E>,
+    F: FnOnce(DetectContext<P, BM>) -> Result<DetectOutcome, E>,
 >(
     detect_fn: F,
 ) -> Result<(), E> {
@@ -90,11 +90,11 @@ fn cnb_runtime_detect<
     };
 
     match detect_fn(detect_context)? {
-        DetectResult::Pass(build_plan) => {
+        DetectOutcome::Pass(build_plan) => {
             write_toml_file(&build_plan, build_plan_path).map_err(Error::CannotWriteBuildPlan)?;
             process::exit(0)
         }
-        DetectResult::Fail => process::exit(100),
+        DetectOutcome::Fail => process::exit(100),
     }
 }
 

@@ -4,7 +4,7 @@ pub mod data;
 pub mod layer_lifecycle;
 pub use build::BuildContext;
 pub use detect::DetectContext;
-pub use detect::DetectResult;
+pub use detect::DetectOutcome;
 pub use error::*;
 pub use generic::*;
 pub use platform::*;
