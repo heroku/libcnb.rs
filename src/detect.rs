@@ -17,5 +17,4 @@ pub struct DetectContext<P: Platform, BM> {
 pub enum DetectResult {
     Pass(BuildPlan),
     Fail,
-    Error(i32),
 }

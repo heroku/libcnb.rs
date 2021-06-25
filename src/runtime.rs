@@ -89,15 +89,13 @@ fn cnb_runtime_detect<
         buildpack_descriptor,
     };
 
-    match detect_fn(detect_context) {
-        Ok(DetectResult::Fail) | Err(_) => process::exit(100),
-        Ok(DetectResult::Error(code)) => process::exit(code),
-        Ok(DetectResult::Pass(build_plan)) => {
+    match detect_fn(detect_context)? {
+        DetectResult::Pass(build_plan) => {
             write_toml_file(&build_plan, build_plan_path).map_err(Error::CannotWriteBuildPlan)?;
-
             process::exit(0)
         }
-    };
+        DetectResult::Fail => process::exit(100),
+    }
 }
 
 fn cnb_runtime_build<
