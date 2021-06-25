@@ -1,5 +1,4 @@
 use std::env;
-use std::error::Error;
 use std::path::PathBuf;
 use std::process;
 use std::process::exit;
@@ -8,14 +7,35 @@ use serde::de::DeserializeOwned;
 
 use crate::build::BuildContext;
 use crate::detect::{DetectContext, DetectResult};
-use crate::error::{LibCnbError, LibCnbErrorHandle};
+use crate::error::{Error, ErrorHandler};
 use crate::platform::Platform;
-use crate::shared::{read_toml_file, write_toml_file};
+use crate::toml_file::{read_toml_file, write_toml_file};
+use crate::Result;
 
-pub fn cnb_runtime<P: Platform, BM: DeserializeOwned, E: Error>(
-    detect_fn: impl Fn(DetectContext<P, BM>) -> Result<DetectResult, LibCnbError<E>>,
-    build_fn: impl Fn(BuildContext<P, BM>) -> Result<(), LibCnbError<E>>,
-    error_handler: impl LibCnbErrorHandle<E>,
+/// Main entry point for this framework.
+///
+/// # Example
+/// ```no_run
+/// use libcnb::{GenericErrorHandler, DetectResult, Error, GenericBuildContext, GenericDetectContext, Result};
+///
+/// fn detect(context: GenericDetectContext) -> Result<DetectResult, std::io::Error> {
+///     // ...
+///     Ok(DetectResult::Fail)
+/// }
+///
+/// fn build(context: GenericBuildContext) -> Result<(), std::io::Error> {
+///    // ...
+///    Ok(())
+/// }
+///
+/// fn main() {
+///    libcnb::cnb_runtime(detect, build, GenericErrorHandler);
+/// }
+/// ```
+pub fn cnb_runtime<P: Platform, BM: DeserializeOwned, E: std::error::Error>(
+    detect_fn: impl Fn(DetectContext<P, BM>) -> Result<DetectResult, E>,
+    build_fn: impl Fn(BuildContext<P, BM>) -> Result<(), E>,
+    error_handler: impl ErrorHandler<E>,
 ) {
     let current_exe = std::env::current_exe().ok();
     let current_exe_file_name = current_exe
@@ -38,26 +58,26 @@ pub fn cnb_runtime<P: Platform, BM: DeserializeOwned, E: Error>(
 fn cnb_runtime_detect<
     P: Platform,
     BM: DeserializeOwned,
-    E: Error,
-    F: FnOnce(DetectContext<P, BM>) -> Result<DetectResult, LibCnbError<E>>,
+    E: std::error::Error,
+    F: FnOnce(DetectContext<P, BM>) -> Result<DetectResult, E>,
 >(
     detect_fn: F,
-) -> Result<(), LibCnbError<E>> {
+) -> Result<(), E> {
     let args = parse_detect_args_or_exit();
 
-    let app_dir = env::current_dir().map_err(LibCnbError::CannotDetermineAppDirectory)?;
+    let app_dir = env::current_dir().map_err(Error::CannotDetermineAppDirectory)?;
 
     let buildpack_dir = env::var("CNB_BUILDPACK_DIR")
-        .map_err(LibCnbError::CannotDetermineBuildpackDirectory)
+        .map_err(Error::CannotDetermineBuildpackDirectory)
         .map(PathBuf::from)?;
 
-    let stack_id: String = env::var("CNB_STACK_ID").map_err(LibCnbError::CannotDetermineStackId)?;
+    let stack_id: String = env::var("CNB_STACK_ID").map_err(Error::CannotDetermineStackId)?;
 
     let platform =
-        P::from_path(&args.platform_dir_path).map_err(LibCnbError::CannotCreatePlatformFromPath)?;
+        P::from_path(&args.platform_dir_path).map_err(Error::CannotCreatePlatformFromPath)?;
 
     let buildpack_descriptor = read_toml_file(buildpack_dir.join("buildpack.toml"))
-        .map_err(LibCnbError::CannotReadBuildpackDescriptor)?;
+        .map_err(Error::CannotReadBuildpackDescriptor)?;
 
     let build_plan_path = args.build_plan_path;
 
@@ -73,8 +93,7 @@ fn cnb_runtime_detect<
         Ok(DetectResult::Fail) | Err(_) => process::exit(100),
         Ok(DetectResult::Error(code)) => process::exit(code),
         Ok(DetectResult::Pass(build_plan)) => {
-            write_toml_file(&build_plan, build_plan_path)
-                .map_err(LibCnbError::CannotWriteBuildPlan)?;
+            write_toml_file(&build_plan, build_plan_path).map_err(Error::CannotWriteBuildPlan)?;
 
             process::exit(0)
         }
@@ -82,33 +101,33 @@ fn cnb_runtime_detect<
 }
 
 fn cnb_runtime_build<
-    E: Error,
-    F: Fn(BuildContext<P, BM>) -> Result<(), LibCnbError<E>>,
+    E: std::error::Error,
+    F: Fn(BuildContext<P, BM>) -> Result<(), E>,
     BM: DeserializeOwned,
     P: Platform,
 >(
     build_fn: F,
-) -> Result<(), LibCnbError<E>> {
+) -> Result<(), E> {
     let args = parse_build_args_or_exit();
 
     let layers_dir = args.layers_dir_path;
 
-    let app_dir = env::current_dir().map_err(LibCnbError::CannotDetermineAppDirectory)?;
+    let app_dir = env::current_dir().map_err(Error::CannotDetermineAppDirectory)?;
 
     let buildpack_dir = env::var("CNB_BUILDPACK_DIR")
-        .map_err(LibCnbError::CannotDetermineBuildpackDirectory)
+        .map_err(Error::CannotDetermineBuildpackDirectory)
         .map(PathBuf::from)?;
 
-    let stack_id: String = env::var("CNB_STACK_ID").map_err(LibCnbError::CannotDetermineStackId)?;
+    let stack_id: String = env::var("CNB_STACK_ID").map_err(Error::CannotDetermineStackId)?;
 
     let platform =
-        P::from_path(&args.platform_dir_path).map_err(LibCnbError::CannotCreatePlatformFromPath)?;
+        P::from_path(&args.platform_dir_path).map_err(Error::CannotCreatePlatformFromPath)?;
 
     let buildpack_plan =
-        read_toml_file(&args.buildpack_plan_path).map_err(LibCnbError::CannotReadBuildpackPlan)?;
+        read_toml_file(&args.buildpack_plan_path).map_err(Error::CannotReadBuildpackPlan)?;
 
     let buildpack_descriptor = read_toml_file(buildpack_dir.join("buildpack.toml"))
-        .map_err(LibCnbError::CannotReadBuildpackDescriptor)?;
+        .map_err(Error::CannotReadBuildpackDescriptor)?;
 
     let context = BuildContext {
         layers_dir,

@@ -1,3 +1,5 @@
+//! Low-level representations for Cloud Native Buildpack data types.
+
 pub mod bom;
 pub mod build;
 pub mod build_plan;

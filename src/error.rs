@@ -1,14 +1,20 @@
 use crate::data::launch::ProcessTypeError;
 use crate::layer_lifecycle::LayerLifecycleError;
-use crate::shared::TomlFileError;
-use std::error::Error;
+use crate::toml_file::TomlFileError;
 
-pub trait LibCnbErrorHandle<E: Error> {
-    fn handle_error(&self, error: LibCnbError<E>) -> i32;
+/// Handles top-level buildpack errors.
+pub trait ErrorHandler<E: std::error::Error> {
+    fn handle_error(&self, error: Error<E>) -> i32;
 }
 
+/// A specialized Result type for libcnb.
+///
+/// This type is broadly used across libcnb for any operation which may produce an error.
+pub type Result<T, E> = std::result::Result<T, Error<E>>;
+
+/// An error that occurred during buildpack execution.
 #[derive(thiserror::Error, Debug)]
-pub enum LibCnbError<E: Error> {
+pub enum Error<E: std::error::Error> {
     #[error("Layer lifecycle error: {0}")]
     LayerLifecycleError(#[from] LayerLifecycleError),
 

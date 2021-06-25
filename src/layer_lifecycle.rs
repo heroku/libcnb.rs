@@ -1,4 +1,5 @@
-use std::error::Error;
+//! Manage layer lifecycles in a declarative way.
+
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 
@@ -7,15 +8,14 @@ use serde::Serialize;
 
 use crate::build::BuildContext;
 use crate::data::layer_content_metadata::LayerContentMetadata;
-
-use crate::error::LibCnbError;
+use crate::error::Error;
 use crate::platform::Platform;
-use crate::shared::TomlFileError;
+use crate::toml_file::TomlFileError;
 
 /// A lifecycle of a Cloud Native Buildpack layer
 ///
 /// Use [`execute_layer_lifecycle`] to execute a layer lifecycle.
-pub trait LayerLifecycle<P: Platform, BM, LM, O: Default, E: Error> {
+pub trait LayerLifecycle<P: Platform, BM, LM, O: Default, E: std::error::Error> {
     /// Creates the layer from scratch
     ///
     /// When used with [`execute_layer_lifecycle`], `path` will be created and empty. The
@@ -158,12 +158,12 @@ pub fn execute_layer_lifecycle<
     BM,
     LM: Serialize + DeserializeOwned,
     O: Default,
-    E: Error,
+    E: std::error::Error,
 >(
     layer_name: impl AsRef<str>,
     layer_lifecycle: impl LayerLifecycle<P, BM, LM, O, E>,
     context: &BuildContext<P, BM>,
-) -> Result<O, LibCnbError<E>> {
+) -> Result<O, Error<E>> {
     layer_lifecycle.on_lifecycle_start();
 
     let layer_path = context.layer_path(&layer_name);
@@ -200,35 +200,47 @@ pub fn execute_layer_lifecycle<
     layer_lifecycle.on_lifecycle_end();
 
     match context.read_layer_content_metadata(&layer_name) {
-        Err(toml_file_error) => Err(LibCnbError::LayerLifecycleError(
+        Err(toml_file_error) => Err(Error::LayerLifecycleError(
             LayerLifecycleError::CannotReadLayerContentMetadata(toml_file_error),
         )),
-        Ok(None) => Err(LibCnbError::LayerLifecycleError(
+        Ok(None) => Err(Error::LayerLifecycleError(
             LayerLifecycleError::CannotFindLayerMetadataAfterLifecycle(),
         )),
         Ok(Some(metadata)) => layer_lifecycle
             .layer_lifecycle_data(&layer_path, metadata)
-            .map_err(LibCnbError::BuildpackError),
+            .map_err(Error::BuildpackError),
     }
 }
 
-fn handle_layer_keep<P: Platform, BM, LM: Serialize + DeserializeOwned, O: Default, E: Error>(
+fn handle_layer_keep<
+    P: Platform,
+    BM,
+    LM: Serialize + DeserializeOwned,
+    O: Default,
+    E: std::error::Error,
+>(
     _layer_name: impl AsRef<str>,
     _layer_path: &PathBuf,
     _layer_content_metadata: LayerContentMetadata<LM>,
     layer_lifecycle: &impl LayerLifecycle<P, BM, LM, O, E>,
     _context: &BuildContext<P, BM>,
-) -> Result<(), LibCnbError<E>> {
+) -> Result<(), Error<E>> {
     layer_lifecycle.on_keep();
     Ok(())
 }
 
-fn handle_layer_create<P: Platform, BM, LM: Serialize + DeserializeOwned, O: Default, E: Error>(
+fn handle_layer_create<
+    P: Platform,
+    BM,
+    LM: Serialize + DeserializeOwned,
+    O: Default,
+    E: std::error::Error,
+>(
     layer_name: impl AsRef<str>,
     layer_path: &PathBuf,
     layer_lifecycle: &impl LayerLifecycle<P, BM, LM, O, E>,
     context: &BuildContext<P, BM>,
-) -> Result<(), LibCnbError<E>> {
+) -> Result<(), Error<E>> {
     std::fs::create_dir_all(&layer_path)
         .map_err(LayerLifecycleError::CannotCreateLayerDirectoryBeforeCreate)?;
 
@@ -236,7 +248,7 @@ fn handle_layer_create<P: Platform, BM, LM: Serialize + DeserializeOwned, O: Def
 
     let layer_content_metadata = layer_lifecycle
         .create(&layer_path, &context)
-        .map_err(LibCnbError::BuildpackError)?;
+        .map_err(Error::BuildpackError)?;
 
     context
         .write_layer_content_metadata(&layer_name, &layer_content_metadata)
@@ -249,14 +261,14 @@ fn handle_layer_recreate<
     BM,
     LM: Serialize + DeserializeOwned,
     O: Default,
-    E: Error,
+    E: std::error::Error,
 >(
     layer_name: impl AsRef<str>,
     layer_path: &PathBuf,
     _layer_content_metadata: LayerContentMetadata<LM>,
     layer_lifecycle: &impl LayerLifecycle<P, BM, LM, O, E>,
     context: &BuildContext<P, BM>,
-) -> Result<(), LibCnbError<E>> {
+) -> Result<(), Error<E>> {
     context
         .delete_layer(&layer_name)
         .map_err(LayerLifecycleError::CannotDeleteLayer)?;
@@ -267,53 +279,61 @@ fn handle_layer_recreate<
 
     let content_metadata = layer_lifecycle
         .create(&layer_path, &context)
-        .map_err(LibCnbError::BuildpackError)?;
+        .map_err(Error::BuildpackError)?;
 
     context
         .write_layer_content_metadata(&layer_name, &content_metadata)
         .map_err(|toml_error| {
-            LibCnbError::LayerLifecycleError(LayerLifecycleError::CannotWriteLayerMetadata(
-                toml_error,
-            ))
+            Error::LayerLifecycleError(LayerLifecycleError::CannotWriteLayerMetadata(toml_error))
         })
 }
 
-fn handle_layer_update<P: Platform, BM, LM: Serialize + DeserializeOwned, O: Default, E: Error>(
+fn handle_layer_update<
+    P: Platform,
+    BM,
+    LM: Serialize + DeserializeOwned,
+    O: Default,
+    E: std::error::Error,
+>(
     layer_name: impl AsRef<str>,
     layer_path: &PathBuf,
     layer_content_metadata: LayerContentMetadata<LM>,
     layer_lifecycle: &impl LayerLifecycle<P, BM, LM, O, E>,
     context: &BuildContext<P, BM>,
-) -> Result<(), LibCnbError<E>> {
+) -> Result<(), Error<E>> {
     layer_lifecycle.on_update();
 
     let content_metadata = layer_lifecycle
         .update(&layer_path, layer_content_metadata, &context)
-        .map_err(LibCnbError::BuildpackError)?;
+        .map_err(Error::BuildpackError)?;
 
     context
         .write_layer_content_metadata(&layer_name, &content_metadata)
         .map_err(|toml_error| {
-            LibCnbError::LayerLifecycleError(LayerLifecycleError::CannotWriteLayerMetadata(
-                toml_error,
-            ))
+            Error::LayerLifecycleError(LayerLifecycleError::CannotWriteLayerMetadata(toml_error))
         })
 }
 
-fn metadata_recovery<P: Platform, BM, LM: Serialize + DeserializeOwned, O: Default, E: Error>(
+fn metadata_recovery<
+    P: Platform,
+    BM,
+    LM: Serialize + DeserializeOwned,
+    O: Default,
+    E: std::error::Error,
+>(
     layer_name: impl AsRef<str>,
     layer_lifecycle: &impl LayerLifecycle<P, BM, LM, O, E>,
     context: &BuildContext<P, BM>,
-) -> Result<Option<LayerContentMetadata<LM>>, LibCnbError<E>> {
+) -> Result<Option<LayerContentMetadata<LM>>, Error<E>> {
     // Read existing layer content metadata as TOML table, handling potential errors and
     // non-existent metadata so subsequent steps don't have to deal with either.
     let mut layer_content_metadata = {
         let maybe_layer_content_metadata = context
             .read_layer_content_metadata(&layer_name)
             .map_err(|toml_file_error| {
-                LibCnbError::LayerLifecycleError(
-                    LayerLifecycleError::CannotNotReadUntypedLayerMetadata(toml_file_error),
-                )
+                Error::LayerLifecycleError(LayerLifecycleError::CannotNotReadUntypedLayerMetadata(
+                    toml_file_error,
+                ))
             })?;
 
         match maybe_layer_content_metadata {
@@ -324,7 +344,7 @@ fn metadata_recovery<P: Platform, BM, LM: Serialize + DeserializeOwned, O: Defau
 
     let metadata_recovery_strategy = layer_lifecycle
         .recover_from_invalid_metadata(&layer_content_metadata.metadata, &context)
-        .map_err(LibCnbError::BuildpackError)?;
+        .map_err(Error::BuildpackError)?;
 
     match metadata_recovery_strategy {
         MetadataRecoveryStrategy::DeleteLayer => {

@@ -1,6 +1,7 @@
 use serde::{de::DeserializeOwned, Serialize};
-use std::{error::Error, fmt::Display, fs, path::Path};
+use std::{fs, path::Path};
 
+/// An error that occurred during reading or writing a TOML file.
 #[derive(thiserror::Error, Debug)]
 pub enum TomlFileError {
     #[error("IO error while reading/writing TOML file: {0}")]
@@ -26,7 +27,3 @@ pub fn read_toml_file<A: DeserializeOwned>(path: impl AsRef<Path>) -> Result<A, 
     let contents = fs::read_to_string(path)?;
     Ok(toml::from_str(&contents)?)
 }
-
-pub trait BuildpackError: Display {}
-
-impl<A: Error> BuildpackError for A {}

@@ -9,9 +9,10 @@ use crate::{
         layer_content_metadata::LayerContentMetadata,
     },
     platform::Platform,
-    shared::{read_toml_file, write_toml_file, TomlFileError},
+    toml_file::{read_toml_file, write_toml_file, TomlFileError},
 };
 
+/// Context for a buildpack's build phase execution.
 pub struct BuildContext<P: Platform, BM> {
     pub layers_dir: PathBuf,
     pub app_dir: PathBuf,

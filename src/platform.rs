@@ -25,9 +25,8 @@ where
     ///
     /// # Examples
     /// ```no_run
-    ///use libcnb::platform::Platform;
-    ///use libcnb::platform::GenericPlatform;
-    /// use libcnb::generic::GenericPlatform;
+    ///use libcnb::Platform;
+    ///use libcnb::GenericPlatform;
     ///let platform = GenericPlatform::from_path("/platform").unwrap();
     /// ```
     fn from_path(platform_dir: impl AsRef<Path>) -> io::Result<Self>;
@@ -43,7 +42,7 @@ impl PlatformEnv {
     ///
     /// # Examples
     /// ```no_run
-    ///use libcnb::platform::PlatformEnv;
+    ///use libcnb::PlatformEnv;
     ///let env = PlatformEnv::from_path("/platform").unwrap();
     ///let value = env.var("SOME_ENV_VAR");
     /// ```
@@ -61,7 +60,7 @@ impl PlatformEnv {
     ///
     /// # Examples
     /// ```no_run
-    ///use libcnb::platform::PlatformEnv;
+    ///use libcnb::PlatformEnv;
     ///let platform = PlatformEnv::from_path("/platform").unwrap();
     /// ```
     pub fn from_path(platform_dir: impl AsRef<Path>) -> Result<Self, io::Error> {

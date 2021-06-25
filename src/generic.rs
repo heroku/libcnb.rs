@@ -1,17 +1,20 @@
-use std::error::Error;
 use std::path::Path;
 
 use crate::build::BuildContext;
 use crate::detect::DetectContext;
-use crate::error::{LibCnbError, LibCnbErrorHandle};
+use crate::error::{Error, ErrorHandler};
 use crate::platform::{Platform, PlatformEnv};
 
+/// Generic TOML metadata.
 pub type GenericMetadata = Option<toml::value::Table>;
 
+/// A build context for a buildpack that uses a generic platform and metadata.
 pub type GenericBuildContext = BuildContext<GenericPlatform, GenericMetadata>;
 
+/// A build detect for a buildpack that uses a generic platform and metadata.
 pub type GenericDetectContext = DetectContext<GenericPlatform, GenericMetadata>;
 
+/// Generic output type for layer lifecycles.
 pub type GenericLayerLifecycleOutput = ();
 
 /// A generic platform that only provides access to environment variables.
@@ -31,10 +34,11 @@ impl Platform for GenericPlatform {
     }
 }
 
+/// Generic implementation of [`ErrorHandler`] that logs errors on stderr based on their [`Display`](std::fmt::Display) representation.
 pub struct GenericErrorHandler;
 
-impl<E: Error> LibCnbErrorHandle<E> for GenericErrorHandler {
-    fn handle_error(&self, error: LibCnbError<E>) -> i32 {
+impl<E: std::error::Error> ErrorHandler<E> for GenericErrorHandler {
+    fn handle_error(&self, error: Error<E>) -> i32 {
         eprintln!("Unhandled error:");
         eprintln!("> {}", error);
         eprintln!("Buildpack will exit!");
