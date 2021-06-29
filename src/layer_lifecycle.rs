@@ -1,6 +1,6 @@
 //! Manage layer lifecycles in a declarative way.
 
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 use std::path::{Path, PathBuf};
 
 use serde::de::DeserializeOwned;
@@ -15,7 +15,7 @@ use crate::toml_file::TomlFileError;
 /// A lifecycle of a Cloud Native Buildpack layer
 ///
 /// Use [`execute_layer_lifecycle`] to execute a layer lifecycle.
-pub trait LayerLifecycle<P: Platform, BM, LM, O: Default, E: std::error::Error> {
+pub trait LayerLifecycle<P: Platform, BM, LM, O: Default, E: Debug + Display> {
     /// Creates the layer from scratch
     ///
     /// When used with [`execute_layer_lifecycle`], `path` will be created and empty. The
@@ -158,7 +158,7 @@ pub fn execute_layer_lifecycle<
     BM,
     LM: Serialize + DeserializeOwned,
     O: Default,
-    E: std::error::Error,
+    E: Debug + Display,
 >(
     layer_name: impl AsRef<str>,
     layer_lifecycle: impl LayerLifecycle<P, BM, LM, O, E>,
@@ -217,7 +217,7 @@ fn handle_layer_keep<
     BM,
     LM: Serialize + DeserializeOwned,
     O: Default,
-    E: std::error::Error,
+    E: Debug + Display,
 >(
     _layer_name: impl AsRef<str>,
     _layer_path: &PathBuf,
@@ -234,7 +234,7 @@ fn handle_layer_create<
     BM,
     LM: Serialize + DeserializeOwned,
     O: Default,
-    E: std::error::Error,
+    E: Debug + Display,
 >(
     layer_name: impl AsRef<str>,
     layer_path: &PathBuf,
@@ -261,7 +261,7 @@ fn handle_layer_recreate<
     BM,
     LM: Serialize + DeserializeOwned,
     O: Default,
-    E: std::error::Error,
+    E: Debug + Display,
 >(
     layer_name: impl AsRef<str>,
     layer_path: &PathBuf,
@@ -293,7 +293,7 @@ fn handle_layer_update<
     BM,
     LM: Serialize + DeserializeOwned,
     O: Default,
-    E: std::error::Error,
+    E: Debug + Display,
 >(
     layer_name: impl AsRef<str>,
     layer_path: &PathBuf,
@@ -319,7 +319,7 @@ fn metadata_recovery<
     BM,
     LM: Serialize + DeserializeOwned,
     O: Default,
-    E: std::error::Error,
+    E: Debug + Display,
 >(
     layer_name: impl AsRef<str>,
     layer_lifecycle: &impl LayerLifecycle<P, BM, LM, O, E>,

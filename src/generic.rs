@@ -4,6 +4,7 @@ use crate::build::BuildContext;
 use crate::detect::DetectContext;
 use crate::error::{Error, ErrorHandler};
 use crate::platform::{Platform, PlatformEnv};
+use std::fmt::{Debug, Display};
 
 /// Generic TOML metadata.
 pub type GenericMetadata = Option<toml::value::Table>;
@@ -37,7 +38,7 @@ impl Platform for GenericPlatform {
 /// Generic implementation of [`ErrorHandler`] that logs errors on stderr based on their [`Display`](std::fmt::Display) representation.
 pub struct GenericErrorHandler;
 
-impl<E: std::error::Error> ErrorHandler<E> for GenericErrorHandler {
+impl<E: Debug + Display> ErrorHandler<E> for GenericErrorHandler {
     fn handle_error(&self, error: Error<E>) -> i32 {
         eprintln!("Unhandled error:");
         eprintln!("> {}", error);

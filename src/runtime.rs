@@ -11,6 +11,7 @@ use crate::error::{Error, ErrorHandler};
 use crate::platform::Platform;
 use crate::toml_file::{read_toml_file, write_toml_file};
 use crate::Result;
+use std::fmt::{Debug, Display};
 
 /// Main entry point for this framework.
 ///
@@ -32,7 +33,7 @@ use crate::Result;
 ///    libcnb::cnb_runtime(detect, build, GenericErrorHandler);
 /// }
 /// ```
-pub fn cnb_runtime<P: Platform, BM: DeserializeOwned, E: std::error::Error>(
+pub fn cnb_runtime<P: Platform, BM: DeserializeOwned, E: Debug + Display>(
     detect_fn: impl Fn(DetectContext<P, BM>) -> Result<DetectOutcome, E>,
     build_fn: impl Fn(BuildContext<P, BM>) -> Result<(), E>,
     error_handler: impl ErrorHandler<E>,
@@ -58,7 +59,7 @@ pub fn cnb_runtime<P: Platform, BM: DeserializeOwned, E: std::error::Error>(
 fn cnb_runtime_detect<
     P: Platform,
     BM: DeserializeOwned,
-    E: std::error::Error,
+    E: Debug + Display,
     F: FnOnce(DetectContext<P, BM>) -> Result<DetectOutcome, E>,
 >(
     detect_fn: F,
@@ -99,7 +100,7 @@ fn cnb_runtime_detect<
 }
 
 fn cnb_runtime_build<
-    E: std::error::Error,
+    E: Debug + Display,
     F: Fn(BuildContext<P, BM>) -> Result<(), E>,
     BM: DeserializeOwned,
     P: Platform,
