@@ -9,7 +9,7 @@ pub use error::*;
 pub use generic::*;
 pub use platform::*;
 pub use runtime::cnb_runtime;
-pub use toml_file::TomlFileError;
+pub use toml_file::*;
 
 mod build;
 mod detect;
