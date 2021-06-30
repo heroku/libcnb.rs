@@ -13,3 +13,6 @@ id = "io.buildpacks.stacks.bionic"
 
 [[stacks]]
 id = "heroku-18"
+
+[metadata]
+ruby_url = "https://s3-external-1.amazonaws.com/heroku-buildpack-ruby/heroku-18/ruby-2.5.1.tgz"

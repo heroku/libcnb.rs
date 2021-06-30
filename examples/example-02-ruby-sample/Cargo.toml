@@ -14,7 +14,7 @@ sha2 = "0.9"
 tar = "0.4"
 toml = "0.5"
 tempfile = "3"
-"libcnb" = { path = "../.." }
+"libcnb" = { path = "../..", features = ["anyhow"] }
 serde = "1.0.126"
 openssl-sys = "*"
 
