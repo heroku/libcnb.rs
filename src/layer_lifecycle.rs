@@ -138,7 +138,7 @@ pub enum LayerLifecycleError {
     #[error("Could not write layer content metadata: {0}")]
     CannotWriteLayerMetadata(TomlFileError),
 
-    #[error("Could create layer directory before layer life cycle create: {0}")]
+    #[error("Could not create layer directory before layer life cycle create: {0}")]
     CannotCreateLayerDirectoryBeforeCreate(std::io::Error),
 
     #[error("Could not delete layer: {0}")]
