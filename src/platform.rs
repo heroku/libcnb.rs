@@ -8,7 +8,7 @@ use std::{
 
 /// Represents a Cloud Native Buildpack platform.
 ///
-/// Most buildpacks target a generic platform and this library provides a [`GenericPlatform`] for that
+/// Most buildpacks target a generic platform and this library provides a [`crate::generic::GenericPlatform`] for that
 /// use-case. Buildpack authors usually do not need to implement this trait. See
 /// [detection](https://github.com/buildpacks/spec/blob/main/buildpack.md#detection) and
 /// [build](https://github.com/buildpacks/spec/blob/main/buildpack.md#build) in the buildpack
@@ -25,28 +25,11 @@ where
     ///
     /// # Examples
     /// ```no_run
-    ///use libcnb::platform::Platform;
-    ///use libcnb::platform::GenericPlatform;
+    ///use libcnb::Platform;
+    ///use libcnb::GenericPlatform;
     ///let platform = GenericPlatform::from_path("/platform").unwrap();
     /// ```
     fn from_path(platform_dir: impl AsRef<Path>) -> io::Result<Self>;
-}
-
-/// A generic platform that only provides access to environment variables.
-pub struct GenericPlatform {
-    env: PlatformEnv,
-}
-
-impl Platform for GenericPlatform {
-    fn env(&self) -> &PlatformEnv {
-        &self.env
-    }
-
-    fn from_path(platform_dir: impl AsRef<Path>) -> io::Result<Self> {
-        Ok(GenericPlatform {
-            env: PlatformEnv::from_path(platform_dir)?,
-        })
-    }
 }
 
 /// Provides access to platform environment variables.
@@ -59,7 +42,7 @@ impl PlatformEnv {
     ///
     /// # Examples
     /// ```no_run
-    ///use libcnb::platform::PlatformEnv;
+    ///use libcnb::PlatformEnv;
     ///let env = PlatformEnv::from_path("/platform").unwrap();
     ///let value = env.var("SOME_ENV_VAR");
     /// ```
@@ -77,7 +60,7 @@ impl PlatformEnv {
     ///
     /// # Examples
     /// ```no_run
-    ///use libcnb::platform::PlatformEnv;
+    ///use libcnb::PlatformEnv;
     ///let platform = PlatformEnv::from_path("/platform").unwrap();
     /// ```
     pub fn from_path(platform_dir: impl AsRef<Path>) -> Result<Self, io::Error> {

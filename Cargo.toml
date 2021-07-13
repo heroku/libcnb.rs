@@ -1,6 +1,6 @@
 [package]
 name = "libcnb"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Manuel Fuchs <malax@malax.de>", "Terence Lee <hone02@gmail.com>"]
 edition = "2018"
 license = "Apache-2.0"
@@ -18,7 +18,7 @@ semver = { version = "0.11", features = ["serde"] }
 serde = { version = "1.0", features = ["derive"] }
 thiserror = "1.0"
 toml = "0.5.8"
+anyhow = { version = "1.0.41", optional = true }
 
 [dev-dependencies]
-anyhow = "1"
 tempfile = "3"
