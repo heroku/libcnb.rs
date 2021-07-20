@@ -3,6 +3,7 @@ use std::fs;
 use std::path::Path;
 
 use crate::Env;
+use std::cmp::Ordering;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 
@@ -192,7 +193,7 @@ impl LayerEnvDelta {
     }
 }
 
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Eq, PartialEq, Debug, Ord, PartialOrd)]
 struct LayerEnvDeltaEntry {
     modification_behavior: ModificationBehavior,
     name: OsString,
@@ -206,6 +207,30 @@ pub enum ModificationBehavior {
     Delimiter,
     Override,
     Prepend,
+}
+
+impl PartialOrd for ModificationBehavior {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for ModificationBehavior {
+    fn cmp(&self, other: &Self) -> Ordering {
+        // Explicit mapping used over macro based approach to avoid tying source order of elements
+        // to ordering logic.
+        fn index(value: &ModificationBehavior) -> i32 {
+            match value {
+                ModificationBehavior::Append => 0,
+                ModificationBehavior::Default => 1,
+                ModificationBehavior::Delimiter => 2,
+                ModificationBehavior::Override => 3,
+                ModificationBehavior::Prepend => 4,
+            }
+        }
+
+        index(self).cmp(&index(other))
+    }
 }
 
 #[derive(Eq, PartialEq, Debug)]
@@ -307,6 +332,7 @@ impl LayerEnv {
 mod test {
     use super::LayerEnvDelta;
     use crate::layer_env::{Env, LayerEnv, ModificationBehavior, TargetLifecycle};
+    use std::cmp::Ordering;
     use std::collections::HashMap;
     use std::fs;
     use tempfile::tempdir;
@@ -508,6 +534,41 @@ mod test {
             ],
             environment_as_sorted_vector(&result_env)
         );
+    }
+
+    #[test]
+    fn test_modification_behavior_order() {
+        let tests = vec![
+            (
+                ModificationBehavior::Append,
+                ModificationBehavior::Default,
+                Ordering::Less,
+            ),
+            (
+                ModificationBehavior::Append,
+                ModificationBehavior::Override,
+                Ordering::Less,
+            ),
+            (
+                ModificationBehavior::Prepend,
+                ModificationBehavior::Append,
+                Ordering::Greater,
+            ),
+            (
+                ModificationBehavior::Default,
+                ModificationBehavior::Delimiter,
+                Ordering::Less,
+            ),
+            (
+                ModificationBehavior::Default,
+                ModificationBehavior::Default,
+                Ordering::Equal,
+            ),
+        ];
+
+        for (a, b, expected) in tests {
+            assert_eq!(expected, a.cmp(&b))
+        }
     }
 
     fn environment_as_sorted_vector(environment: &Env) -> Vec<(&str, &str)> {
