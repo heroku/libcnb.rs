@@ -67,16 +67,74 @@ impl PlatformEnv {
         let env_path = platform_dir.as_ref().join("env");
         let mut env_vars: HashMap<OsString, String> = HashMap::new();
 
-        for entry in fs::read_dir(env_path)? {
-            let entry = entry?;
-            let path = entry.path();
+        match fs::read_dir(env_path) {
+            Ok(entries) => {
+                for entry in entries {
+                    let entry = entry?;
+                    let path = entry.path();
 
-            if let Some(file_name) = path.file_name() {
-                let file_contents = fs::read_to_string(&path)?;
-                env_vars.insert(file_name.to_owned(), file_contents);
+                    if let Some(file_name) = path.file_name() {
+                        // k8s volume mounts will mount a directory symlink in, so we need to check
+                        // that it's actually a file
+                        if path.is_file() {
+                            let file_contents = fs::read_to_string(&path)?;
+                            env_vars.insert(file_name.to_owned(), file_contents);
+                        }
+                    }
+                }
+            }
+            Err(err) => {
+                // don't fail if `<platform>/env` doesn't exist
+                if err.kind() != std::io::ErrorKind::NotFound {
+                    Err(err)?
+                }
             }
         }
 
         Ok(PlatformEnv { vars: env_vars })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn from_path_handles_directories_in_env_folder() {
+        let tmpdir = tempfile::tempdir().unwrap();
+        let env_dir = tmpdir.path().join("env");
+        fs::create_dir(&env_dir).unwrap();
+        let dummy_dir = env_dir.join("foobar");
+        fs::create_dir(&dummy_dir).unwrap();
+        fs::write(env_dir.join("FOO"), "BAR").unwrap();
+
+        let result = PlatformEnv::from_path(tmpdir.path());
+        assert!(result.is_ok());
+    }
+
+    // this symlink is only supported on unix
+    #[cfg(target_family = "unix")]
+    #[test]
+    fn from_path_handles_directories_via_symlinks() {
+        let tmpdir = tempfile::tempdir().unwrap();
+        let env_dir = tmpdir.path().join("env");
+        fs::create_dir(&env_dir).unwrap();
+        let dummy_dir = env_dir.join("foobar");
+        fs::create_dir(&dummy_dir).unwrap();
+        let dst_symlink = env_dir.join("data");
+        std::os::unix::fs::symlink(&dummy_dir, &dst_symlink).unwrap();
+        fs::write(env_dir.join("FOO"), "BAR").unwrap();
+
+        let result = PlatformEnv::from_path(tmpdir.path());
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn from_path_doesnt_blow_up_if_platform_env_is_missing() {
+        let tmpdir = tempfile::tempdir().unwrap();
+
+        let result = PlatformEnv::from_path(tmpdir.path());
+        assert!(result.is_ok());
     }
 }
