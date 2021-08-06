@@ -1,6 +1,6 @@
 [package]
 name = "libcnb"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["Manuel Fuchs <malax@malax.de>", "Terence Lee <hone02@gmail.com>"]
 edition = "2018"
 license = "Apache-2.0"
