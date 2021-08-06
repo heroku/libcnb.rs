@@ -92,7 +92,7 @@ pub fn cnb_runtime_build<
 }
 
 pub struct BuildContext<P: Platform> {
-    layers_dir: PathBuf,
+    pub layers_dir: PathBuf,
     pub app_dir: PathBuf,
     pub buildpack_dir: PathBuf,
     pub stack_id: String,
