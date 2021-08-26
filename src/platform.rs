@@ -86,7 +86,7 @@ impl PlatformEnv {
             Err(err) => {
                 // don't fail if `<platform>/env` doesn't exist
                 if err.kind() != std::io::ErrorKind::NotFound {
-                    Err(err)?
+                    return Err(err);
                 }
             }
         }
