@@ -349,7 +349,7 @@ impl LayerEnvDelta {
                     }
                 }
                 ModificationBehavior::Append => {
-                    let mut previous_value = result_env.get(&name).unwrap_or(OsString::new());
+                    let mut previous_value = result_env.get(&name).unwrap_or_default();
 
                     if previous_value.len() > 0 {
                         previous_value.push(self.delimiter_for(&name));
@@ -360,7 +360,7 @@ impl LayerEnvDelta {
                     result_env.insert(&name, previous_value);
                 }
                 ModificationBehavior::Prepend => {
-                    let previous_value = result_env.get(&name).unwrap_or(OsString::new());
+                    let previous_value = result_env.get(&name).unwrap_or_default();
 
                     let mut new_value = OsString::new();
                     new_value.push(&value);
@@ -383,7 +383,7 @@ impl LayerEnvDelta {
         self.entries
             .get(&(ModificationBehavior::Delimiter, key.into()))
             .cloned()
-            .unwrap_or(OsString::new())
+            .unwrap_or_default()
     }
 
     fn read_from_env_dir(path: impl AsRef<Path>) -> Result<Self, std::io::Error> {
