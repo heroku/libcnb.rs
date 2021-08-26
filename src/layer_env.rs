@@ -5,7 +5,7 @@ use std::path::Path;
 use crate::Env;
 use std::cmp::Ordering;
 use std::collections::hash_map::Entry;
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 
 /// Provides access to layer environment variables.
 #[derive(Eq, PartialEq, Debug)]
@@ -24,12 +24,14 @@ pub struct LayerEnv {
 
 #[derive(Eq, PartialEq, Debug)]
 struct LayerEnvDelta {
-    entries: Vec<LayerEnvDeltaEntry>,
+    entries: BTreeSet<LayerEnvDeltaEntry>,
 }
 
 impl LayerEnvDelta {
     fn empty() -> LayerEnvDelta {
-        LayerEnvDelta { entries: vec![] }
+        LayerEnvDelta {
+            entries: BTreeSet::new(),
+        }
     }
 
     fn apply(&self, env: &Env) -> Env {
@@ -176,21 +178,10 @@ impl LayerEnvDelta {
         name: impl Into<OsString>,
         value: impl Into<OsString>,
     ) -> &Self {
-        let name = name.into();
-        let value = value.into();
-
-        let existing_entry_position = self.entries.iter().position(|entry| {
-            entry.name == name && entry.modification_behavior == modification_behavior
-        });
-
-        if let Some(existing_entry_position) = existing_entry_position {
-            self.entries.remove(existing_entry_position);
-        }
-
-        self.entries.push(LayerEnvDeltaEntry {
+        self.entries.insert(LayerEnvDeltaEntry {
             modification_behavior,
-            name,
-            value,
+            name: name.into(),
+            value: value.into(),
         });
 
         self
@@ -213,12 +204,6 @@ pub enum ModificationBehavior {
     Prepend,
 }
 
-impl PartialOrd for ModificationBehavior {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
 impl Ord for ModificationBehavior {
     fn cmp(&self, other: &Self) -> Ordering {
         // Explicit mapping used over macro based approach to avoid tying source order of elements
@@ -234,6 +219,12 @@ impl Ord for ModificationBehavior {
         }
 
         index(self).cmp(&index(other))
+    }
+}
+
+impl PartialOrd for ModificationBehavior {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 
@@ -573,6 +564,21 @@ mod test {
         for (a, b, expected) in tests {
             assert_eq!(expected, a.cmp(&b))
         }
+    }
+
+    #[test]
+    fn test_layer_env_delta_eq() {
+        let mut delta_1 = LayerEnvDelta::empty();
+        delta_1.insert(ModificationBehavior::Default, "a", "avalue");
+        delta_1.insert(ModificationBehavior::Default, "b", "bvalue");
+        delta_1.insert(ModificationBehavior::Override, "c", "cvalue");
+
+        let mut delta_2 = LayerEnvDelta::empty();
+        delta_2.insert(ModificationBehavior::Default, "b", "bvalue");
+        delta_2.insert(ModificationBehavior::Override, "c", "cvalue");
+        delta_2.insert(ModificationBehavior::Default, "a", "avalue");
+
+        assert_eq!(delta_1, delta_2);
     }
 
     fn environment_as_sorted_vector(environment: &Env) -> Vec<(&str, &str)> {
