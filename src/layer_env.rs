@@ -1,3 +1,5 @@
+//! Type-safe, in-memory, layer environment variables.
+
 use std::cmp::Ordering;
 use std::collections::hash_map::Entry;
 use std::collections::{BTreeMap, HashMap};
@@ -328,6 +330,8 @@ impl LayerEnv {
     }
 }
 
+/// Environment variable modification behavior.
+/// ([CNB spec: Environment Variable Modification Rules](https://github.com/buildpacks/spec/blob/main/buildpack.md#environment-variable-modification-rules))
 #[derive(Eq, PartialEq, Debug)]
 pub enum ModificationBehavior {
     Append,
@@ -361,6 +365,7 @@ impl PartialOrd for ModificationBehavior {
     }
 }
 
+/// Target lifecycle for an environment variable modification.
 #[derive(Eq, PartialEq, Debug)]
 pub enum TargetLifecycle {
     All,
