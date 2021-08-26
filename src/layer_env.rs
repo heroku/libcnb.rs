@@ -114,7 +114,7 @@ impl LayerEnvDelta {
             let file_contents = OsString::from_vec(fs::read(&path)?);
 
             if let Some(file_name_stem) = file_name_stem {
-                let r#type = match file_name_extension {
+                let modification_behavior = match file_name_extension {
                     None => {
                         // TODO: This is different for CNB API versions > 0.5:
                         // https://github.com/buildpacks/lifecycle/blob/a7428a55c2a14d8a37e84285b95dc63192e3264e/env/env.go#L66-L71
@@ -132,8 +132,12 @@ impl LayerEnvDelta {
                     },
                 };
 
-                if let Some(r#type) = r#type {
-                    layer_env.insert(r#type, file_name_stem.to_os_string(), file_contents);
+                if let Some(modification_behavior) = modification_behavior {
+                    layer_env.insert(
+                        modification_behavior,
+                        file_name_stem.to_os_string(),
+                        file_contents,
+                    );
                 }
             }
         }
