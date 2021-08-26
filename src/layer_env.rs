@@ -91,7 +91,8 @@ pub struct LayerEnv {
     // https://github.com/buildpacks/spec/blob/a9f64de9c78022aa7a5091077a765f932d7afe42/buildpack.md#layer-paths
     // These cannot be set by the user itself and are only populated when a `LayerEnv` is read from
     // disk by this library.
-    layer_paths: LayerEnvDelta,
+    layer_paths_build: LayerEnvDelta,
+    layer_paths_launch: LayerEnvDelta,
 }
 
 impl LayerEnv {
@@ -116,7 +117,8 @@ impl LayerEnv {
             build: LayerEnvDelta::empty(),
             launch: LayerEnvDelta::empty(),
             process: HashMap::new(),
-            layer_paths: LayerEnvDelta::empty(),
+            layer_paths_build: LayerEnvDelta::empty(),
+            layer_paths_launch: LayerEnvDelta::empty(),
         }
     }
 
@@ -140,17 +142,19 @@ impl LayerEnv {
     /// assert_eq!(modified_env.get("VAR2").unwrap(), "previous-value");
     /// ```
     pub fn apply(&self, target: TargetLifecycle, env: &Env) -> Env {
-        let target_specific_delta = match target {
-            TargetLifecycle::All => None,
-            TargetLifecycle::Build => Some(&self.build),
-            TargetLifecycle::Launch => Some(&self.launch),
-            TargetLifecycle::Process(process) => self.process.get(&process),
-        };
+        let deltas = match target {
+            TargetLifecycle::All => vec![&self.all],
+            TargetLifecycle::Build => vec![&self.all, &self.build, &self.layer_paths_build],
+            TargetLifecycle::Launch => vec![&self.all, &self.launch, &self.layer_paths_launch],
+            TargetLifecycle::Process(process) => {
+                let mut process_deltas = vec![&self.all];
+                if let Some(process_specific_delta) = self.process.get(&process) {
+                    process_deltas.push(process_specific_delta);
+                }
 
-        let mut deltas = vec![&self.layer_paths, &self.all];
-        if let Some(target_specific_delta) = target_specific_delta {
-            deltas.push(target_specific_delta);
-        }
+                process_deltas
+            }
+        };
 
         deltas
             .iter()
@@ -234,51 +238,52 @@ impl LayerEnv {
     /// assert_eq!(modified_env.get("ZERO_WING").unwrap(), "ALL_YOUR_BASE_ARE_BELONG_TO_US");
     /// ```
     pub fn read_from_layer_dir(layer_dir: impl AsRef<Path>) -> Result<LayerEnv, std::io::Error> {
+        let mut result_layer_env = LayerEnv::empty();
+
         let bin_path = layer_dir.as_ref().join("bin");
         let lib_path = layer_dir.as_ref().join("lib");
+        let include_path = layer_dir.as_ref().join("include");
+        let pkgconfig_path = layer_dir.as_ref().join("pkgconfig");
 
-        let mut layer_path_delta = LayerEnvDelta::empty();
-        if bin_path.is_dir() {
-            layer_path_delta.insert(ModificationBehavior::Prepend, "PATH", &bin_path);
-            layer_path_delta.insert(ModificationBehavior::Delimiter, "PATH", PATH_LIST_SEPARATOR);
+        let layer_path_specs = vec![
+            ("PATH", TargetLifecycle::Build, &bin_path),
+            ("LIBRARY_PATH", TargetLifecycle::Build, &lib_path),
+            ("LD_LIBRARY_PATH", TargetLifecycle::Build, &lib_path),
+            ("CPATH", TargetLifecycle::Build, &include_path),
+            ("PKG_CONFIG_PATH", TargetLifecycle::Build, &pkgconfig_path),
+            ("PATH", TargetLifecycle::Launch, &bin_path),
+            ("LD_LIBRARY_PATH", TargetLifecycle::Launch, &lib_path),
+        ];
+
+        for (name, target_lifecycle, path) in layer_path_specs {
+            if path.is_dir() {
+                let target_delta = match target_lifecycle {
+                    TargetLifecycle::Build => &mut result_layer_env.layer_paths_build,
+                    TargetLifecycle::Launch => &mut result_layer_env.layer_paths_launch,
+                    _ => panic!("Unexpected TargetLifecycle in read_from_layer_dir implementation. This is a libcnb implementation error!"),
+                };
+
+                target_delta.insert(ModificationBehavior::Prepend, &name, &path);
+                target_delta.insert(ModificationBehavior::Delimiter, &name, PATH_LIST_SEPARATOR);
+            }
         }
-
-        if lib_path.is_dir() {
-            layer_path_delta.insert(ModificationBehavior::Prepend, "LIBRARY_PATH", &lib_path);
-            layer_path_delta.insert(
-                ModificationBehavior::Delimiter,
-                "LIBRARY_PATH",
-                PATH_LIST_SEPARATOR,
-            );
-
-            layer_path_delta.insert(ModificationBehavior::Prepend, "LD_LIBRARY_PATH", &lib_path);
-            layer_path_delta.insert(
-                ModificationBehavior::Delimiter,
-                "LD_LIBRARY_PATH",
-                PATH_LIST_SEPARATOR,
-            );
-        }
-
-        let mut layer_env = LayerEnv::empty();
-        // TODO: Support for implicit lauch entries!
-        layer_env.layer_paths = layer_path_delta;
 
         let env_path = layer_dir.as_ref().join("env");
         if env_path.is_dir() {
-            layer_env.all = LayerEnvDelta::read_from_env_dir(env_path)?;
+            result_layer_env.all = LayerEnvDelta::read_from_env_dir(env_path)?;
         }
 
         let env_build_path = layer_dir.as_ref().join("env.build");
         if env_build_path.is_dir() {
-            layer_env.build = LayerEnvDelta::read_from_env_dir(env_build_path)?;
+            result_layer_env.build = LayerEnvDelta::read_from_env_dir(env_build_path)?;
         }
 
         let env_launch_path = layer_dir.as_ref().join("env.launch");
         if env_launch_path.is_dir() {
-            layer_env.launch = LayerEnvDelta::read_from_env_dir(env_launch_path)?;
+            result_layer_env.launch = LayerEnvDelta::read_from_env_dir(env_launch_path)?;
         }
 
-        Ok(layer_env)
+        Ok(result_layer_env)
     }
 
     /// Writes this `LayerEnv` to the given layer directory.
@@ -787,6 +792,65 @@ mod test {
         delta_2.insert(ModificationBehavior::Default, "a", "avalue");
 
         assert_eq!(delta_1, delta_2);
+    }
+
+    #[test]
+    fn test_read_from_layer_dir_layer_paths_launch() {
+        let temp_dir = tempdir().unwrap();
+        let layer_dir = temp_dir.path();
+
+        // https://github.com/buildpacks/spec/blob/main/buildpack.md#layer-paths
+        fs::create_dir_all(layer_dir.join("bin")).unwrap();
+        fs::create_dir_all(layer_dir.join("lib")).unwrap();
+        fs::create_dir_all(layer_dir.join("include")).unwrap();
+        fs::create_dir_all(layer_dir.join("pkgconfig")).unwrap();
+
+        let layer_env = LayerEnv::read_from_layer_dir(&layer_dir).unwrap();
+        let env = Env::empty();
+
+        let modified_env = layer_env.apply(TargetLifecycle::Launch, &env);
+        assert_eq!(modified_env.get("PATH").unwrap(), layer_dir.join("bin"));
+        assert_eq!(
+            modified_env.get("LD_LIBRARY_PATH").unwrap(),
+            layer_dir.join("lib")
+        );
+        assert_eq!(modified_env.get("LIBRARY_PATH"), None);
+        assert_eq!(modified_env.get("CPATH"), None);
+        assert_eq!(modified_env.get("PKG_CONFIG_PATH"), None);
+    }
+
+    #[test]
+    fn test_read_from_layer_dir_layer_paths_build() {
+        let temp_dir = tempdir().unwrap();
+        let layer_dir = temp_dir.path();
+
+        // https://github.com/buildpacks/spec/blob/main/buildpack.md#layer-paths
+        fs::create_dir_all(layer_dir.join("bin")).unwrap();
+        fs::create_dir_all(layer_dir.join("lib")).unwrap();
+        fs::create_dir_all(layer_dir.join("include")).unwrap();
+        fs::create_dir_all(layer_dir.join("pkgconfig")).unwrap();
+
+        let layer_env = LayerEnv::read_from_layer_dir(&layer_dir).unwrap();
+        let env = Env::empty();
+
+        let modified_env = layer_env.apply(TargetLifecycle::Build, &env);
+        assert_eq!(modified_env.get("PATH").unwrap(), layer_dir.join("bin"));
+        assert_eq!(
+            modified_env.get("LD_LIBRARY_PATH").unwrap(),
+            layer_dir.join("lib")
+        );
+        assert_eq!(
+            modified_env.get("LIBRARY_PATH").unwrap(),
+            layer_dir.join("lib")
+        );
+        assert_eq!(
+            modified_env.get("CPATH").unwrap(),
+            layer_dir.join("include")
+        );
+        assert_eq!(
+            modified_env.get("PKG_CONFIG_PATH").unwrap(),
+            layer_dir.join("pkgconfig")
+        );
     }
 
     fn environment_as_sorted_vector(environment: &Env) -> Vec<(&str, &str)> {
