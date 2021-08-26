@@ -42,7 +42,7 @@ impl Env {
         env::vars_os().into()
     }
 
-    /// Creates an empty `Environment` struct.
+    /// Creates an empty `Env` struct.
     pub fn empty() -> Self {
         Env {
             inner: HashMap::new(),
