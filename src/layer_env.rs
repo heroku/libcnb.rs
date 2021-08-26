@@ -247,8 +247,20 @@ impl LayerEnv {
         }
     }
 
-    pub fn apply_for_build(&self, env: &Env) -> Env {
-        vec![&self.layer_paths, &self.all, &self.build]
+    pub fn apply(&self, target: TargetLifecycle, env: &Env) -> Env {
+        let target_specific_delta = match target {
+            TargetLifecycle::All => None,
+            TargetLifecycle::Build => Some(&self.build),
+            TargetLifecycle::Launch => Some(&self.launch),
+            TargetLifecycle::Process(process) => self.process.get(&process),
+        };
+
+        let mut deltas = vec![&self.layer_paths, &self.all];
+        if let Some(target_specific_delta) = target_specific_delta {
+            deltas.push(target_specific_delta);
+        }
+
+        deltas
             .iter()
             .fold(env.clone(), |env, delta| delta.apply(&env))
     }
@@ -451,7 +463,7 @@ mod test {
         original_env.insert("LIBRARY_PATH", "some-library");
 
         let layer_env = LayerEnv::read_from_layer_dir(temp_dir.path()).unwrap();
-        let modified_env = layer_env.apply_for_build(&original_env);
+        let modified_env = layer_env.apply(TargetLifecycle::Build, &original_env);
 
         assert_eq!(
             vec![
@@ -521,7 +533,7 @@ mod test {
             "-XX:+UseSerialGC",
         );
 
-        let result_env = layer_env.apply_for_build(&Env::empty());
+        let result_env = layer_env.apply(TargetLifecycle::Build, &Env::empty());
         assert_eq!(
             vec![
                 ("JAVA_TOOL_OPTIONS", "-Xmx2G"),
