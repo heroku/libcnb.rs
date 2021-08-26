@@ -57,10 +57,8 @@ impl Env {
     }
 
     /// Returns a cloned value corresponding to the given key.
-    pub fn get<T: From<OsString>>(&self, key: impl AsRef<OsStr>) -> Option<T> {
-        self.inner
-            .get(key.as_ref())
-            .map(|value| T::from(value.clone()))
+    pub fn get(&self, key: impl AsRef<OsStr>) -> Option<OsString> {
+        self.inner.get(key.as_ref()).map(|value| value.clone())
     }
 
     /// Returns true if the environment contains a value for the specified key.
