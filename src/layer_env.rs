@@ -94,220 +94,6 @@ pub struct LayerEnv {
     layer_paths: LayerEnvDelta,
 }
 
-#[derive(Eq, PartialEq, Debug)]
-struct LayerEnvDelta {
-    entries: BTreeSet<LayerEnvDeltaEntry>,
-}
-
-impl LayerEnvDelta {
-    fn empty() -> LayerEnvDelta {
-        LayerEnvDelta {
-            entries: BTreeSet::new(),
-        }
-    }
-
-    fn apply(&self, env: &Env) -> Env {
-        let mut result_env = env.clone();
-
-        for entry in &self.entries {
-            match entry.modification_behavior {
-                ModificationBehavior::Override => {
-                    result_env.insert(&entry.name, &entry.value);
-                }
-                ModificationBehavior::Default => {
-                    if !result_env.contains_key(&entry.name) {
-                        result_env.insert(&entry.name, &entry.value);
-                    }
-                }
-                ModificationBehavior::Append => {
-                    let mut previous_value = result_env.get(&entry.name).unwrap_or(OsString::new());
-
-                    if previous_value.len() > 0 {
-                        previous_value.push(self.delimiter_for(&entry.name));
-                    }
-
-                    previous_value.push(&entry.value);
-
-                    result_env.insert(&entry.name, previous_value);
-                }
-                ModificationBehavior::Prepend => {
-                    let previous_value = result_env.get(&entry.name).unwrap_or(OsString::new());
-
-                    let mut new_value = OsString::new();
-                    new_value.push(&entry.value);
-
-                    if !previous_value.is_empty() {
-                        new_value.push(self.delimiter_for(&entry.name));
-                        new_value.push(previous_value);
-                    }
-
-                    result_env.insert(&entry.name, new_value);
-                }
-                _ => (),
-            };
-        }
-
-        result_env
-    }
-
-    fn delimiter_for(&self, key: impl AsRef<OsStr>) -> OsString {
-        self.entries
-            .iter()
-            .find(|entry| {
-                entry.name == key.as_ref()
-                    && entry.modification_behavior == ModificationBehavior::Delimiter
-            })
-            .map(|entry| entry.value.clone())
-            .unwrap_or(OsString::new())
-    }
-
-    fn read_from_env_dir(path: impl AsRef<Path>) -> Result<Self, std::io::Error> {
-        let mut layer_env = Self::empty();
-
-        for dir_entry in fs::read_dir(path.as_ref())? {
-            let path = dir_entry?.path();
-
-            // Rely on the Rust standard library for splitting stem and extension. Since paths
-            // are not necessarily UTF-8 encoded, this is not as trivial as it might look like.
-            // Think twice before changing this.
-            let file_name_stem = path.file_stem();
-            let file_name_extension = path.extension();
-
-            // The CNB spec explicitly states:
-            //
-            // > File contents MUST NOT be evaluated by a shell or otherwise modified before
-            // > inclusion in environment variable values.
-            // > https://github.com/buildpacks/spec/blob/a9f64de9c78022aa7a5091077a765f932d7afe42/buildpack.md#provided-by-the-buildpacks
-            //
-            // This should include parsing the contents with an assumed charset and later emitting
-            // the raw bytes of that encoding as it might change the actual data. Since this is not
-            // explicitly written in the spec, we read through the the reference implementation and
-            // determined that it also treats the file contents as raw bytes.
-            // See: https://github.com/buildpacks/lifecycle/blob/a7428a55c2a14d8a37e84285b95dc63192e3264e/env/env.go#L73-L106
-            use std::os::unix::ffi::OsStringExt;
-            let file_contents = OsString::from_vec(fs::read(&path)?);
-
-            if let Some(file_name_stem) = file_name_stem {
-                let modification_behavior = match file_name_extension {
-                    None => {
-                        // TODO: This is different for CNB API versions > 0.5:
-                        // https://github.com/buildpacks/lifecycle/blob/a7428a55c2a14d8a37e84285b95dc63192e3264e/env/env.go#L66-L71
-                        Some(ModificationBehavior::Override)
-                    }
-                    Some(file_name_extension) => match file_name_extension.to_str() {
-                        Some("append") => Some(ModificationBehavior::Append),
-                        Some("default") => Some(ModificationBehavior::Default),
-                        Some("delim") => Some(ModificationBehavior::Delimiter),
-                        Some("override") => Some(ModificationBehavior::Override),
-                        Some("prepend") => Some(ModificationBehavior::Prepend),
-                        // Note: This IS NOT the case where we have no extension. This handles
-                        // the case of an unknown or non-UTF-8 extension.
-                        Some(_) | None => None,
-                    },
-                };
-
-                if let Some(modification_behavior) = modification_behavior {
-                    layer_env.insert(
-                        modification_behavior,
-                        file_name_stem.to_os_string(),
-                        file_contents,
-                    );
-                }
-            }
-        }
-
-        Ok(layer_env)
-    }
-
-    fn write_to_env_dir(&self, path: impl AsRef<Path>) -> Result<(), std::io::Error> {
-        fs::remove_dir_all(path.as_ref())?;
-        fs::create_dir_all(path.as_ref())?;
-
-        for entry in &self.entries {
-            let file_extension = match entry.modification_behavior {
-                ModificationBehavior::Append => ".append",
-                ModificationBehavior::Default => ".default",
-                ModificationBehavior::Delimiter => ".delimiter",
-                ModificationBehavior::Override => ".override",
-                ModificationBehavior::Prepend => ".prepend",
-            };
-
-            let mut file_name = entry.name.clone();
-            file_name.push(file_extension);
-
-            let file_path = path.as_ref().join(file_name);
-
-            use std::os::unix::ffi::OsStrExt;
-            fs::write(file_path, &entry.value.as_bytes())?;
-        }
-
-        Ok(())
-    }
-
-    fn insert(
-        &mut self,
-        modification_behavior: ModificationBehavior,
-        name: impl Into<OsString>,
-        value: impl Into<OsString>,
-    ) -> &Self {
-        self.entries.insert(LayerEnvDeltaEntry {
-            modification_behavior,
-            name: name.into(),
-            value: value.into(),
-        });
-
-        self
-    }
-}
-
-#[derive(Eq, PartialEq, Debug, Ord, PartialOrd)]
-struct LayerEnvDeltaEntry {
-    modification_behavior: ModificationBehavior,
-    name: OsString,
-    value: OsString,
-}
-
-#[derive(Eq, PartialEq, Debug)]
-pub enum ModificationBehavior {
-    Append,
-    Default,
-    Delimiter,
-    Override,
-    Prepend,
-}
-
-impl Ord for ModificationBehavior {
-    fn cmp(&self, other: &Self) -> Ordering {
-        // Explicit mapping used over macro based approach to avoid tying source order of elements
-        // to ordering logic.
-        fn index(value: &ModificationBehavior) -> i32 {
-            match value {
-                ModificationBehavior::Append => 0,
-                ModificationBehavior::Default => 1,
-                ModificationBehavior::Delimiter => 2,
-                ModificationBehavior::Override => 3,
-                ModificationBehavior::Prepend => 4,
-            }
-        }
-
-        index(self).cmp(&index(other))
-    }
-}
-
-impl PartialOrd for ModificationBehavior {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-#[derive(Eq, PartialEq, Debug)]
-pub enum TargetLifecycle {
-    All,
-    Build,
-    Launch,
-    Process(String),
-}
-
 impl LayerEnv {
     /// Creates an empty LayerEnv that does not modify any environment variables.
     ///
@@ -494,6 +280,220 @@ impl LayerEnv {
 
         Ok(layer_env)
     }
+}
+
+#[derive(Eq, PartialEq, Debug)]
+pub enum ModificationBehavior {
+    Append,
+    Default,
+    Delimiter,
+    Override,
+    Prepend,
+}
+
+impl Ord for ModificationBehavior {
+    fn cmp(&self, other: &Self) -> Ordering {
+        // Explicit mapping used over macro based approach to avoid tying source order of elements
+        // to ordering logic.
+        fn index(value: &ModificationBehavior) -> i32 {
+            match value {
+                ModificationBehavior::Append => 0,
+                ModificationBehavior::Default => 1,
+                ModificationBehavior::Delimiter => 2,
+                ModificationBehavior::Override => 3,
+                ModificationBehavior::Prepend => 4,
+            }
+        }
+
+        index(self).cmp(&index(other))
+    }
+}
+
+impl PartialOrd for ModificationBehavior {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+#[derive(Eq, PartialEq, Debug)]
+pub enum TargetLifecycle {
+    All,
+    Build,
+    Launch,
+    Process(String),
+}
+
+#[derive(Eq, PartialEq, Debug)]
+struct LayerEnvDelta {
+    entries: BTreeSet<LayerEnvDeltaEntry>,
+}
+
+impl LayerEnvDelta {
+    fn empty() -> LayerEnvDelta {
+        LayerEnvDelta {
+            entries: BTreeSet::new(),
+        }
+    }
+
+    fn apply(&self, env: &Env) -> Env {
+        let mut result_env = env.clone();
+
+        for entry in &self.entries {
+            match entry.modification_behavior {
+                ModificationBehavior::Override => {
+                    result_env.insert(&entry.name, &entry.value);
+                }
+                ModificationBehavior::Default => {
+                    if !result_env.contains_key(&entry.name) {
+                        result_env.insert(&entry.name, &entry.value);
+                    }
+                }
+                ModificationBehavior::Append => {
+                    let mut previous_value = result_env.get(&entry.name).unwrap_or(OsString::new());
+
+                    if previous_value.len() > 0 {
+                        previous_value.push(self.delimiter_for(&entry.name));
+                    }
+
+                    previous_value.push(&entry.value);
+
+                    result_env.insert(&entry.name, previous_value);
+                }
+                ModificationBehavior::Prepend => {
+                    let previous_value = result_env.get(&entry.name).unwrap_or(OsString::new());
+
+                    let mut new_value = OsString::new();
+                    new_value.push(&entry.value);
+
+                    if !previous_value.is_empty() {
+                        new_value.push(self.delimiter_for(&entry.name));
+                        new_value.push(previous_value);
+                    }
+
+                    result_env.insert(&entry.name, new_value);
+                }
+                _ => (),
+            };
+        }
+
+        result_env
+    }
+
+    fn delimiter_for(&self, key: impl AsRef<OsStr>) -> OsString {
+        self.entries
+            .iter()
+            .find(|entry| {
+                entry.name == key.as_ref()
+                    && entry.modification_behavior == ModificationBehavior::Delimiter
+            })
+            .map(|entry| entry.value.clone())
+            .unwrap_or(OsString::new())
+    }
+
+    fn read_from_env_dir(path: impl AsRef<Path>) -> Result<Self, std::io::Error> {
+        let mut layer_env = Self::empty();
+
+        for dir_entry in fs::read_dir(path.as_ref())? {
+            let path = dir_entry?.path();
+
+            // Rely on the Rust standard library for splitting stem and extension. Since paths
+            // are not necessarily UTF-8 encoded, this is not as trivial as it might look like.
+            // Think twice before changing this.
+            let file_name_stem = path.file_stem();
+            let file_name_extension = path.extension();
+
+            // The CNB spec explicitly states:
+            //
+            // > File contents MUST NOT be evaluated by a shell or otherwise modified before
+            // > inclusion in environment variable values.
+            // > https://github.com/buildpacks/spec/blob/a9f64de9c78022aa7a5091077a765f932d7afe42/buildpack.md#provided-by-the-buildpacks
+            //
+            // This should include parsing the contents with an assumed charset and later emitting
+            // the raw bytes of that encoding as it might change the actual data. Since this is not
+            // explicitly written in the spec, we read through the the reference implementation and
+            // determined that it also treats the file contents as raw bytes.
+            // See: https://github.com/buildpacks/lifecycle/blob/a7428a55c2a14d8a37e84285b95dc63192e3264e/env/env.go#L73-L106
+            use std::os::unix::ffi::OsStringExt;
+            let file_contents = OsString::from_vec(fs::read(&path)?);
+
+            if let Some(file_name_stem) = file_name_stem {
+                let modification_behavior = match file_name_extension {
+                    None => {
+                        // TODO: This is different for CNB API versions > 0.5:
+                        // https://github.com/buildpacks/lifecycle/blob/a7428a55c2a14d8a37e84285b95dc63192e3264e/env/env.go#L66-L71
+                        Some(ModificationBehavior::Override)
+                    }
+                    Some(file_name_extension) => match file_name_extension.to_str() {
+                        Some("append") => Some(ModificationBehavior::Append),
+                        Some("default") => Some(ModificationBehavior::Default),
+                        Some("delim") => Some(ModificationBehavior::Delimiter),
+                        Some("override") => Some(ModificationBehavior::Override),
+                        Some("prepend") => Some(ModificationBehavior::Prepend),
+                        // Note: This IS NOT the case where we have no extension. This handles
+                        // the case of an unknown or non-UTF-8 extension.
+                        Some(_) | None => None,
+                    },
+                };
+
+                if let Some(modification_behavior) = modification_behavior {
+                    layer_env.insert(
+                        modification_behavior,
+                        file_name_stem.to_os_string(),
+                        file_contents,
+                    );
+                }
+            }
+        }
+
+        Ok(layer_env)
+    }
+
+    fn write_to_env_dir(&self, path: impl AsRef<Path>) -> Result<(), std::io::Error> {
+        fs::remove_dir_all(path.as_ref())?;
+        fs::create_dir_all(path.as_ref())?;
+
+        for entry in &self.entries {
+            let file_extension = match entry.modification_behavior {
+                ModificationBehavior::Append => ".append",
+                ModificationBehavior::Default => ".default",
+                ModificationBehavior::Delimiter => ".delimiter",
+                ModificationBehavior::Override => ".override",
+                ModificationBehavior::Prepend => ".prepend",
+            };
+
+            let mut file_name = entry.name.clone();
+            file_name.push(file_extension);
+
+            let file_path = path.as_ref().join(file_name);
+
+            use std::os::unix::ffi::OsStrExt;
+            fs::write(file_path, &entry.value.as_bytes())?;
+        }
+
+        Ok(())
+    }
+
+    fn insert(
+        &mut self,
+        modification_behavior: ModificationBehavior,
+        name: impl Into<OsString>,
+        value: impl Into<OsString>,
+    ) -> &Self {
+        self.entries.insert(LayerEnvDeltaEntry {
+            modification_behavior,
+            name: name.into(),
+            value: value.into(),
+        });
+
+        self
+    }
+}
+
+#[derive(Eq, PartialEq, Debug, Ord, PartialOrd)]
+struct LayerEnvDeltaEntry {
+    modification_behavior: ModificationBehavior,
+    name: OsString,
+    value: OsString,
 }
 
 #[cfg(test)]
