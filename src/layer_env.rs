@@ -1,13 +1,85 @@
+use std::cmp::Ordering;
+use std::collections::hash_map::Entry;
+use std::collections::{BTreeSet, HashMap};
 use std::ffi::{OsStr, OsString};
 use std::fs;
 use std::path::Path;
 
 use crate::Env;
-use std::cmp::Ordering;
-use std::collections::hash_map::Entry;
-use std::collections::{BTreeSet, HashMap};
 
-/// Provides access to layer environment variables.
+/// Represents environment variable modifications of a Cloud Native Buildpack layer.
+///
+/// Cloud Native Buildpacks can add a special directory to their layer directories to modify the
+/// environment of subsequent buildpacks, the running container or specific processes at launch.
+/// The rules for these modifications are described in the [relevant section of the specification](https://github.com/buildpacks/spec/blob/main/buildpack.md#provided-by-the-buildpacks).
+///
+/// This type decouples this information from the file system, providing a type-safe in-memory
+/// representation of the environment delta that is specified in the `env/*` directories of a layer.
+/// Using this type, libcnb can provide declarative APIs that enable buildpack authors to easily
+/// test their layer environment variable logic since they no longer write them to disk manually.
+///
+/// One use-case are environment variables that are modified by a layer that are required by the
+/// same buildpack in later stages of the build process. For example, a buildpack might install a
+/// build tool (i.e. Apache Maven) in one layer and adding the main binary to `PATH` via the `env`
+/// directory of that layer. The same buildpack then wants to execute Maven to download dependencies
+/// to a different layer. By using `LayerEnv`, the buildpack can encode these changes in a
+/// type and, in addition to passing it to libcnb which will persist it to disk, pass it to the
+/// logic that uses the build tool to download dependencies. The download process does not need to
+/// know the layer name or any logic how to construct `PATH`.
+///
+/// # Applying the delta
+///`LayerEnv` is not a static set of environment variables, but a delta. Layers can modify existing
+/// variables by appending or prepending or setting new ones only conditionally. If you only need a
+/// static set of environment variables, see [`Env`].
+///
+/// To apply a `LayerEnv` delta to a given `Env`, use [`LayerEnv::apply`] like so:
+///```
+/// use libcnb::layer_env::{LayerEnv, TargetLifecycle, ModificationBehavior};
+/// use libcnb::Env;
+///
+/// let mut layer_env = LayerEnv::empty();
+/// layer_env.insert(TargetLifecycle::All, ModificationBehavior::Append, "VAR", "bar");
+/// layer_env.insert(TargetLifecycle::All, ModificationBehavior::Default, "VAR2", "default");
+///
+/// let mut env = Env::empty();
+/// env.insert("VAR", "foo");
+/// env.insert("VAR2", "previous-value");
+///
+/// let modified_env = layer_env.apply(TargetLifecycle::Build, &env);
+/// assert_eq!(modified_env.get("VAR").unwrap(), "foobar");
+/// assert_eq!(modified_env.get("VAR2").unwrap(), "previous-value");
+/// ```
+///
+/// # Implicit Entries
+/// Some directories in a layer directory are be implicitly added to the layer environment if they
+/// exist. The prime example for this behaviour is the `bin` directory. If it exists, its path will
+/// be automatically appended to `PATH` using the operating systems path delimiter as the delimiter.
+///
+/// A full list of these special directories can be found in the
+/// [Cloud Native Buildpack specification](https://github.com/buildpacks/spec/blob/main/buildpack.md#layer-paths).
+///
+/// libcnb supports these, including all precedence and lifecycle rules, when a `LayerEnv` is read
+/// from disk:
+///```
+/// use libcnb::layer_env::{LayerEnv, TargetLifecycle};
+/// use tempfile::tempdir;
+/// use libcnb::Env;
+/// use std::fs;
+///
+/// // Create a bogus layer directory
+/// let temp_dir = tempdir().unwrap();
+/// let layer_dir = temp_dir.path();
+/// fs::create_dir_all(layer_dir.join("bin")).unwrap();
+/// fs::create_dir_all(layer_dir.join("include")).unwrap();
+///
+/// let layer_env = LayerEnv::read_from_layer_dir(&layer_dir).unwrap();
+///
+/// let env = Env::empty();
+/// let modified_env = layer_env.apply(TargetLifecycle::Launch, &env);
+///
+/// assert_eq!(modified_env.get("PATH").unwrap(), layer_dir.join("bin"));
+/// assert_eq!(modified_env.get("CPATH"), None); // None, because CPATH is only added during build
+/// ```
 #[derive(Eq, PartialEq, Debug)]
 pub struct LayerEnv {
     all: LayerEnvDelta,
@@ -237,6 +309,21 @@ pub enum TargetLifecycle {
 }
 
 impl LayerEnv {
+    /// Creates an empty LayerEnv that does not modify any environment variables.
+    ///
+    /// Entries can be added with the [LayerEnv::insert] function.
+    ///
+    /// # Example:
+    /// ```
+    /// use libcnb::layer_env::{LayerEnv, TargetLifecycle};
+    /// use libcnb::Env;
+    ///
+    /// let layer_env = LayerEnv::empty();
+    /// let mut env = Env::empty();
+    ///
+    /// let modified_env = layer_env.apply(TargetLifecycle::Build, &env);
+    /// assert_eq!(env, modified_env);
+    /// ```
     pub fn empty() -> Self {
         LayerEnv {
             all: LayerEnvDelta::empty(),
@@ -247,6 +334,25 @@ impl LayerEnv {
         }
     }
 
+    /// Applies this [`LayerEnv`] to the given [`Env`] for the given [target lifecycle](TargetLifecycle).
+    ///
+    /// # Example:
+    ///```
+    /// use libcnb::layer_env::{LayerEnv, TargetLifecycle, ModificationBehavior};
+    /// use libcnb::Env;
+    ///
+    /// let mut layer_env = LayerEnv::empty();
+    /// layer_env.insert(TargetLifecycle::All, ModificationBehavior::Append, "VAR", "bar");
+    /// layer_env.insert(TargetLifecycle::All, ModificationBehavior::Default, "VAR2", "default");
+    ///
+    /// let mut env = Env::empty();
+    /// env.insert("VAR", "foo");
+    /// env.insert("VAR2", "previous-value");
+    ///
+    /// let modified_env = layer_env.apply(TargetLifecycle::Build, &env);
+    /// assert_eq!(modified_env.get("VAR").unwrap(), "foobar");
+    /// assert_eq!(modified_env.get("VAR2").unwrap(), "previous-value");
+    /// ```
     pub fn apply(&self, target: TargetLifecycle, env: &Env) -> Env {
         let target_specific_delta = match target {
             TargetLifecycle::All => None,
@@ -265,6 +371,28 @@ impl LayerEnv {
             .fold(env.clone(), |env, delta| delta.apply(&env))
     }
 
+    /// Insert a new entry into this LayerEnv.
+    ///
+    /// Should there already be an entry for the same target lifecycle, modification behavior and
+    /// name, it will be updated with the new given value.
+    ///
+    /// # Example:
+    /// ```
+    /// use libcnb::layer_env::{LayerEnv, TargetLifecycle, ModificationBehavior};
+    /// use libcnb::Env;
+    ///
+    /// let mut layer_env = LayerEnv::empty();
+    /// layer_env.insert(TargetLifecycle::All, ModificationBehavior::Default, "VAR", "hello");
+    /// // "foo" will be overridden by "bar" here:
+    /// layer_env.insert(TargetLifecycle::All, ModificationBehavior::Append, "VAR2", "foo");
+    /// layer_env.insert(TargetLifecycle::All, ModificationBehavior::Append, "VAR2", "bar");
+    ///
+    /// let mut env = Env::empty();
+    /// let modified_env = layer_env.apply(TargetLifecycle::Build, &env);
+    ///
+    /// assert_eq!(modified_env.get("VAR").unwrap(), "hello");
+    /// assert_eq!(modified_env.get("VAR2").unwrap(), "bar");
+    /// ```
     pub fn insert(
         &mut self,
         target: TargetLifecycle,
@@ -287,7 +415,39 @@ impl LayerEnv {
         target_delta.insert(modification_behavior, name, value);
     }
 
-    pub(crate) fn read_from_layer_dir(path: impl AsRef<Path>) -> Result<LayerEnv, std::io::Error> {
+    /// Constructs a `LayerEnv` based on the given layer directory.
+    ///
+    /// Follows the rules described in the Cloud Native Buildpacks specification and adds implicit
+    /// entries for special directories (such as `bin`) should they exist.
+    ///
+    /// **NOTE**: Buildpack authors should **never directly use this** in their buildpack code and
+    /// rely on libcnb to pass `LayerEnv` values to minimize side effects in buildpack code.
+    ///
+    /// # Example:
+    ///```
+    /// use libcnb::layer_env::{LayerEnv, TargetLifecycle};
+    /// use tempfile::tempdir;
+    /// use libcnb::Env;
+    /// use std::fs;
+    ///
+    /// // Create a bogus layer directory
+    /// let temp_dir = tempdir().unwrap();
+    /// let layer_dir = temp_dir.path();
+    /// fs::create_dir_all(layer_dir.join("bin")).unwrap();
+    ///
+    /// let layer_env_dir = layer_dir.join("env");
+    /// fs::create_dir_all(&layer_env_dir).unwrap();
+    /// fs::write(layer_env_dir.join("ZERO_WING.default"), "ALL_YOUR_BASE_ARE_BELONG_TO_US").unwrap();
+    ///
+    /// let layer_env = LayerEnv::read_from_layer_dir(&layer_dir).unwrap();
+    ///
+    /// let env = Env::empty();
+    /// let modified_env = layer_env.apply(TargetLifecycle::Launch, &env);
+    ///
+    /// assert_eq!(modified_env.get("PATH").unwrap(), layer_dir.join("bin"));
+    /// assert_eq!(modified_env.get("ZERO_WING").unwrap(), "ALL_YOUR_BASE_ARE_BELONG_TO_US");
+    /// ```
+    pub fn read_from_layer_dir(path: impl AsRef<Path>) -> Result<LayerEnv, std::io::Error> {
         let bin_path = path.as_ref().join("bin");
         let lib_path = path.as_ref().join("lib");
 
@@ -314,6 +474,7 @@ impl LayerEnv {
         }
 
         let mut layer_env = LayerEnv::empty();
+        // TODO: Support for implicit lauch entries!
         layer_env.layer_paths = layer_path_delta;
 
         let env_path = path.as_ref().join("env");
@@ -337,12 +498,15 @@ impl LayerEnv {
 
 #[cfg(test)]
 mod test {
-    use super::LayerEnvDelta;
-    use crate::layer_env::{Env, LayerEnv, ModificationBehavior, TargetLifecycle};
     use std::cmp::Ordering;
     use std::collections::HashMap;
     use std::fs;
+
     use tempfile::tempdir;
+
+    use crate::layer_env::{Env, LayerEnv, ModificationBehavior, TargetLifecycle};
+
+    use super::LayerEnvDelta;
 
     /// Direct port of a test from the reference lifecycle implementation:
     /// See: https://github.com/buildpacks/lifecycle/blob/a7428a55c2a14d8a37e84285b95dc63192e3264e/env/env_test.go#L105-L154
