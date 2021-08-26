@@ -233,9 +233,9 @@ impl LayerEnv {
     /// assert_eq!(modified_env.get("PATH").unwrap(), layer_dir.join("bin"));
     /// assert_eq!(modified_env.get("ZERO_WING").unwrap(), "ALL_YOUR_BASE_ARE_BELONG_TO_US");
     /// ```
-    pub fn read_from_layer_dir(path: impl AsRef<Path>) -> Result<LayerEnv, std::io::Error> {
-        let bin_path = path.as_ref().join("bin");
-        let lib_path = path.as_ref().join("lib");
+    pub fn read_from_layer_dir(layer_dir: impl AsRef<Path>) -> Result<LayerEnv, std::io::Error> {
+        let bin_path = layer_dir.as_ref().join("bin");
+        let lib_path = layer_dir.as_ref().join("lib");
 
         let mut layer_path_delta = LayerEnvDelta::empty();
         if bin_path.is_dir() {
@@ -263,22 +263,63 @@ impl LayerEnv {
         // TODO: Support for implicit lauch entries!
         layer_env.layer_paths = layer_path_delta;
 
-        let env_path = path.as_ref().join("env");
+        let env_path = layer_dir.as_ref().join("env");
         if env_path.is_dir() {
             layer_env.all = LayerEnvDelta::read_from_env_dir(env_path)?;
         }
 
-        let env_build_path = path.as_ref().join("env.build");
+        let env_build_path = layer_dir.as_ref().join("env.build");
         if env_build_path.is_dir() {
             layer_env.build = LayerEnvDelta::read_from_env_dir(env_build_path)?;
         }
 
-        let env_launch_path = path.as_ref().join("env.launch");
+        let env_launch_path = layer_dir.as_ref().join("env.launch");
         if env_launch_path.is_dir() {
             layer_env.launch = LayerEnvDelta::read_from_env_dir(env_launch_path)?;
         }
 
         Ok(layer_env)
+    }
+
+    /// Writes this `LayerEnv` to the given layer directory.
+    ///
+    /// **WARNING:** Existing files that configure the layer environment will be deleted!
+    ///
+    /// **NOTE**: Buildpack authors should **never directly use this** in their buildpack code and
+    /// rely on libcnb's declarative APIs to write `LayerEnv` values to disk to minimize side
+    /// effects in buildpack code.
+    ///
+    /// Example:
+    /// ```
+    /// use libcnb::layer_env::{LayerEnv, TargetLifecycle, ModificationBehavior};
+    /// use tempfile::tempdir;
+    /// use std::fs;
+    ///
+    /// let mut layer_env = LayerEnv::empty();
+    /// layer_env.insert(TargetLifecycle::Build, ModificationBehavior::Default, "FOO", "bar");
+    /// layer_env.insert(TargetLifecycle::All, ModificationBehavior::Append, "PATH", "some-path");
+    ///
+    /// let mut temp_dir = tempdir().unwrap();
+    /// layer_env.write_to_layer_dir(&temp_dir).unwrap();
+    ///
+    /// assert_eq!(fs::read_to_string(temp_dir.path().join("env.build").join("FOO.default")).unwrap(), "bar");
+    /// assert_eq!(fs::read_to_string(temp_dir.path().join("env").join("PATH.append")).unwrap(), "some-path");
+    /// ```
+    pub fn write_to_layer_dir(&self, layer_dir: impl AsRef<Path>) -> std::io::Result<()> {
+        self.all.write_to_env_dir(layer_dir.as_ref().join("env"))?;
+
+        self.build
+            .write_to_env_dir(layer_dir.as_ref().join("env.build"))?;
+
+        let launch_env_dir = layer_dir.as_ref().join("env.launch");
+
+        self.launch.write_to_env_dir(&launch_env_dir)?;
+
+        for (process_name, delta) in &self.process {
+            delta.write_to_env_dir(launch_env_dir.join(process_name))?;
+        }
+
+        Ok(())
     }
 }
 
@@ -445,7 +486,12 @@ impl LayerEnvDelta {
     }
 
     fn write_to_env_dir(&self, path: impl AsRef<Path>) -> Result<(), std::io::Error> {
-        fs::remove_dir_all(path.as_ref())?;
+        if path.as_ref().exists() {
+            // This is a possible race condition if the path is deleted between the check and
+            // removal by this code. We accept this for now to keep it simple.
+            fs::remove_dir_all(path.as_ref())?;
+        }
+
         fs::create_dir_all(path.as_ref())?;
 
         for ((modification_behavior, name), value) in &self.entries {
