@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use std::collections::hash_map::Entry;
-use std::collections::{BTreeSet, HashMap};
-use std::ffi::{OsStr, OsString};
+use std::collections::{BTreeMap, HashMap};
+use std::ffi::OsString;
 use std::fs;
 use std::path::Path;
 
@@ -325,52 +325,52 @@ pub enum TargetLifecycle {
 
 #[derive(Eq, PartialEq, Debug)]
 struct LayerEnvDelta {
-    entries: BTreeSet<LayerEnvDeltaEntry>,
+    entries: BTreeMap<(ModificationBehavior, OsString), OsString>,
 }
 
 impl LayerEnvDelta {
     fn empty() -> LayerEnvDelta {
         LayerEnvDelta {
-            entries: BTreeSet::new(),
+            entries: BTreeMap::new(),
         }
     }
 
     fn apply(&self, env: &Env) -> Env {
         let mut result_env = env.clone();
 
-        for entry in &self.entries {
-            match entry.modification_behavior {
+        for ((modification_behavior, name), value) in &self.entries {
+            match modification_behavior {
                 ModificationBehavior::Override => {
-                    result_env.insert(&entry.name, &entry.value);
+                    result_env.insert(&name, &value);
                 }
                 ModificationBehavior::Default => {
-                    if !result_env.contains_key(&entry.name) {
-                        result_env.insert(&entry.name, &entry.value);
+                    if !result_env.contains_key(&name) {
+                        result_env.insert(&name, &value);
                     }
                 }
                 ModificationBehavior::Append => {
-                    let mut previous_value = result_env.get(&entry.name).unwrap_or(OsString::new());
+                    let mut previous_value = result_env.get(&name).unwrap_or(OsString::new());
 
                     if previous_value.len() > 0 {
-                        previous_value.push(self.delimiter_for(&entry.name));
+                        previous_value.push(self.delimiter_for(&name));
                     }
 
-                    previous_value.push(&entry.value);
+                    previous_value.push(&value);
 
-                    result_env.insert(&entry.name, previous_value);
+                    result_env.insert(&name, previous_value);
                 }
                 ModificationBehavior::Prepend => {
-                    let previous_value = result_env.get(&entry.name).unwrap_or(OsString::new());
+                    let previous_value = result_env.get(&name).unwrap_or(OsString::new());
 
                     let mut new_value = OsString::new();
-                    new_value.push(&entry.value);
+                    new_value.push(&value);
 
                     if !previous_value.is_empty() {
-                        new_value.push(self.delimiter_for(&entry.name));
+                        new_value.push(self.delimiter_for(&name));
                         new_value.push(previous_value);
                     }
 
-                    result_env.insert(&entry.name, new_value);
+                    result_env.insert(&name, new_value);
                 }
                 _ => (),
             };
@@ -379,14 +379,10 @@ impl LayerEnvDelta {
         result_env
     }
 
-    fn delimiter_for(&self, key: impl AsRef<OsStr>) -> OsString {
+    fn delimiter_for(&self, key: impl Into<OsString>) -> OsString {
         self.entries
-            .iter()
-            .find(|entry| {
-                entry.name == key.as_ref()
-                    && entry.modification_behavior == ModificationBehavior::Delimiter
-            })
-            .map(|entry| entry.value.clone())
+            .get(&(ModificationBehavior::Delimiter, key.into()))
+            .cloned()
             .unwrap_or(OsString::new())
     }
 
@@ -452,8 +448,8 @@ impl LayerEnvDelta {
         fs::remove_dir_all(path.as_ref())?;
         fs::create_dir_all(path.as_ref())?;
 
-        for entry in &self.entries {
-            let file_extension = match entry.modification_behavior {
+        for ((modification_behavior, name), value) in &self.entries {
+            let file_extension = match modification_behavior {
                 ModificationBehavior::Append => ".append",
                 ModificationBehavior::Default => ".default",
                 ModificationBehavior::Delimiter => ".delimiter",
@@ -461,13 +457,13 @@ impl LayerEnvDelta {
                 ModificationBehavior::Prepend => ".prepend",
             };
 
-            let mut file_name = entry.name.clone();
+            let mut file_name = name.clone();
             file_name.push(file_extension);
 
             let file_path = path.as_ref().join(file_name);
 
             use std::os::unix::ffi::OsStrExt;
-            fs::write(file_path, &entry.value.as_bytes())?;
+            fs::write(file_path, &value.as_bytes())?;
         }
 
         Ok(())
@@ -479,21 +475,11 @@ impl LayerEnvDelta {
         name: impl Into<OsString>,
         value: impl Into<OsString>,
     ) -> &Self {
-        self.entries.insert(LayerEnvDeltaEntry {
-            modification_behavior,
-            name: name.into(),
-            value: value.into(),
-        });
+        self.entries
+            .insert((modification_behavior, name.into()), value.into());
 
         self
     }
-}
-
-#[derive(Eq, PartialEq, Debug, Ord, PartialOrd)]
-struct LayerEnvDeltaEntry {
-    modification_behavior: ModificationBehavior,
-    name: OsString,
-    value: OsString,
 }
 
 #[cfg(test)]
