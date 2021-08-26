@@ -22,6 +22,12 @@ impl BuildPlan {
     }
 }
 
+impl Default for BuildPlan {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub struct BuildPlanBuilder {
     acc: VecDeque<(Vec<Provide>, Vec<Require>)>,
     current_provides: Vec<Provide>,
@@ -75,6 +81,12 @@ impl BuildPlanBuilder {
         } else {
             BuildPlan::new()
         }
+    }
+}
+
+impl Default for BuildPlanBuilder {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

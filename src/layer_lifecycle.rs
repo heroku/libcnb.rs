@@ -1,7 +1,7 @@
 //! Manage layer lifecycles in a declarative way.
 
 use std::fmt::{Debug, Display};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -220,7 +220,7 @@ fn handle_layer_keep<
     E: Debug + Display,
 >(
     _layer_name: impl AsRef<str>,
-    _layer_path: &PathBuf,
+    _layer_path: &Path,
     _layer_content_metadata: LayerContentMetadata<LM>,
     layer_lifecycle: &impl LayerLifecycle<P, BM, LM, O, E>,
     _context: &BuildContext<P, BM>,
@@ -237,7 +237,7 @@ fn handle_layer_create<
     E: Debug + Display,
 >(
     layer_name: impl AsRef<str>,
-    layer_path: &PathBuf,
+    layer_path: &Path,
     layer_lifecycle: &impl LayerLifecycle<P, BM, LM, O, E>,
     context: &BuildContext<P, BM>,
 ) -> Result<(), Error<E>> {
@@ -264,7 +264,7 @@ fn handle_layer_recreate<
     E: Debug + Display,
 >(
     layer_name: impl AsRef<str>,
-    layer_path: &PathBuf,
+    layer_path: &Path,
     _layer_content_metadata: LayerContentMetadata<LM>,
     layer_lifecycle: &impl LayerLifecycle<P, BM, LM, O, E>,
     context: &BuildContext<P, BM>,
@@ -296,7 +296,7 @@ fn handle_layer_update<
     E: Debug + Display,
 >(
     layer_name: impl AsRef<str>,
-    layer_path: &PathBuf,
+    layer_path: &Path,
     layer_content_metadata: LayerContentMetadata<LM>,
     layer_lifecycle: &impl LayerLifecycle<P, BM, LM, O, E>,
     context: &BuildContext<P, BM>,
