@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::env;
 use std::env::VarsOs;
 use std::ffi::{OsStr, OsString};
+
 /// Generic collection of environment variables.
 ///
 /// # Examples
