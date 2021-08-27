@@ -173,14 +173,14 @@ pub fn execute_layer_lifecycle<
             // If we cannot read the metadata due to a TOML file error, it's very likely that the
             // metadata could not be parsed into `LM` due to field/type mismatch(es). Regardless
             // of the actual error, we run the metadata recovery process here.
-            metadata_recovery(&layer_name, &layer_lifecycle, &context)?
+            metadata_recovery(&layer_name, &layer_lifecycle, context)?
         }
     };
 
     match layer_content_metadata {
         Some(layer_content_metadata) => {
             let handler =
-                match layer_lifecycle.validate(&layer_path, &layer_content_metadata, &context) {
+                match layer_lifecycle.validate(&layer_path, &layer_content_metadata, context) {
                     ValidateResult::KeepLayer => handle_layer_keep,
                     ValidateResult::RecreateLayer => handle_layer_recreate,
                     ValidateResult::UpdateLayer => handle_layer_update,
@@ -191,10 +191,10 @@ pub fn execute_layer_lifecycle<
                 &layer_path,
                 layer_content_metadata,
                 &layer_lifecycle,
-                &context,
+                context,
             )?;
         }
-        None => handle_layer_create(&layer_name, &layer_path, &layer_lifecycle, &context)?,
+        None => handle_layer_create(&layer_name, &layer_path, &layer_lifecycle, context)?,
     };
 
     layer_lifecycle.on_lifecycle_end();
@@ -247,7 +247,7 @@ fn handle_layer_create<
     layer_lifecycle.on_create();
 
     let layer_content_metadata = layer_lifecycle
-        .create(&layer_path, &context)
+        .create(layer_path, context)
         .map_err(Error::BuildpackError)?;
 
     context
@@ -278,7 +278,7 @@ fn handle_layer_recreate<
     layer_lifecycle.on_create();
 
     let content_metadata = layer_lifecycle
-        .create(&layer_path, &context)
+        .create(layer_path, context)
         .map_err(Error::BuildpackError)?;
 
     context
@@ -304,7 +304,7 @@ fn handle_layer_update<
     layer_lifecycle.on_update();
 
     let content_metadata = layer_lifecycle
-        .update(&layer_path, layer_content_metadata, &context)
+        .update(layer_path, layer_content_metadata, context)
         .map_err(Error::BuildpackError)?;
 
     context
@@ -343,7 +343,7 @@ fn metadata_recovery<
     };
 
     let metadata_recovery_strategy = layer_lifecycle
-        .recover_from_invalid_metadata(&layer_content_metadata.metadata, &context)
+        .recover_from_invalid_metadata(&layer_content_metadata.metadata, context)
         .map_err(Error::BuildpackError)?;
 
     match metadata_recovery_strategy {
