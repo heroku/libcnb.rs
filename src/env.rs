@@ -10,7 +10,7 @@ use std::ffi::{OsStr, OsString};
 /// use std::process::Command;
 /// use libcnb::Env;
 ///
-/// let mut env = Env::empty();
+/// let mut env = Env::new();
 /// env.insert("FOO", "BAR");
 /// env.insert("BAZ", "BLAH");
 ///
@@ -43,7 +43,7 @@ impl Env {
     }
 
     /// Creates an empty `Env` struct.
-    pub fn empty() -> Self {
+    pub fn new() -> Self {
         Env {
             inner: HashMap::new(),
         }
@@ -71,6 +71,12 @@ impl Env {
     }
 }
 
+impl Default for Env {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl From<VarsOs> for Env {
     fn from(vars_os: VarsOs) -> Self {
         Env {
@@ -95,7 +101,7 @@ mod test {
         use crate::Env;
         use std::process::Command;
 
-        let mut env = Env::empty();
+        let mut env = Env::new();
         env.insert("FOO", "FOO");
         env.insert("FOO", "BAR");
         env.insert("BAZ", "BLAH");

@@ -39,11 +39,11 @@ use crate::Env;
 /// use libcnb::layer_env::{LayerEnv, TargetLifecycle, ModificationBehavior};
 /// use libcnb::Env;
 ///
-/// let mut layer_env = LayerEnv::empty();
+/// let mut layer_env = LayerEnv::new();
 /// layer_env.insert(TargetLifecycle::All, ModificationBehavior::Append, "VAR", "bar");
 /// layer_env.insert(TargetLifecycle::All, ModificationBehavior::Default, "VAR2", "default");
 ///
-/// let mut env = Env::empty();
+/// let mut env = Env::new();
 /// env.insert("VAR", "foo");
 /// env.insert("VAR2", "previous-value");
 ///
@@ -76,7 +76,7 @@ use crate::Env;
 ///
 /// let layer_env = LayerEnv::read_from_layer_dir(&layer_dir).unwrap();
 ///
-/// let env = Env::empty();
+/// let env = Env::new();
 /// let modified_env = layer_env.apply(TargetLifecycle::Launch, &env);
 ///
 /// assert_eq!(modified_env.get("PATH").unwrap(), layer_dir.join("bin"));
@@ -107,20 +107,20 @@ impl LayerEnv {
     /// use libcnb::layer_env::{LayerEnv, TargetLifecycle};
     /// use libcnb::Env;
     ///
-    /// let layer_env = LayerEnv::empty();
-    /// let mut env = Env::empty();
+    /// let layer_env = LayerEnv::new();
+    /// let mut env = Env::new();
     ///
     /// let modified_env = layer_env.apply(TargetLifecycle::Build, &env);
     /// assert_eq!(env, modified_env);
     /// ```
-    pub fn empty() -> Self {
+    pub fn new() -> Self {
         LayerEnv {
-            all: LayerEnvDelta::empty(),
-            build: LayerEnvDelta::empty(),
-            launch: LayerEnvDelta::empty(),
+            all: LayerEnvDelta::new(),
+            build: LayerEnvDelta::new(),
+            launch: LayerEnvDelta::new(),
             process: HashMap::new(),
-            layer_paths_build: LayerEnvDelta::empty(),
-            layer_paths_launch: LayerEnvDelta::empty(),
+            layer_paths_build: LayerEnvDelta::new(),
+            layer_paths_launch: LayerEnvDelta::new(),
         }
     }
 
@@ -131,11 +131,11 @@ impl LayerEnv {
     /// use libcnb::layer_env::{LayerEnv, TargetLifecycle, ModificationBehavior};
     /// use libcnb::Env;
     ///
-    /// let mut layer_env = LayerEnv::empty();
+    /// let mut layer_env = LayerEnv::new();
     /// layer_env.insert(TargetLifecycle::All, ModificationBehavior::Append, "VAR", "bar");
     /// layer_env.insert(TargetLifecycle::All, ModificationBehavior::Default, "VAR2", "default");
     ///
-    /// let mut env = Env::empty();
+    /// let mut env = Env::new();
     /// env.insert("VAR", "foo");
     /// env.insert("VAR2", "previous-value");
     ///
@@ -173,13 +173,13 @@ impl LayerEnv {
     /// use libcnb::layer_env::{LayerEnv, TargetLifecycle, ModificationBehavior};
     /// use libcnb::Env;
     ///
-    /// let mut layer_env = LayerEnv::empty();
+    /// let mut layer_env = LayerEnv::new();
     /// layer_env.insert(TargetLifecycle::All, ModificationBehavior::Default, "VAR", "hello");
     /// // "foo" will be overridden by "bar" here:
     /// layer_env.insert(TargetLifecycle::All, ModificationBehavior::Append, "VAR2", "foo");
     /// layer_env.insert(TargetLifecycle::All, ModificationBehavior::Append, "VAR2", "bar");
     ///
-    /// let mut env = Env::empty();
+    /// let mut env = Env::new();
     /// let modified_env = layer_env.apply(TargetLifecycle::Build, &env);
     ///
     /// assert_eq!(modified_env.get("VAR").unwrap(), "hello");
@@ -199,7 +199,7 @@ impl LayerEnv {
             TargetLifecycle::Process(process_type_name) => {
                 match self.process.entry(process_type_name) {
                     Entry::Occupied(entry) => entry.into_mut(),
-                    Entry::Vacant(entry) => entry.insert(LayerEnvDelta::empty()),
+                    Entry::Vacant(entry) => entry.insert(LayerEnvDelta::new()),
                 }
             }
         };
@@ -233,14 +233,14 @@ impl LayerEnv {
     ///
     /// let layer_env = LayerEnv::read_from_layer_dir(&layer_dir).unwrap();
     ///
-    /// let env = Env::empty();
+    /// let env = Env::new();
     /// let modified_env = layer_env.apply(TargetLifecycle::Launch, &env);
     ///
     /// assert_eq!(modified_env.get("PATH").unwrap(), layer_dir.join("bin"));
     /// assert_eq!(modified_env.get("ZERO_WING").unwrap(), "ALL_YOUR_BASE_ARE_BELONG_TO_US");
     /// ```
     pub fn read_from_layer_dir(layer_dir: impl AsRef<Path>) -> Result<LayerEnv, std::io::Error> {
-        let mut result_layer_env = LayerEnv::empty();
+        let mut result_layer_env = LayerEnv::new();
 
         let bin_path = layer_dir.as_ref().join("bin");
         let lib_path = layer_dir.as_ref().join("lib");
@@ -302,7 +302,7 @@ impl LayerEnv {
     /// use tempfile::tempdir;
     /// use std::fs;
     ///
-    /// let mut layer_env = LayerEnv::empty();
+    /// let mut layer_env = LayerEnv::new();
     /// layer_env.insert(TargetLifecycle::Build, ModificationBehavior::Default, "FOO", "bar");
     /// layer_env.insert(TargetLifecycle::All, ModificationBehavior::Append, "PATH", "some-path");
     ///
@@ -327,6 +327,12 @@ impl LayerEnv {
         }
 
         Ok(())
+    }
+}
+
+impl Default for LayerEnv {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -380,7 +386,7 @@ struct LayerEnvDelta {
 }
 
 impl LayerEnvDelta {
-    fn empty() -> LayerEnvDelta {
+    fn new() -> LayerEnvDelta {
         LayerEnvDelta {
             entries: BTreeMap::new(),
         }
@@ -438,7 +444,7 @@ impl LayerEnvDelta {
     }
 
     fn read_from_env_dir(path: impl AsRef<Path>) -> Result<Self, std::io::Error> {
-        let mut layer_env = Self::empty();
+        let mut layer_env = Self::new();
 
         for dir_entry in fs::read_dir(path.as_ref())? {
             let path = dir_entry?.path();
@@ -583,7 +589,7 @@ mod test {
             fs::write(temp_dir.path().join(file_name), file_contents).unwrap();
         }
 
-        let mut original_env = Env::empty();
+        let mut original_env = Env::new();
         original_env.insert("VAR_APPEND", "value-append-orig");
         original_env.insert("VAR_APPEND_DELIM", "value-append-delim-orig");
         original_env.insert("VAR_PREPEND", "value-prepend-orig");
@@ -637,7 +643,7 @@ mod test {
             fs::write(temp_dir.path().join(file_name), file_contents).unwrap();
         }
 
-        let mut original_env = Env::empty();
+        let mut original_env = Env::new();
         original_env.insert("VAR_NORMAL", "value-normal-orig");
         original_env.insert("VAR_NORMAL_DELIM", "value-normal-delim-orig");
 
@@ -663,7 +669,7 @@ mod test {
         fs::create_dir_all(temp_dir.path().join("bin")).unwrap();
         fs::create_dir_all(temp_dir.path().join("lib")).unwrap();
 
-        let mut original_env = Env::empty();
+        let mut original_env = Env::new();
         original_env.insert("PATH", "some");
         original_env.insert("LD_LIBRARY_PATH", "some-ld");
         original_env.insert("LIBRARY_PATH", "some-library");
@@ -696,7 +702,7 @@ mod test {
 
     #[test]
     fn test_layer_env_delta_fs_read_write() {
-        let mut original_delta = LayerEnvDelta::empty();
+        let mut original_delta = LayerEnvDelta::new();
         original_delta.insert(ModificationBehavior::Default, "FOO", "BAR");
         original_delta.insert(ModificationBehavior::Append, "APPEND_TO_ME", "NEW_VALUE");
 
@@ -710,7 +716,7 @@ mod test {
 
     #[test]
     fn test_layer_env_insert() {
-        let mut layer_env = LayerEnv::empty();
+        let mut layer_env = LayerEnv::new();
         layer_env.insert(
             TargetLifecycle::Build,
             ModificationBehavior::Append,
@@ -739,7 +745,7 @@ mod test {
             "-XX:+UseSerialGC",
         );
 
-        let result_env = layer_env.apply(TargetLifecycle::Build, &Env::empty());
+        let result_env = layer_env.apply(TargetLifecycle::Build, &Env::new());
         assert_eq!(
             vec![
                 ("JAVA_TOOL_OPTIONS", "-Xmx2G"),
@@ -786,12 +792,12 @@ mod test {
 
     #[test]
     fn test_layer_env_delta_eq() {
-        let mut delta_1 = LayerEnvDelta::empty();
+        let mut delta_1 = LayerEnvDelta::new();
         delta_1.insert(ModificationBehavior::Default, "a", "avalue");
         delta_1.insert(ModificationBehavior::Default, "b", "bvalue");
         delta_1.insert(ModificationBehavior::Override, "c", "cvalue");
 
-        let mut delta_2 = LayerEnvDelta::empty();
+        let mut delta_2 = LayerEnvDelta::new();
         delta_2.insert(ModificationBehavior::Default, "b", "bvalue");
         delta_2.insert(ModificationBehavior::Override, "c", "cvalue");
         delta_2.insert(ModificationBehavior::Default, "a", "avalue");
@@ -811,7 +817,7 @@ mod test {
         fs::create_dir_all(layer_dir.join("pkgconfig")).unwrap();
 
         let layer_env = LayerEnv::read_from_layer_dir(&layer_dir).unwrap();
-        let env = Env::empty();
+        let env = Env::new();
 
         let modified_env = layer_env.apply(TargetLifecycle::Launch, &env);
         assert_eq!(modified_env.get("PATH").unwrap(), layer_dir.join("bin"));
@@ -836,7 +842,7 @@ mod test {
         fs::create_dir_all(layer_dir.join("pkgconfig")).unwrap();
 
         let layer_env = LayerEnv::read_from_layer_dir(&layer_dir).unwrap();
-        let env = Env::empty();
+        let env = Env::new();
 
         let modified_env = layer_env.apply(TargetLifecycle::Build, &env);
         assert_eq!(modified_env.get("PATH").unwrap(), layer_dir.join("bin"));
