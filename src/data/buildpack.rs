@@ -323,7 +323,7 @@ checksum = "awesome"
         let result = toml::from_str::<BuildpackToml<toml::value::Table>>(raw);
         assert!(result.is_ok());
         if let Ok(toml) = result {
-            assert_eq!(false, toml.buildpack.clear_env);
+            assert!(!toml.buildpack.clear_env);
         }
     }
 
@@ -349,10 +349,7 @@ id = "io.buildpacks.stacks.bionic"
         let result = toml::from_str::<BuildpackToml<Option<toml::value::Table>>>(raw);
         assert!(result.is_ok());
         if let Ok(toml) = result {
-            assert_eq!(
-                false,
-                toml.order.get(0).unwrap().group.get(0).unwrap().optional
-            );
+            assert!(!toml.order.get(0).unwrap().group.get(0).unwrap().optional);
         }
     }
 }
