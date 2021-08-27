@@ -48,7 +48,16 @@ pub fn cnb_runtime<P: Platform, BM: DeserializeOwned, E: Debug + Display>(
     let result = match current_exe_file_name {
         Some("detect") => cnb_runtime_detect(detect_fn),
         Some("build") => cnb_runtime_build(build_fn),
-        Some(_) | None => exit(255),
+        other => {
+            eprintln!(
+                "Error: Expected the name of this executable to be 'detect' or 'build', but it was '{}'",
+                other.unwrap_or("<unknown>")
+            );
+
+            eprintln!("The executable name is used to determine the current buildpack phase.");
+            eprintln!("You might want to create 'detect' and 'build' links to this executable and run those instead.");
+            exit(255)
+        }
     };
 
     if let Err(lib_cnb_error) = result {
