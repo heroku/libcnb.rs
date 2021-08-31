@@ -12,7 +12,7 @@ use crate::Env;
 /// Represents environment variable modifications of a Cloud Native Buildpack layer.
 ///
 /// Cloud Native Buildpacks can add a special directory to their layer directories to modify the
-/// environment of subsequent buildpacks, the running container or specific processes at launch.
+/// environment of subsequent buildpacks, the running container, or specific processes at launch.
 /// The rules for these modifications are described in the [relevant section of the specification](https://github.com/buildpacks/spec/blob/main/buildpack.md#provided-by-the-buildpacks).
 ///
 /// This type decouples this information from the file system, providing a type-safe in-memory
@@ -20,18 +20,18 @@ use crate::Env;
 /// Using this type, libcnb can provide declarative APIs that enable buildpack authors to easily
 /// test their layer environment variable logic since they no longer write them to disk manually.
 ///
-/// One use-case are environment variables that are modified by a layer that are required by the
+/// One use-case is environment variables that are modified by a layer that are required by the
 /// same buildpack in later stages of the build process. For example, a buildpack might install a
-/// build tool (i.e. Apache Maven) in one layer and adding the main binary to `PATH` via the `env`
+/// build tool (e.g. Apache Maven) in one layer and add the main binary to `PATH` via the `env`
 /// directory of that layer. The same buildpack then wants to execute Maven to download dependencies
 /// to a different layer. By using `LayerEnv`, the buildpack can encode these changes in a
 /// type and, in addition to passing it to libcnb which will persist it to disk, pass it to the
 /// logic that uses the build tool to download dependencies. The download process does not need to
-/// know the layer name or any logic how to construct `PATH`.
+/// know the layer name or any of the logic for constructing `PATH`.
 ///
 /// # Applying the delta
 ///`LayerEnv` is not a static set of environment variables, but a delta. Layers can modify existing
-/// variables by appending or prepending or setting new ones only conditionally. If you only need a
+/// variables by appending, prepending or setting variables only if they were not already defined. If you only need a
 /// static set of environment variables, see [`Env`].
 ///
 /// To apply a `LayerEnv` delta to a given `Env`, use [`LayerEnv::apply`] like so:
@@ -53,7 +53,7 @@ use crate::Env;
 /// ```
 ///
 /// # Implicit Entries
-/// Some directories in a layer directory are be implicitly added to the layer environment if they
+/// Some directories in a layer directory are implicitly added to the layer environment if they
 /// exist. The prime example for this behaviour is the `bin` directory. If it exists, its path will
 /// be automatically appended to `PATH` using the operating systems path delimiter as the delimiter.
 ///
