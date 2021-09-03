@@ -27,7 +27,15 @@ pub struct Launch {
 /// false).unwrap();
 ///
 /// launch_toml.processes.push(web);
-/// assert!(toml::to_string(&launch_toml).is_ok());
+/// let toml_string = toml::to_string(&launch_toml);
+/// assert!(toml_string.is_ok());
+/// assert_eq!(toml_string.unwrap(), r#"
+/// [[processes]]
+/// type = "web"
+/// command = "bundle"
+/// args = ["exec", "ruby", "app.rb"]
+/// direct = false
+/// "#.trim_start());
 /// ```
 impl Launch {
     pub fn new() -> Self {
