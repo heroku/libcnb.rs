@@ -6,11 +6,12 @@ use std::process::exit;
 use serde::de::DeserializeOwned;
 
 use crate::build::BuildContext;
+use crate::data::buildpack::BuildpackToml;
 use crate::detect::{DetectContext, DetectOutcome};
 use crate::error::{Error, ErrorHandler};
 use crate::platform::Platform;
 use crate::toml_file::{read_toml_file, write_toml_file};
-use crate::Result;
+use crate::{Result, LIBCNB_SUPPORTED_BUILDPACK_API};
 use std::fmt::{Debug, Display};
 
 /// Main entry point for this framework.
@@ -63,6 +64,24 @@ pub fn cnb_runtime<P: Platform, BM: DeserializeOwned, E: Debug + Display>(
     if let Err(lib_cnb_error) = result {
         exit(error_handler.handle_error(lib_cnb_error));
     }
+
+    match read_buildpack_toml::<BM, E>() {
+        Ok(buildpack_toml) => {
+            if buildpack_toml.api != LIBCNB_SUPPORTED_BUILDPACK_API {
+                eprintln!("Error: Cloud Native Buildpack API mismatch");
+                eprintln!(
+                    "This buildpack uses Cloud Native Buildpacks API version {}, but the underlying libcnb.rs library requires CNB API {}.",
+                    &buildpack_toml.api,
+                    LIBCNB_SUPPORTED_BUILDPACK_API
+                );
+
+                exit(254)
+            }
+        }
+        Err(lib_cnb_error) => {
+            exit(error_handler.handle_error(lib_cnb_error));
+        }
+    }
 }
 
 fn cnb_runtime_detect<
@@ -77,26 +96,19 @@ fn cnb_runtime_detect<
 
     let app_dir = env::current_dir().map_err(Error::CannotDetermineAppDirectory)?;
 
-    let buildpack_dir = env::var("CNB_BUILDPACK_DIR")
-        .map_err(Error::CannotDetermineBuildpackDirectory)
-        .map(PathBuf::from)?;
-
     let stack_id: String = env::var("CNB_STACK_ID").map_err(Error::CannotDetermineStackId)?;
 
     let platform =
         P::from_path(&args.platform_dir_path).map_err(Error::CannotCreatePlatformFromPath)?;
 
-    let buildpack_descriptor = read_toml_file(buildpack_dir.join("buildpack.toml"))
-        .map_err(Error::CannotReadBuildpackDescriptor)?;
-
     let build_plan_path = args.build_plan_path;
 
     let detect_context = DetectContext {
         app_dir,
-        buildpack_dir,
         stack_id,
         platform,
-        buildpack_descriptor,
+        buildpack_dir: read_buildpack_dir()?,
+        buildpack_descriptor: read_buildpack_toml()?,
     };
 
     match detect_fn(detect_context)? {
@@ -122,10 +134,6 @@ fn cnb_runtime_build<
 
     let app_dir = env::current_dir().map_err(Error::CannotDetermineAppDirectory)?;
 
-    let buildpack_dir = env::var("CNB_BUILDPACK_DIR")
-        .map_err(Error::CannotDetermineBuildpackDirectory)
-        .map(PathBuf::from)?;
-
     let stack_id: String = env::var("CNB_STACK_ID").map_err(Error::CannotDetermineStackId)?;
 
     let platform =
@@ -134,17 +142,14 @@ fn cnb_runtime_build<
     let buildpack_plan =
         read_toml_file(&args.buildpack_plan_path).map_err(Error::CannotReadBuildpackPlan)?;
 
-    let buildpack_descriptor = read_toml_file(buildpack_dir.join("buildpack.toml"))
-        .map_err(Error::CannotReadBuildpackDescriptor)?;
-
     let context = BuildContext {
         layers_dir,
         app_dir,
-        buildpack_dir,
         stack_id,
         platform,
         buildpack_plan,
-        buildpack_descriptor,
+        buildpack_dir: read_buildpack_dir()?,
+        buildpack_descriptor: read_buildpack_toml()?,
     };
 
     build_fn(context)
@@ -190,4 +195,17 @@ fn parse_build_args_or_exit() -> BuildArgs {
             process::exit(1);
         }
     }
+}
+
+fn read_buildpack_dir<E: Display + Debug>() -> Result<PathBuf, E> {
+    env::var("CNB_BUILDPACK_DIR")
+        .map_err(Error::CannotDetermineBuildpackDirectory)
+        .map(PathBuf::from)
+}
+
+fn read_buildpack_toml<BM: DeserializeOwned, E: Display + Debug>() -> Result<BuildpackToml<BM>, E> {
+    read_buildpack_dir().and_then(|buildpack_dir| {
+        read_toml_file(buildpack_dir.join("buildpack.toml"))
+            .map_err(Error::CannotReadBuildpackDescriptor)
+    })
 }

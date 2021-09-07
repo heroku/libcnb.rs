@@ -3,6 +3,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use semver::Version;
 use serde::{de, Deserialize};
+use std::fmt::{Display, Formatter};
 use std::{fmt, str::FromStr};
 use thiserror;
 
@@ -76,7 +77,7 @@ pub struct Group {
     pub optional: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct BuildpackApi {
     pub major: u32,
     pub minor: u32,
@@ -112,6 +113,12 @@ impl FromStr for BuildpackApi {
         }
 
         Err(BuildpackTomlError::InvalidBuildpackApi(String::from(value)))
+    }
+}
+
+impl Display for BuildpackApi {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+        formatter.write_str(&format!("{}.{}", self.major, self.minor))
     }
 }
 
@@ -351,5 +358,12 @@ id = "io.buildpacks.stacks.bionic"
         if let Ok(toml) = result {
             assert!(!toml.order.get(0).unwrap().group.get(0).unwrap().optional);
         }
+    }
+
+    #[test]
+    fn buildpack_api_display() {
+        assert_eq!(BuildpackApi { major: 1, minor: 0 }.to_string(), "1.0");
+        assert_eq!(BuildpackApi { major: 1, minor: 2 }.to_string(), "1.2");
+        assert_eq!(BuildpackApi { major: 0, minor: 5 }.to_string(), "0.5");
     }
 }
