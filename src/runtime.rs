@@ -39,6 +39,28 @@ pub fn cnb_runtime<P: Platform, BM: DeserializeOwned, E: Debug + Display>(
     build_fn: impl Fn(BuildContext<P, BM>) -> Result<(), E>,
     error_handler: impl ErrorHandler<E>,
 ) {
+    match read_buildpack_toml::<BM, E>() {
+        Ok(buildpack_toml) => {
+            if buildpack_toml.api != LIBCNB_SUPPORTED_BUILDPACK_API {
+                eprintln!("Error: Cloud Native Buildpack API mismatch");
+                eprintln!(
+                    "This buildpack ({}) uses Cloud Native Buildpacks API version {}.",
+                    &buildpack_toml.buildpack.name, &buildpack_toml.api,
+                );
+
+                eprintln!(
+                    "But the underlying libcnb.rs library requires CNB API {}.",
+                    LIBCNB_SUPPORTED_BUILDPACK_API
+                );
+
+                exit(254)
+            }
+        }
+        Err(lib_cnb_error) => {
+            exit(error_handler.handle_error(lib_cnb_error));
+        }
+    }
+
     let current_exe = std::env::current_exe().ok();
     let current_exe_file_name = current_exe
         .as_ref()
@@ -63,28 +85,6 @@ pub fn cnb_runtime<P: Platform, BM: DeserializeOwned, E: Debug + Display>(
 
     if let Err(lib_cnb_error) = result {
         exit(error_handler.handle_error(lib_cnb_error));
-    }
-
-    match read_buildpack_toml::<BM, E>() {
-        Ok(buildpack_toml) => {
-            if buildpack_toml.api != LIBCNB_SUPPORTED_BUILDPACK_API {
-                eprintln!("Error: Cloud Native Buildpack API mismatch");
-                eprintln!(
-                    "This buildpack ({}) uses Cloud Native Buildpacks API version {}.",
-                    &buildpack_toml.buildpack.name, &buildpack_toml.api,
-                );
-
-                eprintln!(
-                    "But the underlying libcnb.rs library requires CNB API {}.",
-                    LIBCNB_SUPPORTED_BUILDPACK_API
-                );
-
-                exit(254)
-            }
-        }
-        Err(lib_cnb_error) => {
-            exit(error_handler.handle_error(lib_cnb_error));
-        }
     }
 }
 
