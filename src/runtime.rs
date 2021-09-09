@@ -70,8 +70,12 @@ pub fn cnb_runtime<P: Platform, BM: DeserializeOwned, E: Debug + Display>(
             if buildpack_toml.api != LIBCNB_SUPPORTED_BUILDPACK_API {
                 eprintln!("Error: Cloud Native Buildpack API mismatch");
                 eprintln!(
-                    "This buildpack uses Cloud Native Buildpacks API version {}, but the underlying libcnb.rs library requires CNB API {}.",
-                    &buildpack_toml.api,
+                    "This buildpack ({}) uses Cloud Native Buildpacks API version {}.",
+                    &buildpack_toml.buildpack.name, &buildpack_toml.api,
+                );
+
+                eprintln!(
+                    "But the underlying libcnb.rs library requires CNB API {}.",
                     LIBCNB_SUPPORTED_BUILDPACK_API
                 );
 
