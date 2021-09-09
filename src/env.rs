@@ -94,6 +94,7 @@ impl<'a> IntoIterator for &'a Env {
     }
 }
 
+#[cfg(test)]
 mod test {
     #[test]
     #[cfg(target_family = "unix")]
