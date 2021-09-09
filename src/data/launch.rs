@@ -99,7 +99,7 @@ pub struct Slice {
 /// let invalid = ProcessType::from_str("!nv4lid");
 /// assert!(invalid.is_err());
 /// ```
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, PartialEq, Eq)]
 pub struct ProcessType(String);
 
 impl ProcessType {
@@ -131,4 +131,22 @@ pub enum ProcessTypeError {
         "Found `{0}` but value MUST only contain numbers, letters, and the characters ., _, and -."
     )]
     InvalidProcessType(String),
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::str::FromStr;
+
+    #[test]
+    fn test_process_type_eq() {
+        assert_eq!(
+            ProcessType::from_str("web").unwrap(),
+            ProcessType::from_str("web").unwrap()
+        );
+        assert_ne!(
+            ProcessType::from_str("web").unwrap(),
+            ProcessType::from_str("nope").unwrap()
+        )
+    }
 }
