@@ -1,11 +1,11 @@
 use crate::data::bom;
 use lazy_static::lazy_static;
 use regex::Regex;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use thiserror;
 
-#[derive(Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct Launch {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub bom: bom::Bom,
@@ -51,13 +51,13 @@ impl Default for Launch {
     }
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct Label {
     pub key: String,
     pub value: String,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct Process {
     pub r#type: ProcessType,
     pub command: String,
@@ -81,7 +81,7 @@ impl Process {
     }
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct Slice {
     pub paths: Vec<String>,
 }
@@ -99,7 +99,7 @@ pub struct Slice {
 /// let invalid = ProcessType::from_str("!nv4lid");
 /// assert!(invalid.is_err());
 /// ```
-#[derive(Serialize, Debug, PartialEq, Eq)]
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq)]
 pub struct ProcessType(String);
 
 impl ProcessType {
