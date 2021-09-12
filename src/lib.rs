@@ -1,5 +1,38 @@
 //! This crate provides a library to implement [Cloud Native Buildpacks](https://buildpacks.io/).
 
+// Enable Clippy lints that are disabled by default.
+// https://rust-lang.github.io/rust-clippy/stable/index.html
+#![warn(clippy::pedantic)]
+// Re-disable pedantic lints that are currently failing, until they are triaged and fixed/wontfixed.
+// https://github.com/Malax/libcnb.rs/issues/60
+#![allow(clippy::doc_markdown)]
+// https://github.com/Malax/libcnb.rs/issues/65
+#![allow(clippy::implicit_clone)]
+// https://github.com/Malax/libcnb.rs/issues/56
+#![allow(clippy::items_after_statements)]
+// https://github.com/Malax/libcnb.rs/issues/59
+#![allow(clippy::map_unwrap_or)]
+// https://github.com/Malax/libcnb.rs/issues/62
+#![allow(clippy::match_wildcard_for_single_variants)]
+// https://github.com/Malax/libcnb.rs/issues/53
+#![allow(clippy::missing_errors_doc)]
+// https://github.com/Malax/libcnb.rs/issues/54
+#![allow(clippy::missing_panics_doc)]
+// https://github.com/Malax/libcnb.rs/issues/83
+#![allow(clippy::module_name_repetitions)]
+// https://github.com/Malax/libcnb.rs/issues/57
+#![allow(clippy::must_use_candidate)]
+// https://github.com/Malax/libcnb.rs/issues/63
+#![allow(clippy::needless_pass_by_value)]
+// https://github.com/Malax/libcnb.rs/issues/61
+#![allow(clippy::redundant_closure_for_method_calls)]
+// https://github.com/Malax/libcnb.rs/issues/58
+#![allow(clippy::semicolon_if_nothing_returned)]
+// https://github.com/Malax/libcnb.rs/issues/55
+#![allow(clippy::single_match_else)]
+// https://github.com/Malax/libcnb.rs/issues/64
+#![allow(clippy::unnecessary_wraps)]
+
 pub mod data;
 pub mod layer_env;
 
