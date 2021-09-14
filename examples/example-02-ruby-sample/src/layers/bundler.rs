@@ -24,7 +24,7 @@ pub struct BundlerLayerMetadata {
 
 impl LayerLifecycle<GenericPlatform, RubyBuildpackMetadata, BundlerLayerMetadata, Option<()>, anyhow::Error> for BundlerLayerLifecycle {
     fn validate(&self, layer_path: &Path, layer_content_metadata: &LayerContentMetadata<BundlerLayerMetadata>, build_context: &BuildContext<GenericPlatform, RubyBuildpackMetadata>) -> ValidateResult {
-        let checksum_matches = sha256_checksum(layer_path.join("Gemfile.lock"))
+        let checksum_matches = sha256_checksum(build_context.app_dir.join("Gemfile.lock"))
             .map(|local_checksum| local_checksum == layer_content_metadata.metadata.checksum)
             .unwrap_or(false);
 
@@ -81,7 +81,7 @@ impl LayerLifecycle<GenericPlatform, RubyBuildpackMetadata, BundlerLayerMetadata
         }
 
         Ok(LayerContentMetadata::default().launch(true).cache(true).metadata(BundlerLayerMetadata {
-            checksum: sha256_checksum(layer_path.join("Gemfile.lock"))?
+            checksum: sha256_checksum(build_context.app_dir.join("Gemfile.lock"))?
         }))
     }
 }
