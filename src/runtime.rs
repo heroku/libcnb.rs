@@ -1,5 +1,6 @@
 use std::env;
-use std::path::PathBuf;
+use std::ffi::OsStr;
+use std::path::{Path, PathBuf};
 use std::process;
 use std::process::exit;
 
@@ -15,6 +16,14 @@ use crate::{Result, LIBCNB_SUPPORTED_BUILDPACK_API};
 use std::fmt::{Debug, Display};
 
 /// Main entry point for this framework.
+///
+/// The Buildpack API requires us to have separate entry points for each of `bin/{detect,build}`.
+/// In order to save the compile time and buildpack size of having two very similar binaries, a
+/// single binary is built instead, with the filename by which it is invoked being used to determine
+/// the mode in which it is being run. The desired filenames are then created as symlinks or
+/// hard links to this single binary.
+///
+/// Currently symlinks are recommended over hard hard links due to [buildpacks/pack#1286](https://github.com/buildpacks/pack/issues/1286).
 ///
 /// # Example
 /// ```no_run
@@ -61,11 +70,14 @@ pub fn cnb_runtime<P: Platform, BM: DeserializeOwned, E: Debug + Display>(
         }
     }
 
-    let current_exe = std::env::current_exe().ok();
+    // Using `std::env::args()` instead of `std::env::current_exe()` since the latter resolves
+    // symlinks to their target on some platforms, whereas we need the original filename.
+    let current_exe = env::args().next();
     let current_exe_file_name = current_exe
         .as_ref()
-        .and_then(|path| path.file_name())
-        .and_then(|file_name| file_name.to_str());
+        .map(Path::new)
+        .and_then(Path::file_name)
+        .and_then(OsStr::to_str);
 
     #[cfg(any(target_family = "unix"))]
     let result = match current_exe_file_name {
