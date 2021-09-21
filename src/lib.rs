@@ -39,6 +39,7 @@ pub mod data;
 pub mod layer_env;
 
 pub mod layer_lifecycle;
+pub mod test_helper;
 
 use crate::data::buildpack::BuildpackApi;
 pub use build::BuildContext;
