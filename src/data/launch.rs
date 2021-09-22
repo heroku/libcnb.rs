@@ -1,4 +1,5 @@
 use crate::data::bom;
+use crate::data::defaults;
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -24,7 +25,7 @@ pub struct Launch {
 /// use libcnb::data::launch;
 /// let mut launch_toml = launch::Launch::new();
 /// let web = launch::Process::new("web", "bundle", vec!["exec", "ruby", "app.rb"],
-/// false).unwrap();
+/// false, false).unwrap();
 ///
 /// launch_toml.processes.push(web);
 /// assert!(toml::to_string(&launch_toml).is_ok());
@@ -63,6 +64,8 @@ pub struct Process {
     pub command: String,
     pub args: Vec<String>,
     pub direct: bool,
+    #[serde(default = "defaults::r#false")]
+    pub default: bool,
 }
 
 impl Process {
@@ -71,12 +74,14 @@ impl Process {
         command: impl Into<String>,
         args: impl IntoIterator<Item = impl Into<String>>,
         direct: bool,
+        default: bool,
     ) -> Result<Self, ProcessTypeError> {
         Ok(Process {
             r#type: ProcessType::from_str(r#type.as_ref())?,
             command: command.into(),
             args: args.into_iter().map(|i| i.into()).collect(),
             direct,
+            default,
         })
     }
 }
