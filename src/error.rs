@@ -25,6 +25,9 @@ pub enum Error<E: Debug + Display> {
     #[error("Could not determine app directory: {0}")]
     CannotDetermineAppDirectory(std::io::Error),
 
+    #[error("{0}")]
+    Other(String),
+
     #[error("Could not determine buildpack directory: {0}")]
     CannotDetermineBuildpackDirectory(std::env::VarError),
 
