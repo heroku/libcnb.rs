@@ -33,6 +33,7 @@ where
 }
 
 /// Provides access to platform environment variables.
+#[derive(Clone)]
 pub struct PlatformEnv {
     vars: HashMap<OsString, String>,
 }

@@ -19,6 +19,7 @@ pub type GenericDetectContext = DetectContext<GenericPlatform, GenericMetadata>;
 pub type GenericLayerLifecycleOutput = ();
 
 /// A generic platform that only provides access to environment variables.
+#[derive(Clone)]
 pub struct GenericPlatform {
     env: PlatformEnv,
 }

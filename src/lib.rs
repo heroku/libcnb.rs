@@ -42,8 +42,8 @@ pub mod layer_lifecycle;
 
 use crate::data::buildpack::BuildpackApi;
 pub use build::BuildContext;
+pub use context_builder::ContextBuilder;
 pub use detect::DetectContext;
-pub use detect::DetectContextBuilder;
 pub use detect::DetectOutcome;
 pub use env::*;
 pub use error::*;
@@ -53,6 +53,7 @@ pub use runtime::cnb_runtime;
 pub use toml_file::*;
 
 mod build;
+mod context_builder;
 mod detect;
 mod env;
 mod error;

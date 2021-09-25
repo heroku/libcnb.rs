@@ -27,7 +27,3 @@ pub fn read_toml_file<A: DeserializeOwned>(path: impl AsRef<Path>) -> Result<A, 
     let contents = fs::read_to_string(path)?;
     Ok(toml::from_str(&contents)?)
 }
-
-pub fn from_string<A: DeserializeOwned>(contents: String) -> Result<A, TomlFileError> {
-    Ok(toml::from_str(&contents)?)
-}

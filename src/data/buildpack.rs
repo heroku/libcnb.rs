@@ -34,7 +34,7 @@ use thiserror;
 ///         let result = toml::from_str::<BuildpackToml<toml::value::Table>>(raw);
 ///         assert!(result.is_ok());
 /// ```
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct BuildpackToml<BM> {
     // MUST be in form <major>.<minor> or <major>, where <major> is equivalent to <major>.0.
     pub api: BuildpackApi,
@@ -45,7 +45,7 @@ pub struct BuildpackToml<BM> {
     pub metadata: BM,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Buildpack {
     pub id: BuildpackId,
     pub name: String,
@@ -57,19 +57,19 @@ pub struct Buildpack {
     pub clear_env: bool,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Stack {
     pub id: StackId,
     #[serde(default)]
     pub mixins: Vec<String>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Order {
     group: Vec<Group>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Group {
     pub id: BuildpackId,
     pub version: Version,
@@ -77,7 +77,7 @@ pub struct Group {
     pub optional: bool,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct BuildpackApi {
     pub major: u32,
     pub minor: u32,
@@ -163,7 +163,7 @@ impl<'de> de::Deserialize<'de> for BuildpackApi {
 /// let invalid = BuildpackId::from_str("!nvalid");
 /// assert!(invalid.is_err());
 /// ```
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct BuildpackId(String);
 
 impl FromStr for BuildpackId {
@@ -203,7 +203,7 @@ impl BuildpackId {
 /// assert!(invalid.is_err());
 /// ```
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct StackId(String);
 
 impl FromStr for StackId {

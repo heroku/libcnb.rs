@@ -1,13 +1,13 @@
 use serde::Deserialize;
 use toml::value::Table;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct BuildpackPlan {
     #[serde(default)]
     pub entries: Vec<Entry>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Entry {
     pub name: String,
     #[serde(default)]
