@@ -9,7 +9,7 @@ use serde::de::DeserializeOwned;
 use crate::build::BuildContext;
 use crate::data::buildpack::BuildpackToml;
 use crate::detect::{DetectContext, DetectOutcome};
-use crate::error::{Error, ErrorHandler};
+use crate::error::{ErrorHandler, LibError};
 use crate::platform::Platform;
 use crate::toml_file::{read_toml_file, write_toml_file};
 use crate::{Result, LIBCNB_SUPPORTED_BUILDPACK_API};
@@ -110,12 +110,12 @@ fn cnb_runtime_detect<
 ) -> Result<(), E> {
     let args = parse_detect_args_or_exit();
 
-    let app_dir = env::current_dir().map_err(Error::CannotDetermineAppDirectory)?;
+    let app_dir = env::current_dir().map_err(LibError::CannotDetermineAppDirectory)?;
 
-    let stack_id: String = env::var("CNB_STACK_ID").map_err(Error::CannotDetermineStackId)?;
+    let stack_id: String = env::var("CNB_STACK_ID").map_err(LibError::CannotDetermineStackId)?;
 
     let platform =
-        P::from_path(&args.platform_dir_path).map_err(Error::CannotCreatePlatformFromPath)?;
+        P::from_path(&args.platform_dir_path).map_err(LibError::CannotCreatePlatformFromPath)?;
 
     let build_plan_path = args.build_plan_path;
 
@@ -129,7 +129,8 @@ fn cnb_runtime_detect<
 
     match detect_fn(detect_context)? {
         DetectOutcome::Pass(build_plan) => {
-            write_toml_file(&build_plan, build_plan_path).map_err(Error::CannotWriteBuildPlan)?;
+            write_toml_file(&build_plan, build_plan_path)
+                .map_err(LibError::CannotWriteBuildPlan)?;
             process::exit(0)
         }
         DetectOutcome::Fail => process::exit(100),
@@ -148,15 +149,15 @@ fn cnb_runtime_build<
 
     let layers_dir = args.layers_dir_path;
 
-    let app_dir = env::current_dir().map_err(Error::CannotDetermineAppDirectory)?;
+    let app_dir = env::current_dir().map_err(LibError::CannotDetermineAppDirectory)?;
 
-    let stack_id: String = env::var("CNB_STACK_ID").map_err(Error::CannotDetermineStackId)?;
+    let stack_id: String = env::var("CNB_STACK_ID").map_err(LibError::CannotDetermineStackId)?;
 
     let platform =
-        P::from_path(&args.platform_dir_path).map_err(Error::CannotCreatePlatformFromPath)?;
+        P::from_path(&args.platform_dir_path).map_err(LibError::CannotCreatePlatformFromPath)?;
 
     let buildpack_plan =
-        read_toml_file(&args.buildpack_plan_path).map_err(Error::CannotReadBuildpackPlan)?;
+        read_toml_file(&args.buildpack_plan_path).map_err(LibError::CannotReadBuildpackPlan)?;
 
     let context = BuildContext {
         layers_dir,
@@ -213,13 +214,13 @@ fn parse_build_args_or_exit() -> BuildArgs {
 
 fn read_buildpack_dir<E: Display + Debug>() -> Result<PathBuf, E> {
     env::var("CNB_BUILDPACK_DIR")
-        .map_err(Error::CannotDetermineBuildpackDirectory)
+        .map_err(|e| LibError::CannotDetermineBuildpackDirectory(e).into())
         .map(PathBuf::from)
 }
 
 fn read_buildpack_toml<BM: DeserializeOwned, E: Display + Debug>() -> Result<BuildpackToml<BM>, E> {
     read_buildpack_dir().and_then(|buildpack_dir| {
         read_toml_file(buildpack_dir.join("buildpack.toml"))
-            .map_err(Error::CannotReadBuildpackDescriptor)
+            .map_err(|e| LibError::CannotReadBuildpackDescriptor(e).into())
     })
 }

@@ -16,11 +16,38 @@ pub type Result<T, E> = std::result::Result<T, Error<E>>;
 /// An error that occurred during buildpack execution.
 #[derive(thiserror::Error, Debug)]
 pub enum Error<E: Debug + Display> {
+    #[error("libcnb error: {0}")]
+    LibError(LibError),
+    #[error("data format error: {0}")]
+    DataError(DataError),
+    #[error("Buildpack error: {0}")]
+    BuildpackError(E),
+}
+
+#[cfg(feature = "anyhow")]
+impl From<anyhow::Error> for Error<anyhow::Error> {
+    fn from(error: anyhow::Error) -> Self {
+        Error::BuildpackError(error)
+    }
+}
+
+impl<E: Debug + Display> From<LibError> for Error<E> {
+    fn from(error: LibError) -> Self {
+        Self::LibError(error)
+    }
+}
+
+impl<E: Debug + Display> From<LayerLifecycleError> for Error<E> {
+    fn from(error: LayerLifecycleError) -> Self {
+        Self::LibError(LibError::LayerLifecycleError(error))
+    }
+}
+
+/// An error that occurred from libcnb
+#[derive(thiserror::Error, Debug)]
+pub enum LibError {
     #[error("Layer lifecycle error: {0}")]
     LayerLifecycleError(#[from] LayerLifecycleError),
-
-    #[error("Process type error: {0}")]
-    ProcessTypeError(#[from] ProcessTypeError),
 
     #[error("Could not determine app directory: {0}")]
     CannotDetermineAppDirectory(std::io::Error),
@@ -42,14 +69,10 @@ pub enum Error<E: Debug + Display> {
 
     #[error("Cannot write build plan: {0}")]
     CannotWriteBuildPlan(TomlFileError),
-
-    #[error("Buildpack error: {0}")]
-    BuildpackError(E),
 }
 
-#[cfg(feature = "anyhow")]
-impl From<anyhow::Error> for Error<anyhow::Error> {
-    fn from(error: anyhow::Error) -> Self {
-        Error::BuildpackError(error)
-    }
+#[derive(thiserror::Error, Debug)]
+pub enum DataError {
+    #[error("Process type error: {0}")]
+    ProcessTypeError(#[from] ProcessTypeError),
 }
