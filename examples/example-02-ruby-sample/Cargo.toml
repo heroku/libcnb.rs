@@ -16,7 +16,4 @@ toml = "0.5"
 tempfile = "3"
 "libcnb" = { path = "../..", features = ["anyhow"] }
 serde = "1.0.126"
-openssl-sys = "*"
-
-[features]
-vendored-openssl = ["openssl-sys/vendored"]
+openssl = { version = "0.10.36", features = ["vendored"] }
