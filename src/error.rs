@@ -1,3 +1,4 @@
+use crate::context_builder::ContextBuilderMissingError;
 use crate::data::launch::ProcessTypeError;
 use crate::layer_lifecycle::LayerLifecycleError;
 use crate::toml_file::TomlFileError;
@@ -16,6 +17,9 @@ pub type Result<T, E> = std::result::Result<T, Error<E>>;
 /// An error that occurred during buildpack execution.
 #[derive(thiserror::Error, Debug)]
 pub enum Error<E: Debug + Display> {
+    #[error("Context builder error: {0}")]
+    ContextBuilderMissingError(#[from] ContextBuilderMissingError),
+
     #[error("Layer lifecycle error: {0}")]
     LayerLifecycleError(#[from] LayerLifecycleError),
 
@@ -24,9 +28,6 @@ pub enum Error<E: Debug + Display> {
 
     #[error("Could not determine app directory: {0}")]
     CannotDetermineAppDirectory(std::io::Error),
-
-    #[error("{0}")]
-    Other(String),
 
     #[error("Could not determine buildpack directory: {0}")]
     CannotDetermineBuildpackDirectory(std::env::VarError),

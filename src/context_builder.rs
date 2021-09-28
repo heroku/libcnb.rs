@@ -104,7 +104,7 @@ pub struct ContextBuilder<P: Platform + Clone, BM: DeserializeOwned + Clone> {
     platform: PlatformArg<P>,
     buildpack_plan: BuildpackPlanArg,
     buildpack_descriptor: BuildpackDescriptorArg<BM>,
-    _temp_dirs: Vec<TempDir>,
+    temp_dirs: Vec<TempDir>,
 }
 impl<P: Platform + Clone, BM: DeserializeOwned + Clone> ContextBuilder<P, BM> {
     pub fn new(stack_id: impl AsRef<str>) -> Self {
@@ -116,7 +116,7 @@ impl<P: Platform + Clone, BM: DeserializeOwned + Clone> ContextBuilder<P, BM> {
             platform: PlatformArg::None,
             buildpack_plan: BuildpackPlanArg::None,
             buildpack_descriptor: BuildpackDescriptorArg::None,
-            _temp_dirs: vec![],
+            temp_dirs: vec![],
         }
     }
 
@@ -197,7 +197,7 @@ impl<P: Platform + Clone, BM: DeserializeOwned + Clone> ContextBuilder<P, BM> {
     fn tempdir(&mut self) -> PathBuf {
         let temp_dir = TempDir::new().unwrap(); // Cheating with unwrap here, okay since it's only ever expected in test?
         let path = temp_dir.path().to_path_buf();
-        self._temp_dirs.push(temp_dir);
+        self.temp_dirs.push(temp_dir);
         path
     }
 
@@ -212,8 +212,8 @@ impl<P: Platform + Clone, BM: DeserializeOwned + Clone> ContextBuilder<P, BM> {
                 crate::toml_file::read_toml_file(path).map_err(Error::CannotReadBuildpackDescriptor)
             }
             BuildpackDescriptorArg::BuildpackToml(a) => Ok(a),
-            BuildpackDescriptorArg::None => Err(crate::error::Error::Other(
-                "buildpack_descriptor is missing".to_string(),
+            BuildpackDescriptorArg::None => Err(Error::ContextBuilderMissingError(
+                ContextBuilderMissingError::BuildpackDescriptor(),
             )),
         }
     }
@@ -225,7 +225,7 @@ impl<P: Platform + Clone, BM: DeserializeOwned + Clone> ContextBuilder<P, BM> {
 
     // Generate a BuildContext
     pub fn build<E: Display + Debug>(&mut self) -> crate::Result<BuildContext<P, BM>, E> {
-        // Re-use logic from building the DetectContext
+        // Re-use logic from building DetectContext
         //
         // DetectContext and BuildContext share most of the same fields. Instead of extracting
         // the logic to build the fields into shared functions it was easier to build a
@@ -241,7 +241,11 @@ impl<P: Platform + Clone, BM: DeserializeOwned + Clone> ContextBuilder<P, BM> {
         let layers_dir = match self.layers_dir.clone() {
             PathArg::Static(p) => p,
             PathArg::Temporary => self.tempdir(),
-            PathArg::None => Err(crate::error::Error::Other("missing layers_dir".to_string()))?,
+            PathArg::None => {
+                return Err(Error::ContextBuilderMissingError(
+                    ContextBuilderMissingError::LayersDirectory(),
+                ))
+            }
         };
 
         let buildpack_plan = match self.buildpack_plan.clone() {
@@ -249,9 +253,11 @@ impl<P: Platform + Clone, BM: DeserializeOwned + Clone> ContextBuilder<P, BM> {
             BuildpackPlanArg::Temporary => BuildpackPlan {
                 entries: Vec::<Entry>::new(),
             },
-            BuildpackPlanArg::None => Err(crate::error::Error::Other(
-                "buildpack_plan is missing".to_string(),
-            ))?,
+            BuildpackPlanArg::None => {
+                return Err(Error::ContextBuilderMissingError(
+                    ContextBuilderMissingError::BuildpackPlan(),
+                ))
+            }
         };
         Ok(BuildContext {
             layers_dir,
@@ -275,23 +281,31 @@ impl<P: Platform + Clone, BM: DeserializeOwned + Clone> ContextBuilder<P, BM> {
             PlatformArg::TemporaryDirectory => {
                 Platform::from_path(self.tempdir()).map_err(Error::CannotCreatePlatformFromPath)
             }
-            PlatformArg::None => Err(crate::error::Error::Other(
-                "Platform is missing".to_string(),
-            )),
+            PlatformArg::None => {
+                return Err(Error::ContextBuilderMissingError(
+                    ContextBuilderMissingError::Platform(),
+                ))
+            }
         }?;
 
         let app_dir = match self.app_dir.clone() {
             PathArg::Static(p) => p,
             PathArg::Temporary => self.tempdir(),
-            PathArg::None => Err(crate::error::Error::Other("missing app_dir".to_string()))?,
+            PathArg::None => {
+                return Err(Error::ContextBuilderMissingError(
+                    ContextBuilderMissingError::AppDirectory(),
+                ))
+            }
         };
 
         let buildpack_dir = match self.buildpack_dir.clone() {
             PathArg::Static(p) => p,
             PathArg::Temporary => self.tempdir(),
-            PathArg::None => Err(crate::error::Error::Other(
-                "missing buildpack_dir".to_string(),
-            ))?,
+            PathArg::None => {
+                return Err(Error::ContextBuilderMissingError(
+                    ContextBuilderMissingError::BuildpackDirectory(),
+                ))
+            }
         };
 
         Ok(DetectContext {
@@ -302,6 +316,28 @@ impl<P: Platform + Clone, BM: DeserializeOwned + Clone> ContextBuilder<P, BM> {
             buildpack_descriptor,
         })
     }
+}
+
+/// An error that occurred during generating a context.
+#[derive(thiserror::Error, Debug)]
+pub enum ContextBuilderMissingError {
+    #[error("Missing required value: `buildpack_descriptor`")]
+    BuildpackDescriptor(),
+
+    #[error("Missing required value: `buildpack_plan`")]
+    BuildpackPlan(),
+
+    #[error("Missing required value: `platform`")]
+    Platform(),
+
+    #[error("Missing required field: `layers_dir`")]
+    LayersDirectory(),
+
+    #[error("Missing required field: `app_dir`")]
+    AppDirectory(),
+
+    #[error("Missing required field: `buildpack_dir`")]
+    BuildpackDirectory(),
 }
 
 #[derive(Clone)]
