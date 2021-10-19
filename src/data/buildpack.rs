@@ -3,6 +3,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use semver::Version;
 use serde::{de, Deserialize};
+use std::convert::TryFrom;
 use std::fmt::{Display, Formatter};
 use std::{fmt, str::FromStr};
 use thiserror;
@@ -58,10 +59,35 @@ pub struct Buildpack {
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(try_from = "StackUnchecked")]
 pub struct Stack {
     pub id: StackId,
+    pub mixins: Vec<String>,
+}
+
+// Used as a "shadow" struct to store
+// potentially invalid `Stack` data when deserializing
+// https://dev.to/equalma/validate-fields-and-types-in-serde-with-tryfrom-c2n
+#[derive(Deserialize)]
+struct StackUnchecked {
+    pub id: StackId,
+
     #[serde(default)]
     pub mixins: Vec<String>,
+}
+
+impl TryFrom<StackUnchecked> for Stack {
+    type Error = BuildpackTomlError;
+
+    fn try_from(value: StackUnchecked) -> Result<Self, Self::Error> {
+        let StackUnchecked { id, mixins } = value;
+
+        if id.as_str() == "*" && !mixins.is_empty() {
+            Err(BuildpackTomlError::InvalidStarStack(mixins.join(", ")))
+        } else {
+            Ok(Stack { id, mixins })
+        }
+    }
 }
 
 #[derive(Deserialize, Debug)]
@@ -150,7 +176,10 @@ impl<'de> de::Deserialize<'de> for BuildpackApi {
     }
 }
 
-/// buildpack.toml Buildpack Id. This is a newtype wrapper around a String. It MUST only contain numbers, letters, and the characters ., /, and -. It also cannot be `config` or `app`. Use [`std::str::FromStr`] to create a new instance of this struct.
+/// buildpack.toml Buildpack Id. This is a newtype wrapper around a String.
+/// It MUST only contain numbers, letters, and the characters ., /, and -.
+/// It also cannot be `config` or `app`.
+/// Use [`std::str::FromStr`] to create a new instance of this struct.
 ///
 /// # Examples
 /// ```
@@ -189,7 +218,11 @@ impl BuildpackId {
     }
 }
 
-/// buildpack.toml Stack Id. This is a newtype wrapper around a String. It MUST only contain numbers, letters, and the characters ., /, and -. Use [`std::str::FromStr`] to create a new instance of this struct.
+/// buildpack.toml Stack Id. This is a newtype wrapper around a String.
+/// It MUST only contain numbers, letters, and the characters ., /, and -.
+/// or be `*`.
+///
+/// Use [`std::str::FromStr`] to create a new instance of this struct.
 ///
 /// # Examples
 /// ```
@@ -201,6 +234,9 @@ impl BuildpackId {
 ///
 /// let invalid = StackId::from_str("!nvalid");
 /// assert!(invalid.is_err());
+///
+/// let invalid = StackId::from_str("*");
+/// assert!(invalid.is_ok());
 /// ```
 
 #[derive(Deserialize, Debug)]
@@ -211,7 +247,7 @@ impl FromStr for StackId {
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         lazy_static! {
-            static ref RE: Regex = Regex::new(r"^[[:alnum:]./-]+$").unwrap();
+            static ref RE: Regex = Regex::new(r"^([[:alnum:]./-]+|\*)$").unwrap();
         }
 
         let string = String::from(value);
@@ -231,15 +267,18 @@ impl StackId {
 
 #[derive(thiserror::Error, Debug)]
 pub enum BuildpackTomlError {
-    #[error("Found `{0}` but value MUST only contain numbers, letters, and the characters ., /, and -. Value MUST NOT be 'config' or 'app'.")]
+    #[error("Found `{0}` but value MUST only contain numbers, letters, and the characters `.`, `/`, and `-`. Value MUST NOT be 'config' or 'app'.")]
     InvalidBuildpackApi(String),
 
+    #[error("Stack with id `*` MUST not contain mixins. mixins: [{0}]")]
+    InvalidStarStack(String),
+
     #[error(
-        "Found `{0}` but value MUST only contain numbers, letters, and the characters ., /, and -."
+        "Found `{0}` but value MUST only contain numbers, letters, and the characters `.`, `/`, and `-`. or only `*`"
     )]
     InvalidStackId(String),
 
-    #[error("Found `{0}` but value MUST only contain numbers, letters, and the characters ., /, and -. Value MUST NOT be 'config' or 'app'.")]
+    #[error("Found `{0}` but value MUST only contain numbers, letters, and the characters `.`, `/`, and `-`. Value MUST NOT be 'config' or 'app'.")]
     InvalidBuildpackId(String),
 }
 
@@ -358,6 +397,28 @@ id = "io.buildpacks.stacks.bionic"
         if let Ok(toml) = result {
             assert!(!toml.order.get(0).unwrap().group.get(0).unwrap().optional);
         }
+    }
+
+    #[test]
+    fn cannot_use_star_stack_id_with_mixins() {
+        let raw = r#"
+api = "0.4"
+
+[buildpack]
+id = "foo/bar"
+name = "Bar Buildpack"
+version = "0.0.1"
+
+[[stacks]]
+id = "*"
+mixins = ["yolo"]
+
+[metadata]
+checksum = "awesome"
+"#;
+
+        let result = toml::from_str::<BuildpackToml<toml::value::Table>>(raw);
+        assert!(&result.is_err());
     }
 
     #[test]
