@@ -3,11 +3,10 @@ use serde::{Deserialize, Serialize};
 use crate::data::defaults;
 use crate::generic::GenericMetadata;
 
-/// Describes Layer Content Metadata
-///
-/// See [Cloud Native Buildpack specification](https://github.com/buildpacks/spec/blob/main/buildpack.md#layer-content-metadata-toml)
+/// Used to specify layer availability based
+/// on buildpack phase.
 #[derive(Debug, Deserialize, Serialize)]
-pub struct LayerContentMetadata<M> {
+pub struct LayerContentTypeTable {
     /// Whether the layer is intended for launch.
     #[serde(default = "defaults::r#false")]
     pub launch: bool,
@@ -19,6 +18,34 @@ pub struct LayerContentMetadata<M> {
     /// Whether the layer is cached.
     #[serde(default = "defaults::r#false")]
     pub cache: bool,
+}
+
+/// Describes Layer Content Metadata
+///
+/// See [Cloud Native Buildpack specification](https://github.com/buildpacks/spec/blob/main/buildpack.md#layer-content-metadata-toml)
+///
+/// ```
+/// use libcnb::data::layer_content_metadata::LayerContentMetadata;
+/// use toml::toml;
+///
+/// let layer = LayerContentMetadata::default()
+///   .build(true)
+///   .cache(true)
+///   .launch(true)
+///   .metadata(
+///     toml! {
+///       version = "2.5"
+///       name = "ACME Corp."
+///     });
+///
+/// assert!(layer.types.build);
+///
+/// let version = layer.metadata.get("version").unwrap().as_str().unwrap();
+/// assert_eq!(version, "2.5");
+/// ```
+#[derive(Debug, Deserialize, Serialize)]
+pub struct LayerContentMetadata<M> {
+    pub types: LayerContentTypeTable,
 
     /// Metadata that describes the layer contents.
     pub metadata: M,
@@ -27,9 +54,11 @@ pub struct LayerContentMetadata<M> {
 impl Default for LayerContentMetadata<GenericMetadata> {
     fn default() -> Self {
         LayerContentMetadata {
-            launch: false,
-            build: false,
-            cache: false,
+            types: LayerContentTypeTable {
+                launch: false,
+                build: false,
+                cache: false,
+            },
             metadata: GenericMetadata::default(),
         }
     }
@@ -37,25 +66,28 @@ impl Default for LayerContentMetadata<GenericMetadata> {
 
 impl<M> LayerContentMetadata<M> {
     pub fn launch(mut self, launch: bool) -> Self {
-        self.launch = launch;
+        self.types.launch = launch;
         self
     }
 
     pub fn build(mut self, build: bool) -> Self {
-        self.build = build;
+        self.types.build = build;
         self
     }
 
     pub fn cache(mut self, cache: bool) -> Self {
-        self.cache = cache;
+        self.types.cache = cache;
         self
     }
 
     pub fn metadata<NM>(&mut self, metadata: NM) -> LayerContentMetadata<NM> {
         LayerContentMetadata {
-            cache: self.cache,
-            build: self.build,
-            launch: self.launch,
+            types: LayerContentTypeTable {
+                cache: self.types.cache,
+                build: self.types.build,
+                launch: self.types.launch,
+            },
+
             metadata,
         }
     }
@@ -70,12 +102,17 @@ mod tests {
         let layer: Result<LayerContentMetadata<Option<toml::value::Table>>, toml::de::Error> =
             toml::from_str(
                 r#"
+            [types]
             launch = true
             build = true
             cache = false
             "#,
             );
 
-        assert!(!layer.is_err());
+        let layer = layer.unwrap();
+        assert_eq!(layer.metadata, None);
+        assert!(layer.types.launch);
+        assert!(layer.types.build);
+        assert!(!layer.types.cache);
     }
 }
