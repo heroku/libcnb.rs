@@ -113,7 +113,7 @@ impl FromStr for ProcessType {
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         lazy_static! {
-            static ref RE: Regex = Regex::new(r"^[[:alnum:]_-]+$").unwrap();
+            static ref RE: Regex = Regex::new(r"^[[:alnum:]\._-]+$").unwrap();
         }
 
         let string = String::from(value);
@@ -148,5 +148,14 @@ mod tests {
             ProcessType::from_str("web").unwrap(),
             ProcessType::from_str("nope").unwrap()
         )
+    }
+
+    #[test]
+    fn test_process_type_with_special_chars() {
+        assert!(ProcessType::from_str("java_jar").is_ok());
+        assert!(ProcessType::from_str("java-jar").is_ok());
+        assert!(ProcessType::from_str("java.jar").is_ok());
+
+        assert!(ProcessType::from_str("java~jar").is_err());
     }
 }
