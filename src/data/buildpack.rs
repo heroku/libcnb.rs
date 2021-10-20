@@ -2,7 +2,7 @@ use crate::data::defaults;
 use lazy_static::lazy_static;
 use regex::Regex;
 use semver::Version;
-use serde::{de, Deserialize};
+use serde::Deserialize;
 use std::convert::TryFrom;
 use std::fmt::{Display, Formatter};
 use std::{fmt, str::FromStr};
@@ -103,10 +103,24 @@ pub struct Group {
     pub optional: bool,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Deserialize, Debug, Eq, PartialEq)]
+#[serde(try_from = "BuildpackApiUnchecked")]
 pub struct BuildpackApi {
     pub major: u32,
     pub minor: u32,
+}
+// Used as a "shadow" struct to store
+// potentially invalid `BuildpackApi` data when deserializing
+// <https://dev.to/equalma/validate-fields-and-types-in-serde-with-tryfrom-c2n>
+#[derive(Deserialize)]
+struct BuildpackApiUnchecked(String);
+
+impl TryFrom<BuildpackApiUnchecked> for BuildpackApi {
+    type Error = BuildpackTomlError;
+
+    fn try_from(value: BuildpackApiUnchecked) -> Result<Self, Self::Error> {
+        BuildpackApi::from_str(value.0.as_str())
+    }
 }
 
 impl FromStr for BuildpackApi {
@@ -145,34 +159,6 @@ impl FromStr for BuildpackApi {
 impl Display for BuildpackApi {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         formatter.write_str(&format!("{}.{}", self.major, self.minor))
-    }
-}
-
-impl<'de> de::Deserialize<'de> for BuildpackApi {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: de::Deserializer<'de>,
-    {
-        struct BuildpackApiVisitor;
-
-        impl<'de> de::Visitor<'de> for BuildpackApiVisitor {
-            type Value = BuildpackApi;
-
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str(
-                    "a BuildpackApi as a string which MUST be in form <major>.<minor> or <major>",
-                )
-            }
-
-            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
-            where
-                E: de::Error,
-            {
-                BuildpackApi::from_str(v).map_err(de::Error::custom)
-            }
-        }
-
-        deserializer.deserialize_str(BuildpackApiVisitor)
     }
 }
 
