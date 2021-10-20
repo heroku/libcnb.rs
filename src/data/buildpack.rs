@@ -253,7 +253,7 @@ impl StackId {
 
 #[derive(thiserror::Error, Debug)]
 pub enum BuildpackTomlError {
-    #[error("Found `{0}` but value MUST only contain numbers, letters, and the characters `.`, `/`, and `-`. Value MUST NOT be 'config' or 'app'.")]
+    #[error("Found `{0}` but value MUST be in the form `<major>.<minor>` or `<major>` and only contain numbers.")]
     InvalidBuildpackApi(String),
 
     #[error("Stack with id `*` MUST not contain mixins. mixins: [{0}]")]
