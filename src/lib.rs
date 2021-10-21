@@ -60,4 +60,4 @@ mod platform;
 mod runtime;
 mod toml_file;
 
-const LIBCNB_SUPPORTED_BUILDPACK_API: BuildpackApi = BuildpackApi { major: 0, minor: 5 };
+const LIBCNB_SUPPORTED_BUILDPACK_API: BuildpackApi = BuildpackApi { major: 0, minor: 6 };
