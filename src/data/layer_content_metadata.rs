@@ -20,6 +20,16 @@ pub struct LayerContentTypeTable {
     pub cache: bool,
 }
 
+impl LayerContentTypeTable {
+    fn default() -> Self {
+        LayerContentTypeTable {
+            launch: false,
+            build: false,
+            cache: false,
+        }
+    }
+}
+
 /// Describes Layer Content Metadata
 ///
 /// See [Cloud Native Buildpack specification](https://github.com/buildpacks/spec/blob/main/buildpack.md#layer-content-metadata-toml)
@@ -45,6 +55,7 @@ pub struct LayerContentTypeTable {
 /// ```
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LayerContentMetadata<M> {
+    #[serde(default = "LayerContentTypeTable::default")]
     pub types: LayerContentTypeTable,
 
     /// Metadata that describes the layer contents.
@@ -54,11 +65,7 @@ pub struct LayerContentMetadata<M> {
 impl Default for LayerContentMetadata<GenericMetadata> {
     fn default() -> Self {
         LayerContentMetadata {
-            types: LayerContentTypeTable {
-                launch: false,
-                build: false,
-                cache: false,
-            },
+            types: LayerContentTypeTable::default(),
             metadata: GenericMetadata::default(),
         }
     }
@@ -96,6 +103,31 @@ impl<M> LayerContentMetadata<M> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn layer_types_have_defaults() {
+        let layer: Result<LayerContentMetadata<Option<toml::value::Table>>, toml::de::Error> =
+            toml::from_str(
+                r#"
+            [types]
+            "#,
+            );
+
+        let layer = layer.unwrap();
+        assert_eq!(layer.metadata, None);
+        assert!(!layer.types.launch);
+        assert!(!layer.types.build);
+        assert!(!layer.types.cache);
+
+        let layer: Result<LayerContentMetadata<Option<toml::value::Table>>, toml::de::Error> =
+            toml::from_str(r#""#);
+
+        let layer = layer.unwrap();
+        assert_eq!(layer.metadata, None);
+        assert!(!layer.types.launch);
+        assert!(!layer.types.build);
+        assert!(!layer.types.cache);
+    }
 
     #[test]
     fn metadata_is_optional() {
