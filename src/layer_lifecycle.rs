@@ -1,4 +1,122 @@
-//! Manage layer lifecycles in a declarative way.
+//! Layer Lifecycle controller
+//!
+//! This represents a controller that manages state associated with the lifecycle
+//! of a given layer (CRUD).
+//!
+//! Layers have two main components:
+//!
+//! 1. A <layer> directory (<https://github.com/buildpacks/spec/blob/main/buildpack.md#layers>)
+//! 2. A <layer>/<layer>.toml file (<https://github.com/buildpacks/spec/blob/main/buildpack.md#layer-content-metadata-toml>)
+//!
+//! The <layer>.toml file can be further broken down into compomponents. First,
+//! the `types` key holds information on when a given layer is available
+//! (build, launch, cache) <https://github.com/buildpacks/spec/blob/main/buildpack.md#layer-types>.
+//! Second, the `metadata` key persists buildpack specific data about the layer
+//!  and is empty by default.
+//!
+//! ## Execute the lifecycle
+//!
+//! Once a struct implements the [`LayerLifecycle`] trait it can be passed
+//! to the main interface [`crate::layer_lifecycle::execute_layer_lifecycle`]
+//!
+//! Example:
+//!
+//! ```no-run
+//! let run_sh_path: PathBuf = execute_layer_lifecycle("opt", OptLayerLifecycle {}, &context)?;
+//! ```
+//!
+//! The first argument is the layer name, the second is a user defined struct
+//! that implements [`LayerLifecycle`] and the third is the build context.
+//!
+//! ## Implementing the lifecycle
+//!
+//! The function [`crate::layer_lifecycle::execute_layer_lifecycle`] modifies the
+//! directory and <layer>.toml via the [`LayerLifecycle`] trait which expects the
+//! following user implemented functions:
+//!
+//! Create and update a layer:
+//!
+//! - [`LayerLifecycle::create`] (required)
+//! - [`LayerLifecycle::update`] (defaults to a no-op)
+//!
+//! The flow between the states is controlled via:
+//!
+//! - [`LayerLifecycle::validate`] (defaults to [`ValidateResult::RecreateLayer`])
+//!
+//! The return from [`crate::layer_lifecycle::execute_layer_lifecycle`] is specified
+//! by:
+//!
+//! - [`LayerLifecycle::layer_lifecycle_data`] (defaults to calling `::default`)
+//!
+//! When invalid data is detected via a serilization error (`try_from`)
+//! there is a mechanism to register a metadata recovery strategy:
+//!
+//! - [`LayerLifecycle::recover_from_invalid_metadata`] (defaults to [`MetadataRecoveryStrategy::DeleteLayer`])
+//!
+//! There are also callback hooks, unlike `create` and `update`
+//! these callback hooks do not present the ability to mutate
+//! the directory or metadata:
+//!
+//! - [`LayerLifecycle::on_lifecycle_start`]
+//! - [`LayerLifecycle::on_keep`]
+//! - [`LayerLifecycle::on_update`]
+//! - [`LayerLifecycle::on_create`]
+//! - [`LayerLifecycle::on_lifecycle_end`]
+//!
+//! ## Lifecycle State
+//!
+//! This section describes the state machine of the layer lifecycle controller so that
+//! developers can understand the relationship between `validate`, `update`, and `create`.
+//!
+//! ### None state
+//!
+//! On the first run there will be no data. The directory and toml file
+//! will be created and the user's defined `create` function will be executed.
+//!
+//! In `create` the directory can be modified, and a representation of the toml
+//! file is returned via `LayerContentMetadata<LM>` struct.
+//!
+//! For all other runs `validate` will be called and the result determines
+//! the lifecycle state.
+//!
+//! ### `validate` returns [`ValidateResult::KeepLayer`]
+//!
+//! The directory and toml are not modified. Neither `create` nor `update`
+//! are called.
+//!
+//! ### `validate` returns [`ValidateResult::RecreateLayer`]
+//!
+//! The directory and toml file are deleted and then `create` is called similar
+//! to the `None` state above.
+//!
+//! ### `validate` returns [`ValidateResult::UpdateLayer`]
+//!
+//! Nothing is deleted. The existing path and toml representations are passed
+//! into the user's `update` function.
+//!
+//! In `update`, the directory can be modified and a representation of the toml file
+//! is returned via `LayerContentMetadata<LM>` struct.
+//!
+//! ## Metadata recovery
+//!
+//! Metadata is in the <layer>.toml file. TOML data in libcnb is represented by
+//! structs with the `Deserialize` trait from the `serde` library. If the
+//! TOML on disk does not exactly match the format of the struct (and there
+//! are not appropriate defaults) then the deserialization can fail.
+//!
+//! The most common time this would happen is if TOML data was saved by an
+//! older copy of a buildpack, then the developer updated the struct to add
+//! or remove a field, then on the next run the old data from <layer>.toml
+//! cannot deserialize to the new struct and it would fail.
+//!
+//! When that happens we must tell libcnb what to do. The way to do that is to
+//! specify [`LayerLifecycle::recover_from_invalid_metadata`]. This function
+//! is expected to return one of two results:
+//!
+//! - [`MetadataRecoveryStrategy::DeleteLayer`] will delete the old layer
+//!   when data cannot be deserialized
+//! - [`MetadataRecoveryStrategy::ReplaceMetadata<M>`] will replace the old layer
+//!   metadata with the contents in `<M>`
 
 use std::fmt::{Debug, Display};
 use std::path::Path;
