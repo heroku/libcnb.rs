@@ -24,6 +24,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Update Rust toolchain
+      # Most of the time this will be a no-op, since GitHub releases new images every week
+      # which include the latest stable release of Rust, Rustup, Clippy and rustfmt.
+      run: rustup update
     - name: Build
       # Not using --locked since Cargo.lock is in .gitignore.
       run: cargo build --all-features

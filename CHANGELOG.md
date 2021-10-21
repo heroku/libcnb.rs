@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Set a minumim required Rust version of 1.56 and switch to the 2021 Rust edition
 - Stack id in `buildpack.toml` can now be `*` indicating "any" stack
 - LayerContentMetadata values (build, cache, launch) are now under a "types" key
 - Allow ProcessType to contain a dot (`.`) character

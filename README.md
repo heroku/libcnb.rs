@@ -1,4 +1,4 @@
-# libcnb.rs [![Build Status]][ci] [![Docs]][docs.rs] [![Latest Version]][crates.io] [![Rustc Version 1.31+]][rustc]
+# libcnb.rs [![Build Status]][ci] [![Docs]][docs.rs] [![Latest Version]][crates.io] [![Rustc Version 1.56+]][rustc]
 
 [Build Status]: https://img.shields.io/github/workflow/status/Malax/libcnb/Rust/master
 [ci]: https://github.com/Malax/libcnb/actions?query=branch%3Amaster
@@ -6,8 +6,8 @@
 [docs.rs]: https://docs.rs/libcnb/*/libcnb/
 [Latest Version]: https://img.shields.io/crates/v/libcnb.svg
 [crates.io]: https://crates.io/crates/libcnb
-[Rustc Version 1.31+]: https://img.shields.io/badge/rustc-1.31+-lightgray.svg
-[rustc]: https://blog.rust-lang.org/2018/12/06/Rust-1.31-and-rust-2018.html
+[Rustc Version 1.56+]: https://img.shields.io/badge/rustc-1.56+-lightgray.svg
+[rustc]: https://blog.rust-lang.org/2021/10/21/Rust-1.56.0.html
 
 `libcnb.rs` is a Rust language binding of the [Cloud Native Buildpacks](https://buildpacks.io) [spec](https://github.com/buildpacks/spec). It is a non-opinionated implementation adding language constructs and convenience methods for working with the spec. It values strong adherence to the spec and data formats.
 
@@ -78,4 +78,4 @@ Add the following to your `Cargo.toml` file:
 libcnb = "0.1.0"
 ```
 
-*Compiler support requires rustc 1.31+ for 2018 edition*
+*Compiler support requires rustc 1.56+ for 2021 edition*
