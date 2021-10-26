@@ -23,6 +23,11 @@ use thiserror;
 /// version = "0.0.1"
 /// homepage = "https://www.foo.com/bar"
 /// clear-env = false
+/// description = "A buildpack for Foo Bar"
+/// keywords = ["foo"]
+///
+/// [[buildpack.licenses]]
+/// type = "BSD-3-Clause"
 ///
 /// [[stacks]]
 /// id = "io.buildpacks.stacks.bionic"
@@ -56,6 +61,17 @@ pub struct Buildpack {
     #[serde(rename = "clear-env")]
     #[serde(default = "defaults::r#false")]
     pub clear_env: bool,
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub keywords: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub licenses: Vec<License>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct License {
+    pub r#type: Option<String>,
+    pub uri: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -305,7 +321,7 @@ mod tests {
     }
 
     #[test]
-    fn can_serialize_metabuildpack() {
+    fn can_deserialize_metabuildpack() {
         let raw = r#"
 api = "0.4"
 
@@ -314,7 +330,19 @@ id = "foo/bar"
 name = "Bar Buildpack"
 version = "0.0.1"
 homepage = "https://www.foo.com/bar"
-clear-env = false
+clear-env = true
+description = "A buildpack for Foo Bar"
+keywords = ["foo", "bar"]
+
+[[buildpack.licenses]]
+type = "BSD-3-Clause"
+
+[[buildpack.licenses]]
+type = "Custom license with type and URI"
+uri = "https://example.tld/my-license"
+
+[[buildpack.licenses]]
+uri = "https://example.tld/my-license"
 
 [[order]]
 [[order.group]]
@@ -331,12 +359,19 @@ checksum = "awesome"
 "#;
 
         let result = toml::from_str::<BuildpackToml<toml::value::Table>>(raw);
-        result.unwrap();
-        //assert!(result.is_ok());
+        assert!(result.is_ok());
+        if let Ok(toml) = result {
+            assert_eq!(
+                toml.buildpack.description.unwrap(),
+                "A buildpack for Foo Bar"
+            );
+            assert_eq!(toml.buildpack.keywords.len(), 2);
+            assert_eq!(toml.buildpack.licenses.len(), 3);
+        }
     }
 
     #[test]
-    fn can_serialize_minimal_buildpack() {
+    fn can_deserialize_minimal_buildpack() {
         let raw = r#"
 api = "0.4"
 
@@ -360,7 +395,7 @@ checksum = "awesome"
     }
 
     #[test]
-    fn can_serialize_minimal_metabuildpack() {
+    fn can_deserialize_minimal_metabuildpack() {
         let raw = r#"
 api = "0.4"
 
