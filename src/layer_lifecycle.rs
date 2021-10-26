@@ -5,10 +5,10 @@
 //!
 //! Layers have two main components:
 //!
-//! 1. A <layer> directory (<https://github.com/buildpacks/spec/blob/main/buildpack.md#layers>)
-//! 2. A <layer>/<layer>.toml file (<https://github.com/buildpacks/spec/blob/main/buildpack.md#layer-content-metadata-toml>)
+//! 1. A `<layer>` directory (<https://github.com/buildpacks/spec/blob/main/buildpack.md#layers>)
+//! 2. A `<layer>/<layer>.toml` file (<https://github.com/buildpacks/spec/blob/main/buildpack.md#layer-content-metadata-toml>)
 //!
-//! The <layer>.toml file can be further broken down into compomponents. First,
+//! The `<layer>.toml` file can be further broken down into components. First,
 //! the `types` key holds information on when a given layer is available
 //! (build, launch, cache) <https://github.com/buildpacks/spec/blob/main/buildpack.md#layer-types>.
 //! Second, the `metadata` key persists buildpack specific data about the layer
@@ -31,7 +31,7 @@
 //! ## Implementing the lifecycle
 //!
 //! The function [`crate::layer_lifecycle::execute_layer_lifecycle`] modifies the
-//! directory and <layer>.toml via the [`LayerLifecycle`] trait which expects the
+//! directory and `<layer>.toml` via the [`LayerLifecycle`] trait which expects the
 //! following user implemented functions:
 //!
 //! Create and update a layer:
@@ -48,7 +48,7 @@
 //!
 //! - [`LayerLifecycle::layer_lifecycle_data`] (defaults to calling `::default`)
 //!
-//! When invalid data is detected via a serilization error (`try_from`)
+//! When invalid data is detected via a serialization error (`try_from`)
 //! there is a mechanism to register a metadata recovery strategy:
 //!
 //! - [`LayerLifecycle::recover_from_invalid_metadata`] (defaults to [`MetadataRecoveryStrategy::DeleteLayer`])
@@ -99,15 +99,15 @@
 //!
 //! ## Metadata recovery
 //!
-//! Metadata is in the <layer>.toml file. TOML data in libcnb is represented by
-//! structs with the `Deserialize` trait from the `serde` library. If the
-//! TOML on disk does not exactly match the format of the struct (and there
-//! are not appropriate defaults) then the deserialization can fail.
+//! Metadata is in the `<layer>.toml` file. TOML data in libcnb is represented
+//! by structs with the `Deserialize` trait from the `serde` library. If a
+//! value is changed (for example a field is changed from a string to an
+//! integer) then deserialization can fail.
 //!
 //! The most common time this would happen is if TOML data was saved by an
-//! older copy of a buildpack, then the developer updated the struct to add
-//! or remove a field, then on the next run the old data from <layer>.toml
-//! cannot deserialize to the new struct and it would fail.
+//! older copy of a buildpack, and the developer updated the struct to add
+//! a field without a default. In that case, on the next run the old data from
+//! `<layer>.toml` cannot deserialize to the new struct, and it would fail.
 //!
 //! When that happens we must tell libcnb what to do. The way to do that is to
 //! specify [`LayerLifecycle::recover_from_invalid_metadata`]. This function
