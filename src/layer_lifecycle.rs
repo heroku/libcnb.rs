@@ -21,7 +21,7 @@
 //!
 //! Example:
 //!
-//! ```no-run
+//! ```ignore
 //! let run_sh_path: PathBuf = execute_layer_lifecycle("opt", OptLayerLifecycle {}, &context)?;
 //! ```
 //!
