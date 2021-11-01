@@ -30,8 +30,6 @@
 #![allow(clippy::redundant_closure_for_method_calls)]
 // https://github.com/Malax/libcnb.rs/issues/58
 #![allow(clippy::semicolon_if_nothing_returned)]
-// https://github.com/Malax/libcnb.rs/issues/55
-#![allow(clippy::single_match_else)]
 // https://github.com/Malax/libcnb.rs/issues/64
 #![allow(clippy::unnecessary_wraps)]
 
