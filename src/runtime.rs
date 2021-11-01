@@ -184,32 +184,30 @@ struct BuildArgs {
 
 fn parse_detect_args_or_exit() -> DetectArgs {
     let args: Vec<String> = env::args().collect();
-    match args.as_slice() {
-        [_, platform_dir_path, build_plan_path] => DetectArgs {
+    if let [_, platform_dir_path, build_plan_path] = args.as_slice() {
+        DetectArgs {
             platform_dir_path: PathBuf::from(platform_dir_path),
             build_plan_path: PathBuf::from(build_plan_path),
-        },
-        _ => {
-            eprintln!("Usage: detect <platform_dir> <buildplan>");
-            eprintln!("https://github.com/buildpacks/spec/blob/main/buildpack.md#detection");
-            process::exit(1);
         }
+    } else {
+        eprintln!("Usage: detect <platform_dir> <buildplan>");
+        eprintln!("https://github.com/buildpacks/spec/blob/main/buildpack.md#detection");
+        process::exit(1);
     }
 }
 
 fn parse_build_args_or_exit() -> BuildArgs {
     let args: Vec<String> = env::args().collect();
-    match args.as_slice() {
-        [_, layers_dir_path, platform_dir_path, buildpack_plan_path] => BuildArgs {
+    if let [_, layers_dir_path, platform_dir_path, buildpack_plan_path] = args.as_slice() {
+        BuildArgs {
             layers_dir_path: PathBuf::from(layers_dir_path),
             platform_dir_path: PathBuf::from(platform_dir_path),
             buildpack_plan_path: PathBuf::from(buildpack_plan_path),
-        },
-        _ => {
-            eprintln!("Usage: build <layers> <platform> <plan>");
-            eprintln!("https://github.com/buildpacks/spec/blob/main/buildpack.md#build");
-            process::exit(1);
         }
+    } else {
+        eprintln!("Usage: build <layers> <platform> <plan>");
+        eprintln!("https://github.com/buildpacks/spec/blob/main/buildpack.md#build");
+        process::exit(1);
     }
 }
 
