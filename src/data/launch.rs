@@ -32,7 +32,7 @@ pub struct Launch {
 /// ```
 impl Launch {
     pub fn new() -> Self {
-        Launch {
+        Self {
             bom: bom::Bom::new(),
             labels: Vec::new(),
             processes: Vec::new(),
@@ -48,7 +48,7 @@ impl Launch {
 
 impl Default for Launch {
     fn default() -> Self {
-        Launch::new()
+        Self::new()
     }
 }
 
@@ -76,7 +76,7 @@ impl Process {
         direct: bool,
         default: bool,
     ) -> Result<Self, ProcessTypeError> {
-        Ok(Process {
+        Ok(Self {
             r#type: ProcessType::from_str(r#type.as_ref())?,
             command: command.into(),
             args: args.into_iter().map(|i| i.into()).collect(),
@@ -123,7 +123,7 @@ impl FromStr for ProcessType {
 
         let string = String::from(value);
         if RE.is_match(value) {
-            Ok(ProcessType(string))
+            Ok(Self(string))
         } else {
             Err(ProcessTypeError::InvalidProcessType(string))
         }

@@ -114,7 +114,7 @@ impl LayerEnv {
     /// assert_eq!(env, modified_env);
     /// ```
     pub fn new() -> Self {
-        LayerEnv {
+        Self {
             all: LayerEnvDelta::new(),
             build: LayerEnvDelta::new(),
             launch: LayerEnvDelta::new(),
@@ -239,8 +239,8 @@ impl LayerEnv {
     /// assert_eq!(modified_env.get("PATH").unwrap(), layer_dir.join("bin"));
     /// assert_eq!(modified_env.get("ZERO_WING").unwrap(), "ALL_YOUR_BASE_ARE_BELONG_TO_US");
     /// ```
-    pub fn read_from_layer_dir(layer_dir: impl AsRef<Path>) -> Result<LayerEnv, std::io::Error> {
-        let mut result_layer_env = LayerEnv::new();
+    pub fn read_from_layer_dir(layer_dir: impl AsRef<Path>) -> Result<Self, std::io::Error> {
+        let mut result_layer_env = Self::new();
 
         let bin_path = layer_dir.as_ref().join("bin");
         let lib_path = layer_dir.as_ref().join("lib");
@@ -386,8 +386,8 @@ struct LayerEnvDelta {
 }
 
 impl LayerEnvDelta {
-    fn new() -> LayerEnvDelta {
-        LayerEnvDelta {
+    fn new() -> Self {
+        Self {
             entries: BTreeMap::new(),
         }
     }

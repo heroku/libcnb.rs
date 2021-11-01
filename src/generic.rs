@@ -29,7 +29,7 @@ impl Platform for GenericPlatform {
     }
 
     fn from_path(platform_dir: impl AsRef<Path>) -> std::io::Result<Self> {
-        Ok(GenericPlatform {
+        Ok(Self {
             env: PlatformEnv::from_path(platform_dir)?,
         })
     }

@@ -13,8 +13,8 @@ pub struct BuildPlan {
 }
 
 impl BuildPlan {
-    pub fn new() -> BuildPlan {
-        BuildPlan {
+    pub fn new() -> Self {
+        Self {
             provides: vec![],
             requires: vec![],
             or: vec![],
@@ -36,7 +36,7 @@ pub struct BuildPlanBuilder {
 
 impl BuildPlanBuilder {
     pub fn new() -> Self {
-        BuildPlanBuilder {
+        Self {
             acc: VecDeque::new(),
             current_provides: vec![],
             current_requires: vec![],
@@ -105,7 +105,7 @@ pub struct Provide {
 
 impl Provide {
     pub fn new(name: impl Into<String>) -> Self {
-        Provide { name: name.into() }
+        Self { name: name.into() }
     }
 }
 
@@ -117,7 +117,7 @@ pub struct Require {
 
 impl Require {
     pub fn new(name: impl Into<String>) -> Self {
-        Require {
+        Self {
             name: name.into(),
             metadata: Table::new(),
         }

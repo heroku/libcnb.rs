@@ -101,7 +101,7 @@ impl TryFrom<StackUnchecked> for Stack {
         if id.as_str() == "*" && !mixins.is_empty() {
             Err(BuildpackTomlError::InvalidStarStack(mixins.join(", ")))
         } else {
-            Ok(Stack { id, mixins })
+            Ok(Self { id, mixins })
         }
     }
 }
@@ -135,7 +135,7 @@ impl TryFrom<BuildpackApiUnchecked> for BuildpackApi {
     type Error = BuildpackTomlError;
 
     fn try_from(value: BuildpackApiUnchecked) -> Result<Self, Self::Error> {
-        BuildpackApi::from_str(value.0.as_str())
+        Self::from_str(value.0.as_str())
     }
 }
 
@@ -164,7 +164,7 @@ impl FromStr for BuildpackApi {
                     .parse::<u32>()
                     .map_err(|_| BuildpackTomlError::InvalidBuildpackApi(String::from(value)))?;
 
-                return Ok(BuildpackApi { major, minor });
+                return Ok(Self { major, minor });
             }
         }
 
@@ -207,7 +207,7 @@ impl FromStr for BuildpackId {
 
         let string = String::from(value);
         if value != "app" && value != "config" && RE.is_match(value) {
-            Ok(BuildpackId(string))
+            Ok(Self(string))
         } else {
             Err(BuildpackTomlError::InvalidBuildpackId(string))
         }
@@ -254,7 +254,7 @@ impl FromStr for StackId {
 
         let string = String::from(value);
         if RE.is_match(value) {
-            Ok(StackId(string))
+            Ok(Self(string))
         } else {
             Err(BuildpackTomlError::InvalidStackId(string))
         }
