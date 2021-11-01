@@ -44,7 +44,7 @@ impl Env {
 
     /// Creates an empty `Env` struct.
     pub fn new() -> Self {
-        Env {
+        Self {
             inner: HashMap::new(),
         }
     }
@@ -79,7 +79,7 @@ impl Default for Env {
 
 impl From<VarsOs> for Env {
     fn from(vars_os: VarsOs) -> Self {
-        Env {
+        Self {
             inner: vars_os.collect(),
         }
     }

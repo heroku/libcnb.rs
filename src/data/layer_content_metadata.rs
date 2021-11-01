@@ -22,7 +22,7 @@ pub struct LayerContentTypeTable {
 
 impl LayerContentTypeTable {
     fn default() -> Self {
-        LayerContentTypeTable {
+        Self {
             launch: false,
             build: false,
             cache: false,
@@ -64,7 +64,7 @@ pub struct LayerContentMetadata<M> {
 
 impl Default for LayerContentMetadata<GenericMetadata> {
     fn default() -> Self {
-        LayerContentMetadata {
+        Self {
             types: LayerContentTypeTable::default(),
             metadata: GenericMetadata::default(),
         }

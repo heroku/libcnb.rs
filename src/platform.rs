@@ -91,7 +91,7 @@ impl PlatformEnv {
             }
         }
 
-        Ok(PlatformEnv { vars: env_vars })
+        Ok(Self { vars: env_vars })
     }
 }
 
