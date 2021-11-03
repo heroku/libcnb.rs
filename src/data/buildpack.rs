@@ -159,8 +159,7 @@ impl FromStr for BuildpackApi {
                 // If no minor version is specified default to 0.
                 let minor = captures
                     .name("minor")
-                    .map(|s| s.as_str())
-                    .unwrap_or("0")
+                    .map_or("0", |s| s.as_str())
                     .parse::<u32>()
                     .map_err(|_| BuildpackTomlError::InvalidBuildpackApi(String::from(value)))?;
 
