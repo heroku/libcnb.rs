@@ -9,7 +9,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v2.4.0
     - name: Update Rust toolchain
       # Most of the time this will be a no-op, since GitHub releases new images every week
       # which include the latest stable release of Rust, Rustup, Clippy and rustfmt.
@@ -23,7 +23,7 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v2.4.0
     - name: Update Rust toolchain
       # Most of the time this will be a no-op, since GitHub releases new images every week
       # which include the latest stable release of Rust, Rustup, Clippy and rustfmt.
