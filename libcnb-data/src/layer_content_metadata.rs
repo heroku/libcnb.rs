@@ -65,7 +65,7 @@ impl Default for LayerContentMetadata<Option<toml::Value>> {
     fn default() -> Self {
         Self {
             types: LayerContentTypeTable::default(),
-            metadata: Default::default(),
+            metadata: Option::default(),
         }
     }
 }
