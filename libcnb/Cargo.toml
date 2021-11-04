@@ -16,7 +16,7 @@ serde = { version = "^1.0.126", features = ["derive"] }
 thiserror = "^1.0.26"
 toml = "^0.5.8"
 anyhow = { version = "^1.0.42", optional = true }
-libcnb-data = { path = "../libcnb-data" }
+libcnb-data = { path = "../libcnb-data", version = "0.3.0" }
 
 [dev-dependencies]
 tempfile = "^3.2.0"
