@@ -1,4 +1,5 @@
 use crate::data::launch::ProcessTypeError;
+use crate::data::stack_id::StackIdError;
 use crate::layer_lifecycle::LayerLifecycleError;
 use crate::toml_file::TomlFileError;
 use std::fmt::{Debug, Display};
@@ -42,6 +43,9 @@ pub enum Error<E: Debug + Display> {
 
     #[error("Cannot write build plan: {0}")]
     CannotWriteBuildPlan(TomlFileError),
+
+    #[error("Stack ID error: {0}")]
+    StackIdError(StackIdError),
 
     #[error("Buildpack error: {0}")]
     BuildpackError(E),

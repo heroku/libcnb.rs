@@ -23,4 +23,5 @@ pub mod buildpack_plan;
 pub mod defaults;
 pub mod launch;
 pub mod layer_content_metadata;
+pub mod stack_id;
 pub mod store;

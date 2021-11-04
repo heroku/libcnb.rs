@@ -1,4 +1,5 @@
 use crate::defaults;
+use crate::stack_id::{StackId, StackIdError};
 use lazy_static::lazy_static;
 use regex::Regex;
 use semver::Version;
@@ -219,53 +220,6 @@ impl BuildpackId {
     }
 }
 
-/// buildpack.toml Stack Id. This is a newtype wrapper around a String.
-/// It MUST only contain numbers, letters, and the characters ., /, and -.
-/// or be `*`.
-///
-/// Use [`std::str::FromStr`] to create a new instance of this struct.
-///
-/// # Examples
-/// ```
-/// use std::str::FromStr;
-/// use libcnb_data::buildpack::StackId;
-///
-/// let valid = StackId::from_str("io.buildpacks.bionic/Latest-2020");
-/// assert_eq!(valid.unwrap().as_str(), "io.buildpacks.bionic/Latest-2020");
-///
-/// let invalid = StackId::from_str("!nvalid");
-/// assert!(invalid.is_err());
-///
-/// let invalid = StackId::from_str("*");
-/// assert!(invalid.is_ok());
-/// ```
-
-#[derive(Deserialize, Debug)]
-pub struct StackId(String);
-
-impl FromStr for StackId {
-    type Err = BuildpackTomlError;
-
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        lazy_static! {
-            static ref RE: Regex = Regex::new(r"^([[:alnum:]./-]+|\*)$").unwrap();
-        }
-
-        let string = String::from(value);
-        if RE.is_match(value) {
-            Ok(Self(string))
-        } else {
-            Err(BuildpackTomlError::InvalidStackId(string))
-        }
-    }
-}
-
-impl StackId {
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
-
 #[derive(thiserror::Error, Debug)]
 pub enum BuildpackTomlError {
     #[error("Found `{0}` but value MUST be in the form `<major>.<minor>` or `<major>` and only contain numbers.")]
@@ -274,10 +228,8 @@ pub enum BuildpackTomlError {
     #[error("Stack with id `*` MUST not contain mixins. mixins: [{0}]")]
     InvalidStarStack(String),
 
-    #[error(
-        "Found `{0}` but value MUST only contain numbers, letters, and the characters `.`, `/`, and `-`. or only `*`"
-    )]
-    InvalidStackId(String),
+    #[error("Invalid stack id: {0}")]
+    InvalidStackId(StackIdError),
 
     #[error("Found `{0}` but value MUST only contain numbers, letters, and the characters `.`, `/`, and `-`. Value MUST NOT be 'config' or 'app'.")]
     InvalidBuildpackId(String),

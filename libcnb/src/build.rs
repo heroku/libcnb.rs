@@ -3,6 +3,7 @@ use std::{fs, path::PathBuf};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
+use crate::data::stack_id::StackId;
 use crate::{
     data::{
         buildpack::BuildpackToml, buildpack_plan::BuildpackPlan, launch::Launch,
@@ -17,7 +18,7 @@ pub struct BuildContext<P: Platform, BM> {
     pub layers_dir: PathBuf,
     pub app_dir: PathBuf,
     pub buildpack_dir: PathBuf,
-    pub stack_id: String,
+    pub stack_id: StackId,
     pub platform: P,
     pub buildpack_plan: BuildpackPlan,
     pub buildpack_descriptor: BuildpackToml<BM>,

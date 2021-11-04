@@ -8,12 +8,14 @@ use serde::de::DeserializeOwned;
 
 use crate::build::BuildContext;
 use crate::data::buildpack::BuildpackToml;
+use crate::data::stack_id::StackId;
 use crate::detect::{DetectContext, DetectOutcome};
 use crate::error::{Error, ErrorHandler};
 use crate::platform::Platform;
 use crate::toml_file::{read_toml_file, write_toml_file};
 use crate::{Result, LIBCNB_SUPPORTED_BUILDPACK_API};
 use std::fmt::{Debug, Display};
+use std::str::FromStr;
 
 /// Main entry point for this framework.
 ///
@@ -112,7 +114,11 @@ fn cnb_runtime_detect<
 
     let app_dir = env::current_dir().map_err(Error::CannotDetermineAppDirectory)?;
 
-    let stack_id: String = env::var("CNB_STACK_ID").map_err(Error::CannotDetermineStackId)?;
+    let stack_id: StackId = env::var("CNB_STACK_ID")
+        .map_err(Error::CannotDetermineStackId)
+        .and_then(|stack_id_string| {
+            StackId::from_str(&stack_id_string).map_err(Error::StackIdError)
+        })?;
 
     let platform =
         P::from_path(&args.platform_dir_path).map_err(Error::CannotCreatePlatformFromPath)?;
@@ -150,7 +156,11 @@ fn cnb_runtime_build<
 
     let app_dir = env::current_dir().map_err(Error::CannotDetermineAppDirectory)?;
 
-    let stack_id: String = env::var("CNB_STACK_ID").map_err(Error::CannotDetermineStackId)?;
+    let stack_id: StackId = env::var("CNB_STACK_ID")
+        .map_err(Error::CannotDetermineStackId)
+        .and_then(|stack_id_string| {
+            StackId::from_str(&stack_id_string).map_err(Error::StackIdError)
+        })?;
 
     let platform =
         P::from_path(&args.platform_dir_path).map_err(Error::CannotCreatePlatformFromPath)?;
