@@ -26,8 +26,6 @@
 #![allow(clippy::needless_pass_by_value)]
 // https://github.com/Malax/libcnb.rs/issues/61
 #![allow(clippy::redundant_closure_for_method_calls)]
-// https://github.com/Malax/libcnb.rs/issues/58
-#![allow(clippy::semicolon_if_nothing_returned)]
 // https://github.com/Malax/libcnb.rs/issues/64
 #![allow(clippy::unnecessary_wraps)]
 
