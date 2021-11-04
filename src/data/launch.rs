@@ -152,7 +152,7 @@ mod tests {
         assert_ne!(
             ProcessType::from_str("web").unwrap(),
             ProcessType::from_str("nope").unwrap()
-        )
+        );
     }
 
     #[test]

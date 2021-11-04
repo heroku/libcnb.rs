@@ -786,7 +786,7 @@ mod test {
         ];
 
         for (a, b, expected) in tests {
-            assert_eq!(expected, a.cmp(&b))
+            assert_eq!(expected, a.cmp(&b));
         }
     }
 

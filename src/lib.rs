@@ -10,8 +10,6 @@
 #![allow(clippy::doc_markdown)]
 // https://github.com/Malax/libcnb.rs/issues/65
 #![allow(clippy::implicit_clone)]
-// https://github.com/Malax/libcnb.rs/issues/59
-#![allow(clippy::map_unwrap_or)]
 // https://github.com/Malax/libcnb.rs/issues/62
 #![allow(clippy::match_wildcard_for_single_variants)]
 // https://github.com/Malax/libcnb.rs/issues/53
@@ -26,8 +24,6 @@
 #![allow(clippy::needless_pass_by_value)]
 // https://github.com/Malax/libcnb.rs/issues/61
 #![allow(clippy::redundant_closure_for_method_calls)]
-// https://github.com/Malax/libcnb.rs/issues/58
-#![allow(clippy::semicolon_if_nothing_returned)]
 // https://github.com/Malax/libcnb.rs/issues/64
 #![allow(clippy::unnecessary_wraps)]
 

@@ -74,7 +74,7 @@ impl BuildPlanBuilder {
                 build_plan.or.push(Or {
                     provides: alternative.0,
                     requires: alternative.1,
-                })
+                });
             }
 
             build_plan
