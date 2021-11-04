@@ -10,8 +10,6 @@
 #![allow(clippy::doc_markdown)]
 // https://github.com/Malax/libcnb.rs/issues/65
 #![allow(clippy::implicit_clone)]
-// https://github.com/Malax/libcnb.rs/issues/56
-#![allow(clippy::items_after_statements)]
 // https://github.com/Malax/libcnb.rs/issues/62
 #![allow(clippy::match_wildcard_for_single_variants)]
 // https://github.com/Malax/libcnb.rs/issues/53

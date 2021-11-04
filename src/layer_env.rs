@@ -447,14 +447,6 @@ impl LayerEnvDelta {
         let mut layer_env = Self::new();
 
         for dir_entry in fs::read_dir(path.as_ref())? {
-            let path = dir_entry?.path();
-
-            // Rely on the Rust standard library for splitting stem and extension. Since paths
-            // are not necessarily UTF-8 encoded, this is not as trivial as it might look like.
-            // Think twice before changing this.
-            let file_name_stem = path.file_stem();
-            let file_name_extension = path.extension();
-
             // The CNB spec explicitly states:
             //
             // > File contents MUST NOT be evaluated by a shell or otherwise modified before
@@ -467,7 +459,14 @@ impl LayerEnvDelta {
             // determined that it also treats the file contents as raw bytes.
             // See: https://github.com/buildpacks/lifecycle/blob/a7428a55c2a14d8a37e84285b95dc63192e3264e/env/env.go#L73-L106
             use std::os::unix::ffi::OsStringExt;
+            let path = dir_entry?.path();
             let file_contents = OsString::from_vec(fs::read(&path)?);
+
+            // Rely on the Rust standard library for splitting stem and extension. Since paths
+            // are not necessarily UTF-8 encoded, this is not as trivial as it might look like.
+            // Think twice before changing this.
+            let file_name_stem = path.file_stem();
+            let file_name_extension = path.extension();
 
             if let Some(file_name_stem) = file_name_stem {
                 let modification_behavior = match file_name_extension {
@@ -502,6 +501,8 @@ impl LayerEnvDelta {
     }
 
     fn write_to_env_dir(&self, path: impl AsRef<Path>) -> Result<(), std::io::Error> {
+        use std::os::unix::ffi::OsStrExt;
+
         if path.as_ref().exists() {
             // This is a possible race condition if the path is deleted between the check and
             // removal by this code. We accept this for now to keep it simple.
@@ -524,7 +525,6 @@ impl LayerEnvDelta {
 
             let file_path = path.as_ref().join(file_name);
 
-            use std::os::unix::ffi::OsStrExt;
             fs::write(file_path, &value.as_bytes())?;
         }
 
