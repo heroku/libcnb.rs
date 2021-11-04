@@ -1,5 +1,5 @@
 [package]
-name = "libcnb"
+name = "libcnb-data"
 version = "0.3.0"
 authors = ["Manuel Fuchs <malax@malax.de>", "Terence Lee <hone02@gmail.com>"]
 edition = "2021"
@@ -7,16 +7,14 @@ rust-version = "1.56"
 license = "Apache-2.0"
 description = "Rust language binding of the Cloud Native Buildpack spec."
 repository = "https://github.com/Malax/libcnb.rs"
-documentation = "https://docs.rs/libcnb"
+documentation = "https://docs.rs/libcnb-data"
 readme = "../README.md"
 include = ["src/**/*", "../LICENSE", "../README.md"]
 
 [dependencies]
+lazy_static = "^1.4.0"
+regex = "^1.5.4"
+semver = { version = "^1.0.4", features = ["serde"] }
 serde = { version = "^1.0.126", features = ["derive"] }
 thiserror = "^1.0.26"
 toml = "^0.5.8"
-anyhow = { version = "^1.0.42", optional = true }
-libcnb-data = { path = "../libcnb-data", version = "0.3.0" }
-
-[dev-dependencies]
-tempfile = "^3.2.0"

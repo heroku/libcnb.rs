@@ -1,5 +1,5 @@
-use crate::data::bom;
-use crate::data::defaults;
+use crate::bom;
+use crate::defaults;
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -22,7 +22,7 @@ pub struct Launch {
 ///
 /// # Examples
 /// ```
-/// use libcnb::data::launch;
+/// use libcnb_data::launch;
 /// let mut launch_toml = launch::Launch::new();
 /// let web = launch::Process::new("web", "bundle", vec!["exec", "ruby", "app.rb"],
 /// false, false).unwrap();
@@ -96,7 +96,7 @@ pub struct Slice {
 /// # Examples
 /// ```
 /// use std::str::FromStr;
-/// use libcnb::data::launch::ProcessType;
+/// use libcnb_data::launch::ProcessType;
 ///
 /// let valid = ProcessType::from_str("foo-Bar_9");
 /// assert_eq!(valid.unwrap().as_str(), "foo-Bar_9");

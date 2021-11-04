@@ -1,4 +1,4 @@
-use crate::data::defaults;
+use crate::defaults;
 use lazy_static::lazy_static;
 use regex::Regex;
 use semver::Version;
@@ -12,7 +12,7 @@ use thiserror;
 ///
 /// # Examples
 /// ```
-/// use libcnb::data::buildpack::BuildpackToml;
+/// use libcnb_data::buildpack::BuildpackToml;
 ///
 ///         let raw = r#"
 /// api = "0.4"
@@ -185,7 +185,7 @@ impl Display for BuildpackApi {
 /// # Examples
 /// ```
 /// use std::str::FromStr;
-/// use libcnb::data::buildpack::BuildpackId;
+/// use libcnb_data::buildpack::BuildpackId;
 ///
 /// let valid = BuildpackId::from_str("heroku/ruby-engine.MRI3");
 /// assert_eq!(valid.unwrap().as_str(), "heroku/ruby-engine.MRI3");
@@ -228,7 +228,7 @@ impl BuildpackId {
 /// # Examples
 /// ```
 /// use std::str::FromStr;
-/// use libcnb::data::buildpack::StackId;
+/// use libcnb_data::buildpack::StackId;
 ///
 /// let valid = StackId::from_str("io.buildpacks.bionic/Latest-2020");
 /// assert_eq!(valid.unwrap().as_str(), "io.buildpacks.bionic/Latest-2020");
