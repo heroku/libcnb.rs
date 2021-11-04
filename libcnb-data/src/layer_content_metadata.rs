@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::data::defaults;
-use crate::generic::GenericMetadata;
+use crate::defaults;
 
 /// Used to specify layer availability based
 /// on buildpack phase.
@@ -35,7 +34,7 @@ impl LayerContentTypeTable {
 /// See [Cloud Native Buildpack specification](https://github.com/buildpacks/spec/blob/main/buildpack.md#layer-content-metadata-toml)
 ///
 /// ```
-/// use libcnb::data::layer_content_metadata::LayerContentMetadata;
+/// use libcnb_data::layer_content_metadata::LayerContentMetadata;
 /// use toml::toml;
 ///
 /// let layer = LayerContentMetadata::default()
@@ -62,11 +61,11 @@ pub struct LayerContentMetadata<M> {
     pub metadata: M,
 }
 
-impl Default for LayerContentMetadata<GenericMetadata> {
+impl Default for LayerContentMetadata<Option<toml::Value>> {
     fn default() -> Self {
         Self {
             types: LayerContentTypeTable::default(),
-            metadata: GenericMetadata::default(),
+            metadata: Default::default(),
         }
     }
 }

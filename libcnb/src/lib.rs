@@ -27,7 +27,6 @@
 // https://github.com/Malax/libcnb.rs/issues/64
 #![allow(clippy::unnecessary_wraps)]
 
-pub mod data;
 pub mod layer_env;
 
 pub mod layer_lifecycle;
@@ -39,6 +38,7 @@ pub use detect::DetectOutcome;
 pub use env::*;
 pub use error::*;
 pub use generic::*;
+pub use libcnb_data as data;
 pub use platform::*;
 pub use runtime::cnb_runtime;
 pub use toml_file::*;

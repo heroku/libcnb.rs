@@ -1,4 +1,4 @@
-use crate::data::bom;
+use crate::bom;
 use serde::Serialize;
 
 #[derive(Serialize, Debug)]
