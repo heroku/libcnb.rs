@@ -19,7 +19,7 @@ pub struct LayerContentTypeTable {
     pub cache: bool,
 }
 
-impl LayerContentTypeTable {
+impl Default for LayerContentTypeTable {
     fn default() -> Self {
         Self {
             launch: false,
@@ -54,7 +54,7 @@ impl LayerContentTypeTable {
 /// ```
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LayerContentMetadata<M> {
-    #[serde(default = "LayerContentTypeTable::default")]
+    #[serde(default)]
     pub types: LayerContentTypeTable,
 
     /// Metadata that describes the layer contents.
