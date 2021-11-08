@@ -1,2 +1,2 @@
-pub mod ruby;
 pub mod bundler;
+pub mod ruby;

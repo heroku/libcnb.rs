@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::process::{Command, Stdio};
 
-
 use libcnb::data;
 use libcnb::data::build_plan::BuildPlan;
 use libcnb::layer_lifecycle::execute_layer_lifecycle;
