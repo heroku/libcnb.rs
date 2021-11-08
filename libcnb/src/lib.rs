@@ -8,8 +8,6 @@
 // Re-disable pedantic lints that are currently failing, until they are triaged and fixed/wontfixed.
 // https://github.com/Malax/libcnb.rs/issues/60
 #![allow(clippy::doc_markdown)]
-// https://github.com/Malax/libcnb.rs/issues/65
-#![allow(clippy::implicit_clone)]
 // https://github.com/Malax/libcnb.rs/issues/62
 #![allow(clippy::match_wildcard_for_single_variants)]
 // https://github.com/Malax/libcnb.rs/issues/53
