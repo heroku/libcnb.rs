@@ -4,9 +4,9 @@ use std::path::Path;
 use std::process::Command;
 
 use anyhow::Error;
-use libcnb::{BuildContext, GenericPlatform};
 use libcnb::data::layer_content_metadata::LayerContentMetadata;
 use libcnb::layer_lifecycle::{LayerLifecycle, ValidateResult};
+use libcnb::{BuildContext, GenericPlatform};
 use serde::Deserialize;
 use serde::Serialize;
 use sha2::Digest;
@@ -22,8 +22,21 @@ pub struct BundlerLayerMetadata {
     checksum: String,
 }
 
-impl LayerLifecycle<GenericPlatform, RubyBuildpackMetadata, BundlerLayerMetadata, Option<()>, anyhow::Error> for BundlerLayerLifecycle {
-    fn validate(&self, layer_path: &Path, layer_content_metadata: &LayerContentMetadata<BundlerLayerMetadata>, build_context: &BuildContext<GenericPlatform, RubyBuildpackMetadata>) -> ValidateResult {
+impl
+    LayerLifecycle<
+        GenericPlatform,
+        RubyBuildpackMetadata,
+        BundlerLayerMetadata,
+        Option<()>,
+        anyhow::Error,
+    > for BundlerLayerLifecycle
+{
+    fn validate(
+        &self,
+        _layer_path: &Path,
+        layer_content_metadata: &LayerContentMetadata<BundlerLayerMetadata>,
+        build_context: &BuildContext<GenericPlatform, RubyBuildpackMetadata>,
+    ) -> ValidateResult {
         let checksum_matches = sha256_checksum(build_context.app_dir.join("Gemfile.lock"))
             .map(|local_checksum| local_checksum == layer_content_metadata.metadata.checksum)
             .unwrap_or(false);
@@ -35,15 +48,15 @@ impl LayerLifecycle<GenericPlatform, RubyBuildpackMetadata, BundlerLayerMetadata
         }
     }
 
-    fn update(&self, layer_path: &Path, layer_content_metadata: LayerContentMetadata<BundlerLayerMetadata>, build_context: &BuildContext<GenericPlatform, RubyBuildpackMetadata>) -> Result<LayerContentMetadata<BundlerLayerMetadata>, Error> {
+    fn update(
+        &self,
+        layer_path: &Path,
+        layer_content_metadata: LayerContentMetadata<BundlerLayerMetadata>,
+        _build_context: &BuildContext<GenericPlatform, RubyBuildpackMetadata>,
+    ) -> Result<LayerContentMetadata<BundlerLayerMetadata>, Error> {
         println!("---> Reusing gems");
         Command::new("bundle")
-            .args(&[
-                "config",
-                "--local",
-                "path",
-                layer_path.to_str().unwrap(),
-            ])
+            .args(&["config", "--local", "path", layer_path.to_str().unwrap()])
             .envs(&self.ruby_env)
             .spawn()?
             .wait()?;
@@ -62,7 +75,11 @@ impl LayerLifecycle<GenericPlatform, RubyBuildpackMetadata, BundlerLayerMetadata
         Ok(layer_content_metadata)
     }
 
-    fn create(&self, layer_path: &Path, build_context: &BuildContext<GenericPlatform, RubyBuildpackMetadata>) -> Result<LayerContentMetadata<BundlerLayerMetadata>, Error> {
+    fn create(
+        &self,
+        layer_path: &Path,
+        build_context: &BuildContext<GenericPlatform, RubyBuildpackMetadata>,
+    ) -> Result<LayerContentMetadata<BundlerLayerMetadata>, Error> {
         println!("---> Installing gems");
 
         let cmd = Command::new("bundle")
@@ -80,9 +97,12 @@ impl LayerLifecycle<GenericPlatform, RubyBuildpackMetadata, BundlerLayerMetadata
             anyhow::anyhow!("Could not bundle install");
         }
 
-        Ok(LayerContentMetadata::default().launch(true).cache(true).metadata(BundlerLayerMetadata {
-            checksum: sha256_checksum(build_context.app_dir.join("Gemfile.lock"))?
-        }))
+        Ok(LayerContentMetadata::default()
+            .launch(true)
+            .cache(true)
+            .metadata(BundlerLayerMetadata {
+                checksum: sha256_checksum(build_context.app_dir.join("Gemfile.lock"))?,
+            }))
     }
 }
 

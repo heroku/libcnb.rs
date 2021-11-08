@@ -1,15 +1,16 @@
 use std::collections::HashMap;
 use std::process::{Command, Stdio};
 
-use anyhow::Error;
-use libcnb::{BuildContext, cnb_runtime, DetectContext, DetectOutcome, GenericErrorHandler, GenericPlatform};
-use libcnb::data::build_plan::BuildPlan;
 use libcnb::data;
+use libcnb::data::build_plan::BuildPlan;
 use libcnb::layer_lifecycle::execute_layer_lifecycle;
+use libcnb::{
+    cnb_runtime, BuildContext, DetectContext, DetectOutcome, GenericErrorHandler, GenericPlatform,
+};
 use serde::Deserialize;
 
 use crate::layers::bundler::BundlerLayerLifecycle;
-use crate::layers::ruby;
+
 use crate::layers::ruby::RubyLayerLifecycle;
 
 mod layers;
@@ -18,7 +19,9 @@ fn main() {
     cnb_runtime(detect, build, GenericErrorHandler)
 }
 
-fn detect(context: DetectContext<GenericPlatform, RubyBuildpackMetadata>) -> libcnb::Result<DetectOutcome, anyhow::Error> {
+fn detect(
+    context: DetectContext<GenericPlatform, RubyBuildpackMetadata>,
+) -> libcnb::Result<DetectOutcome, anyhow::Error> {
     let outcome = if context.app_dir.join("Gemfile.lock").exists() {
         DetectOutcome::Pass(BuildPlan::new())
     } else {
@@ -28,7 +31,9 @@ fn detect(context: DetectContext<GenericPlatform, RubyBuildpackMetadata>) -> lib
     Ok(outcome)
 }
 
-fn build(context: BuildContext<GenericPlatform, RubyBuildpackMetadata>) -> libcnb::Result<(), anyhow::Error> {
+fn build(
+    context: BuildContext<GenericPlatform, RubyBuildpackMetadata>,
+) -> libcnb::Result<(), anyhow::Error> {
     println!("---> Ruby Buildpack");
     println!("---> Download and extracting Ruby");
 
@@ -38,7 +43,7 @@ fn build(context: BuildContext<GenericPlatform, RubyBuildpackMetadata>) -> libcn
     install_bundler(&ruby_env)?;
     execute_layer_lifecycle("bundler", BundlerLayerLifecycle { ruby_env }, &context)?;
 
-    write_launch(&context);
+    write_launch(&context)?;
     Ok(())
 }
 
@@ -63,11 +68,21 @@ fn install_bundler(ruby_env: &HashMap<String, String>) -> anyhow::Result<()> {
     }
 }
 
-fn write_launch(context: &BuildContext<GenericPlatform, RubyBuildpackMetadata>) -> anyhow::Result<()> {
+fn write_launch(
+    context: &BuildContext<GenericPlatform, RubyBuildpackMetadata>,
+) -> anyhow::Result<()> {
     let mut launch_toml = data::launch::Launch::new();
-    let web = data::launch::Process::new("web", "bundle", vec!["exec", "ruby", "app.rb"], false)?;
-    let worker =
-        data::launch::Process::new("worker", "bundle", vec!["exec", "ruby", "worker.rb"], false)?;
+    let web =
+        data::launch::Process::new("web", "bundle", vec!["exec", "ruby", "app.rb"], false, true)?;
+
+    let worker = data::launch::Process::new(
+        "worker",
+        "bundle",
+        vec!["exec", "ruby", "worker.rb"],
+        false,
+        false,
+    )?;
+
     launch_toml.processes.push(web);
     launch_toml.processes.push(worker);
 

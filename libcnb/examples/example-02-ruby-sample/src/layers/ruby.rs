@@ -5,32 +5,53 @@ use std::path::Path;
 
 use anyhow::Error;
 use flate2::read::GzDecoder;
-use libcnb::{BuildContext, GenericMetadata, GenericPlatform};
 use libcnb::data::layer_content_metadata::LayerContentMetadata;
 use libcnb::layer_lifecycle::LayerLifecycle;
-use serde::{Deserialize, Serialize};
+use libcnb::{BuildContext, GenericMetadata, GenericPlatform};
+
+use std::env;
 use tar::Archive;
 use tempfile::NamedTempFile;
-use std::env;
 
 use crate::RubyBuildpackMetadata;
 
 pub struct RubyLayerLifecycle;
 
-impl LayerLifecycle<GenericPlatform, RubyBuildpackMetadata, GenericMetadata, HashMap<String, String>, anyhow::Error> for RubyLayerLifecycle {
-    fn create(&self, layer_path: &Path, build_context: &BuildContext<GenericPlatform, RubyBuildpackMetadata>) -> Result<LayerContentMetadata<GenericMetadata>, anyhow::Error> {
+impl
+    LayerLifecycle<
+        GenericPlatform,
+        RubyBuildpackMetadata,
+        GenericMetadata,
+        HashMap<String, String>,
+        anyhow::Error,
+    > for RubyLayerLifecycle
+{
+    fn create(
+        &self,
+        layer_path: &Path,
+        build_context: &BuildContext<GenericPlatform, RubyBuildpackMetadata>,
+    ) -> Result<LayerContentMetadata<GenericMetadata>, anyhow::Error> {
         let ruby_tgz = NamedTempFile::new()?;
-        download(&build_context.buildpack_descriptor.metadata.ruby_url, ruby_tgz.path())?;
+        download(
+            &build_context.buildpack_descriptor.metadata.ruby_url,
+            ruby_tgz.path(),
+        )?;
         untar(ruby_tgz.path(), &layer_path)?;
 
-        Ok(LayerContentMetadata::default().launch(true))
+        Ok(LayerContentMetadata::default()
+            .metadata(GenericMetadata::default())
+            .launch(true))
     }
 
-    fn layer_lifecycle_data(&self, layer_path: &Path, layer_content_metadata: LayerContentMetadata<GenericMetadata>) -> Result<HashMap<String, String>, Error> {
+    fn layer_lifecycle_data(
+        &self,
+        layer_path: &Path,
+        _layer_content_metadata: LayerContentMetadata<GenericMetadata>,
+    ) -> Result<HashMap<String, String>, Error> {
         let mut ruby_env: HashMap<String, String> = HashMap::new();
         let ruby_bin_path = format!(
             "{}/.gem/ruby/2.6.6/bin",
-            env::var("HOME").unwrap_or(String::new())
+            env::var("HOME").unwrap_or_default()
         );
 
         ruby_env.insert(
@@ -39,7 +60,7 @@ impl LayerLifecycle<GenericPlatform, RubyBuildpackMetadata, GenericMetadata, Has
                 "{}:{}:{}",
                 layer_path.join("bin").as_path().to_str().unwrap(),
                 ruby_bin_path,
-                env::var("PATH").unwrap_or(String::new()),
+                env::var("PATH").unwrap_or_default(),
             ),
         );
 
@@ -47,12 +68,8 @@ impl LayerLifecycle<GenericPlatform, RubyBuildpackMetadata, GenericMetadata, Has
             String::from("LD_LIBRARY_PATH"),
             format!(
                 "{}:{}",
-                env::var("LD_LIBRARY_PATH").unwrap_or(String::new()),
-                layer_path
-                    .join("layer")
-                    .as_path()
-                    .to_str()
-                    .unwrap()
+                env::var("LD_LIBRARY_PATH").unwrap_or_default(),
+                layer_path.join("layer").as_path().to_str().unwrap()
             ),
         );
 

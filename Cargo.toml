@@ -1,5 +1,7 @@
 [workspace]
 members = [
     "libcnb",
-    "libcnb-data"
+    "libcnb-data",
+    "libcnb/examples/example-01-basics",
+    "libcnb/examples/example-02-ruby-sample"
 ]
