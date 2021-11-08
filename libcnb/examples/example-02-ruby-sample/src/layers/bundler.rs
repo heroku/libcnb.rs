@@ -23,7 +23,7 @@ pub struct BundlerLayerMetadata {
 }
 
 impl LayerLifecycle<GenericPlatform, RubyBuildpackMetadata, BundlerLayerMetadata, Option<()>, anyhow::Error> for BundlerLayerLifecycle {
-    fn validate(&self, layer_path: &Path, layer_content_metadata: &LayerContentMetadata<BundlerLayerMetadata>, build_context: &BuildContext<GenericPlatform, RubyBuildpackMetadata>) -> ValidateResult {
+    fn validate(&self, _layer_path: &Path, layer_content_metadata: &LayerContentMetadata<BundlerLayerMetadata>, build_context: &BuildContext<GenericPlatform, RubyBuildpackMetadata>) -> ValidateResult {
         let checksum_matches = sha256_checksum(build_context.app_dir.join("Gemfile.lock"))
             .map(|local_checksum| local_checksum == layer_content_metadata.metadata.checksum)
             .unwrap_or(false);
@@ -35,7 +35,7 @@ impl LayerLifecycle<GenericPlatform, RubyBuildpackMetadata, BundlerLayerMetadata
         }
     }
 
-    fn update(&self, layer_path: &Path, layer_content_metadata: LayerContentMetadata<BundlerLayerMetadata>, build_context: &BuildContext<GenericPlatform, RubyBuildpackMetadata>) -> Result<LayerContentMetadata<BundlerLayerMetadata>, Error> {
+    fn update(&self, layer_path: &Path, layer_content_metadata: LayerContentMetadata<BundlerLayerMetadata>, _build_context: &BuildContext<GenericPlatform, RubyBuildpackMetadata>) -> Result<LayerContentMetadata<BundlerLayerMetadata>, Error> {
         println!("---> Reusing gems");
         Command::new("bundle")
             .args(&[

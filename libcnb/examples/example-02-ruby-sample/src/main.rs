@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::process::{Command, Stdio};
 
-use anyhow::Error;
+
 use libcnb::data;
 use libcnb::data::build_plan::BuildPlan;
 use libcnb::layer_lifecycle::execute_layer_lifecycle;
@@ -11,7 +11,7 @@ use libcnb::{
 use serde::Deserialize;
 
 use crate::layers::bundler::BundlerLayerLifecycle;
-use crate::layers::ruby;
+
 use crate::layers::ruby::RubyLayerLifecycle;
 
 mod layers;

@@ -8,7 +8,7 @@ use flate2::read::GzDecoder;
 use libcnb::data::layer_content_metadata::LayerContentMetadata;
 use libcnb::layer_lifecycle::LayerLifecycle;
 use libcnb::{BuildContext, GenericMetadata, GenericPlatform};
-use serde::{Deserialize, Serialize};
+
 use std::env;
 use tar::Archive;
 use tempfile::NamedTempFile;
@@ -46,7 +46,7 @@ impl
     fn layer_lifecycle_data(
         &self,
         layer_path: &Path,
-        layer_content_metadata: LayerContentMetadata<GenericMetadata>,
+        _layer_content_metadata: LayerContentMetadata<GenericMetadata>,
     ) -> Result<HashMap<String, String>, Error> {
         let mut ruby_env: HashMap<String, String> = HashMap::new();
         let ruby_bin_path = format!(
