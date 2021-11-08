@@ -49,7 +49,7 @@ impl PlatformEnv {
     pub fn var<K: AsRef<OsStr>>(&self, key: K) -> Result<String, VarError> {
         self.vars
             .get(key.as_ref())
-            .map(|s| s.to_owned())
+            .map(|s| s.clone())
             .ok_or(VarError::NotPresent)
     }
 
