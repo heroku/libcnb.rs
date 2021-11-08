@@ -3,11 +3,6 @@ use crate::layer_lifecycle::LayerLifecycleError;
 use crate::toml_file::TomlFileError;
 use std::fmt::{Debug, Display};
 
-/// Handles top-level buildpack errors.
-pub trait ErrorHandler<E: Debug + Display> {
-    fn handle_error(&self, error: Error<E>) -> i32;
-}
-
 /// A specialized Result type for libcnb.
 ///
 /// This type is broadly used across libcnb for any operation which may produce an error.
