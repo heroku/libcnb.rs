@@ -51,7 +51,7 @@ impl
         let mut ruby_env: HashMap<String, String> = HashMap::new();
         let ruby_bin_path = format!(
             "{}/.gem/ruby/2.6.6/bin",
-            env::var("HOME").unwrap_or(String::new())
+            env::var("HOME").unwrap_or_default()
         );
 
         ruby_env.insert(
@@ -60,7 +60,7 @@ impl
                 "{}:{}:{}",
                 layer_path.join("bin").as_path().to_str().unwrap(),
                 ruby_bin_path,
-                env::var("PATH").unwrap_or(String::new()),
+                env::var("PATH").unwrap_or_default(),
             ),
         );
 
@@ -68,7 +68,7 @@ impl
             String::from("LD_LIBRARY_PATH"),
             format!(
                 "{}:{}",
-                env::var("LD_LIBRARY_PATH").unwrap_or(String::new()),
+                env::var("LD_LIBRARY_PATH").unwrap_or_default(),
                 layer_path.join("layer").as_path().to_str().unwrap()
             ),
         );
