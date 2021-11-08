@@ -43,7 +43,7 @@ fn build(
     install_bundler(&ruby_env)?;
     execute_layer_lifecycle("bundler", BundlerLayerLifecycle { ruby_env }, &context)?;
 
-    write_launch(&context);
+    write_launch(&context)?;
     Ok(())
 }
 
