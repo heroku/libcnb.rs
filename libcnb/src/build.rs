@@ -3,27 +3,27 @@ use std::{fs, path::PathBuf};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
+use crate::buildpack::Buildpack;
 use crate::{
     data::{
         buildpack::BuildpackToml, buildpack_plan::BuildpackPlan, launch::Launch,
         layer_content_metadata::LayerContentMetadata,
     },
-    platform::Platform,
     toml_file::{read_toml_file, write_toml_file, TomlFileError},
 };
 
 /// Context for a buildpack's build phase execution.
-pub struct BuildContext<P: Platform, BM> {
+pub struct BuildContext<B: Buildpack + ?Sized> {
     pub layers_dir: PathBuf,
     pub app_dir: PathBuf,
     pub buildpack_dir: PathBuf,
     pub stack_id: String,
-    pub platform: P,
+    pub platform: B::Platform,
     pub buildpack_plan: BuildpackPlan,
-    pub buildpack_descriptor: BuildpackToml<BM>,
+    pub buildpack_descriptor: BuildpackToml<B::Metadata>,
 }
 
-impl<P: Platform, BM> BuildContext<P, BM> {
+impl<B: Buildpack> BuildContext<B> {
     pub fn layer_path(&self, layer_name: impl AsRef<str>) -> PathBuf {
         self.layers_dir.join(layer_name.as_ref())
     }

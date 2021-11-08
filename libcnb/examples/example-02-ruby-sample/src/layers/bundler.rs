@@ -3,15 +3,14 @@ use std::fs;
 use std::path::Path;
 use std::process::Command;
 
-use anyhow::Error;
 use libcnb::data::layer_content_metadata::LayerContentMetadata;
 use libcnb::layer_lifecycle::{LayerLifecycle, ValidateResult};
-use libcnb::{BuildContext, GenericPlatform};
+use libcnb::BuildContext;
 use serde::Deserialize;
 use serde::Serialize;
 use sha2::Digest;
 
-use crate::RubyBuildpackMetadata;
+use crate::RubyBuildpack;
 
 pub struct BundlerLayerLifecycle {
     pub ruby_env: HashMap<String, String>,
@@ -22,64 +21,14 @@ pub struct BundlerLayerMetadata {
     checksum: String,
 }
 
-impl
-    LayerLifecycle<
-        GenericPlatform,
-        RubyBuildpackMetadata,
-        BundlerLayerMetadata,
-        Option<()>,
-        anyhow::Error,
-    > for BundlerLayerLifecycle
+impl LayerLifecycle<RubyBuildpack, BundlerLayerMetadata, HashMap<String, String>>
+    for BundlerLayerLifecycle
 {
-    fn validate(
-        &self,
-        _layer_path: &Path,
-        layer_content_metadata: &LayerContentMetadata<BundlerLayerMetadata>,
-        build_context: &BuildContext<GenericPlatform, RubyBuildpackMetadata>,
-    ) -> ValidateResult {
-        let checksum_matches = sha256_checksum(build_context.app_dir.join("Gemfile.lock"))
-            .map(|local_checksum| local_checksum == layer_content_metadata.metadata.checksum)
-            .unwrap_or(false);
-
-        if checksum_matches {
-            ValidateResult::KeepLayer
-        } else {
-            ValidateResult::UpdateLayer
-        }
-    }
-
-    fn update(
-        &self,
-        layer_path: &Path,
-        layer_content_metadata: LayerContentMetadata<BundlerLayerMetadata>,
-        _build_context: &BuildContext<GenericPlatform, RubyBuildpackMetadata>,
-    ) -> Result<LayerContentMetadata<BundlerLayerMetadata>, Error> {
-        println!("---> Reusing gems");
-        Command::new("bundle")
-            .args(&["config", "--local", "path", layer_path.to_str().unwrap()])
-            .envs(&self.ruby_env)
-            .spawn()?
-            .wait()?;
-
-        Command::new("bundle")
-            .args(&[
-                "config",
-                "--local",
-                "bin",
-                layer_path.join("bin").as_path().to_str().unwrap(),
-            ])
-            .envs(&self.ruby_env)
-            .spawn()?
-            .wait()?;
-
-        Ok(layer_content_metadata)
-    }
-
     fn create(
         &self,
         layer_path: &Path,
-        build_context: &BuildContext<GenericPlatform, RubyBuildpackMetadata>,
-    ) -> Result<LayerContentMetadata<BundlerLayerMetadata>, Error> {
+        build_context: &BuildContext<RubyBuildpack>,
+    ) -> anyhow::Result<LayerContentMetadata<BundlerLayerMetadata>> {
         println!("---> Installing gems");
 
         let cmd = Command::new("bundle")
@@ -103,6 +52,50 @@ impl
             .metadata(BundlerLayerMetadata {
                 checksum: sha256_checksum(build_context.app_dir.join("Gemfile.lock"))?,
             }))
+    }
+
+    fn validate(
+        &self,
+        _layer_path: &Path,
+        layer_content_metadata: &LayerContentMetadata<BundlerLayerMetadata>,
+        build_context: &BuildContext<RubyBuildpack>,
+    ) -> ValidateResult {
+        let checksum_matches = sha256_checksum(build_context.app_dir.join("Gemfile.lock"))
+            .map(|local_checksum| local_checksum == layer_content_metadata.metadata.checksum)
+            .unwrap_or(false);
+
+        if checksum_matches {
+            ValidateResult::KeepLayer
+        } else {
+            ValidateResult::UpdateLayer
+        }
+    }
+
+    fn update(
+        &self,
+        layer_path: &Path,
+        layer_content_metadata: LayerContentMetadata<BundlerLayerMetadata>,
+        _build_context: &BuildContext<RubyBuildpack>,
+    ) -> anyhow::Result<LayerContentMetadata<BundlerLayerMetadata>> {
+        println!("---> Reusing gems");
+        Command::new("bundle")
+            .args(&["config", "--local", "path", layer_path.to_str().unwrap()])
+            .envs(&self.ruby_env)
+            .spawn()?
+            .wait()?;
+
+        Command::new("bundle")
+            .args(&[
+                "config",
+                "--local",
+                "bin",
+                layer_path.join("bin").as_path().to_str().unwrap(),
+            ])
+            .envs(&self.ruby_env)
+            .spawn()?
+            .wait()?;
+
+        Ok(layer_content_metadata)
     }
 }
 

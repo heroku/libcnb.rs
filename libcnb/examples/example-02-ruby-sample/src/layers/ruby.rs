@@ -3,39 +3,33 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
-use anyhow::Error;
 use flate2::read::GzDecoder;
 use libcnb::data::layer_content_metadata::LayerContentMetadata;
 use libcnb::layer_lifecycle::LayerLifecycle;
-use libcnb::{BuildContext, GenericMetadata, GenericPlatform};
+use libcnb::{BuildContext, GenericMetadata};
 
 use std::env;
 use tar::Archive;
 use tempfile::NamedTempFile;
 
-use crate::RubyBuildpackMetadata;
+use crate::RubyBuildpack;
 
 pub struct RubyLayerLifecycle;
 
-impl
-    LayerLifecycle<
-        GenericPlatform,
-        RubyBuildpackMetadata,
-        GenericMetadata,
-        HashMap<String, String>,
-        anyhow::Error,
-    > for RubyLayerLifecycle
+impl LayerLifecycle<RubyBuildpack, GenericMetadata, HashMap<String, String>>
+    for RubyLayerLifecycle
 {
     fn create(
         &self,
         layer_path: &Path,
-        build_context: &BuildContext<GenericPlatform, RubyBuildpackMetadata>,
-    ) -> Result<LayerContentMetadata<GenericMetadata>, anyhow::Error> {
+        build_context: &BuildContext<RubyBuildpack>,
+    ) -> anyhow::Result<LayerContentMetadata<GenericMetadata>> {
         let ruby_tgz = NamedTempFile::new()?;
         download(
             &build_context.buildpack_descriptor.metadata.ruby_url,
             ruby_tgz.path(),
         )?;
+
         untar(ruby_tgz.path(), &layer_path)?;
 
         Ok(LayerContentMetadata::default()
@@ -47,7 +41,7 @@ impl
         &self,
         layer_path: &Path,
         _layer_content_metadata: LayerContentMetadata<GenericMetadata>,
-    ) -> Result<HashMap<String, String>, Error> {
+    ) -> anyhow::Result<HashMap<String, String>> {
         let mut ruby_env: HashMap<String, String> = HashMap::new();
         let ruby_bin_path = format!(
             "{}/.gem/ruby/2.6.6/bin",
