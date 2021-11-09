@@ -72,10 +72,10 @@ impl LayerLifecycle<RubyBuildpack, GenericMetadata, HashMap<String, String>>
 }
 
 fn download(uri: impl AsRef<str>, dst: impl AsRef<Path>) -> anyhow::Result<()> {
-    let response = reqwest::blocking::get(uri.as_ref())?;
-    let mut content = io::Cursor::new(response.bytes()?);
+    let response = ureq::get(uri.as_ref()).call()?;
+    let mut reader = response.into_reader();
     let mut file = fs::File::create(dst.as_ref())?;
-    io::copy(&mut content, &mut file)?;
+    io::copy(&mut reader, &mut file)?;
 
     Ok(())
 }
