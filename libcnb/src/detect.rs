@@ -13,52 +13,52 @@ pub struct DetectContext<B: Buildpack + ?Sized> {
     pub buildpack_descriptor: BuildpackToml<B::Metadata>,
 }
 
-/// Describes the outcome of the detect phase.
+/// Describes the result of the detect phase.
 ///
 /// Besides indicating passing or failing detection, it also contains detect phase output such as
-/// the build plan. To construct values of this type, use a [`DetectOutcomeBuilder`].
+/// the build plan. To construct values of this type, use a [`DetectResultBuilder`].
 #[derive(Debug)]
-pub struct DetectOutcome(pub(crate) InnerDetectOutcome);
+pub struct DetectResult(pub(crate) InnerDetectResult);
 
 #[derive(Debug)]
-pub(crate) enum InnerDetectOutcome {
+pub(crate) enum InnerDetectResult {
     Fail,
     Pass { build_plan: Option<BuildPlan> },
 }
 
-/// Constructs [`DetectOutcome`] values.
+/// Constructs [`DetectResult`] values.
 ///
 /// # Examples:
 /// ```
-/// use libcnb::detect::DetectOutcomeBuilder;
+/// use libcnb::detect::DetectResultBuilder;
 /// use libcnb_data::build_plan::{BuildPlan, BuildPlanBuilder};
 ///
-/// let simple_pass = DetectOutcomeBuilder::pass().build();
-/// let simple_fail = DetectOutcomeBuilder::fail().build();
+/// let simple_pass = DetectResultBuilder::pass().build();
+/// let simple_fail = DetectResultBuilder::fail().build();
 ///
-/// let with_build_plan = DetectOutcomeBuilder::pass()
+/// let with_build_plan = DetectResultBuilder::pass()
 ///    .build_plan(BuildPlanBuilder::new().provides("something").build())
 ///    .build();
 /// ```
-pub struct DetectOutcomeBuilder;
+pub struct DetectResultBuilder;
 
-impl DetectOutcomeBuilder {
-    pub fn pass() -> PassDetectOutcomeBuilder {
-        PassDetectOutcomeBuilder { build_plan: None }
+impl DetectResultBuilder {
+    pub fn pass() -> PassDetectResultBuilder {
+        PassDetectResultBuilder { build_plan: None }
     }
 
-    pub fn fail() -> FailDetectOutcomeBuilder {
-        FailDetectOutcomeBuilder {}
+    pub fn fail() -> FailDetectResultBuilder {
+        FailDetectResultBuilder {}
     }
 }
 
-pub struct PassDetectOutcomeBuilder {
+pub struct PassDetectResultBuilder {
     build_plan: Option<BuildPlan>,
 }
 
-impl PassDetectOutcomeBuilder {
-    pub fn build(self) -> DetectOutcome {
-        DetectOutcome(InnerDetectOutcome::Pass {
+impl PassDetectResultBuilder {
+    pub fn build(self) -> DetectResult {
+        DetectResult(InnerDetectResult::Pass {
             build_plan: self.build_plan,
         })
     }
@@ -69,11 +69,11 @@ impl PassDetectOutcomeBuilder {
     }
 }
 
-pub struct FailDetectOutcomeBuilder;
+pub struct FailDetectResultBuilder;
 
-impl FailDetectOutcomeBuilder {
+impl FailDetectResultBuilder {
     #[allow(clippy::unused_self)]
-    pub fn build(self) -> DetectOutcome {
-        DetectOutcome(InnerDetectOutcome::Fail)
+    pub fn build(self) -> DetectResult {
+        DetectResult(InnerDetectResult::Fail)
     }
 }

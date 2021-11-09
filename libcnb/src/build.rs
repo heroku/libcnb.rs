@@ -24,45 +24,45 @@ pub struct BuildContext<B: Buildpack + ?Sized> {
     pub buildpack_descriptor: BuildpackToml<B::Metadata>,
 }
 
-/// Describes the outcome of the build phase.
+/// Describes the result of the build phase.
 ///
-/// In contrast to `DetectOutcome`, it always signals a successful build. To fail the build phase,
-/// return a failed result from the build function.
+/// In contrast to `DetectResult`, it always signals a successful build. To fail the build phase,
+/// return a failed [`libcnb::Result`] from the build function.
 ///
 /// It contains build phase output such as launch and/or store metadata which will be subsequently
 /// handled by libcnb.
 ///
-/// To construct values of this type, use a [`BuildOutcomeBuilder`].
+/// To construct values of this type, use a [`BuildResultBuilder`].
 #[derive(Debug)]
-pub struct BuildOutcome(pub(crate) InnerBuildOutcome);
+pub struct BuildResult(pub(crate) InnerBuildResult);
 
 #[derive(Debug)]
-pub(crate) enum InnerBuildOutcome {
+pub(crate) enum InnerBuildResult {
     Pass {
         launch: Option<Launch>,
         store: Option<Store>,
     },
 }
 
-/// Constructs [`BuildOutcome`] values.
+/// Constructs [`BuildResult`] values.
 ///
 /// # Examples:
 /// ```
-/// use libcnb::build::BuildOutcomeBuilder;
+/// use libcnb::build::BuildResultBuilder;
 /// use libcnb_data::launch::{Launch, Process};
 ///
-/// let simple = BuildOutcomeBuilder::new().build();
+/// let simple = BuildResultBuilder::new().build();
 ///
-/// let with_launch = BuildOutcomeBuilder::new()
+/// let with_launch = BuildResultBuilder::new()
 ///    .launch(Launch::new().process(Process::new("type", "command", vec!["-v"], false, false).unwrap()))
 ///    .build();
 /// ```
-pub struct BuildOutcomeBuilder {
+pub struct BuildResultBuilder {
     launch: Option<Launch>,
     store: Option<Store>,
 }
 
-impl BuildOutcomeBuilder {
+impl BuildResultBuilder {
     pub fn new() -> Self {
         Self {
             launch: None,
@@ -71,9 +71,9 @@ impl BuildOutcomeBuilder {
     }
 }
 
-impl BuildOutcomeBuilder {
-    pub fn build(self) -> BuildOutcome {
-        BuildOutcome(InnerBuildOutcome::Pass {
+impl BuildResultBuilder {
+    pub fn build(self) -> BuildResult {
+        BuildResult(InnerBuildResult::Pass {
             launch: self.launch,
             store: self.store,
         })
@@ -90,7 +90,7 @@ impl BuildOutcomeBuilder {
     }
 }
 
-impl Default for BuildOutcomeBuilder {
+impl Default for BuildResultBuilder {
     fn default() -> Self {
         Self::new()
     }

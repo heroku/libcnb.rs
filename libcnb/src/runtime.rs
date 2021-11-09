@@ -6,10 +6,10 @@ use std::process::exit;
 
 use serde::de::DeserializeOwned;
 
-use crate::build::{BuildContext, InnerBuildOutcome};
+use crate::build::{BuildContext, InnerBuildResult};
 use crate::buildpack::Buildpack;
 use crate::data::buildpack::BuildpackToml;
-use crate::detect::{DetectContext, InnerDetectOutcome};
+use crate::detect::{DetectContext, InnerDetectResult};
 use crate::error::Error;
 use crate::platform::Platform;
 use crate::toml_file::{read_toml_file, write_toml_file};
@@ -99,8 +99,8 @@ fn cnb_runtime_detect<B: Buildpack>(buildpack: &B) -> Result<(), B::Error> {
     };
 
     match buildpack.detect(detect_context)?.0 {
-        InnerDetectOutcome::Fail => process::exit(100),
-        InnerDetectOutcome::Pass { build_plan } => {
+        InnerDetectResult::Fail => process::exit(100),
+        InnerDetectResult::Pass { build_plan } => {
             if let Some(build_plan) = build_plan {
                 write_toml_file(&build_plan, build_plan_path)
                     .map_err(Error::CannotWriteBuildPlan)?;
@@ -126,7 +126,7 @@ fn cnb_runtime_build<B: Buildpack>(buildpack: &B) -> Result<(), B::Error> {
     let buildpack_plan =
         read_toml_file(&args.buildpack_plan_path).map_err(Error::CannotReadBuildpackPlan)?;
 
-    let build_outcome = buildpack.build(BuildContext {
+    let build_result = buildpack.build(BuildContext {
         layers_dir: layers_dir.clone(),
         app_dir,
         stack_id,
@@ -136,8 +136,8 @@ fn cnb_runtime_build<B: Buildpack>(buildpack: &B) -> Result<(), B::Error> {
         buildpack_descriptor: read_buildpack_toml()?,
     })?;
 
-    match build_outcome.0 {
-        InnerBuildOutcome::Pass { launch, store } => {
+    match build_result.0 {
+        InnerBuildResult::Pass { launch, store } => {
             if let Some(launch) = launch {
                 write_toml_file(&launch, layers_dir.join("launch.toml"))
                     .map_err(Error::CannotWriteLaunch)?;

@@ -3,9 +3,9 @@ use std::process::{Command, Stdio};
 
 use crate::layers::bundler::BundlerLayerLifecycle;
 use crate::layers::ruby::RubyLayerLifecycle;
-use libcnb::build::{BuildContext, BuildOutcome, BuildOutcomeBuilder};
+use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
 use libcnb::data::launch::{Launch, Process};
-use libcnb::detect::{DetectContext, DetectOutcome, DetectOutcomeBuilder};
+use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::layer_lifecycle::execute_layer_lifecycle;
 use libcnb::Buildpack;
 use libcnb::{cnb_runtime, GenericPlatform};
@@ -19,17 +19,17 @@ impl Buildpack for RubyBuildpack {
     type Metadata = RubyBuildpackMetadata;
     type Error = anyhow::Error;
 
-    fn detect(&self, context: DetectContext<Self>) -> libcnb::Result<DetectOutcome, Self::Error> {
-        let outcome = if context.app_dir.join("Gemfile.lock").exists() {
-            DetectOutcomeBuilder::pass().build()
+    fn detect(&self, context: DetectContext<Self>) -> libcnb::Result<DetectResult, Self::Error> {
+        let result = if context.app_dir.join("Gemfile.lock").exists() {
+            DetectResultBuilder::pass().build()
         } else {
-            DetectOutcomeBuilder::fail().build()
+            DetectResultBuilder::fail().build()
         };
 
-        Ok(outcome)
+        Ok(result)
     }
 
-    fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildOutcome, Self::Error> {
+    fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildResult, Self::Error> {
         println!("---> Ruby Buildpack");
         println!("---> Download and extracting Ruby");
 
@@ -39,7 +39,7 @@ impl Buildpack for RubyBuildpack {
         install_bundler(&ruby_env)?;
         execute_layer_lifecycle("bundler", BundlerLayerLifecycle { ruby_env }, &context)?;
 
-        Ok(BuildOutcomeBuilder::new()
+        Ok(BuildResultBuilder::new()
             .launch(
                 Launch::new()
                     .process(Process::new(

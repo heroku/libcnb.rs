@@ -35,8 +35,8 @@ can be used without the framework to implement Cloud Native Buildpacks tooling i
 A basic hello world buildpack looks like this:
 
 ```rust,no_run
-use libcnb::build::{BuildContext, BuildOutcome, BuildOutcomeBuilder};
-use libcnb::detect::{DetectContext, DetectOutcome, DetectOutcomeBuilder};
+use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
+use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::{
     cnb_runtime, data::build_plan::BuildPlan, Buildpack, GenericError, GenericMetadata,
     GenericPlatform,
@@ -67,18 +67,18 @@ impl Buildpack for HelloWorldBuildpack {
     // the stack this buildpack is currently executed on, the app directory and similar things. When using libcnb.rs,
     // you never have to read environment variables or read/write files to disk to interact with the CNB lifecycle.
     //
-    // One example of this is the return type of this method. DetectOutcome encapsulates the required exit code as well
+    // One example of this is the return type of this method. DetectResult encapsulates the required exit code as well
     // as the data written to the build plan. libcnb.rs will, according to the returned value, handle both writing the
     // build plan and exiting with the correct status code for you.
-    fn detect(&self, context: DetectContext<Self>) -> libcnb::Result<DetectOutcome, Self::Error> {
-        Ok(DetectOutcomeBuilder::pass().build())
+    fn detect(&self, context: DetectContext<Self>) -> libcnb::Result<DetectResult, Self::Error> {
+        Ok(DetectResultBuilder::pass().build())
     }
 
     // Similar to detect, this method will be called when the CNB lifecycle executes the build phase.
-    fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildOutcome, Self::Error> {
+    fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildResult, Self::Error> {
         println!("Hello World!");
         println!("Build runs on stack {}!", context.stack_id);
-        Ok(BuildOutcomeBuilder::new().build())
+        Ok(BuildResultBuilder::new().build())
     }
 }
 
