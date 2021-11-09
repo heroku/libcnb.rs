@@ -4,10 +4,14 @@ use std::process::{Command, Stdio};
 use crate::layers::bundler::BundlerLayerLifecycle;
 use crate::layers::ruby::RubyLayerLifecycle;
 use libcnb::data::build_plan::BuildPlan;
+use libcnb::data::launch::{Launch, Process};
 use libcnb::layer_lifecycle::execute_layer_lifecycle;
-use libcnb::{cnb_runtime, BuildContext, DetectContext, DetectOutcome, GenericPlatform};
-use libcnb::{data, Buildpack};
+use libcnb::Buildpack;
+use libcnb::{
+    cnb_runtime, BuildContext, BuildOutcome, DetectContext, DetectOutcome, GenericPlatform,
+};
 use serde::Deserialize;
+
 mod layers;
 
 struct RubyBuildpack;
@@ -26,7 +30,7 @@ impl Buildpack for RubyBuildpack {
         Ok(outcome)
     }
 
-    fn build(&self, context: BuildContext<Self>) -> libcnb::Result<(), Self::Error> {
+    fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildOutcome, Self::Error> {
         println!("---> Ruby Buildpack");
         println!("---> Download and extracting Ruby");
 
@@ -36,8 +40,25 @@ impl Buildpack for RubyBuildpack {
         install_bundler(&ruby_env)?;
         execute_layer_lifecycle("bundler", BundlerLayerLifecycle { ruby_env }, &context)?;
 
-        write_launch(&context)?;
-        Ok(())
+        BuildOutcome::success().launch(
+            Launch::new()
+                .process(Process::new(
+                    "web",
+                    "bundle",
+                    vec!["exec", "ruby", "app.rb"],
+                    false,
+                    true,
+                )?)
+                .process(Process::new(
+                    "worker",
+                    "bundle",
+                    vec!["exec", "ruby", "worker.rb"],
+                    false,
+                    false,
+                )?),
+        );
+
+        Ok(BuildOutcome::success())
     }
 }
 
@@ -64,24 +85,4 @@ fn install_bundler(ruby_env: &HashMap<String, String>) -> anyhow::Result<()> {
     } else {
         Err(anyhow::anyhow!("Could not install bundler"))
     }
-}
-
-fn write_launch<B: Buildpack>(context: &BuildContext<B>) -> anyhow::Result<()> {
-    let mut launch_toml = data::launch::Launch::new();
-    let web =
-        data::launch::Process::new("web", "bundle", vec!["exec", "ruby", "app.rb"], false, true)?;
-
-    let worker = data::launch::Process::new(
-        "worker",
-        "bundle",
-        vec!["exec", "ruby", "worker.rb"],
-        false,
-        false,
-    )?;
-
-    launch_toml.processes.push(web);
-    launch_toml.processes.push(worker);
-
-    context.write_launch(launch_toml)?;
-    Ok(())
 }

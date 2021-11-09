@@ -1,6 +1,6 @@
 use libcnb::data::build_plan::BuildPlan;
 use libcnb::{
-    cnb_runtime, BuildContext, Buildpack, DetectContext, DetectOutcome, GenericError,
+    cnb_runtime, BuildContext, BuildOutcome, Buildpack, DetectContext, DetectOutcome, GenericError,
     GenericMetadata, GenericPlatform,
 };
 
@@ -14,9 +14,9 @@ impl Buildpack for BasicBuildpack {
         Ok(DetectOutcome::Pass(BuildPlan::new()))
     }
 
-    fn build(&self, context: BuildContext<Self>) -> libcnb::Result<(), Self::Error> {
+    fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildOutcome, Self::Error> {
         println!("Build runs on stack {}!", context.stack_id);
-        Ok(())
+        Ok(BuildOutcome::success())
     }
 }
 

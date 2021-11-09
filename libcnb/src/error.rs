@@ -38,6 +38,12 @@ pub enum Error<E: Debug + Display> {
     #[error("Cannot write build plan: {0}")]
     CannotWriteBuildPlan(TomlFileError),
 
+    #[error("Cannot write launch.toml: {0}")]
+    CannotWriteLaunch(TomlFileError),
+
+    #[error("Cannot write store.toml: {0}")]
+    CannotWriteStore(TomlFileError),
+
     #[error("Buildpack error: {0}")]
     BuildpackError(E),
 }

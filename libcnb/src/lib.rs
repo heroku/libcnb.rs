@@ -33,6 +33,7 @@ pub mod layer_lifecycle;
 
 use crate::data::buildpack::BuildpackApi;
 pub use build::BuildContext;
+pub use build::BuildOutcome;
 pub use buildpack::Buildpack;
 pub use detect::DetectContext;
 pub use detect::DetectOutcome;

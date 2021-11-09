@@ -4,6 +4,7 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 use crate::buildpack::Buildpack;
+use crate::data::store::Store;
 use crate::{
     data::{
         buildpack::BuildpackToml, buildpack_plan::BuildpackPlan, launch::Launch,
@@ -21,6 +22,30 @@ pub struct BuildContext<B: Buildpack + ?Sized> {
     pub platform: B::Platform,
     pub buildpack_plan: BuildpackPlan,
     pub buildpack_descriptor: BuildpackToml<B::Metadata>,
+}
+
+pub struct BuildOutcome {
+    pub(crate) launch: Option<Launch>,
+    pub(crate) store: Option<Store>,
+}
+
+impl BuildOutcome {
+    pub fn success() -> Self {
+        BuildOutcome {
+            launch: None,
+            store: None,
+        }
+    }
+
+    pub fn launch(mut self, launch: Launch) -> Self {
+        self.launch = Some(launch);
+        self
+    }
+
+    pub fn store(mut self, store: Store) -> Self {
+        self.store = Some(store);
+        self
+    }
 }
 
 impl<B: Buildpack> BuildContext<B> {
@@ -102,9 +127,5 @@ impl<B: Buildpack> BuildContext<B> {
         let layer_path = self.layer_path(&layer_name);
         let content_metadata_path = self.layer_content_metadata_path(&layer_name);
         layer_path.exists() && content_metadata_path.exists()
-    }
-
-    pub fn write_launch(&self, data: Launch) -> Result<(), TomlFileError> {
-        write_toml_file(&data, self.layers_dir.join("launch.toml"))
     }
 }

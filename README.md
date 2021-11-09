@@ -36,7 +36,7 @@ A basic hello world buildpack looks like this:
 
 ```rust,no_run
 use libcnb::{
-    cnb_runtime, data::build_plan::BuildPlan, BuildContext, Buildpack, DetectContext,
+    cnb_runtime, data::build_plan::BuildPlan, BuildContext, BuildOutcome, Buildpack, DetectContext,
     DetectOutcome, GenericError, GenericMetadata, GenericPlatform,
 };
 
@@ -73,10 +73,10 @@ impl Buildpack for HelloWorldBuildpack {
     }
 
     // Similar to detect, this method will be called when the CNB lifecycle executes the build phase.
-    fn build(&self, context: BuildContext<Self>) -> libcnb::Result<(), Self::Error> {
+    fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildOutcome, Self::Error> {
         println!("Hello World!");
         println!("Build runs on stack {}!", context.stack_id);
-        Ok(())
+        Ok(BuildOutcome::success())
     }
 }
 

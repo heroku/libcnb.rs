@@ -122,17 +122,26 @@ fn cnb_runtime_build<B: Buildpack>(buildpack: &B) -> Result<(), B::Error> {
     let buildpack_plan =
         read_toml_file(&args.buildpack_plan_path).map_err(Error::CannotReadBuildpackPlan)?;
 
-    let context = BuildContext {
-        layers_dir,
+    let build_outcome = buildpack.build(BuildContext {
+        layers_dir: layers_dir.clone(),
         app_dir,
         stack_id,
         platform,
         buildpack_plan,
         buildpack_dir: read_buildpack_dir()?,
         buildpack_descriptor: read_buildpack_toml()?,
+    })?;
+
+    if let Some(launch) = build_outcome.launch {
+        write_toml_file(&launch, layers_dir.join("launch.toml"))
+            .map_err(Error::CannotWriteLaunch)?;
     };
 
-    buildpack.build(context)
+    if let Some(store) = build_outcome.store {
+        write_toml_file(&store, layers_dir.join("store.toml")).map_err(Error::CannotWriteStore)?;
+    };
+
+    Ok(())
 }
 
 struct DetectArgs {
