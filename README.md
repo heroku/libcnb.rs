@@ -34,7 +34,7 @@ can be used without the framework to implement Cloud Native Buildpacks tooling i
 
 A basic hello world buildpack looks like this:
 
-```no_run
+```rust,no_run
 use libcnb::{
     cnb_runtime, data::build_plan::BuildPlan, BuildContext, Buildpack, DetectContext,
     DetectOutcome, GenericError, GenericMetadata, GenericPlatform,
