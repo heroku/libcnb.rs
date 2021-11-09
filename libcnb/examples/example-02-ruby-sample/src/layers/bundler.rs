@@ -5,12 +5,12 @@ use std::process::Command;
 
 use libcnb::data::layer_content_metadata::LayerContentMetadata;
 use libcnb::layer_lifecycle::{LayerLifecycle, ValidateResult};
-use libcnb::BuildContext;
 use serde::Deserialize;
 use serde::Serialize;
 use sha2::Digest;
 
 use crate::RubyBuildpack;
+use libcnb::build::BuildContext;
 
 pub struct BundlerLayerLifecycle {
     pub ruby_env: HashMap<String, String>,

@@ -6,10 +6,10 @@ use std::process::exit;
 
 use serde::de::DeserializeOwned;
 
-use crate::build::BuildContext;
+use crate::build::{BuildContext, InnerBuildOutcome};
 use crate::buildpack::Buildpack;
 use crate::data::buildpack::BuildpackToml;
-use crate::detect::{DetectContext, DetectOutcome};
+use crate::detect::{DetectContext, InnerDetectOutcome};
 use crate::error::Error;
 use crate::platform::Platform;
 use crate::toml_file::{read_toml_file, write_toml_file};
@@ -98,12 +98,16 @@ fn cnb_runtime_detect<B: Buildpack>(buildpack: &B) -> Result<(), B::Error> {
         buildpack_descriptor: read_buildpack_toml()?,
     };
 
-    match buildpack.detect(detect_context)? {
-        DetectOutcome::Pass(build_plan) => {
-            write_toml_file(&build_plan, build_plan_path).map_err(Error::CannotWriteBuildPlan)?;
+    match buildpack.detect(detect_context)?.0 {
+        InnerDetectOutcome::Fail => process::exit(100),
+        InnerDetectOutcome::Pass { build_plan } => {
+            if let Some(build_plan) = build_plan {
+                write_toml_file(&build_plan, build_plan_path)
+                    .map_err(Error::CannotWriteBuildPlan)?;
+            }
+
             process::exit(0)
         }
-        DetectOutcome::Fail => process::exit(100),
     }
 }
 
@@ -132,16 +136,22 @@ fn cnb_runtime_build<B: Buildpack>(buildpack: &B) -> Result<(), B::Error> {
         buildpack_descriptor: read_buildpack_toml()?,
     })?;
 
-    if let Some(launch) = build_outcome.launch {
-        write_toml_file(&launch, layers_dir.join("launch.toml"))
-            .map_err(Error::CannotWriteLaunch)?;
-    };
+    match build_outcome.0 {
+        InnerBuildOutcome::Fail => process::exit(1),
+        InnerBuildOutcome::Pass { launch, store } => {
+            if let Some(launch) = launch {
+                write_toml_file(&launch, layers_dir.join("launch.toml"))
+                    .map_err(Error::CannotWriteLaunch)?;
+            };
 
-    if let Some(store) = build_outcome.store {
-        write_toml_file(&store, layers_dir.join("store.toml")).map_err(Error::CannotWriteStore)?;
-    };
+            if let Some(store) = store {
+                write_toml_file(&store, layers_dir.join("store.toml"))
+                    .map_err(Error::CannotWriteStore)?;
+            };
 
-    Ok(())
+            process::exit(0)
+        }
+    }
 }
 
 struct DetectArgs {

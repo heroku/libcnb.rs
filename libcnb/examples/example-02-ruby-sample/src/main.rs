@@ -3,13 +3,12 @@ use std::process::{Command, Stdio};
 
 use crate::layers::bundler::BundlerLayerLifecycle;
 use crate::layers::ruby::RubyLayerLifecycle;
-use libcnb::data::build_plan::BuildPlan;
+use libcnb::build::{BuildContext, BuildOutcome, BuildOutcomeBuilder};
 use libcnb::data::launch::{Launch, Process};
+use libcnb::detect::{DetectContext, DetectOutcome, DetectOutcomeBuilder};
 use libcnb::layer_lifecycle::execute_layer_lifecycle;
 use libcnb::Buildpack;
-use libcnb::{
-    cnb_runtime, BuildContext, BuildOutcome, DetectContext, DetectOutcome, GenericPlatform,
-};
+use libcnb::{cnb_runtime, GenericPlatform};
 use serde::Deserialize;
 
 mod layers;
@@ -22,9 +21,9 @@ impl Buildpack for RubyBuildpack {
 
     fn detect(&self, context: DetectContext<Self>) -> libcnb::Result<DetectOutcome, Self::Error> {
         let outcome = if context.app_dir.join("Gemfile.lock").exists() {
-            DetectOutcome::Pass(BuildPlan::new())
+            DetectOutcomeBuilder::pass().build()
         } else {
-            DetectOutcome::Fail
+            DetectOutcomeBuilder::fail().build()
         };
 
         Ok(outcome)
@@ -40,25 +39,25 @@ impl Buildpack for RubyBuildpack {
         install_bundler(&ruby_env)?;
         execute_layer_lifecycle("bundler", BundlerLayerLifecycle { ruby_env }, &context)?;
 
-        BuildOutcome::success().launch(
-            Launch::new()
-                .process(Process::new(
-                    "web",
-                    "bundle",
-                    vec!["exec", "ruby", "app.rb"],
-                    false,
-                    true,
-                )?)
-                .process(Process::new(
-                    "worker",
-                    "bundle",
-                    vec!["exec", "ruby", "worker.rb"],
-                    false,
-                    false,
-                )?),
-        );
-
-        Ok(BuildOutcome::success())
+        Ok(BuildOutcomeBuilder::success()
+            .launch(
+                Launch::new()
+                    .process(Process::new(
+                        "web",
+                        "bundle",
+                        vec!["exec", "ruby", "app.rb"],
+                        false,
+                        true,
+                    )?)
+                    .process(Process::new(
+                        "worker",
+                        "bundle",
+                        vec!["exec", "ruby", "worker.rb"],
+                        false,
+                        false,
+                    )?),
+            )
+            .build())
     }
 }
 

@@ -13,7 +13,7 @@ use crate::{
     toml_file::{read_toml_file, write_toml_file, TomlFileError},
 };
 
-/// Context for a buildpack's build phase execution.
+/// Context for the build phase execution.
 pub struct BuildContext<B: Buildpack + ?Sized> {
     pub layers_dir: PathBuf,
     pub app_dir: PathBuf,
@@ -24,17 +24,62 @@ pub struct BuildContext<B: Buildpack + ?Sized> {
     pub buildpack_descriptor: BuildpackToml<B::Metadata>,
 }
 
-pub struct BuildOutcome {
-    pub(crate) launch: Option<Launch>,
-    pub(crate) store: Option<Store>,
+/// Describes the outcome of the build phase. Besides indicating success or failure, it also
+/// contains build phase output such as launch and/or store metadata.
+///
+/// To construct values of this type, use a [`BuildOutcomeBuilder`].
+#[derive(Debug)]
+pub struct BuildOutcome(pub(crate) InnerBuildOutcome);
+
+#[derive(Debug)]
+pub(crate) enum InnerBuildOutcome {
+    Fail,
+    Pass {
+        launch: Option<Launch>,
+        store: Option<Store>,
+    },
 }
 
-impl BuildOutcome {
-    pub fn success() -> Self {
-        BuildOutcome {
+/// Constructs [`BuildOutcome`] values.
+///
+/// # Examples:
+/// ```
+/// use libcnb::build::BuildOutcomeBuilder;
+/// use libcnb_data::launch::{Launch, Process};
+///
+/// let simple_success = BuildOutcomeBuilder::success().build();
+/// let simple_failure = BuildOutcomeBuilder::fail().build();
+///
+/// let with_launch = BuildOutcomeBuilder::success()
+///    .launch(Launch::new().process(Process::new("type", "command", vec!["-v"], false, false).unwrap()))
+///    .build();
+/// ```
+pub struct BuildOutcomeBuilder;
+
+impl BuildOutcomeBuilder {
+    pub fn success() -> SuccessBuildOutcomeBuilder {
+        SuccessBuildOutcomeBuilder {
             launch: None,
             store: None,
         }
+    }
+
+    pub fn fail() -> FailBuildOutcomeBuilder {
+        FailBuildOutcomeBuilder {}
+    }
+}
+
+pub struct SuccessBuildOutcomeBuilder {
+    launch: Option<Launch>,
+    store: Option<Store>,
+}
+
+impl SuccessBuildOutcomeBuilder {
+    pub fn build(self) -> BuildOutcome {
+        BuildOutcome(InnerBuildOutcome::Pass {
+            launch: self.launch,
+            store: self.store,
+        })
     }
 
     pub fn launch(mut self, launch: Launch) -> Self {
@@ -45,6 +90,14 @@ impl BuildOutcome {
     pub fn store(mut self, store: Store) -> Self {
         self.store = Some(store);
         self
+    }
+}
+
+pub struct FailBuildOutcomeBuilder;
+
+impl FailBuildOutcomeBuilder {
+    pub fn build(self) -> BuildOutcome {
+        BuildOutcome(InnerBuildOutcome::Fail)
     }
 }
 

@@ -1,8 +1,6 @@
-use libcnb::data::build_plan::BuildPlan;
-use libcnb::{
-    cnb_runtime, BuildContext, BuildOutcome, Buildpack, DetectContext, DetectOutcome, GenericError,
-    GenericMetadata, GenericPlatform,
-};
+use libcnb::build::{BuildContext, BuildOutcome, BuildOutcomeBuilder};
+use libcnb::detect::{DetectContext, DetectOutcome, DetectOutcomeBuilder};
+use libcnb::{cnb_runtime, Buildpack, GenericError, GenericMetadata, GenericPlatform};
 
 struct BasicBuildpack;
 impl Buildpack for BasicBuildpack {
@@ -11,12 +9,12 @@ impl Buildpack for BasicBuildpack {
     type Error = GenericError;
 
     fn detect(&self, _context: DetectContext<Self>) -> libcnb::Result<DetectOutcome, Self::Error> {
-        Ok(DetectOutcome::Pass(BuildPlan::new()))
+        Ok(DetectOutcomeBuilder::pass().build())
     }
 
     fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildOutcome, Self::Error> {
         println!("Build runs on stack {}!", context.stack_id);
-        Ok(BuildOutcome::success())
+        Ok(BuildOutcomeBuilder::success().build())
     }
 }
 
