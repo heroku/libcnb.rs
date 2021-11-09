@@ -7,9 +7,10 @@ use std::process::exit;
 use serde::de::DeserializeOwned;
 
 use crate::build::BuildContext;
+use crate::buildpack::Buildpack;
 use crate::data::buildpack::BuildpackToml;
 use crate::detect::{DetectContext, DetectOutcome};
-use crate::error::{Error, ErrorHandler};
+use crate::error::Error;
 use crate::platform::Platform;
 use crate::toml_file::{read_toml_file, write_toml_file};
 use crate::{Result, LIBCNB_SUPPORTED_BUILDPACK_API};
@@ -24,31 +25,8 @@ use std::fmt::{Debug, Display};
 /// hard links to this single binary.
 ///
 /// Currently symlinks are recommended over hard hard links due to [buildpacks/pack#1286](https://github.com/buildpacks/pack/issues/1286).
-///
-/// # Example
-/// ```no_run
-/// use libcnb::{GenericErrorHandler, DetectOutcome, Error, GenericBuildContext, GenericDetectContext, Result};
-///
-/// fn detect(context: GenericDetectContext) -> Result<DetectOutcome, std::io::Error> {
-///     // ...
-///     Ok(DetectOutcome::Fail)
-/// }
-///
-/// fn build(context: GenericBuildContext) -> Result<(), std::io::Error> {
-///    // ...
-///    Ok(())
-/// }
-///
-/// fn main() {
-///    libcnb::cnb_runtime(detect, build, GenericErrorHandler);
-/// }
-/// ```
-pub fn cnb_runtime<P: Platform, BM: DeserializeOwned, E: Debug + Display>(
-    detect_fn: impl Fn(DetectContext<P, BM>) -> Result<DetectOutcome, E>,
-    build_fn: impl Fn(BuildContext<P, BM>) -> Result<(), E>,
-    error_handler: impl ErrorHandler<E>,
-) {
-    match read_buildpack_toml::<BM, E>() {
+pub fn cnb_runtime<B: Buildpack>(buildpack: B) {
+    match read_buildpack_toml::<B::Metadata, B::Error>() {
         Ok(buildpack_toml) => {
             if buildpack_toml.api != LIBCNB_SUPPORTED_BUILDPACK_API {
                 eprintln!("Error: Cloud Native Buildpack API mismatch");
@@ -66,7 +44,7 @@ pub fn cnb_runtime<P: Platform, BM: DeserializeOwned, E: Debug + Display>(
             }
         }
         Err(lib_cnb_error) => {
-            exit(error_handler.handle_error(lib_cnb_error));
+            exit(buildpack.handle_error(lib_cnb_error));
         }
     }
 
@@ -81,8 +59,8 @@ pub fn cnb_runtime<P: Platform, BM: DeserializeOwned, E: Debug + Display>(
 
     #[cfg(any(target_family = "unix"))]
     let result = match current_exe_file_name {
-        Some("detect") => cnb_runtime_detect(detect_fn),
-        Some("build") => cnb_runtime_build(build_fn),
+        Some("detect") => cnb_runtime_detect(&buildpack),
+        Some("build") => cnb_runtime_build(&buildpack),
         other => {
             eprintln!(
                 "Error: Expected the name of this executable to be 'detect' or 'build', but it was '{}'",
@@ -96,26 +74,19 @@ pub fn cnb_runtime<P: Platform, BM: DeserializeOwned, E: Debug + Display>(
     };
 
     if let Err(lib_cnb_error) = result {
-        exit(error_handler.handle_error(lib_cnb_error));
+        exit(buildpack.handle_error(lib_cnb_error));
     }
 }
 
-fn cnb_runtime_detect<
-    P: Platform,
-    BM: DeserializeOwned,
-    E: Debug + Display,
-    F: FnOnce(DetectContext<P, BM>) -> Result<DetectOutcome, E>,
->(
-    detect_fn: F,
-) -> Result<(), E> {
+fn cnb_runtime_detect<B: Buildpack>(buildpack: &B) -> Result<(), B::Error> {
     let args = parse_detect_args_or_exit();
 
     let app_dir = env::current_dir().map_err(Error::CannotDetermineAppDirectory)?;
 
     let stack_id: String = env::var("CNB_STACK_ID").map_err(Error::CannotDetermineStackId)?;
 
-    let platform =
-        P::from_path(&args.platform_dir_path).map_err(Error::CannotCreatePlatformFromPath)?;
+    let platform = B::Platform::from_path(&args.platform_dir_path)
+        .map_err(Error::CannotCreatePlatformFromPath)?;
 
     let build_plan_path = args.build_plan_path;
 
@@ -127,7 +98,7 @@ fn cnb_runtime_detect<
         buildpack_descriptor: read_buildpack_toml()?,
     };
 
-    match detect_fn(detect_context)? {
+    match buildpack.detect(detect_context)? {
         DetectOutcome::Pass(build_plan) => {
             write_toml_file(&build_plan, build_plan_path).map_err(Error::CannotWriteBuildPlan)?;
             process::exit(0)
@@ -136,14 +107,7 @@ fn cnb_runtime_detect<
     }
 }
 
-fn cnb_runtime_build<
-    E: Debug + Display,
-    F: Fn(BuildContext<P, BM>) -> Result<(), E>,
-    BM: DeserializeOwned,
-    P: Platform,
->(
-    build_fn: F,
-) -> Result<(), E> {
+fn cnb_runtime_build<B: Buildpack>(buildpack: &B) -> Result<(), B::Error> {
     let args = parse_build_args_or_exit();
 
     let layers_dir = args.layers_dir_path;
@@ -152,8 +116,8 @@ fn cnb_runtime_build<
 
     let stack_id: String = env::var("CNB_STACK_ID").map_err(Error::CannotDetermineStackId)?;
 
-    let platform =
-        P::from_path(&args.platform_dir_path).map_err(Error::CannotCreatePlatformFromPath)?;
+    let platform = B::Platform::from_path(&args.platform_dir_path)
+        .map_err(Error::CannotCreatePlatformFromPath)?;
 
     let buildpack_plan =
         read_toml_file(&args.buildpack_plan_path).map_err(Error::CannotReadBuildpackPlan)?;
@@ -168,7 +132,7 @@ fn cnb_runtime_build<
         buildpack_descriptor: read_buildpack_toml()?,
     };
 
-    build_fn(context)
+    buildpack.build(context)
 }
 
 struct DetectArgs {

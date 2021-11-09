@@ -10,5 +10,8 @@
 - Allow ProcessType to contain a dot (`.`) character
 - libcnb now targets [Buildpack API 0.6](https://github.com/buildpacks/spec/releases/tag/buildpack%2Fv0.6) <https://github.com/Malax/libcnb.rs/milestone/2>
 - The `data` module can now be used without the rest of the framework by depending on the `libcnb-data` crate.
+- Introduced `Buildpack` trait that needs to be implemented for each buildpack
+- `cnb_runtime()` now requires a `Buildpack` instead of `detect` and `build` functions.
+- `ErrorHandler` has been removed. Functionality is now part of the new `Buildpack` trait.
 
 ## [0.3.0] 2021/09/17

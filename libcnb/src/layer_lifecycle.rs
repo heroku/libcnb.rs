@@ -118,22 +118,23 @@
 //! - [`MetadataRecoveryStrategy::ReplaceMetadata<M>`] will replace the old layer
 //!   metadata with the contents in `<M>`
 
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 use std::path::Path;
 
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 use crate::build::BuildContext;
+use crate::buildpack::Buildpack;
 use crate::data::layer_content_metadata::LayerContentMetadata;
 use crate::error::Error;
-use crate::platform::Platform;
+
 use crate::toml_file::TomlFileError;
 
 /// A lifecycle of a Cloud Native Buildpack layer
 ///
 /// Use [`execute_layer_lifecycle`] to execute a layer lifecycle.
-pub trait LayerLifecycle<P: Platform, BM, LM, O: Default, E: Debug + Display> {
+pub trait LayerLifecycle<B: Buildpack, LM, O: Default> {
     /// Creates the layer from scratch
     ///
     /// When used with [`execute_layer_lifecycle`], `path` will be created and empty. The
@@ -142,8 +143,8 @@ pub trait LayerLifecycle<P: Platform, BM, LM, O: Default, E: Debug + Display> {
     fn create(
         &self,
         layer_path: &Path,
-        build_context: &BuildContext<P, BM>,
-    ) -> Result<LayerContentMetadata<LM>, E>;
+        build_context: &BuildContext<B>,
+    ) -> Result<LayerContentMetadata<LM>, B::Error>;
 
     /// Tries to recover from invalid layer metadata
     ///
@@ -157,8 +158,8 @@ pub trait LayerLifecycle<P: Platform, BM, LM, O: Default, E: Debug + Display> {
     fn recover_from_invalid_metadata(
         &self,
         #[allow(unused_variables)] layer_metadata: &toml::value::Table,
-        #[allow(unused_variables)] build_context: &BuildContext<P, BM>,
-    ) -> Result<MetadataRecoveryStrategy<LM>, E> {
+        #[allow(unused_variables)] build_context: &BuildContext<B>,
+    ) -> Result<MetadataRecoveryStrategy<LM>, B::Error> {
         // Default implementation is to delete the layer if the metadata is invalid
         Ok(MetadataRecoveryStrategy::DeleteLayer)
     }
@@ -182,7 +183,7 @@ pub trait LayerLifecycle<P: Platform, BM, LM, O: Default, E: Debug + Display> {
         &self,
         #[allow(unused_variables)] layer_path: &Path,
         #[allow(unused_variables)] layer_content_metadata: &LayerContentMetadata<LM>,
-        #[allow(unused_variables)] build_context: &BuildContext<P, BM>,
+        #[allow(unused_variables)] build_context: &BuildContext<B>,
     ) -> ValidateResult {
         // Default implementation is to always recreate the layer
         ValidateResult::RecreateLayer
@@ -193,8 +194,8 @@ pub trait LayerLifecycle<P: Platform, BM, LM, O: Default, E: Debug + Display> {
         &self,
         #[allow(unused_variables)] layer_path: &Path,
         #[allow(unused_variables)] layer_content_metadata: LayerContentMetadata<LM>,
-        #[allow(unused_variables)] build_context: &BuildContext<P, BM>,
-    ) -> Result<LayerContentMetadata<LM>, E> {
+        #[allow(unused_variables)] build_context: &BuildContext<B>,
+    ) -> Result<LayerContentMetadata<LM>, B::Error> {
         // Default implementation is a no-op
         Ok(layer_content_metadata)
     }
@@ -203,7 +204,7 @@ pub trait LayerLifecycle<P: Platform, BM, LM, O: Default, E: Debug + Display> {
         &self,
         #[allow(unused_variables)] layer_path: &Path,
         #[allow(unused_variables)] layer_content_metadata: LayerContentMetadata<LM>,
-    ) -> Result<O, E> {
+    ) -> Result<O, B::Error> {
         Ok(O::default())
     }
 
@@ -271,17 +272,11 @@ pub enum LayerLifecycleError {
 
 /// Executes a layer lifecycle for a given layer name and [`BuildContext`]
 /// See [`LayerLifecycle`]
-pub fn execute_layer_lifecycle<
-    P: Platform,
-    BM,
-    LM: Serialize + DeserializeOwned,
-    O: Default,
-    E: Debug + Display,
->(
+pub fn execute_layer_lifecycle<B: Buildpack, LM: Serialize + DeserializeOwned, O: Default>(
     layer_name: impl AsRef<str>,
-    layer_lifecycle: impl LayerLifecycle<P, BM, LM, O, E>,
-    context: &BuildContext<P, BM>,
-) -> Result<O, Error<E>> {
+    layer_lifecycle: impl LayerLifecycle<B, LM, O>,
+    context: &BuildContext<B>,
+) -> Result<O, Error<B::Error>> {
     layer_lifecycle.on_lifecycle_start();
 
     let layer_path = context.layer_path(&layer_name);
@@ -330,35 +325,23 @@ pub fn execute_layer_lifecycle<
     }
 }
 
-fn handle_layer_keep<
-    P: Platform,
-    BM,
-    LM: Serialize + DeserializeOwned,
-    O: Default,
-    E: Debug + Display,
->(
+fn handle_layer_keep<B: Buildpack, LM: Serialize + DeserializeOwned, O: Default>(
     _layer_name: impl AsRef<str>,
     _layer_path: &Path,
     _layer_content_metadata: LayerContentMetadata<LM>,
-    layer_lifecycle: &impl LayerLifecycle<P, BM, LM, O, E>,
-    _context: &BuildContext<P, BM>,
-) -> Result<(), Error<E>> {
+    layer_lifecycle: &impl LayerLifecycle<B, LM, O>,
+    _context: &BuildContext<B>,
+) -> Result<(), Error<B::Error>> {
     layer_lifecycle.on_keep();
     Ok(())
 }
 
-fn handle_layer_create<
-    P: Platform,
-    BM,
-    LM: Serialize + DeserializeOwned,
-    O: Default,
-    E: Debug + Display,
->(
+fn handle_layer_create<B: Buildpack, LM: Serialize + DeserializeOwned, O: Default>(
     layer_name: impl AsRef<str>,
     layer_path: &Path,
-    layer_lifecycle: &impl LayerLifecycle<P, BM, LM, O, E>,
-    context: &BuildContext<P, BM>,
-) -> Result<(), Error<E>> {
+    layer_lifecycle: &impl LayerLifecycle<B, LM, O>,
+    context: &BuildContext<B>,
+) -> Result<(), Error<B::Error>> {
     std::fs::create_dir_all(&layer_path)
         .map_err(LayerLifecycleError::CannotCreateLayerDirectoryBeforeCreate)?;
 
@@ -374,19 +357,13 @@ fn handle_layer_create<
     Ok(())
 }
 
-fn handle_layer_recreate<
-    P: Platform,
-    BM,
-    LM: Serialize + DeserializeOwned,
-    O: Default,
-    E: Debug + Display,
->(
+fn handle_layer_recreate<B: Buildpack, LM: Serialize + DeserializeOwned, O: Default>(
     layer_name: impl AsRef<str>,
     layer_path: &Path,
     _layer_content_metadata: LayerContentMetadata<LM>,
-    layer_lifecycle: &impl LayerLifecycle<P, BM, LM, O, E>,
-    context: &BuildContext<P, BM>,
-) -> Result<(), Error<E>> {
+    layer_lifecycle: &impl LayerLifecycle<B, LM, O>,
+    context: &BuildContext<B>,
+) -> Result<(), Error<B::Error>> {
     context
         .delete_layer(&layer_name)
         .map_err(LayerLifecycleError::CannotDeleteLayer)?;
@@ -406,19 +383,13 @@ fn handle_layer_recreate<
         })
 }
 
-fn handle_layer_update<
-    P: Platform,
-    BM,
-    LM: Serialize + DeserializeOwned,
-    O: Default,
-    E: Debug + Display,
->(
+fn handle_layer_update<B: Buildpack, LM: Serialize + DeserializeOwned, O: Default>(
     layer_name: impl AsRef<str>,
     layer_path: &Path,
     layer_content_metadata: LayerContentMetadata<LM>,
-    layer_lifecycle: &impl LayerLifecycle<P, BM, LM, O, E>,
-    context: &BuildContext<P, BM>,
-) -> Result<(), Error<E>> {
+    layer_lifecycle: &impl LayerLifecycle<B, LM, O>,
+    context: &BuildContext<B>,
+) -> Result<(), Error<B::Error>> {
     layer_lifecycle.on_update();
 
     let content_metadata = layer_lifecycle
@@ -432,17 +403,11 @@ fn handle_layer_update<
         })
 }
 
-fn metadata_recovery<
-    P: Platform,
-    BM,
-    LM: Serialize + DeserializeOwned,
-    O: Default,
-    E: Debug + Display,
->(
+fn metadata_recovery<B: Buildpack, LM: Serialize + DeserializeOwned, O: Default>(
     layer_name: impl AsRef<str>,
-    layer_lifecycle: &impl LayerLifecycle<P, BM, LM, O, E>,
-    context: &BuildContext<P, BM>,
-) -> Result<Option<LayerContentMetadata<LM>>, Error<E>> {
+    layer_lifecycle: &impl LayerLifecycle<B, LM, O>,
+    context: &BuildContext<B>,
+) -> Result<Option<LayerContentMetadata<LM>>, Error<B::Error>> {
     // Read existing layer content metadata as TOML table, handling potential errors and
     // non-existent metadata so subsequent steps don't have to deal with either.
     let mut layer_content_metadata = {
