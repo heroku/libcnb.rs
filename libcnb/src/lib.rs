@@ -55,3 +55,9 @@ mod runtime;
 mod toml_file;
 
 const LIBCNB_SUPPORTED_BUILDPACK_API: BuildpackApi = BuildpackApi { major: 0, minor: 6 };
+
+// This runs the README.md as a doctest, ensuring the code examples in it are valid.
+// It will not be part of the final crate.
+#[cfg(doctest)]
+#[doc = include_str!("../../README.md")]
+pub struct ReadmeDoctests;

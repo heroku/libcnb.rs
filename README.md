@@ -9,73 +9,79 @@
 [Rustc Version 1.56+]: https://img.shields.io/badge/rustc-1.56+-lightgray.svg
 [rustc]: https://blog.rust-lang.org/2021/10/21/Rust-1.56.0.html
 
-`libcnb.rs` is a Rust language binding of the [Cloud Native Buildpacks](https://buildpacks.io) [spec](https://github.com/buildpacks/spec). It is a non-opinionated implementation adding language constructs and convenience methods for working with the spec. It values strong adherence to the spec and data formats.
+`libcnb.rs` is a Rust framework for writing [Cloud Native Buildpacks](https://buildpacks.io) in Rust. It is an opinionated implementation adding language constructs and convenience methods for working with the spec. It values strong adherence to the spec and data formats.
 
-## Usage
+It currently targets version `0.6` of the CNB spec.
 
-Here's a [quick start template](https://github.com/Malax/rust-cnb-starter) that can be cloned.
-
-View the [examples](./examples) for some buildpack samples.
-
-All spec data files are implemented in the [`libcnb::data`](https://docs.rs/libcnb/*/libcnb/data/index.html) module.
-
-[`libcnb::platform::Platform`](https://docs.rs/libcnb/*/libcnb/platform/trait.Platform.html) represents the `/platform` directory in the CNB spec.
-
-
-### Example Buildpack
-
-A basic hello world buildpack looks like:
-
-#### Detect
-
-For `/bin/detect`, [`libcnb::detect::cnb_runtime_detect`](https://docs.rs/libcnb/*/libcnb/detect/fn.cnb_runtime_detect.html) handles processing the arguments (made available through [`libcnb::detect::DetectContext`](https://docs.rs/libcnb/*/libcnb/detect/struct.DetectContext.html) and handling the lifecycle of the detect script (including exiting with [`libcnb::detect::DetectOutcome`](https://docs.rs/libcnb/*/libcnb/detect/enum.DetectOutcome.html)). This function will exit and write the build plan where applicable. The buildpack author is responsible for writing the `FnOnce(DetectContext<P>) -> Result<DetectOutcome, E> where E: std::fmt::Display` that `libcnb::detect::cnb_runtime_detect`] takes.
-
-
-```rust
-use libcnb::{
-    data::build_plan::BuildPlan,
-    detect::{DetectOutcome, GenericDetectContext},
-};
-
-use rust_cnb_starter::messages;
-
-fn main() {
-    libcnb::detect::cnb_runtime_detect(detect)
-}
-
-fn detect(_context: GenericDetectContext) -> Result<DetectOutcome, std::io::Error> {
-    println!("/bin/detect is running!");
-    Ok(DetectOutcome::Pass(BuildPlan::new()))
-}
-```
-
-#### Build
-
-For `/bin/build`, [`libcnb::build::cnb_runtime_build`](https://docs.rs/libcnb/*/libcnb/build/fn.cnb_runtime_build.html) will handle processing the arguments and exiting. Arguments and layer creation can be found on [`libcnb::build::BuildContext`](https://docs.rs/libcnb/*/libcnb/build/index.html). If an error is raised, `libcnb::build::cnb_runtime_build` will print out an error message and exit with an error status code. The buildpack author is responsible for defining a `Fn(BuildContext<P>) -> Result<(), E> where E: std::fmt::Display, P: libcnb::platform::Platform`.
-
-```rust
-
-use libcnb::build::GenericBuildContext;
-use std::collections::HashMap;
-
-fn main() {
-    libcnb::build::cnb_runtime_build(build);
-}
-
-fn build(context: GenericBuildContext) -> Result<(), std::io::Error> {
-    println!("/bin/build is running!");
-    println!("App source @ {:?}", context.app_dir);
-
-    Ok(())
-}
-```
 
 ## Installation
 Add the following to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-libcnb = "0.1.0"
+libcnb = "0.5.0"
 ```
 
 *Compiler support requires rustc 1.56+ for 2021 edition*
+
+## Usage
+View the [examples](./libcnb/examples) for some buildpack samples.
+
+All spec data files are implemented in the [`libcnb-data`](https://docs.rs/libcnb-data) crate and
+can be used without the framework to implement Cloud Native Buildpacks tooling in Rust.
+
+### Hello World Buildpack
+
+A basic hello world buildpack looks like this:
+
+```no_run
+use libcnb::{
+    cnb_runtime, data::build_plan::BuildPlan, BuildContext, Buildpack, DetectContext,
+    DetectOutcome, GenericError, GenericMetadata, GenericPlatform,
+};
+
+struct HelloWorldBuildpack;
+
+impl Buildpack for HelloWorldBuildpack {
+    // The CNB platform this buildpack targets, usually GenericPlatform. See the CNB spec for more information
+    // about platforms: https://github.com/buildpacks/spec/blob/main/buildpack.md
+    type Platform = GenericPlatform;
+    
+    // The type for the metadata of the buildpack itself. This is the data found in the `[metadata]` section
+    // of your buildpack's buildpack.toml. The framework will automatically try to parse it into the specified type.
+    // This example buildpack uses GenericMetadata which provides low-level access to the TOML table.
+    type Metadata = GenericMetadata;
+    
+    // The error type for this buildpack. Buildpack authors usually implement an enum with specific errors that can
+    // happen during buildpack execution. This error type should only contain error specific to this buildpack, such
+    // as CouldNotExecuteMaven or InvalidGemfileLock. This example buildpack uses GenericError which means this 
+    // buildpack does not specify any errors.
+    //
+    // More generic errors that happen during buildpack execution such as I/O errors while writing CNB TOML files are
+    // handled by libcnb.rs itself.
+    type Error = GenericError;
+
+    // This method will be called when the CNB lifecycle calls detect. Use the DetectContext to access CNB data such as
+    // the stack this buildpack is currently executed on, the app directory and similar things. When using libcnb.rs, 
+    // you never have to read environment variables or read/write files to disk to interact with the CNB lifecycle.
+    //
+    // One example of this is the return type of this method. DetectOutcome encapsulates the required exit code as well
+    // as the data written to the build plan. libcnb.rs will, according to the returned value, handle both writing the 
+    // build plan and exiting with the correct status code for you.
+    fn detect(&self, context: DetectContext<Self>) -> libcnb::Result<DetectOutcome, Self::Error> {
+        Ok(DetectOutcome::Pass(BuildPlan::new()))
+    }
+
+    // Similar to detect, this method will be called when the CNB lifecycle executes the build phase.
+    fn build(&self, context: BuildContext<Self>) -> libcnb::Result<(), Self::Error> {
+        println!("Hello World!");
+        println!("Build runs on stack {}!", context.stack_id);
+        Ok(())
+    }
+}
+
+fn main() {
+    // This kicks of the framework for the given buildpack.
+    cnb_runtime(HelloWorldBuildpack);
+}
+```
