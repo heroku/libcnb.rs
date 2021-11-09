@@ -96,6 +96,7 @@ impl SuccessBuildOutcomeBuilder {
 pub struct FailBuildOutcomeBuilder;
 
 impl FailBuildOutcomeBuilder {
+    #[allow(clippy::unused_self)]
     pub fn build(self) -> BuildOutcome {
         BuildOutcome(InnerBuildOutcome::Fail)
     }

@@ -72,6 +72,7 @@ impl PassDetectOutcomeBuilder {
 pub struct FailDetectOutcomeBuilder;
 
 impl FailDetectOutcomeBuilder {
+    #[allow(clippy::unused_self)]
     pub fn build(self) -> DetectOutcome {
         DetectOutcome(InnerDetectOutcome::Fail)
     }
