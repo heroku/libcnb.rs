@@ -39,7 +39,7 @@ impl Buildpack for RubyBuildpack {
         install_bundler(&ruby_env)?;
         execute_layer_lifecycle("bundler", BundlerLayerLifecycle { ruby_env }, &context)?;
 
-        Ok(BuildOutcomeBuilder::success()
+        Ok(BuildOutcomeBuilder::new()
             .launch(
                 Launch::new()
                     .process(Process::new(

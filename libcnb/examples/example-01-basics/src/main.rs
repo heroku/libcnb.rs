@@ -14,7 +14,7 @@ impl Buildpack for BasicBuildpack {
 
     fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildOutcome, Self::Error> {
         println!("Build runs on stack {}!", context.stack_id);
-        Ok(BuildOutcomeBuilder::success().build())
+        Ok(BuildOutcomeBuilder::new().build())
     }
 }
 

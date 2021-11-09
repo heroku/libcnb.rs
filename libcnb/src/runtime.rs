@@ -137,7 +137,6 @@ fn cnb_runtime_build<B: Buildpack>(buildpack: &B) -> Result<(), B::Error> {
     })?;
 
     match build_outcome.0 {
-        InnerBuildOutcome::Fail => process::exit(1),
         InnerBuildOutcome::Pass { launch, store } => {
             if let Some(launch) = launch {
                 write_toml_file(&launch, layers_dir.join("launch.toml"))
