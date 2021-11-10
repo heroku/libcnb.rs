@@ -8,7 +8,7 @@ use libcnb::data::launch::{Launch, Process};
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::layer_lifecycle::execute_layer_lifecycle;
 use libcnb::Buildpack;
-use libcnb::{cnb_runtime, GenericPlatform};
+use libcnb::{buildpack_main, GenericPlatform};
 use serde::Deserialize;
 
 mod layers;
@@ -61,9 +61,7 @@ impl Buildpack for RubyBuildpack {
     }
 }
 
-fn main() {
-    cnb_runtime(RubyBuildpack)
-}
+buildpack_main!(RubyBuildpack);
 
 #[derive(Deserialize, Debug)]
 struct RubyBuildpackMetadata {

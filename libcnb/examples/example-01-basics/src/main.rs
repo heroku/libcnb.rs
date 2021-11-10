@@ -1,6 +1,6 @@
 use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
-use libcnb::{cnb_runtime, Buildpack, GenericError, GenericMetadata, GenericPlatform};
+use libcnb::{buildpack_main, Buildpack, GenericError, GenericMetadata, GenericPlatform};
 
 struct BasicBuildpack;
 impl Buildpack for BasicBuildpack {
@@ -18,6 +18,4 @@ impl Buildpack for BasicBuildpack {
     }
 }
 
-fn main() {
-    cnb_runtime(BasicBuildpack);
-}
+buildpack_main!(BasicBuildpack);

@@ -25,7 +25,7 @@ use std::fmt::{Debug, Display};
 /// hard links to this single binary.
 ///
 /// Currently symlinks are recommended over hard hard links due to [buildpacks/pack#1286](https://github.com/buildpacks/pack/issues/1286).
-pub fn cnb_runtime<B: Buildpack>(buildpack: B) {
+pub fn libcnb_runtime<B: Buildpack>(buildpack: B) {
     match read_buildpack_toml::<B::Metadata, B::Error>() {
         Ok(buildpack_toml) => {
             if buildpack_toml.api != LIBCNB_SUPPORTED_BUILDPACK_API {
@@ -59,8 +59,8 @@ pub fn cnb_runtime<B: Buildpack>(buildpack: B) {
 
     #[cfg(any(target_family = "unix"))]
     let result = match current_exe_file_name {
-        Some("detect") => cnb_runtime_detect(&buildpack),
-        Some("build") => cnb_runtime_build(&buildpack),
+        Some("detect") => libcnb_runtime_detect(&buildpack),
+        Some("build") => libcnb_runtime_build(&buildpack),
         other => {
             eprintln!(
                 "Error: Expected the name of this executable to be 'detect' or 'build', but it was '{}'",
@@ -78,7 +78,7 @@ pub fn cnb_runtime<B: Buildpack>(buildpack: B) {
     }
 }
 
-fn cnb_runtime_detect<B: Buildpack>(buildpack: &B) -> Result<(), B::Error> {
+fn libcnb_runtime_detect<B: Buildpack>(buildpack: &B) -> Result<(), B::Error> {
     let args = parse_detect_args_or_exit();
 
     let app_dir = env::current_dir().map_err(Error::CannotDetermineAppDirectory)?;
@@ -111,7 +111,7 @@ fn cnb_runtime_detect<B: Buildpack>(buildpack: &B) -> Result<(), B::Error> {
     }
 }
 
-fn cnb_runtime_build<B: Buildpack>(buildpack: &B) -> Result<(), B::Error> {
+fn libcnb_runtime_build<B: Buildpack>(buildpack: &B) -> Result<(), B::Error> {
     let args = parse_build_args_or_exit();
 
     let layers_dir = args.layers_dir_path;

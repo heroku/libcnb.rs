@@ -38,7 +38,7 @@ A basic hello world buildpack looks like this:
 use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::{
-    cnb_runtime, data::build_plan::BuildPlan, Buildpack, GenericError, GenericMetadata,
+    buildpack_main, data::build_plan::BuildPlan, Buildpack, GenericError, GenericMetadata,
     GenericPlatform,
 };
 
@@ -82,8 +82,6 @@ impl Buildpack for HelloWorldBuildpack {
     }
 }
 
-fn main() {
-    // This kicks of the framework for the given buildpack.
-    cnb_runtime(HelloWorldBuildpack);
-}
+// Implements the main function and wires up the framework for the given buildpack.
+buildpack_main!(HelloWorldBuildpack);
 ```
