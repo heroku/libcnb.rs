@@ -922,6 +922,34 @@ mod test {
     }
 }
 
+pub struct LayerEnvBuilder {
+    layer_env: LayerEnv,
+}
+
+impl LayerEnvBuilder {
+    pub fn new() -> Self {
+        Self {
+            layer_env: LayerEnv::new(),
+        }
+    }
+
+    pub fn with(
+        mut self,
+        target: TargetLifecycle,
+        modification_behavior: ModificationBehavior,
+        name: impl Into<OsString>,
+        value: impl Into<OsString>,
+    ) -> Self {
+        self.layer_env
+            .insert(target, modification_behavior, name, value);
+        self
+    }
+
+    pub fn build(self) -> LayerEnv {
+        self.layer_env
+    }
+}
+
 #[cfg(target_family = "unix")]
 const PATH_LIST_SEPARATOR: &str = ":";
 

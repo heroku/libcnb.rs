@@ -1,82 +1,65 @@
-use std::collections::HashMap;
 use std::fs;
 use std::io;
 use std::path::Path;
 
 use flate2::read::GzDecoder;
-use libcnb::data::layer_content_metadata::{LayerContentMetadata, LayerTypes};
-use libcnb::layer_lifecycle::LayerLifecycle;
+use libcnb::data::layer_content_metadata::LayerTypes;
+use libcnb::{Layer, LayerResult, LayerResultBuilder};
 
-use std::env;
 use tar::Archive;
 use tempfile::NamedTempFile;
 
 use crate::RubyBuildpack;
 use libcnb::build::BuildContext;
 use libcnb::generic::GenericMetadata;
+use libcnb::layer_env::{LayerEnvBuilder, ModificationBehavior, TargetLifecycle};
 
-pub struct RubyLayerLifecycle;
+pub struct RubyLayer;
 
-impl LayerLifecycle<RubyBuildpack, GenericMetadata, HashMap<String, String>>
-    for RubyLayerLifecycle
-{
+impl Layer for RubyLayer {
+    type Buildpack = RubyBuildpack;
+    type Metadata = GenericMetadata;
+
+    fn types(&self) -> LayerTypes {
+        LayerTypes {
+            build: false,
+            launch: true,
+            cache: false,
+        }
+    }
+
     fn create(
         &self,
+        context: &BuildContext<Self::Buildpack>,
         layer_path: &Path,
-        build_context: &BuildContext<RubyBuildpack>,
-    ) -> anyhow::Result<LayerContentMetadata<GenericMetadata>> {
-        println!("---> Download and extracting Ruby");
-
+    ) -> anyhow::Result<LayerResult<Self::Metadata>> {
         let ruby_tgz = NamedTempFile::new()?;
 
         download(
-            &build_context.buildpack_descriptor.metadata.ruby_url,
+            &context.buildpack_descriptor.metadata.ruby_url,
             ruby_tgz.path(),
         )?;
 
         untar(ruby_tgz.path(), &layer_path)?;
 
-        Ok(LayerContentMetadata {
-            types: LayerTypes {
-                build: false,
-                launch: true,
-                cache: false,
-            },
-            metadata: GenericMetadata::default(),
-        })
-    }
-
-    fn layer_lifecycle_data(
-        &self,
-        layer_path: &Path,
-        _layer_content_metadata: LayerContentMetadata<GenericMetadata>,
-    ) -> anyhow::Result<HashMap<String, String>> {
-        let mut ruby_env: HashMap<String, String> = HashMap::new();
-        let ruby_bin_path = format!(
-            "{}/.gem/ruby/2.6.6/bin",
-            env::var("HOME").unwrap_or_default()
-        );
-
-        ruby_env.insert(
-            String::from("PATH"),
-            format!(
-                "{}:{}:{}",
-                layer_path.join("bin").as_path().to_str().unwrap(),
-                ruby_bin_path,
-                env::var("PATH").unwrap_or_default(),
-            ),
-        );
-
-        ruby_env.insert(
-            String::from("LD_LIBRARY_PATH"),
-            format!(
-                "{}:{}",
-                env::var("LD_LIBRARY_PATH").unwrap_or_default(),
-                layer_path.join("layer").as_path().to_str().unwrap()
-            ),
-        );
-
-        Ok(ruby_env)
+        LayerResultBuilder::new(GenericMetadata::default())
+            .env(
+                LayerEnvBuilder::new()
+                    .with(
+                        TargetLifecycle::All,
+                        ModificationBehavior::Prepend,
+                        "PATH",
+                        context.app_dir.join(".gem/ruby/2.6.6/bin"),
+                    )
+                    .with(
+                        TargetLifecycle::All,
+                        ModificationBehavior::Prepend,
+                        "LD_LIBRARY_PATH",
+                        layer_path,
+                    )
+                    .build(),
+            )
+            .build()
     }
 }
 

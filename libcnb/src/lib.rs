@@ -21,11 +21,11 @@ pub mod build;
 pub mod detect;
 pub mod generic;
 pub mod layer_env;
-pub mod layer_lifecycle;
 
 mod buildpack;
 mod env;
 mod error;
+mod layer;
 mod platform;
 mod runtime;
 mod toml_file;
@@ -36,6 +36,7 @@ pub use libcnb_data as data;
 
 pub use env::*;
 pub use error::*;
+pub use layer::*;
 pub use platform::*;
 pub use toml_file::*;
 

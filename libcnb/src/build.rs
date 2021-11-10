@@ -1,20 +1,14 @@
 //! Provides build phase specific types and helpers.
-
-use std::{fs, path::PathBuf};
-
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use std::{fs, path::PathBuf};
 
 use crate::buildpack::Buildpack;
 use crate::data::store::Store;
-use crate::util::default_on_not_found;
-use crate::{
-    data::{
-        buildpack::BuildpackToml, buildpack_plan::BuildpackPlan, launch::Launch,
-        layer_content_metadata::LayerContentMetadata,
-    },
-    toml_file::{read_toml_file, write_toml_file, TomlFileError},
-};
+use crate::layer::{Layer, LayerData};
+
+use crate::data::{buildpack::BuildpackToml, buildpack_plan::BuildpackPlan, launch::Launch};
+use crate::HandleLayerErrorOrBuildpackError;
 
 /// Context for the build phase execution.
 pub struct BuildContext<B: Buildpack + ?Sized> {
@@ -25,6 +19,21 @@ pub struct BuildContext<B: Buildpack + ?Sized> {
     pub platform: B::Platform,
     pub buildpack_plan: BuildpackPlan,
     pub buildpack_descriptor: BuildpackToml<B::Metadata>,
+}
+
+impl<B: Buildpack + ?Sized> BuildContext<B> {
+    pub fn handle_layer<L: Layer<Buildpack = B>>(
+        &self,
+        name: impl AsRef<str>,
+        layer: L,
+    ) -> crate::Result<LayerData<L::Metadata>, B::Error> {
+        crate::layer::handle_layer(&self, name.as_ref(), layer).map_err(|error| match error {
+            HandleLayerErrorOrBuildpackError::HandleLayerError(e) => {
+                crate::Error::HandleLayerError(e)
+            }
+            HandleLayerErrorOrBuildpackError::BuildpackError(e) => crate::Error::BuildpackError(e),
+        })
+    }
 }
 
 /// Describes the result of the build phase.
@@ -96,76 +105,5 @@ impl BuildResultBuilder {
 impl Default for BuildResultBuilder {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-impl<B: Buildpack> BuildContext<B> {
-    pub fn layer_path(&self, layer_name: impl AsRef<str>) -> PathBuf {
-        self.layers_dir.join(layer_name.as_ref())
-    }
-
-    pub fn layer_content_metadata_path(&self, layer_name: impl AsRef<str>) -> PathBuf {
-        self.layers_dir
-            .join(format!("{}.toml", layer_name.as_ref()))
-    }
-
-    pub fn read_layer_content_metadata<M: DeserializeOwned>(
-        &self,
-        layer_name: impl AsRef<str>,
-    ) -> Result<Option<LayerContentMetadata<M>>, TomlFileError> {
-        let path = self.layer_content_metadata_path(layer_name);
-
-        if path.exists() {
-            read_toml_file(path).map(Some)
-        } else {
-            Ok(None)
-        }
-    }
-
-    pub fn write_layer_content_metadata<M: Serialize>(
-        &self,
-        layer_name: impl AsRef<str>,
-        layer_content_metadata: &LayerContentMetadata<M>,
-    ) -> Result<(), TomlFileError> {
-        write_toml_file(
-            layer_content_metadata,
-            self.layer_content_metadata_path(layer_name),
-        )
-    }
-
-    pub fn delete_layer(&self, layer_name: impl AsRef<str>) -> Result<(), std::io::Error> {
-        default_on_not_found(fs::remove_file(
-            self.layer_content_metadata_path(&layer_name),
-        ))?;
-
-        default_on_not_found(fs::remove_dir_all(self.layer_path(&layer_name)))?;
-
-        Ok(())
-    }
-
-    pub fn read_layer<M: DeserializeOwned>(
-        &self,
-        layer_name: impl AsRef<str>,
-    ) -> Result<Option<(PathBuf, LayerContentMetadata<M>)>, TomlFileError> {
-        let layer_path = self.layer_path(&layer_name);
-
-        self.read_layer_content_metadata(&layer_name)
-            .map(|maybe_content_layer_metadata| {
-                maybe_content_layer_metadata.and_then(
-                    |layer_content_metadata: LayerContentMetadata<M>| {
-                        if layer_path.exists() {
-                            Some((layer_path, layer_content_metadata))
-                        } else {
-                            None
-                        }
-                    },
-                )
-            })
-    }
-
-    pub fn layer_exists(&self, layer_name: impl AsRef<str>) -> bool {
-        let layer_path = self.layer_path(&layer_name);
-        let content_metadata_path = self.layer_content_metadata_path(&layer_name);
-        layer_path.exists() && content_metadata_path.exists()
     }
 }
