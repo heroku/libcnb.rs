@@ -13,5 +13,8 @@
 - Introduced `Buildpack` trait that needs to be implemented for each buildpack
 - `cnb_runtime()` now requires a `Buildpack` instead of `detect` and `build` functions.
 - `ErrorHandler` has been removed. Functionality is now part of the new `Buildpack` trait.
+- `build` now returns `Result<BuildResult, E>` instead of `Result<(), E>`. Construct `BuildResult` values by using the new `BuildResultBuilder`.
+- `detect` now returns `DetectResult` instead of a `DetectOutcome` enum. Construct `DetectResult` values by using the new `DetectResultBuilder`.
+- `BuildContext#write_launch` was removed. Return a `Launch` value from `build` via `BuildResult` instead.
 
 ## [0.3.0] 2021/09/17
