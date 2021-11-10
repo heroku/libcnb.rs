@@ -18,5 +18,6 @@
 - `BuildContext#write_launch` was removed. Return a `Launch` value from `build` via `BuildResult` instead.
 - `cnb_runtime` was renamed to `libcnb_runtime`.
 - Introduced `buildpack_main` macro to initialize the framework.
+- Switch to BSD 3-Clause License.
 
 ## [0.3.0] 2021/09/17
