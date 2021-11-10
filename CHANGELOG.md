@@ -16,5 +16,7 @@
 - `build` now returns `Result<BuildResult, E>` instead of `Result<(), E>`. Construct `BuildResult` values by using the new `BuildResultBuilder`.
 - `detect` now returns `DetectResult` instead of a `DetectOutcome` enum. Construct `DetectResult` values by using the new `DetectResultBuilder`.
 - `BuildContext#write_launch` was removed. Return a `Launch` value from `build` via `BuildResult` instead.
+- `cnb_runtime` was renamed to `libcnb_runtime`.
+- Introduced `buildpack_main` macro to initialize the framework.
 
 ## [0.3.0] 2021/09/17

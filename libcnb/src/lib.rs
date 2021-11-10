@@ -40,7 +40,7 @@ pub use error::*;
 pub use generic::*;
 pub use libcnb_data as data;
 pub use platform::*;
-pub use runtime::cnb_runtime;
+pub use runtime::libcnb_runtime;
 pub use toml_file::*;
 
 mod buildpack;
@@ -52,6 +52,15 @@ mod runtime;
 mod toml_file;
 
 const LIBCNB_SUPPORTED_BUILDPACK_API: BuildpackApi = BuildpackApi { major: 0, minor: 6 };
+
+#[macro_export]
+macro_rules! buildpack_main {
+    ($buildpack:expr) => {
+        fn main() {
+            ::libcnb::libcnb_runtime($buildpack);
+        }
+    };
+}
 
 // This runs the README.md as a doctest, ensuring the code examples in it are valid.
 // It will not be part of the final crate.
