@@ -429,7 +429,7 @@ impl LayerEnvDelta {
 
                     result_env.insert(&name, new_value);
                 }
-                _ => (),
+                ModificationBehavior::Delimiter => (),
             };
         }
 
