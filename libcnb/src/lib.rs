@@ -6,8 +6,6 @@
 // https://rust-lang.github.io/rust-clippy/stable/index.html
 #![warn(clippy::pedantic)]
 // Re-disable pedantic lints that are currently failing, until they are triaged and fixed/wontfixed.
-// https://github.com/Malax/libcnb.rs/issues/60
-#![allow(clippy::doc_markdown)]
 // https://github.com/Malax/libcnb.rs/issues/53
 #![allow(clippy::missing_errors_doc)]
 // https://github.com/Malax/libcnb.rs/issues/54

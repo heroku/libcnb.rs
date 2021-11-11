@@ -53,7 +53,7 @@ impl PlatformEnv {
             .ok_or(VarError::NotPresent)
     }
 
-    /// Initializes a new PlatformEnv from the given platform directory.
+    /// Initializes a new `PlatformEnv` from the given platform directory.
     ///
     /// Buildpack authors usually do not need to create their own [`PlatformEnv`] and instead use the
     /// one passed via context structs ([`DetectContext`](crate::detect::DetectContext) and [`BuildContext`](crate::build::BuildContext)).
