@@ -63,6 +63,7 @@ pub struct BuildResultBuilder {
 }
 
 impl BuildResultBuilder {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             launch: None,
@@ -72,6 +73,7 @@ impl BuildResultBuilder {
 }
 
 impl BuildResultBuilder {
+    #[must_use]
     pub fn build(self) -> BuildResult {
         BuildResult(InnerBuildResult::Pass {
             launch: self.launch,
@@ -79,11 +81,13 @@ impl BuildResultBuilder {
         })
     }
 
+    #[must_use]
     pub fn launch(mut self, launch: Launch) -> Self {
         self.launch = Some(launch);
         self
     }
 
+    #[must_use]
     pub fn store(mut self, store: Store) -> Self {
         self.store = Some(store);
         self

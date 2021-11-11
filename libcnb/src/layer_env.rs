@@ -113,6 +113,7 @@ impl LayerEnv {
     /// let modified_env = layer_env.apply(TargetLifecycle::Build, &env);
     /// assert_eq!(env, modified_env);
     /// ```
+    #[must_use]
     pub fn new() -> Self {
         Self {
             all: LayerEnvDelta::new(),
@@ -143,6 +144,7 @@ impl LayerEnv {
     /// assert_eq!(modified_env.get("VAR").unwrap(), "foobar");
     /// assert_eq!(modified_env.get("VAR2").unwrap(), "previous-value");
     /// ```
+    #[must_use]
     pub fn apply(&self, target: TargetLifecycle, env: &Env) -> Env {
         let deltas = match target {
             TargetLifecycle::All => vec![&self.all],
