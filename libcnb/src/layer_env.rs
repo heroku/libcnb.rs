@@ -262,7 +262,7 @@ impl LayerEnv {
                 let target_delta = match target_lifecycle {
                     TargetLifecycle::Build => &mut result_layer_env.layer_paths_build,
                     TargetLifecycle::Launch => &mut result_layer_env.layer_paths_launch,
-                    _ => panic!("Unexpected TargetLifecycle in read_from_layer_dir implementation. This is a libcnb implementation error!"),
+                    _ => unreachable!("Unexpected TargetLifecycle in read_from_layer_dir implementation. This is a libcnb implementation error!"),
                 };
 
                 target_delta.insert(ModificationBehavior::Prepend, &name, &path);

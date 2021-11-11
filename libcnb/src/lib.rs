@@ -10,8 +10,6 @@
 // Re-disable pedantic lints that are currently failing, until they are triaged and fixed/wontfixed.
 // https://github.com/Malax/libcnb.rs/issues/53
 #![allow(clippy::missing_errors_doc)]
-// https://github.com/Malax/libcnb.rs/issues/54
-#![allow(clippy::missing_panics_doc)]
 // https://github.com/Malax/libcnb.rs/issues/57
 #![allow(clippy::must_use_candidate)]
 // https://github.com/Malax/libcnb.rs/issues/63
