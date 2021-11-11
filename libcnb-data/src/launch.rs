@@ -79,7 +79,7 @@ impl Process {
         Ok(Self {
             r#type: ProcessType::from_str(r#type.as_ref())?,
             command: command.into(),
-            args: args.into_iter().map(|i| i.into()).collect(),
+            args: args.into_iter().map(std::convert::Into::into).collect(),
             direct,
             default,
         })
