@@ -98,9 +98,9 @@ pub struct LayerEnv {
 }
 
 impl LayerEnv {
-    /// Creates an empty LayerEnv that does not modify any environment variables.
+    /// Creates an empty `LayerEnv` that does not modify any environment variables.
     ///
-    /// Entries can be added with the [LayerEnv::insert] function.
+    /// Entries can be added with the [`LayerEnv::insert`] function.
     ///
     /// # Example:
     /// ```
@@ -163,7 +163,7 @@ impl LayerEnv {
             .fold(env.clone(), |env, delta| delta.apply(&env))
     }
 
-    /// Insert a new entry into this LayerEnv.
+    /// Insert a new entry into this `LayerEnv`.
     ///
     /// Should there already be an entry for the same target lifecycle, modification behavior and
     /// name, it will be updated with the new given value.
@@ -557,7 +557,7 @@ mod test {
     use super::LayerEnvDelta;
 
     /// Direct port of a test from the reference lifecycle implementation:
-    /// See: https://github.com/buildpacks/lifecycle/blob/a7428a55c2a14d8a37e84285b95dc63192e3264e/env/env_test.go#L105-L154
+    /// See: <https://github.com/buildpacks/lifecycle/blob/a7428a55c2a14d8a37e84285b95dc63192e3264e/env/env_test.go#L105-L154>
     #[test]
     fn test_reference_impl_env_files_have_a_suffix_it_performs_the_matching_action() {
         let temp_dir = tempdir().unwrap();
@@ -626,7 +626,7 @@ mod test {
     }
 
     /// Direct port of a test from the reference lifecycle implementation:
-    /// See: https://github.com/buildpacks/lifecycle/blob/a7428a55c2a14d8a37e84285b95dc63192e3264e/env/env_test.go#L188-L210
+    /// See: <https://github.com/buildpacks/lifecycle/blob/a7428a55c2a14d8a37e84285b95dc63192e3264e/env/env_test.go#L188-L210>
     #[test]
     fn test_reference_impl_env_files_have_no_suffix_default_action_is_override() {
         let temp_dir = tempdir().unwrap();
@@ -662,7 +662,7 @@ mod test {
     }
 
     /// Direct port of a test from the reference lifecycle implementation:
-    /// See: https://github.com/buildpacks/lifecycle/blob/a7428a55c2a14d8a37e84285b95dc63192e3264e/env/env_test.go#L55-L80
+    /// See: <https://github.com/buildpacks/lifecycle/blob/a7428a55c2a14d8a37e84285b95dc63192e3264e/env/env_test.go#L55-L80>
     #[test]
     fn test_reference_impl_add_root_dir_should_append_posix_directories() {
         let temp_dir = tempdir().unwrap();
