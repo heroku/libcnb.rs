@@ -950,6 +950,12 @@ impl LayerEnvBuilder {
     }
 }
 
+impl Default for LayerEnvBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(target_family = "unix")]
 const PATH_LIST_SEPARATOR: &str = ":";
 

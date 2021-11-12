@@ -10,7 +10,6 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::fs;
 use std::path::Path;
-use thiserror;
 
 pub(crate) fn handle_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
     context: &BuildContext<B>,
@@ -91,11 +90,13 @@ pub(crate) fn handle_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
 
                     handle_layer(context, layer_name, layer)
                 }
-                Ok(None) => Err(HandleLayerError::UnexpectedMissingLayer)?,
-                Err(read_layer_error) => Err(HandleLayerError::ReadLayerError(read_layer_error))?,
+                Ok(None) => Err(HandleLayerError::UnexpectedMissingLayer.into()),
+                Err(read_layer_error) => {
+                    Err(HandleLayerError::ReadLayerError(read_layer_error).into())
+                }
             }
         }
-        Err(read_layer_error) => Err(HandleLayerError::ReadLayerError(read_layer_error))?,
+        Err(read_layer_error) => Err(HandleLayerError::ReadLayerError(read_layer_error).into()),
     }
 }
 
@@ -259,7 +260,7 @@ fn read_layer<M: DeserializeOwned, P: AsRef<Path>, S: AsRef<str>>(
         .as_ref()
         .join(format!("{}.toml", layer_name.as_ref()));
 
-    if layer_dir_path.exists() == false && layer_toml_path.exists() == false {
+    if !layer_dir_path.exists() && !layer_toml_path.exists() {
         return Ok(None);
     } else if layer_dir_path.exists() != layer_toml_path.exists() {
         return Err(ReadLayerError::DisjointedLayer);

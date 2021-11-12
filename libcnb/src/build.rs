@@ -27,7 +27,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
         name: impl AsRef<str>,
         layer: L,
     ) -> crate::Result<LayerData<L::Metadata>, B::Error> {
-        crate::layer::handle_layer(&self, name.as_ref(), layer).map_err(|error| match error {
+        crate::layer::handle_layer(self, name.as_ref(), layer).map_err(|error| match error {
             HandleLayerErrorOrBuildpackError::HandleLayerError(e) => {
                 crate::Error::HandleLayerError(e)
             }

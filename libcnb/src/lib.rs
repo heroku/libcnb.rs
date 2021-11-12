@@ -7,6 +7,8 @@
 #![warn(clippy::pedantic)]
 // This lint is too noisy and enforces a style that reduces readability in many cases.
 #![allow(clippy::module_name_repetitions)]
+// This lint triggers when both layer_dir and layers_dir are present which are quite common.
+#![allow(clippy::similar_names)]
 // Re-disable pedantic lints that are currently failing, until they are triaged and fixed/wontfixed.
 // https://github.com/Malax/libcnb.rs/issues/53
 #![allow(clippy::missing_errors_doc)]
