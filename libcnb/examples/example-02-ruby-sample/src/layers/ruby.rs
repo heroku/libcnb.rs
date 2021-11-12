@@ -22,7 +22,7 @@ impl Layer for RubyLayer {
 
     fn types(&self) -> LayerTypes {
         LayerTypes {
-            build: false,
+            build: true,
             launch: true,
             cache: false,
         }
@@ -33,6 +33,8 @@ impl Layer for RubyLayer {
         context: &BuildContext<Self::Buildpack>,
         layer_path: &Path,
     ) -> anyhow::Result<LayerResult<Self::Metadata>> {
+        println!("---> Download and extracting Ruby");
+
         let ruby_tgz = NamedTempFile::new()?;
 
         download(

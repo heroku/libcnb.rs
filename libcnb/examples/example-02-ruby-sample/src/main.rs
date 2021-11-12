@@ -37,10 +37,6 @@ impl Buildpack for RubyBuildpack {
 
         let ruby_layer = context.handle_layer("ruby", RubyLayer)?;
 
-        // TODO: Why isn't this in a layer?
-        // println!("---> Installing bundler");
-        // install_bundler(&ruby_env)?;
-
         context.handle_layer(
             "bundler",
             BundlerLayer {

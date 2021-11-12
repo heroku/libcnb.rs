@@ -25,7 +25,7 @@ impl Layer for BundlerLayer {
 
     fn types(&self) -> LayerTypes {
         LayerTypes {
-            build: false,
+            build: true,
             launch: true,
             cache: true,
         }
@@ -36,6 +36,18 @@ impl Layer for BundlerLayer {
         context: &BuildContext<Self::Buildpack>,
         layer_path: &Path,
     ) -> anyhow::Result<LayerResult<Self::Metadata>> {
+        println!("---> Installing bundler");
+
+        let install_bundler_exit_code = Command::new("gem")
+            .args(&["install", "bundler", "--no-ri", "--no-rdoc"])
+            .envs(&self.ruby_env)
+            .spawn()?
+            .wait()?;
+
+        if !install_bundler_exit_code.success() {
+            return Err(anyhow::anyhow!("Could not install bundler!"));
+        }
+
         println!("---> Installing gems");
 
         let bundle_exit_code = Command::new("bundle")
