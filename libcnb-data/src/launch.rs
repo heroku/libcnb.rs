@@ -1,5 +1,4 @@
 use crate::bom;
-use crate::defaults;
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -64,7 +63,7 @@ pub struct Process {
     pub command: String,
     pub args: Vec<String>,
     pub direct: bool,
-    #[serde(default = "defaults::r#false")]
+    #[serde(default)]
     pub default: bool,
 }
 

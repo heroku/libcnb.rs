@@ -1,4 +1,3 @@
-use crate::defaults;
 use lazy_static::lazy_static;
 use regex::Regex;
 use semver::Version;
@@ -59,7 +58,7 @@ pub struct Buildpack {
     pub version: Version,
     pub homepage: Option<String>,
     #[serde(rename = "clear-env")]
-    #[serde(default = "defaults::r#false")]
+    #[serde(default)]
     pub clear_env: bool,
     pub description: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -115,7 +114,7 @@ pub struct Order {
 pub struct Group {
     pub id: BuildpackId,
     pub version: Version,
-    #[serde(default = "defaults::r#false")]
+    #[serde(default)]
     pub optional: bool,
 }
 
