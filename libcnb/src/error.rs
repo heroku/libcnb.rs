@@ -1,6 +1,6 @@
 use crate::data::launch::ProcessTypeError;
+use crate::layer::HandleLayerError;
 use crate::toml_file::TomlFileError;
-use crate::HandleLayerError;
 use std::fmt::{Debug, Display};
 
 /// A specialized Result type for libcnb.

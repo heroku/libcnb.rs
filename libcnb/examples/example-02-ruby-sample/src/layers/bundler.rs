@@ -8,7 +8,8 @@ use std::process::Command;
 
 use crate::RubyBuildpack;
 use libcnb::build::BuildContext;
-use libcnb::{Env, Layer, LayerData, LayerResult, LayerResultBuilder};
+use libcnb::layer::{Layer, LayerData, LayerResult, LayerResultBuilder};
+use libcnb::Env;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct BundlerLayerMetadata {

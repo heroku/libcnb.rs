@@ -1,11 +1,10 @@
 use crate::build::BuildContext;
 use crate::data::layer_content_metadata::LayerContentMetadata;
-use crate::generic::GenericMetadata;
-use crate::layer::{Layer, LayerData};
+use crate::layer::{Layer, LayerData, MetadataMigration};
 use crate::layer_env::LayerEnv;
 use crate::util::default_on_not_found;
 use crate::{write_toml_file, TomlFileError};
-use crate::{Buildpack, MetadataMigration};
+use crate::{Buildpack, GenericMetadata};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::fs;

@@ -5,10 +5,9 @@ use std::{fs, path::PathBuf};
 
 use crate::buildpack::Buildpack;
 use crate::data::store::Store;
-use crate::layer::{Layer, LayerData};
+use crate::layer::{HandleLayerErrorOrBuildpackError, Layer, LayerData};
 
 use crate::data::{buildpack::BuildpackToml, buildpack_plan::BuildpackPlan, launch::Launch};
-use crate::HandleLayerErrorOrBuildpackError;
 
 /// Context for the build phase execution.
 pub struct BuildContext<B: Buildpack + ?Sized> {

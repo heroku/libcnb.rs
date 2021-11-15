@@ -22,12 +22,18 @@
 pub mod build;
 pub mod detect;
 pub mod generic;
+pub mod layer;
 pub mod layer_env;
+
+pub use env::*;
+pub use error::*;
+pub use generic::*;
+pub use platform::*;
+pub use toml_file::*;
 
 mod buildpack;
 mod env;
 mod error;
-mod layer;
 mod platform;
 mod runtime;
 mod toml_file;

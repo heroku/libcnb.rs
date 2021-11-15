@@ -3,15 +3,14 @@ use std::io;
 use std::path::Path;
 
 use flate2::read::GzDecoder;
-use libcnb::data::layer_content_metadata::LayerTypes;
-use libcnb::{Layer, LayerResult, LayerResultBuilder};
-
 use tar::Archive;
 use tempfile::NamedTempFile;
 
 use crate::RubyBuildpack;
 use libcnb::build::BuildContext;
+use libcnb::data::layer_content_metadata::LayerTypes;
 use libcnb::generic::GenericMetadata;
+use libcnb::layer::{Layer, LayerResult, LayerResultBuilder};
 use libcnb::layer_env::{LayerEnvBuilder, ModificationBehavior, TargetLifecycle};
 
 pub struct RubyLayer;
