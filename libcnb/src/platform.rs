@@ -26,7 +26,7 @@ where
     /// # Examples
     /// ```no_run
     ///use libcnb::Platform;
-    ///use libcnb::GenericPlatform;
+    ///use libcnb::generic::GenericPlatform;
     ///let platform = GenericPlatform::from_path("/platform").unwrap();
     /// ```
     fn from_path(platform_dir: impl AsRef<Path>) -> io::Result<Self>;

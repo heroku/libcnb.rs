@@ -37,10 +37,8 @@ A basic hello world buildpack looks like this:
 ```rust,no_run
 use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
-use libcnb::{
-    buildpack_main, data::build_plan::BuildPlan, Buildpack, GenericError, GenericMetadata,
-    GenericPlatform,
-};
+use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};
+use libcnb::{buildpack_main, data::build_plan::BuildPlan, Buildpack};
 
 struct HelloWorldBuildpack;
 
