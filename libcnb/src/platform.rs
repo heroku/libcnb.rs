@@ -29,6 +29,7 @@ where
     fn from_path(platform_dir: impl AsRef<Path>) -> io::Result<Self>;
 }
 
+/// Initializes a new `Env` based on the given platform directory.
 pub(crate) fn read_platform_env(platform_dir: impl AsRef<Path>) -> std::io::Result<Env> {
     let env_path = platform_dir.as_ref().join("env");
     let mut env_vars = Env::new();
