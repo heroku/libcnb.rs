@@ -4,7 +4,7 @@ use crate::defaults;
 
 /// Used to specify layer availability based
 /// on buildpack phase.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, Serialize)]
 pub struct LayerTypes {
     /// Whether the layer is intended for launch.
     #[serde(default = "defaults::r#false")]
@@ -17,16 +17,6 @@ pub struct LayerTypes {
     /// Whether the layer is cached.
     #[serde(default = "defaults::r#false")]
     pub cache: bool,
-}
-
-impl Default for LayerTypes {
-    fn default() -> Self {
-        Self {
-            launch: false,
-            build: false,
-            cache: false,
-        }
-    }
 }
 
 /// Describes Layer Content Metadata
