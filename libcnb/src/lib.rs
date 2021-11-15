@@ -22,17 +22,6 @@ pub mod detect;
 pub mod layer_env;
 pub mod layer_lifecycle;
 
-use crate::data::buildpack::BuildpackApi;
-pub use buildpack::Buildpack;
-
-pub use env::*;
-pub use error::*;
-pub use generic::*;
-pub use libcnb_data as data;
-pub use platform::*;
-pub use runtime::libcnb_runtime;
-pub use toml_file::*;
-
 mod buildpack;
 mod env;
 mod error;
@@ -41,7 +30,20 @@ mod platform;
 mod runtime;
 mod toml_file;
 
-const LIBCNB_SUPPORTED_BUILDPACK_API: BuildpackApi = BuildpackApi { major: 0, minor: 6 };
+#[doc(inline)]
+pub use libcnb_data as data;
+
+pub use env::*;
+pub use error::*;
+pub use generic::*;
+pub use platform::*;
+pub use toml_file::*;
+
+pub use buildpack::Buildpack;
+pub use runtime::libcnb_runtime;
+
+const LIBCNB_SUPPORTED_BUILDPACK_API: data::buildpack::BuildpackApi =
+    data::buildpack::BuildpackApi { major: 0, minor: 6 };
 
 /// Generates a main function for the given buildpack.
 ///
