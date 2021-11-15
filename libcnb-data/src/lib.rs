@@ -12,8 +12,6 @@
 #![allow(clippy::missing_errors_doc)]
 // https://github.com/Malax/libcnb.rs/issues/57
 #![allow(clippy::must_use_candidate)]
-// https://github.com/Malax/libcnb.rs/issues/61
-#![allow(clippy::redundant_closure_for_method_calls)]
 
 pub mod bom;
 pub mod build;
