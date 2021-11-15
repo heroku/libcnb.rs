@@ -64,7 +64,22 @@ pub(crate) fn read_platform_env(platform_dir: impl AsRef<Path>) -> std::io::Resu
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::ffi::OsString;
     use std::fs;
+
+    #[test]
+    fn read_platform_env_reads_correct_env_vars() {
+        let tmpdir = tempfile::tempdir().unwrap();
+        let env_dir = tmpdir.path().join("env");
+        fs::create_dir(&env_dir).unwrap();
+
+        fs::write(env_dir.join("FOO"), "BAR").unwrap();
+        fs::write(env_dir.join("HELLO"), "World!").unwrap();
+
+        let env = read_platform_env(tmpdir.path()).unwrap();
+        assert_eq!(env.get("FOO"), Some(OsString::from("BAR")));
+        assert_eq!(env.get("HELLO"), Some(OsString::from("World!")));
+    }
 
     #[test]
     fn read_platform_env_handles_directories_in_env_folder() {
