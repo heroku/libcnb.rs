@@ -43,6 +43,37 @@ mod toml_file;
 
 const LIBCNB_SUPPORTED_BUILDPACK_API: BuildpackApi = BuildpackApi { major: 0, minor: 6 };
 
+/// Generates a main function for the given buildpack.
+///
+/// It will create the main function and wires up the buildpack to the framework.
+///
+/// # Example:
+/// ```
+/// use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
+/// use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
+/// use libcnb::{
+///     buildpack_main, data::build_plan::BuildPlan, Buildpack, GenericError, GenericMetadata,
+///     GenericPlatform,
+/// };
+///
+/// struct MyBuildpack;
+///
+/// impl Buildpack for MyBuildpack {
+///     type Platform = GenericPlatform;
+///     type Metadata = GenericMetadata;
+///     type Error = GenericError;
+///
+///     fn detect(&self, context: DetectContext<Self>) -> libcnb::Result<DetectResult, Self::Error> {
+///         Ok(DetectResultBuilder::pass().build())
+///     }
+///
+///     fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildResult, Self::Error> {
+///         Ok(BuildResultBuilder::new().build())
+///     }
+/// }
+///
+/// buildpack_main!(MyBuildpack);
+/// ```
 #[macro_export]
 macro_rules! buildpack_main {
     ($buildpack:expr) => {
