@@ -54,6 +54,8 @@ impl DetectResultBuilder {
     }
 }
 
+/// Constructs [`DetectResult`] values for a passed detection. Can't be used directly, use
+/// a [`DetectResultBuilder`] to create an instance.
 pub struct PassDetectResultBuilder {
     build_plan: Option<BuildPlan>,
 }
@@ -71,6 +73,8 @@ impl PassDetectResultBuilder {
     }
 }
 
+/// Constructs [`DetectResult`] values for a failed detection. Can't be used directly, use
+/// a [`DetectResultBuilder`] to create an instance.
 pub struct FailDetectResultBuilder;
 
 impl FailDetectResultBuilder {
