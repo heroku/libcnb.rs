@@ -1,3 +1,5 @@
+//! Provides build phase specific types and helpers.
+
 use std::{fs, path::PathBuf};
 
 use serde::de::DeserializeOwned;

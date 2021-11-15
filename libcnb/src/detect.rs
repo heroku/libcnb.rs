@@ -1,3 +1,5 @@
+//! Provides detect phase specific types and helpers.
+
 use std::fmt::Debug;
 use std::path::PathBuf;
 
