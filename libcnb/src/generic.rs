@@ -1,3 +1,5 @@
+//! Generic implementations for some libcnb types.
+
 use std::path::Path;
 
 use crate::platform::{Platform, PlatformEnv};
