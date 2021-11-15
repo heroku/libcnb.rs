@@ -25,7 +25,10 @@ impl LayerLifecycle<RubyBuildpack, GenericMetadata, HashMap<String, String>>
         layer_path: &Path,
         build_context: &BuildContext<RubyBuildpack>,
     ) -> anyhow::Result<LayerContentMetadata<GenericMetadata>> {
+        println!("---> Download and extracting Ruby");
+
         let ruby_tgz = NamedTempFile::new()?;
+
         download(
             &build_context.buildpack_descriptor.metadata.ruby_url,
             ruby_tgz.path(),
