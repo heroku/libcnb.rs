@@ -138,23 +138,33 @@ pub trait Layer {
     }
 }
 
+/// The result of a [`Layer::migrate_incompatible_metadata`] call.
 pub enum MetadataMigration<M> {
+    /// The layer should be recreated entirely.
     RecreateLayer,
+    /// The layer's metadata should be replaced by this new value.
     ReplaceMetadata(M),
 }
 
+/// Information about an existing CNB layer.
 pub struct LayerData<M> {
     pub name: String,
+    /// The layer's path, should not be modified outside of a [`Layer`] implementation.
     pub path: PathBuf,
     pub env: LayerEnv,
     pub content_metadata: LayerContentMetadata<M>,
 }
 
+/// The result of a function that processes layer data.
+///
+/// Essentially, this carries additional metadata about a layer this later persisted according
+/// to the CNB spec by libcnb.
 pub struct LayerResult<M> {
     pub metadata: M,
     pub env: Option<LayerEnv>,
 }
 
+/// A builder that simplifies the creation of [`LayerResult`] values.
 pub struct LayerResultBuilder<M> {
     metadata: M,
     env: Option<LayerEnv>,
