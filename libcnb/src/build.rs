@@ -27,7 +27,7 @@ pub struct BuildContext<B: Buildpack + ?Sized> {
 /// Describes the result of the build phase.
 ///
 /// In contrast to `DetectResult`, it always signals a successful build. To fail the build phase,
-/// return a failed [`libcnb::Result`] from the build function.
+/// return a failed [`crate::Result`] from the build function.
 ///
 /// It contains build phase output such as launch and/or store metadata which will be subsequently
 /// handled by libcnb.
