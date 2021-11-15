@@ -197,9 +197,6 @@ pub enum HandleLayerError {
 
 #[derive(thiserror::Error, Debug)]
 pub enum ReadLayerError {
-    #[error("Found either layer metadata TOML or layer path, but not both!")]
-    DisjointedLayer,
-
     #[error("Layer content metadata could not be parsed!")]
     LayerContentMetadataParseError(toml::de::Error),
 
@@ -262,8 +259,27 @@ fn read_layer<M: DeserializeOwned, P: AsRef<Path>, S: AsRef<str>>(
 
     if !layer_dir_path.exists() && !layer_toml_path.exists() {
         return Ok(None);
-    } else if layer_dir_path.exists() != layer_toml_path.exists() {
-        return Err(ReadLayerError::DisjointedLayer);
+    } else if !layer_dir_path.exists() && layer_toml_path.exists() {
+        // This is a valid case according to the spec:
+        // https://github.com/buildpacks/spec/blob/7b20dfa070ed428c013e61a3cefea29030af1732/buildpack.md#layer-types
+        //
+        // When launch = true, build = false, cache = false, the layer metadata will be restored but
+        // not the layer itself. However, we choose to not support this case as of now. It would
+        // complicate the API we need to expose to the user of libcnb as this case is very different
+        // compared to all other combinations of launch, build and cache. It's the only case where
+        // a cache = false layer restores some of its data between builds.
+        //
+        // To normalize, we remove the layer TOML file and treat the layer as non-existent.
+        fs::remove_file(&layer_toml_path)?;
+        return Ok(None);
+    }
+
+    // An empty layer content metadata file is valid and the CNB spec is not clear if the lifecycle
+    // has to restore them if they're empty. This is especially important since the layer types
+    // are removed from the file if it's restored. To normalize, we write an empty file if the layer
+    // directory exists without the metadata file.
+    if !layer_toml_path.exists() {
+        fs::write(&layer_toml_path, "")?;
     }
 
     let layer_toml_contents = fs::read_to_string(&layer_toml_path)?;
@@ -626,21 +642,24 @@ mod test {
     }
 
     #[test]
-    fn read_disjointed_layer_1() {
+    fn read_layer_without_layer_directory() {
         let layer_name = "foo";
         let temp_dir = tempdir().unwrap();
         let layers_dir = temp_dir.path();
+        let layer_dir = layers_dir.join(&layer_name);
 
-        fs::create_dir_all(layers_dir.join(&layer_name)).unwrap();
+        fs::create_dir_all(&layer_dir).unwrap();
 
         match super::read_layer::<GenericMetadata, _, _>(&layers_dir, &layer_name) {
-            Err(ReadLayerError::DisjointedLayer) => {}
-            _ => panic!("Expected ReadLayerError::DisjointedLayer!"),
+            Ok(Some(layer_data)) => {
+                assert_eq!(layer_data.content_metadata, LayerContentMetadata::default());
+            }
+            _ => panic!("Expected Ok(Some(_)!"),
         }
     }
 
     #[test]
-    fn read_disjointed_layer_2() {
+    fn read_layer_without_layer_content_metadata() {
         let layer_name = "foo";
         let temp_dir = tempdir().unwrap();
         let layers_dir = temp_dir.path();
@@ -648,8 +667,8 @@ mod test {
         fs::write(layers_dir.join(format!("{}.toml", &layer_name)), "").unwrap();
 
         match super::read_layer::<GenericMetadata, _, _>(&layers_dir, &layer_name) {
-            Err(ReadLayerError::DisjointedLayer) => {}
-            _ => panic!("Expected ReadLayerError::DisjointedLayer!"),
+            Ok(None) => {}
+            _ => panic!("Expected Ok(None)!"),
         }
     }
 
