@@ -6,7 +6,6 @@ use std::path::Path;
 use flate2::read::GzDecoder;
 use libcnb::data::layer_content_metadata::LayerContentMetadata;
 use libcnb::layer_lifecycle::LayerLifecycle;
-use libcnb::GenericMetadata;
 
 use std::env;
 use tar::Archive;
@@ -14,6 +13,7 @@ use tempfile::NamedTempFile;
 
 use crate::RubyBuildpack;
 use libcnb::build::BuildContext;
+use libcnb::generic::GenericMetadata;
 
 pub struct RubyLayerLifecycle;
 

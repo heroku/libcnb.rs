@@ -19,13 +19,13 @@
 
 pub mod build;
 pub mod detect;
+pub mod generic;
 pub mod layer_env;
 pub mod layer_lifecycle;
 
 mod buildpack;
 mod env;
 mod error;
-mod generic;
 mod platform;
 mod runtime;
 mod toml_file;
@@ -35,7 +35,6 @@ pub use libcnb_data as data;
 
 pub use env::*;
 pub use error::*;
-pub use generic::*;
 pub use platform::*;
 pub use toml_file::*;
 
@@ -53,10 +52,8 @@ const LIBCNB_SUPPORTED_BUILDPACK_API: data::buildpack::BuildpackApi =
 /// ```
 /// use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
 /// use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
-/// use libcnb::{
-///     buildpack_main, data::build_plan::BuildPlan, Buildpack, GenericError, GenericMetadata,
-///     GenericPlatform,
-/// };
+/// use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};
+/// use libcnb::{buildpack_main, data::build_plan::BuildPlan, Buildpack};
 ///
 /// struct MyBuildpack;
 ///

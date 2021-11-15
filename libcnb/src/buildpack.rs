@@ -11,13 +11,13 @@ use std::fmt::{Debug, Display};
 /// is targeting, the type for its metadata and the custom error type.
 pub trait Buildpack {
     /// The platform targeted by this buildpack. If no specific platform is targeted, consider using
-    /// [`GenericPlatform`](crate::GenericPlatform) as the type.
+    /// [`GenericPlatform`](crate::generic::GenericPlatform) as the type.
     type Platform: Platform;
 
     /// The metadata type for this buildpack. This is the data within `[metadata]` of the buildpacks
     /// `buildpack.toml`. The framework will attempt to parse the data and will only continue if
     /// parsing succeeded. If you wish to use raw, untyped, TOML data instead, use
-    /// [`GenericMetadata`](crate::GenericMetadata).
+    /// [`GenericMetadata`](crate::generic::GenericMetadata).
     type Metadata: DeserializeOwned;
 
     /// The error type for buildpack specific errors, usually an enum. Examples of values inside the

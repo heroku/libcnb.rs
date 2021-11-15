@@ -1,11 +1,12 @@
 use crate::layers::BundlerLayerLifecycle;
 use crate::layers::RubyLayerLifecycle;
 use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
+use libcnb::buildpack_main;
 use libcnb::data::launch::{Launch, Process};
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
+use libcnb::generic::GenericPlatform;
 use libcnb::layer_lifecycle::execute_layer_lifecycle;
 use libcnb::Buildpack;
-use libcnb::{buildpack_main, GenericPlatform};
 use serde::Deserialize;
 
 mod layers;
