@@ -1,21 +1,19 @@
 use serde::{Deserialize, Serialize};
 
-use crate::defaults;
-
 /// Used to specify layer availability based
 /// on buildpack phase.
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LayerTypes {
     /// Whether the layer is intended for launch.
-    #[serde(default = "defaults::r#false")]
+    #[serde(default)]
     pub launch: bool,
 
     /// Whether the layer is intended for build.
-    #[serde(default = "defaults::r#false")]
+    #[serde(default)]
     pub build: bool,
 
     /// Whether the layer is cached.
-    #[serde(default = "defaults::r#false")]
+    #[serde(default)]
     pub cache: bool,
 }
 
