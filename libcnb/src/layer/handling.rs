@@ -315,11 +315,8 @@ mod test {
 
         super::delete_layer(&layers_dir, &layer_name).unwrap();
 
-        assert_eq!(layer_dir.exists(), false);
-        assert_eq!(
-            layers_dir.join(format!("{}.toml", &layer_name)).exists(),
-            false
-        );
+        assert!(!layer_dir.exists());
+        assert!(!layers_dir.join(format!("{}.toml", &layer_name)).exists());
     }
 
     #[test]
@@ -342,11 +339,8 @@ mod test {
 
         super::delete_layer(&layers_dir, &layer_name).unwrap();
 
-        assert_eq!(layer_dir.exists(), false);
-        assert_eq!(
-            layers_dir.join(format!("{}.toml", &layer_name)).exists(),
-            false
-        );
+        assert!(!layer_dir.exists());
+        assert!(!layers_dir.join(format!("{}.toml", &layer_name)).exists());
     }
 
     #[test]
@@ -387,7 +381,7 @@ mod test {
         )
         .unwrap();
 
-        assert_eq!(layer_dir.exists(), true);
+        assert!(layer_dir.exists());
 
         assert_eq!(
             fs::read_to_string(layer_dir.join("env/ENV_VAR.default")).unwrap(),
@@ -466,7 +460,7 @@ mod test {
         )
         .unwrap();
 
-        assert_eq!(layer_dir.exists(), true);
+        assert!(layer_dir.exists());
 
         assert_eq!(
             fs::read_to_string(layer_dir.join("content.txt")).unwrap(),
@@ -478,10 +472,7 @@ mod test {
             "NEW_ENV_VAR_VALUE"
         );
 
-        assert_eq!(
-            layer_dir.join("env/SOME_OTHER_ENV_VAR.default").exists(),
-            false
-        );
+        assert!(!layer_dir.join("env/SOME_OTHER_ENV_VAR.default").exists());
 
         let layer_content_metadata: LayerContentMetadata<GenericMetadata> =
             read_toml_file(layers_dir.join(format!("{}.toml", layer_name))).unwrap();
@@ -592,7 +583,7 @@ mod test {
 
         match super::read_layer::<GenericMetadata, _, _>(&layers_dir, &layer_name) {
             Err(ReadLayerError::LayerContentMetadataParseError(toml_error)) => {
-                assert_eq!(toml_error.line_col(), Some((1, 18)))
+                assert_eq!(toml_error.line_col(), Some((1, 18)));
             }
             _ => panic!("Expected ReadLayerError::LayerContentMetadataParseError!"),
         }
@@ -628,7 +619,7 @@ mod test {
 
         match super::read_layer::<TestLayerMetadata, _, _>(&layers_dir, &layer_name) {
             Err(ReadLayerError::LayerContentMetadataParseError(toml_error)) => {
-                assert_eq!(toml_error.line_col(), Some((6, 12)))
+                assert_eq!(toml_error.line_col(), Some((6, 12)));
             }
             _ => panic!("Expected ReadLayerError::LayerContentMetadataParseError!"),
         }
