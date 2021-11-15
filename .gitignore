@@ -1,5 +1,5 @@
 /target
 .idea
 Cargo.lock
-examples/**/target
-examples/**/target-cargo
+libcnb/examples/**/target
+libcnb/examples/**/target-cargo
