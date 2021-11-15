@@ -20,5 +20,6 @@
 - Introduced `buildpack_main` macro to initialize the framework.
 - Switch to BSD 3-Clause License.
 - `Generic*` implementations moved to the `generic` module.
+- `LayerContentTypeTable` has been renamed to `LayerTypes`.
 
 ## [0.3.0] 2021/09/17
