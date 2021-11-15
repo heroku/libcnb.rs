@@ -19,30 +19,60 @@
 
 pub mod build;
 pub mod detect;
+pub mod generic;
 pub mod layer_env;
 pub mod layer_lifecycle;
-
-use crate::data::buildpack::BuildpackApi;
-pub use buildpack::Buildpack;
-
-pub use env::*;
-pub use error::*;
-pub use generic::*;
-pub use libcnb_data as data;
-pub use platform::*;
-pub use runtime::libcnb_runtime;
-pub use toml_file::*;
 
 mod buildpack;
 mod env;
 mod error;
-mod generic;
 mod platform;
 mod runtime;
 mod toml_file;
 
-const LIBCNB_SUPPORTED_BUILDPACK_API: BuildpackApi = BuildpackApi { major: 0, minor: 6 };
+#[doc(inline)]
+pub use libcnb_data as data;
 
+pub use env::*;
+pub use error::*;
+pub use platform::*;
+pub use toml_file::*;
+
+pub use buildpack::Buildpack;
+pub use runtime::libcnb_runtime;
+
+const LIBCNB_SUPPORTED_BUILDPACK_API: data::buildpack::BuildpackApi =
+    data::buildpack::BuildpackApi { major: 0, minor: 6 };
+
+/// Generates a main function for the given buildpack.
+///
+/// It will create the main function and wires up the buildpack to the framework.
+///
+/// # Example:
+/// ```
+/// use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
+/// use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
+/// use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};
+/// use libcnb::{buildpack_main, data::build_plan::BuildPlan, Buildpack};
+///
+/// struct MyBuildpack;
+///
+/// impl Buildpack for MyBuildpack {
+///     type Platform = GenericPlatform;
+///     type Metadata = GenericMetadata;
+///     type Error = GenericError;
+///
+///     fn detect(&self, context: DetectContext<Self>) -> libcnb::Result<DetectResult, Self::Error> {
+///         Ok(DetectResultBuilder::pass().build())
+///     }
+///
+///     fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildResult, Self::Error> {
+///         Ok(BuildResultBuilder::new().build())
+///     }
+/// }
+///
+/// buildpack_main!(MyBuildpack);
+/// ```
 #[macro_export]
 macro_rules! buildpack_main {
     ($buildpack:expr) => {

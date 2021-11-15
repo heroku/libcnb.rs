@@ -1,6 +1,7 @@
 use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
-use libcnb::{buildpack_main, Buildpack, GenericError, GenericMetadata, GenericPlatform};
+use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};
+use libcnb::{buildpack_main, Buildpack};
 
 struct BasicBuildpack;
 impl Buildpack for BasicBuildpack {

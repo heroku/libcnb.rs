@@ -1,5 +1,5 @@
 # Buildpack API version
-api = "0.5"
+api = "0.6"
 
 # Buildpack ID and metadata
 [buildpack]
@@ -9,10 +9,7 @@ name = "Ruby Buildpack"
 
 # Stacks that the buildpack will work with
 [[stacks]]
-id = "io.buildpacks.stacks.bionic"
-
-[[stacks]]
-id = "heroku-18"
+id = "heroku-20"
 
 [metadata]
-ruby_url = "https://s3-external-1.amazonaws.com/heroku-buildpack-ruby/heroku-18/ruby-2.5.1.tgz"
+ruby_url = "https://heroku-buildpack-ruby.s3.amazonaws.com/heroku-20/ruby-2.7.4.tgz"

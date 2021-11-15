@@ -1,32 +1,20 @@
 use serde::{Deserialize, Serialize};
 
-use crate::defaults;
-
 /// Used to specify layer availability based
 /// on buildpack phase.
-#[derive(Debug, Deserialize, Serialize)]
-pub struct LayerContentTypeTable {
+#[derive(Debug, Default, Deserialize, Serialize)]
+pub struct LayerTypes {
     /// Whether the layer is intended for launch.
-    #[serde(default = "defaults::r#false")]
+    #[serde(default)]
     pub launch: bool,
 
     /// Whether the layer is intended for build.
-    #[serde(default = "defaults::r#false")]
+    #[serde(default)]
     pub build: bool,
 
     /// Whether the layer is cached.
-    #[serde(default = "defaults::r#false")]
+    #[serde(default)]
     pub cache: bool,
-}
-
-impl Default for LayerContentTypeTable {
-    fn default() -> Self {
-        Self {
-            launch: false,
-            build: false,
-            cache: false,
-        }
-    }
 }
 
 /// Describes Layer Content Metadata
@@ -55,7 +43,7 @@ impl Default for LayerContentTypeTable {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LayerContentMetadata<M> {
     #[serde(default)]
-    pub types: LayerContentTypeTable,
+    pub types: LayerTypes,
 
     /// Metadata that describes the layer contents.
     pub metadata: M,
@@ -64,7 +52,7 @@ pub struct LayerContentMetadata<M> {
 impl Default for LayerContentMetadata<Option<toml::Value>> {
     fn default() -> Self {
         Self {
-            types: LayerContentTypeTable::default(),
+            types: LayerTypes::default(),
             metadata: Option::default(),
         }
     }
@@ -88,7 +76,7 @@ impl<M> LayerContentMetadata<M> {
 
     pub fn metadata<NM>(&mut self, metadata: NM) -> LayerContentMetadata<NM> {
         LayerContentMetadata {
-            types: LayerContentTypeTable {
+            types: LayerTypes {
                 cache: self.types.cache,
                 build: self.types.build,
                 launch: self.types.launch,

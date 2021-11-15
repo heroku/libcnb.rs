@@ -19,5 +19,8 @@
 - `cnb_runtime` was renamed to `libcnb_runtime`.
 - Introduced `buildpack_main` macro to initialize the framework.
 - Switch to BSD 3-Clause License.
+- `Generic*` implementations moved to the `generic` module.
+- `LayerContentTypeTable` has been renamed to `LayerTypes`.
+- Remove `PlatformEnv` and replaced it with the already existing `Env`.
 
 ## [0.3.0] 2021/09/17

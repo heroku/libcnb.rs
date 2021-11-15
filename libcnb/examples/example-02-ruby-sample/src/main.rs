@@ -1,19 +1,23 @@
-use std::collections::HashMap;
-use std::process::{Command, Stdio};
-
-use crate::layers::bundler::BundlerLayerLifecycle;
-use crate::layers::ruby::RubyLayerLifecycle;
+use crate::layers::BundlerLayerLifecycle;
+use crate::layers::RubyLayerLifecycle;
 use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
+use libcnb::buildpack_main;
 use libcnb::data::launch::{Launch, Process};
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
+use libcnb::generic::GenericPlatform;
 use libcnb::layer_lifecycle::execute_layer_lifecycle;
 use libcnb::Buildpack;
-use libcnb::{buildpack_main, GenericPlatform};
 use serde::Deserialize;
 
 mod layers;
 
+#[derive(Deserialize, Debug)]
+struct RubyBuildpackMetadata {
+    pub ruby_url: String,
+}
+
 struct RubyBuildpack;
+
 impl Buildpack for RubyBuildpack {
     type Platform = GenericPlatform;
     type Metadata = RubyBuildpackMetadata;
@@ -31,12 +35,9 @@ impl Buildpack for RubyBuildpack {
 
     fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildResult, Self::Error> {
         println!("---> Ruby Buildpack");
-        println!("---> Download and extracting Ruby");
 
         let ruby_env = execute_layer_lifecycle("ruby", RubyLayerLifecycle, &context)?;
 
-        println!("---> Installing bundler");
-        install_bundler(&ruby_env)?;
         execute_layer_lifecycle("bundler", BundlerLayerLifecycle { ruby_env }, &context)?;
 
         Ok(BuildResultBuilder::new()
@@ -62,24 +63,3 @@ impl Buildpack for RubyBuildpack {
 }
 
 buildpack_main!(RubyBuildpack);
-
-#[derive(Deserialize, Debug)]
-struct RubyBuildpackMetadata {
-    pub ruby_url: String,
-}
-
-fn install_bundler(ruby_env: &HashMap<String, String>) -> anyhow::Result<()> {
-    let cmd = Command::new("gem")
-        .args(&["install", "bundler", "--no-ri", "--no-rdoc"])
-        .envs(ruby_env)
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit())
-        .spawn()?
-        .wait()?;
-
-    if cmd.success() {
-        Ok(())
-    } else {
-        Err(anyhow::anyhow!("Could not install bundler"))
-    }
-}

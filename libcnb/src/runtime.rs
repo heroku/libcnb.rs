@@ -25,6 +25,9 @@ use std::fmt::{Debug, Display};
 /// hard links to this single binary.
 ///
 /// Currently symlinks are recommended over hard hard links due to [buildpacks/pack#1286](https://github.com/buildpacks/pack/issues/1286).
+///
+/// Don't implement this directly and use the [`buildpack_main`] macro instead!
+#[doc(hidden)]
 pub fn libcnb_runtime<B: Buildpack>(buildpack: B) {
     match read_buildpack_toml::<B::Metadata, B::Error>() {
         Ok(buildpack_toml) => {
