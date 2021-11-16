@@ -3,25 +3,6 @@ use crate::newtypes::libcnb_newtype;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
-libcnb_newtype!(
-    /// launch.toml Process Type. This is a newtype wrapper around a String. It MUST only contain numbers, letters, and the characters ., _, and -. Use [`std::str::FromStr`] to create a new instance of this struct.
-    ///
-    /// # Examples
-    /// ```
-    /// use std::str::FromStr;
-    /// use libcnb_data::launch::ProcessType;
-    ///
-    /// let valid = ProcessType::from_str("foo-Bar_9");
-    /// assert_eq!(valid.unwrap().as_str(), "foo-Bar_9");
-    ///
-    /// let invalid = ProcessType::from_str("!nv4lid");
-    /// assert!(invalid.is_err());
-    /// ```
-    ProcessType,
-    ProcessTypeError,
-    r"^[[:alnum:]\._-]+$"
-);
-
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Launch {
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -106,6 +87,25 @@ impl Process {
 pub struct Slice {
     pub paths: Vec<String>,
 }
+
+libcnb_newtype!(
+    /// launch.toml Process Type. This is a newtype wrapper around a String. It MUST only contain numbers, letters, and the characters ., _, and -. Use [`std::str::FromStr`] to create a new instance of this struct.
+    ///
+    /// # Examples
+    /// ```
+    /// use std::str::FromStr;
+    /// use libcnb_data::launch::ProcessType;
+    ///
+    /// let valid = ProcessType::from_str("foo-Bar_9");
+    /// assert_eq!(valid.unwrap().as_str(), "foo-Bar_9");
+    ///
+    /// let invalid = ProcessType::from_str("!nv4lid");
+    /// assert!(invalid.is_err());
+    /// ```
+    ProcessType,
+    ProcessTypeError,
+    r"^[[:alnum:]\._-]+$"
+);
 
 #[cfg(test)]
 mod tests {

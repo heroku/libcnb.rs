@@ -7,55 +7,6 @@ use std::fmt::{Display, Formatter};
 use std::{fmt, str::FromStr};
 use thiserror;
 
-libcnb_newtype!(
-    /// buildpack.toml Buildpack Id. This is a newtype wrapper around a String.
-    /// It MUST only contain numbers, letters, and the characters ., /, and -.
-    /// It also cannot be `config` or `app`.
-    /// Use [`std::str::FromStr`] to create a new instance of this struct.
-    ///
-    /// # Examples
-    /// ```
-    /// use std::str::FromStr;
-    /// use libcnb_data::buildpack::BuildpackId;
-    ///
-    /// let valid = BuildpackId::from_str("heroku/ruby-engine.MRI3");
-    /// assert_eq!(valid.unwrap().as_str(), "heroku/ruby-engine.MRI3");
-    ///
-    /// let invalid = BuildpackId::from_str("!nvalid");
-    /// assert!(invalid.is_err());
-    /// ```
-    BuildpackId,
-    BuildpackIdError,
-    r"^[[:alnum:]./-]+$",
-    |id| { id != "app" && id != "config" }
-);
-
-libcnb_newtype!(
-    /// buildpack.toml Stack Id. This is a newtype wrapper around a String.
-    /// It MUST only contain numbers, letters, and the characters ., /, and -.
-    /// or be `*`.
-    ///
-    /// Use [`std::str::FromStr`] to create a new instance of this struct.
-    ///
-    /// # Examples
-    /// ```
-    /// use std::str::FromStr;
-    /// use libcnb_data::buildpack::StackId;
-    ///
-    /// let valid = StackId::from_str("io.buildpacks.bionic/Latest-2020");
-    /// assert_eq!(valid.unwrap().as_str(), "io.buildpacks.bionic/Latest-2020");
-    ///
-    /// let invalid = StackId::from_str("!nvalid");
-    /// assert!(invalid.is_err());
-    ///
-    /// let invalid = StackId::from_str("*");
-    /// assert!(invalid.is_ok());
-    /// ```
-    StackId,
-    StackIdError,
-    r"^([[:alnum:]./-]+|\*)$"
-);
-
 /// Data structure for the Buildpack descriptor (buildpack.toml).
 ///
 /// # Examples
@@ -222,6 +173,55 @@ impl Display for BuildpackApi {
         formatter.write_str(&format!("{}.{}", self.major, self.minor))
     }
 }
+
+libcnb_newtype!(
+    /// buildpack.toml Buildpack Id. This is a newtype wrapper around a String.
+    /// It MUST only contain numbers, letters, and the characters ., /, and -.
+    /// It also cannot be `config` or `app`.
+    /// Use [`std::str::FromStr`] to create a new instance of this struct.
+    ///
+    /// # Examples
+    /// ```
+    /// use std::str::FromStr;
+    /// use libcnb_data::buildpack::BuildpackId;
+    ///
+    /// let valid = BuildpackId::from_str("heroku/ruby-engine.MRI3");
+    /// assert_eq!(valid.unwrap().as_str(), "heroku/ruby-engine.MRI3");
+    ///
+    /// let invalid = BuildpackId::from_str("!nvalid");
+    /// assert!(invalid.is_err());
+    /// ```
+    BuildpackId,
+    BuildpackIdError,
+    r"^[[:alnum:]./-]+$",
+    |id| { id != "app" && id != "config" }
+);
+
+libcnb_newtype!(
+    /// buildpack.toml Stack Id. This is a newtype wrapper around a String.
+    /// It MUST only contain numbers, letters, and the characters ., /, and -.
+    /// or be `*`.
+    ///
+    /// Use [`std::str::FromStr`] to create a new instance of this struct.
+    ///
+    /// # Examples
+    /// ```
+    /// use std::str::FromStr;
+    /// use libcnb_data::buildpack::StackId;
+    ///
+    /// let valid = StackId::from_str("io.buildpacks.bionic/Latest-2020");
+    /// assert_eq!(valid.unwrap().as_str(), "io.buildpacks.bionic/Latest-2020");
+    ///
+    /// let invalid = StackId::from_str("!nvalid");
+    /// assert!(invalid.is_err());
+    ///
+    /// let invalid = StackId::from_str("*");
+    /// assert!(invalid.is_ok());
+    /// ```
+    StackId,
+    StackIdError,
+    r"^([[:alnum:]./-]+|\*)$"
+);
 
 #[derive(thiserror::Error, Debug)]
 pub enum BuildpackTomlError {
