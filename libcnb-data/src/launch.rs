@@ -1,9 +1,7 @@
 use crate::bom;
-use lazy_static::lazy_static;
-use regex::Regex;
+use crate::newtypes::libcnb_newtype;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
-use thiserror;
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Launch {
@@ -90,52 +88,24 @@ pub struct Slice {
     pub paths: Vec<String>,
 }
 
-/// launch.toml Process Type. This is a newtype wrapper around a String. It MUST only contain numbers, letters, and the characters ., _, and -. Use [`std::str::FromStr`] to create a new instance of this struct.
-///
-/// # Examples
-/// ```
-/// use std::str::FromStr;
-/// use libcnb_data::launch::ProcessType;
-///
-/// let valid = ProcessType::from_str("foo-Bar_9");
-/// assert_eq!(valid.unwrap().as_str(), "foo-Bar_9");
-///
-/// let invalid = ProcessType::from_str("!nv4lid");
-/// assert!(invalid.is_err());
-/// ```
-#[derive(Deserialize, Serialize, Debug, PartialEq, Eq)]
-pub struct ProcessType(String);
-
-impl ProcessType {
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
-
-impl FromStr for ProcessType {
-    type Err = ProcessTypeError;
-
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        lazy_static! {
-            static ref RE: Regex = Regex::new(r"^[[:alnum:]\._-]+$").unwrap();
-        }
-
-        let string = String::from(value);
-        if RE.is_match(value) {
-            Ok(Self(string))
-        } else {
-            Err(ProcessTypeError::InvalidProcessType(string))
-        }
-    }
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum ProcessTypeError {
-    #[error(
-        "Found `{0}` but value MUST only contain numbers, letters, and the characters ., _, and -."
-    )]
-    InvalidProcessType(String),
-}
+libcnb_newtype!(
+    /// launch.toml Process Type. This is a newtype wrapper around a String. It MUST only contain numbers, letters, and the characters ., _, and -. Use [`std::str::FromStr`] to create a new instance of this struct.
+    ///
+    /// # Examples
+    /// ```
+    /// use std::str::FromStr;
+    /// use libcnb_data::launch::ProcessType;
+    ///
+    /// let valid = ProcessType::from_str("foo-Bar_9");
+    /// assert_eq!(valid.unwrap().as_str(), "foo-Bar_9");
+    ///
+    /// let invalid = ProcessType::from_str("!nv4lid");
+    /// assert!(invalid.is_err());
+    /// ```
+    ProcessType,
+    ProcessTypeError,
+    r"^[[:alnum:]\._-]+$"
+);
 
 #[cfg(test)]
 mod tests {
