@@ -1,4 +1,5 @@
 use crate::newtypes::libcnb_newtype;
+use lazy_static::lazy_static;
 use regex::Regex;
 use semver::Version;
 use serde::Deserialize;
@@ -142,9 +143,11 @@ impl FromStr for BuildpackApi {
     type Err = BuildpackTomlError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        let regex = Regex::new(r"^(?P<major>\d+)(\.(?P<minor>\d+))?$").unwrap();
+        lazy_static! {
+            static ref RE: Regex = Regex::new(r"^(?P<major>\d+)(\.(?P<minor>\d+))?$").unwrap();
+        }
 
-        if let Some(captures) = regex.captures(value) {
+        if let Some(captures) = RE.captures(value) {
             if let Some(major) = captures.name("major") {
                 // these should never panic since we check with the regex unless it's greater than
                 // `std::u32::MAX`
