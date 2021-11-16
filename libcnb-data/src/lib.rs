@@ -22,3 +22,5 @@ pub mod defaults;
 pub mod launch;
 pub mod layer_content_metadata;
 pub mod store;
+
+mod newtypes;

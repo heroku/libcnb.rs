@@ -1,4 +1,4 @@
-use lazy_static::lazy_static;
+use crate::newtypes::libcnb_newtype;
 use regex::Regex;
 use semver::Version;
 use serde::Deserialize;
@@ -6,6 +6,12 @@ use std::convert::TryFrom;
 use std::fmt::{Display, Formatter};
 use std::{fmt, str::FromStr};
 use thiserror;
+
+libcnb_newtype!(BuildpackId, BuildpackIdError, r"^[[:alnum:]./-]+$", |id| {
+    id != "app" && id != "config"
+});
+
+libcnb_newtype!(StackId, StackIdError, r"^([[:alnum:]./-]+|\*)$");
 
 /// Data structure for the Buildpack descriptor (buildpack.toml).
 ///
@@ -142,11 +148,9 @@ impl FromStr for BuildpackApi {
     type Err = BuildpackTomlError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        lazy_static! {
-            static ref RE: Regex = Regex::new(r"^(?P<major>\d+)(\.(?P<minor>\d+))?$").unwrap();
-        }
+        let regex = Regex::new(r"^(?P<major>\d+)(\.(?P<minor>\d+))?$").unwrap();
 
-        if let Some(captures) = RE.captures(value) {
+        if let Some(captures) = regex.captures(value) {
             if let Some(major) = captures.name("major") {
                 // these should never panic since we check with the regex unless it's greater than
                 // `std::u32::MAX`
@@ -176,95 +180,6 @@ impl Display for BuildpackApi {
     }
 }
 
-/// buildpack.toml Buildpack Id. This is a newtype wrapper around a String.
-/// It MUST only contain numbers, letters, and the characters ., /, and -.
-/// It also cannot be `config` or `app`.
-/// Use [`std::str::FromStr`] to create a new instance of this struct.
-///
-/// # Examples
-/// ```
-/// use std::str::FromStr;
-/// use libcnb_data::buildpack::BuildpackId;
-///
-/// let valid = BuildpackId::from_str("heroku/ruby-engine.MRI3");
-/// assert_eq!(valid.unwrap().as_str(), "heroku/ruby-engine.MRI3");
-///
-/// let invalid = BuildpackId::from_str("!nvalid");
-/// assert!(invalid.is_err());
-/// ```
-#[derive(Deserialize, Debug)]
-pub struct BuildpackId(String);
-
-impl FromStr for BuildpackId {
-    type Err = BuildpackTomlError;
-
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        lazy_static! {
-            static ref RE: Regex = Regex::new(r"^[[:alnum:]./-]+$").unwrap();
-        }
-
-        let string = String::from(value);
-        if value != "app" && value != "config" && RE.is_match(value) {
-            Ok(Self(string))
-        } else {
-            Err(BuildpackTomlError::InvalidBuildpackId(string))
-        }
-    }
-}
-
-impl BuildpackId {
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
-
-/// buildpack.toml Stack Id. This is a newtype wrapper around a String.
-/// It MUST only contain numbers, letters, and the characters ., /, and -.
-/// or be `*`.
-///
-/// Use [`std::str::FromStr`] to create a new instance of this struct.
-///
-/// # Examples
-/// ```
-/// use std::str::FromStr;
-/// use libcnb_data::buildpack::StackId;
-///
-/// let valid = StackId::from_str("io.buildpacks.bionic/Latest-2020");
-/// assert_eq!(valid.unwrap().as_str(), "io.buildpacks.bionic/Latest-2020");
-///
-/// let invalid = StackId::from_str("!nvalid");
-/// assert!(invalid.is_err());
-///
-/// let invalid = StackId::from_str("*");
-/// assert!(invalid.is_ok());
-/// ```
-
-#[derive(Deserialize, Debug)]
-pub struct StackId(String);
-
-impl FromStr for StackId {
-    type Err = BuildpackTomlError;
-
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        lazy_static! {
-            static ref RE: Regex = Regex::new(r"^([[:alnum:]./-]+|\*)$").unwrap();
-        }
-
-        let string = String::from(value);
-        if RE.is_match(value) {
-            Ok(Self(string))
-        } else {
-            Err(BuildpackTomlError::InvalidStackId(string))
-        }
-    }
-}
-
-impl StackId {
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
-
 #[derive(thiserror::Error, Debug)]
 pub enum BuildpackTomlError {
     #[error("Found `{0}` but value MUST be in the form `<major>.<minor>` or `<major>` and only contain numbers.")]
@@ -273,13 +188,11 @@ pub enum BuildpackTomlError {
     #[error("Stack with id `*` MUST not contain mixins. mixins: [{0}]")]
     InvalidStarStack(String),
 
-    #[error(
-        "Found `{0}` but value MUST only contain numbers, letters, and the characters `.`, `/`, and `-`. or only `*`"
-    )]
-    InvalidStackId(String),
+    #[error("Invalid Stack ID: {0}")]
+    InvalidStackId(#[from] StackIdError),
 
-    #[error("Found `{0}` but value MUST only contain numbers, letters, and the characters `.`, `/`, and `-`. Value MUST NOT be 'config' or 'app'.")]
-    InvalidBuildpackId(String),
+    #[error("Invalid Buildpack ID: {0}")]
+    InvalidBuildpackId(#[from] BuildpackIdError),
 }
 
 #[cfg(test)]
