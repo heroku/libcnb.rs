@@ -1,9 +1,34 @@
 macro_rules! libcnb_newtype {
-    ($name:ident, $error_name:ident, $regex:expr) => {
-        libcnb_newtype!($name, $error_name, $regex, |_| true);
+    (
+        $(#[$type_attributes:meta])*
+        $name:ident,
+        $(#[$error_type_attributes:meta])*
+        $error_name:ident,
+        $regex:expr
+    ) => {
+            libcnb_newtype!(
+                $(#[$type_attributes])*
+                $name,
+                $(#[$error_type_attributes])*
+                $error_name,
+                $regex,
+                |_| true
+            );
     };
-    ($name:ident, $error_name:ident, $regex:expr, $extra_predicate:expr) => {
+    (
+        $(#[$type_attributes:meta])*
+        $name:ident,
+        $(#[$error_type_attributes:meta])*
+        $error_name:ident,
+        $regex:expr,
+        $extra_predicate:expr
+    ) => {
+        #[derive(Debug, Eq, PartialEq, ::serde::Deserialize, ::serde::Serialize)]
+        $(#[$type_attributes])*
+        pub struct $name(String);
+
         #[derive(::thiserror::Error, Debug, Eq, PartialEq)]
+        $(#[$error_type_attributes])*
         pub enum $error_name {
             InvalidValue(String),
         }
@@ -17,9 +42,6 @@ macro_rules! libcnb_newtype {
                 }
             }
         }
-
-        #[derive(Debug, Eq, PartialEq, ::serde::Deserialize, ::serde::Serialize)]
-        pub struct $name(String);
 
         impl ::std::str::FromStr for $name {
             type Err = $error_name;
