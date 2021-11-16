@@ -1,3 +1,30 @@
+/// Macro to generate newtypes backed by `String`
+///
+/// Automatically implements the following traits for the newtype:
+/// - [`Debug`]
+/// - [`Display`]
+/// - [`Eq`]
+/// - [`PartialEq`]
+/// - [`serde::Deserialize`]
+/// - [`serde::Serialize`]
+/// - [`FromStr`]
+/// - [`Borrow<String>`]
+/// - [`Deref<Target=String>`]
+/// - [`AsRef<String>`]
+///
+/// # Usage:
+/// ```
+/// libcnb_newtype!(
+///     /// RustDoc for the newtype itself (optional)
+///     BuildpackId,
+///     /// RustDoc for the newtype error (optional)
+///     BuildpackIdError,
+///     // The regular expression that must match for the String to be valid
+///     r"^[[:alnum:]./-]+$",
+///     // Additional predicate function to do further validation (optional)
+///     |id| { id != "app" && id != "config" }
+/// );
+/// ```
 macro_rules! libcnb_newtype {
     (
         $(#[$type_attributes:meta])*
