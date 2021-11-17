@@ -1,7 +1,7 @@
 use crate::build::BuildContext;
 use crate::data::layer_content_metadata::LayerContentMetadata;
 use crate::generic::GenericMetadata;
-use crate::layer::{Layer, LayerData, MetadataMigration};
+use crate::layer::{ExistingLayerStrategy, Layer, LayerData, MetadataMigration};
 use crate::layer_env::LayerEnv;
 use crate::util::default_on_not_found;
 use crate::Buildpack;
@@ -19,46 +19,44 @@ pub(crate) fn handle_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
     match read_layer(&context.layers_dir, layer_name.as_ref()) {
         Ok(None) => handle_create_layer(context, layer_name, layer),
         Ok(Some(layer_data)) => {
-            let layer_should_be_recreated = layer
-                .should_be_recreated(context, &layer_data)
+            let existing_layer_strategy = layer
+                .existing_layer_strategy(context, &layer_data)
                 .map_err(HandleLayerErrorOrBuildpackError::BuildpackError)?;
 
-            let layer_should_be_updated = layer
-                .should_be_updated(context, &layer_data)
-                .map_err(HandleLayerErrorOrBuildpackError::BuildpackError)?;
+            match existing_layer_strategy {
+                ExistingLayerStrategy::Recreate => {
+                    delete_layer(&context.layers_dir, layer_name.as_ref())?;
+                    handle_create_layer(context, layer_name, layer)
+                }
+                ExistingLayerStrategy::Update => handle_update_layer(context, layer_data, layer),
+                ExistingLayerStrategy::Keep => {
+                    // We need to rewrite the metadata even if we just want to keep the layer around
+                    // since cached layers are restored without their types, causing the layer to be
+                    // discarded.
+                    write_layer(
+                        &context.layers_dir,
+                        &layer_data.name,
+                        layer_data.env,
+                        LayerContentMetadata {
+                            // We cannot copy the types from layer_data due to an issue with the current
+                            // libcnb implementation. The types will be missing in the TOML file on disk
+                            // but if they're not there, their default values will be used when
+                            // deserializing. Issue: https://github.com/Malax/libcnb.rs/issues/146
+                            //
+                            // Even if the deserialization of LayerContentMetadata is fixed, it would
+                            // not contain the layer types as they're not restored by the CNB lifecycle.
+                            // We must call layer.types here to get the correct types for the layer.
+                            types: layer.types(),
+                            metadata: layer_data.content_metadata.metadata,
+                        },
+                    )?;
 
-            if layer_should_be_recreated {
-                delete_layer(&context.layers_dir, layer_name.as_ref())?;
-                handle_create_layer(context, layer_name, layer)
-            } else if layer_should_be_updated {
-                handle_update_layer(context, layer_data, layer)
-            } else {
-                // We need to rewrite the metadata even if we just want to keep the layer around
-                // since cached layers are restored without their types, causing the layer to be
-                // discarded.
-                write_layer(
-                    &context.layers_dir,
-                    &layer_data.name,
-                    layer_data.env,
-                    LayerContentMetadata {
-                        // We cannot copy the types from layer_data due to an issue with the current
-                        // libcnb implementation. The types will be missing in the TOML file on disk
-                        // but if they're not there, their default values will be used when
-                        // deserializing. Issue: https://github.com/Malax/libcnb.rs/issues/146
-                        //
-                        // Even if the deserialization of LayerContentMetadata is fixed, it would
-                        // not contain the layer types as they're not restored by the CNB lifecycle.
-                        // We must call layer.types here to get the correct types for the layer.
-                        types: layer.types(),
-                        metadata: layer_data.content_metadata.metadata,
-                    },
-                )?;
-
-                // Reread the layer from disk to ensure the returned layer data accurately reflects
-                // the state on disk after we messed with it.
-                read_layer(&context.layers_dir, layer_name.as_ref())?
-                    .ok_or(HandleLayerError::UnexpectedMissingLayer)
-                    .map_err(HandleLayerErrorOrBuildpackError::HandleLayerError)
+                    // Reread the layer from disk to ensure the returned layer data accurately reflects
+                    // the state on disk after we messed with it.
+                    read_layer(&context.layers_dir, layer_name.as_ref())?
+                        .ok_or(HandleLayerError::UnexpectedMissingLayer)
+                        .map_err(HandleLayerErrorOrBuildpackError::HandleLayerError)
+                }
             }
         }
         Err(ReadLayerError::LayerContentMetadataParseError(_)) => {

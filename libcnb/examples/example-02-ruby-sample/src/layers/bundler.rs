@@ -8,7 +8,7 @@ use std::process::Command;
 
 use crate::RubyBuildpack;
 use libcnb::build::BuildContext;
-use libcnb::layer::{Layer, LayerData, LayerResult, LayerResultBuilder};
+use libcnb::layer::{ExistingLayerStrategy, Layer, LayerData, LayerResult, LayerResultBuilder};
 use libcnb::Env;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -73,13 +73,18 @@ impl Layer for BundlerLayer {
         .build()
     }
 
-    fn should_be_updated(
+    fn existing_layer_strategy(
         &self,
         context: &BuildContext<Self::Buildpack>,
         layer: &LayerData<Self::Metadata>,
-    ) -> anyhow::Result<bool> {
-        sha256_checksum(context.app_dir.join("Gemfile.lock"))
-            .map(|checksum| checksum != layer.content_metadata.metadata.gemfile_lock_checksum)
+    ) -> anyhow::Result<ExistingLayerStrategy> {
+        sha256_checksum(context.app_dir.join("Gemfile.lock")).map(|checksum| {
+            if checksum != layer.content_metadata.metadata.gemfile_lock_checksum {
+                ExistingLayerStrategy::Update
+            } else {
+                ExistingLayerStrategy::Keep
+            }
+        })
     }
 
     fn update(

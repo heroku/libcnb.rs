@@ -47,46 +47,32 @@ pub trait Layer {
         layer_path: &Path,
     ) -> Result<LayerResult<Self::Metadata>, <Self::Buildpack as Buildpack>::Error>;
 
-    /// This method will be called by libcnb to determine if, based on the current state, the layer
-    /// needs to be recreated. If this method returns true, libcnb will delete the layer and call
-    /// create as if the layer didn't exist.
+    /// This method will be called by libcnb when the layer already exists to determine the strategy
+    /// used to deal with it. Implementations of this method can use the current layer contents and
+    /// metadata to make that decision.
     ///
     /// This can be used to invalidate a layer based on metadata. For example, the layer metadata
     /// could contain a language runtime version string. If the version requested by the user is
-    /// different, this method should return true, causing the new language runtime version to be
-    /// installed.
+    /// different, this method should can return [`ExistingLayerStrategy::Recreate`], causing a new
+    /// language runtime version to be installed from scratch.
     ///
-    /// When not implemented, the layer will never be recreated.
+    /// It can also be used cause a call to [`update`](Layer::update), updating the contents of the
+    /// existing layer. Installing additional application dependencies with a package manager is
+    /// one common case where this strategy makes sense. Implementations need to return
+    /// [`ExistingLayerStrategy::Update`] to trigger that behavior.
     ///
-    /// # Implementation Requirements
-    /// Implementations **MUST NOT** modify the file-system.
-    fn should_be_recreated(
-        &self,
-        context: &BuildContext<Self::Buildpack>,
-        layer_data: &LayerData<Self::Metadata>,
-    ) -> Result<bool, <Self::Buildpack as Buildpack>::Error> {
-        Ok(false)
-    }
-
-    /// This method will be called by libcnb to determine if, based on the current state, the layer
-    /// needs to be updated. A layer will only be updated if it was restored from the cache and this
-    /// method returns `true`.
-    ///
-    /// If the layer was restored from cache and this method returns `false`, neither
-    /// [`create`](Self::create) nor [`update`](Self::update) will be called by libcnb. In this
-    /// case, the layer will stay unmodified, but libcnb will ensure its types match the ones
-    /// returned from the [`types`](Self::types) method.
-    ///
-    /// When not implemented, the layer will never be updated.
+    /// When not implemented, the default implementation will return
+    /// [`ExistingLayerStrategy::Keep`], causing the layer to stay as-is (i.e. no calls to either
+    /// [`create`](Layer::create) nor [`update`](Layer::update)).
     ///
     /// # Implementation Requirements
     /// Implementations **MUST NOT** modify the file-system.
-    fn should_be_updated(
+    fn existing_layer_strategy(
         &self,
         context: &BuildContext<Self::Buildpack>,
         layer_data: &LayerData<Self::Metadata>,
-    ) -> Result<bool, <Self::Buildpack as Buildpack>::Error> {
-        Ok(false)
+    ) -> Result<ExistingLayerStrategy, <Self::Buildpack as Buildpack>::Error> {
+        Ok(ExistingLayerStrategy::Keep)
     }
 
     /// Updates the layer contents and metadata based on the cached version of a previous run.
@@ -134,6 +120,17 @@ pub trait Layer {
     ) -> Result<MetadataMigration<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {
         Ok(MetadataMigration::RecreateLayer)
     }
+}
+
+/// The result of a [`Layer::existing_layer_strategy`] call.
+#[derive(Eq, PartialEq, Clone, Copy, Debug)]
+pub enum ExistingLayerStrategy {
+    /// The existing layer should not be modified.
+    Keep,
+    /// The existing layer should be deleted and then recreated from scratch.
+    Recreate,
+    /// The existing layer contents should be updated with the [`Layer::update`] method.
+    Update,
 }
 
 /// The result of a [`Layer::migrate_incompatible_metadata`] call.
