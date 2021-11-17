@@ -4,7 +4,7 @@ use std::io;
 use std::path::Path;
 
 use flate2::read::GzDecoder;
-use libcnb::data::layer_content_metadata::LayerContentMetadata;
+use libcnb::data::layer_content_metadata::{LayerContentMetadata, LayerTypes};
 use libcnb::layer_lifecycle::LayerLifecycle;
 
 use std::env;
@@ -36,9 +36,14 @@ impl LayerLifecycle<RubyBuildpack, GenericMetadata, HashMap<String, String>>
 
         untar(ruby_tgz.path(), &layer_path)?;
 
-        Ok(LayerContentMetadata::default()
-            .metadata(GenericMetadata::default())
-            .launch(true))
+        Ok(LayerContentMetadata {
+            types: LayerTypes {
+                build: false,
+                launch: true,
+                cache: false,
+            },
+            metadata: GenericMetadata::default(),
+        })
     }
 
     fn layer_lifecycle_data(
