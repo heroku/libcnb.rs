@@ -7,6 +7,7 @@ use serde::Serialize;
 
 use crate::buildpack::Buildpack;
 use crate::data::store::Store;
+use crate::util::default_on_not_found;
 use crate::{
     data::{
         buildpack::BuildpackToml, buildpack_plan::BuildpackPlan, launch::Launch,
@@ -133,22 +134,11 @@ impl<B: Buildpack> BuildContext<B> {
     }
 
     pub fn delete_layer(&self, layer_name: impl AsRef<str>) -> Result<(), std::io::Error> {
-        // Do not fail if the metadata file does not exist
-        match fs::remove_file(self.layer_content_metadata_path(&layer_name)) {
-            Err(io_error) => match io_error.kind() {
-                std::io::ErrorKind::NotFound => Ok(()),
-                _ => Err(io_error),
-            },
-            Ok(_) => Ok(()),
-        }?;
+        default_on_not_found(fs::remove_file(
+            self.layer_content_metadata_path(&layer_name),
+        ))?;
 
-        match fs::remove_dir_all(self.layer_path(&layer_name)) {
-            Err(io_error) => match io_error.kind() {
-                std::io::ErrorKind::NotFound => Ok(()),
-                _ => Err(io_error),
-            },
-            Ok(_) => Ok(()),
-        }?;
+        default_on_not_found(fs::remove_dir_all(self.layer_path(&layer_name)))?;
 
         Ok(())
     }
