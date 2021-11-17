@@ -89,6 +89,7 @@ pub struct Slice {
 }
 
 libcnb_newtype!(
+    process_type,
     /// launch.toml Process Type. This is a newtype wrapper around a String. It MUST only contain numbers, letters, and the characters ., _, and -. Use [`std::str::FromStr`] to create a new instance of this struct.
     ///
     /// # Examples

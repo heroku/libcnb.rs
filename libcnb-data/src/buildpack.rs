@@ -1,6 +1,6 @@
 use crate::newtypes::libcnb_newtype;
+use fancy_regex::Regex;
 use lazy_static::lazy_static;
-use regex::Regex;
 use semver::Version;
 use serde::Deserialize;
 use std::convert::TryFrom;
@@ -147,7 +147,7 @@ impl FromStr for BuildpackApi {
             static ref RE: Regex = Regex::new(r"^(?P<major>\d+)(\.(?P<minor>\d+))?$").unwrap();
         }
 
-        if let Some(captures) = RE.captures(value) {
+        if let Some(captures) = RE.captures(value).unwrap_or_default() {
             if let Some(major) = captures.name("major") {
                 // these should never panic since we check with the regex unless it's greater than
                 // `std::u32::MAX`
@@ -178,6 +178,7 @@ impl Display for BuildpackApi {
 }
 
 libcnb_newtype!(
+    buildpack_id,
     /// buildpack.toml Buildpack Id. This is a newtype wrapper around a String.
     /// It MUST only contain numbers, letters, and the characters ., /, and -.
     /// It also cannot be `config` or `app`.
@@ -196,11 +197,11 @@ libcnb_newtype!(
     /// ```
     BuildpackId,
     BuildpackIdError,
-    r"^[[:alnum:]./-]+$",
-    |id| { id != "app" && id != "config" }
+    r"^(?!app$|config$)[[:alnum:]./-]+$"
 );
 
 libcnb_newtype!(
+    stack_id,
     /// buildpack.toml Stack Id. This is a newtype wrapper around a String.
     /// It MUST only contain numbers, letters, and the characters ., /, and -.
     /// or be `*`.
