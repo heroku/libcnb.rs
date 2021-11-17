@@ -185,6 +185,9 @@ impl LayerEnv {
     /// assert_eq!(modified_env.get("VAR").unwrap(), "hello");
     /// assert_eq!(modified_env.get("VAR2").unwrap(), "bar");
     /// ```
+    ///
+    /// See [`LayerEnv::chainable_insert`] that allows easy creation of inline `LayerEnv` values
+    /// without intermediate variables.
     pub fn insert(
         &mut self,
         target: TargetLifecycle,
@@ -205,6 +208,50 @@ impl LayerEnv {
         };
 
         target_delta.insert(modification_behavior, name, value);
+    }
+
+    /// Chainable version of [`LayerEnv::insert`].
+    ///
+    /// Allows easy creation of inline `LayerEnv` values without intermediate variables. See
+    /// [`LayerEnv::insert`] docs for details.
+    ///
+    /// # Example:
+    /// ```
+    /// use libcnb::layer_env::{LayerEnv, ModificationBehavior, TargetLifecycle};
+    /// use libcnb::Env;
+    ///
+    /// fn something_that_needs_layer_env(layer_env: LayerEnv) {
+    ///     let mut env = Env::new();
+    ///     let modified_env = layer_env.apply(TargetLifecycle::Build, &env);
+    ///     assert_eq!(modified_env.get("VAR").unwrap(), "hello");
+    ///     assert_eq!(modified_env.get("VAR2").unwrap(), "bar");
+    /// }
+    ///
+    /// something_that_needs_layer_env(
+    ///     LayerEnv::new()
+    ///         .chainable_insert(
+    ///             TargetLifecycle::All,
+    ///             ModificationBehavior::Default,
+    ///             "VAR",
+    ///             "hello",
+    ///         )
+    ///         .chainable_insert(
+    ///             TargetLifecycle::All,
+    ///             ModificationBehavior::Append,
+    ///             "VAR2",
+    ///             "bar",
+    ///         ),
+    /// );
+    /// ```
+    pub fn chainable_insert(
+        mut self,
+        target: TargetLifecycle,
+        modification_behavior: ModificationBehavior,
+        name: impl Into<OsString>,
+        value: impl Into<OsString>,
+    ) -> Self {
+        self.insert(target, modification_behavior, name, value);
+        self
     }
 
     /// Constructs a `LayerEnv` based on the given layer directory.

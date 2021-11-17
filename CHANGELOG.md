@@ -26,5 +26,6 @@
 - Add a more general `Default` implementation for `LayerContentMetadata`.
 - Add `PartialEq` implementation for `LayerContentMetadata`.
 - Add `PartialEq` and `Eq` implementations for `LayerTypes`.
+- Add `LayerEnv::chainable_insert`
 
 ## [0.3.0] 2021/09/17
