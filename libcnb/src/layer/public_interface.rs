@@ -121,7 +121,7 @@ pub trait Layer {
     /// The simplest strategy, [`MetadataMigration::RecreateLayer`] will delete the layer and
     /// recreate it from scratch. This is also the default implementation.
     ///
-    /// In some cases, a layer might be able to migrate metadata from an other version to a new
+    /// In some cases, a layer might be able to migrate metadata from an older version to a new
     /// structure. For this, [`MetadataMigration::ReplaceMetadata`] can be used. Implementations can
     /// use the raw TOML metadata passed as `metadata` to the method and the contents of the layer
     /// to construct a new value for [`Self::Metadata`].
