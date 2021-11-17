@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 /// Used to specify layer availability based
 /// on buildpack phase.
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, Serialize, Eq, PartialEq)]
 pub struct LayerTypes {
     /// Whether the layer is intended for launch.
     #[serde(default)]
