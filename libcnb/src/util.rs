@@ -18,7 +18,7 @@ mod test {
     use std::io::ErrorKind;
 
     #[test]
-    fn test_with_not_found_kind() {
+    fn default_on_not_found_with_notfound() {
         let not_found_io_error = std::io::Error::from(ErrorKind::NotFound);
 
         assert_eq!(
@@ -28,9 +28,14 @@ mod test {
     }
 
     #[test]
-    fn test_with_other_kind() {
+    fn default_on_not_found_with_brokenpipe() {
         let broken_pipe_io_error = std::io::Error::from(ErrorKind::BrokenPipe);
 
         assert!(default_on_not_found::<Option<String>>(Err(broken_pipe_io_error)).is_err());
+    }
+
+    #[test]
+    fn default_on_not_found_with_ok() {
+        assert_eq!(default_on_not_found(Ok("Hello!")).unwrap(), "Hello!");
     }
 }
