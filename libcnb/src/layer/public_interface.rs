@@ -59,8 +59,7 @@ pub trait Layer {
     /// When not implemented, the layer will never be recreated.
     ///
     /// # Implementation Requirements
-    /// Implementations **MUST** be read-only. They **MUST NOT** modify the file-system or write
-    /// anything to stdout/stdout or any other stream.
+    /// Implementations **MUST NOT** modify the file-system.
     fn should_be_recreated(
         &self,
         context: &BuildContext<Self::Buildpack>,
@@ -81,8 +80,7 @@ pub trait Layer {
     /// When not implemented, the layer will never be updated.
     ///
     /// # Implementation Requirements
-    /// Implementations **MUST** be read-only. They **MUST NOT** modify the file-system or write
-    /// anything to stdout/stdout or any other stream.
+    /// Implementations **MUST NOT** modify the file-system.
     fn should_be_updated(
         &self,
         context: &BuildContext<Self::Buildpack>,
