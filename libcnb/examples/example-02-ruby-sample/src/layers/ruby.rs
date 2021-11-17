@@ -11,7 +11,7 @@ use libcnb::build::BuildContext;
 use libcnb::data::layer_content_metadata::LayerTypes;
 use libcnb::generic::GenericMetadata;
 use libcnb::layer::{Layer, LayerResult, LayerResultBuilder};
-use libcnb::layer_env::{LayerEnvBuilder, ModificationBehavior, TargetLifecycle};
+use libcnb::layer_env::{LayerEnv, ModificationBehavior, TargetLifecycle};
 
 pub struct RubyLayer;
 
@@ -45,20 +45,19 @@ impl Layer for RubyLayer {
 
         LayerResultBuilder::new(GenericMetadata::default())
             .env(
-                LayerEnvBuilder::new()
-                    .with(
+                LayerEnv::new()
+                    .chainable_insert(
                         TargetLifecycle::All,
                         ModificationBehavior::Prepend,
                         "PATH",
                         context.app_dir.join(".gem/ruby/2.6.6/bin"),
                     )
-                    .with(
+                    .chainable_insert(
                         TargetLifecycle::All,
                         ModificationBehavior::Prepend,
                         "LD_LIBRARY_PATH",
                         layer_path,
-                    )
-                    .build(),
+                    ),
             )
             .build()
     }

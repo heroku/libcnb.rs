@@ -302,7 +302,7 @@ mod test {
     use crate::data::layer_content_metadata::{LayerContentMetadata, LayerTypes};
 
     use crate::generic::GenericMetadata;
-    use crate::layer_env::{LayerEnvBuilder, ModificationBehavior, TargetLifecycle};
+    use crate::layer_env::{ModificationBehavior, TargetLifecycle};
     use crate::{read_toml_file, Env};
     use serde::Deserialize;
     use std::ffi::OsString;
@@ -378,14 +378,12 @@ mod test {
         super::write_layer(
             &layers_dir,
             &layer_name,
-            LayerEnvBuilder::new()
-                .with(
-                    TargetLifecycle::All,
-                    ModificationBehavior::Default,
-                    "ENV_VAR",
-                    "ENV_VAR_VALUE",
-                )
-                .build(),
+            LayerEnv::new().chainable_insert(
+                TargetLifecycle::All,
+                ModificationBehavior::Default,
+                "ENV_VAR",
+                "ENV_VAR_VALUE",
+            ),
             LayerContentMetadata {
                 types: LayerTypes {
                     launch: true,
@@ -427,20 +425,19 @@ mod test {
         super::write_layer(
             &layers_dir,
             &layer_name,
-            LayerEnvBuilder::new()
-                .with(
+            LayerEnv::new()
+                .chainable_insert(
                     TargetLifecycle::All,
                     ModificationBehavior::Default,
                     "ENV_VAR",
                     "INITIAL_ENV_VAR_VALUE",
                 )
-                .with(
+                .chainable_insert(
                     TargetLifecycle::All,
                     ModificationBehavior::Default,
                     "SOME_OTHER_ENV_VAR",
                     "SOME_OTHER_ENV_VAR_VALUE",
-                )
-                .build(),
+                ),
             LayerContentMetadata {
                 types: LayerTypes {
                     launch: false,
@@ -457,14 +454,12 @@ mod test {
         super::write_layer(
             &layers_dir,
             &layer_name,
-            LayerEnvBuilder::new()
-                .with(
-                    TargetLifecycle::All,
-                    ModificationBehavior::Default,
-                    "ENV_VAR",
-                    "NEW_ENV_VAR_VALUE",
-                )
-                .build(),
+            LayerEnv::new().chainable_insert(
+                TargetLifecycle::All,
+                ModificationBehavior::Default,
+                "ENV_VAR",
+                "NEW_ENV_VAR_VALUE",
+            ),
             LayerContentMetadata {
                 types: LayerTypes {
                     launch: false,
