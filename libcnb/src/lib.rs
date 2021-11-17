@@ -29,6 +29,7 @@ mod error;
 mod platform;
 mod runtime;
 mod toml_file;
+mod util;
 
 #[doc(inline)]
 pub use libcnb_data as data;
