@@ -3,7 +3,7 @@ use std::fs;
 use std::path::Path;
 use std::process::Command;
 
-use libcnb::data::layer_content_metadata::LayerContentMetadata;
+use libcnb::data::layer_content_metadata::{LayerContentMetadata, LayerTypes};
 use libcnb::layer_lifecycle::{LayerLifecycle, ValidateResult};
 use serde::Deserialize;
 use serde::Serialize;
@@ -59,12 +59,16 @@ impl LayerLifecycle<RubyBuildpack, BundlerLayerMetadata, HashMap<String, String>
             return Err(anyhow::anyhow!("Could not install gems!"));
         }
 
-        Ok(LayerContentMetadata::default()
-            .launch(true)
-            .cache(true)
-            .metadata(BundlerLayerMetadata {
+        Ok(LayerContentMetadata {
+            types: LayerTypes {
+                build: false,
+                launch: true,
+                cache: true,
+            },
+            metadata: BundlerLayerMetadata {
                 gemfile_lock_checksum: sha256_checksum(build_context.app_dir.join("Gemfile.lock"))?,
-            }))
+            },
+        })
     }
 
     fn validate(

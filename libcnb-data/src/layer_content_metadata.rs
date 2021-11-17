@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 /// Used to specify layer availability based
 /// on buildpack phase.
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, Serialize, Eq, PartialEq)]
 pub struct LayerTypes {
     /// Whether the layer is intended for launch.
     #[serde(default)]
@@ -25,7 +25,7 @@ pub struct LayerTypes {
 /// use libcnb_data::layer_content_metadata::LayerContentMetadata;
 /// use toml::toml;
 ///
-/// let layer = LayerContentMetadata::default()
+/// let layer = LayerContentMetadata::<()>::default()
 ///   .build(true)
 ///   .cache(true)
 ///   .launch(true)
@@ -49,11 +49,17 @@ pub struct LayerContentMetadata<M> {
     pub metadata: M,
 }
 
-impl Default for LayerContentMetadata<Option<toml::Value>> {
+impl<M: PartialEq> PartialEq for LayerContentMetadata<M> {
+    fn eq(&self, other: &Self) -> bool {
+        self.types == other.types && self.metadata == other.metadata
+    }
+}
+
+impl<M: Default> Default for LayerContentMetadata<M> {
     fn default() -> Self {
         Self {
             types: LayerTypes::default(),
-            metadata: Option::default(),
+            metadata: M::default(),
         }
     }
 }

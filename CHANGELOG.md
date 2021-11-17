@@ -23,5 +23,8 @@
 - `LayerContentTypeTable` has been renamed to `LayerTypes`.
 - Remove `PlatformEnv` and replaced it with the already existing `Env`.
 - `StackId`, `ProcessType` and `BuildpackId` now implement `Deref<Target = String>`, `Borrow<String>`, `AsRef<String>` and `Display`.
+- Add a more general `Default` implementation for `LayerContentMetadata`.
+- Add `PartialEq` implementation for `LayerContentMetadata`.
+- Add `PartialEq` and `Eq` implementations for `LayerTypes`.
 
 ## [0.3.0] 2021/09/17
