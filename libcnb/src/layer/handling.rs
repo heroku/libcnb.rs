@@ -188,7 +188,7 @@ pub enum HandleLayerError {
     #[error("Unexpected ReadLayerError while handling layer: {0}")]
     ReadLayerError(#[from] ReadLayerError),
 
-    #[error("Unexpected WriteMetadataError while handling layer: {0}")]
+    #[error("Unexpected WriteLayerError while handling layer: {0}")]
     WriteLayerError(#[from] WriteLayerError),
 
     #[error("Expected layer to be present, but it was missing")]
