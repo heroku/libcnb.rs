@@ -49,6 +49,12 @@ pub struct LayerContentMetadata<M> {
     pub metadata: M,
 }
 
+impl<M: PartialEq> PartialEq for LayerContentMetadata<M> {
+    fn eq(&self, other: &Self) -> bool {
+        self.types == other.types && self.metadata == other.metadata
+    }
+}
+
 impl<M: Default> Default for LayerContentMetadata<M> {
     fn default() -> Self {
         Self {
