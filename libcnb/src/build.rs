@@ -20,6 +20,76 @@ pub struct BuildContext<B: Buildpack + ?Sized> {
 }
 
 impl<B: Buildpack + ?Sized> BuildContext<B> {
+    /// Handles the given [`Layer`] implementation in this context.
+    ///
+    /// It will ensure that the layer with the given name is created and/or updated accordingly and
+    /// handles all errors that can occur during the process. After this method has executed, the
+    /// layer will exist on disk or an error has been returned by this method.
+    ///
+    /// Use the returned [`LayerData`] to access the layers metadata and environment variables for
+    /// subsequent logic or layers.
+    ///
+    /// # Example:
+    /// ```
+    /// # use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
+    /// # use libcnb::data::layer_content_metadata::LayerTypes;
+    /// # use libcnb::detect::{DetectContext, DetectResult};
+    /// # use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};
+    /// # use libcnb::layer::{Layer, LayerResult, LayerResultBuilder};
+    /// # use libcnb::Buildpack;
+    /// # use serde::Deserialize;
+    /// # use serde::Serialize;
+    /// # use std::path::Path;
+    /// #
+    /// struct ExampleBuildpack;
+    ///
+    /// impl Buildpack for ExampleBuildpack {
+    /// #   type Platform = GenericPlatform;
+    /// #   type Metadata = GenericMetadata;
+    /// #   type Error = GenericError;
+    /// #
+    /// #    fn detect(&self, context: DetectContext<Self>) -> libcnb::Result<DetectResult, Self::Error> {
+    /// #        unimplemented!()
+    /// #    }
+    /// #
+    ///     fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildResult, Self::Error> {
+    ///         let example_layer = context.handle_layer("example-layer", ExampleLayer)?;
+    ///
+    ///         println!(
+    ///             "Monologue from layer metadata: {}",
+    ///             &example_layer.content_metadata.metadata.monologue
+    ///         );
+    ///
+    ///         Ok(BuildResultBuilder::new().build())
+    ///     }
+    /// }
+    ///
+    /// struct ExampleLayer;
+    ///
+    /// # #[derive(Deserialize, Serialize, Clone)]
+    /// # struct ExampleLayerMetadata {
+    /// #    monologue: String,
+    /// # }
+    /// #
+    /// impl Layer for ExampleLayer {
+    /// # type Buildpack = ExampleBuildpack;
+    /// #   type Metadata = ExampleLayerMetadata;
+    /// #
+    /// #    fn types(&self) -> LayerTypes {
+    /// #        unimplemented!()
+    /// #    }
+    /// #
+    ///     fn create(
+    ///         &self,
+    ///         context: &BuildContext<Self::Buildpack>,
+    ///         layer_path: &Path,
+    ///     ) -> Result<LayerResult<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {
+    ///         LayerResultBuilder::new(ExampleLayerMetadata {
+    ///             monologue: String::from("I've seen things you people wouldn't believe... Attack ships on fire off the shoulder of Orion..." )
+    ///         }).build()
+    ///     }
+    /// }
+    /// ```
     pub fn handle_layer<L: Layer<Buildpack = B>>(
         &self,
         name: impl AsRef<str>,
