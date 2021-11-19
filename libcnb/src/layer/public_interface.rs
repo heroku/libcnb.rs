@@ -54,16 +54,19 @@ pub trait Layer {
     /// This can be used to invalidate a layer based on metadata. For example, the layer metadata
     /// could contain a language runtime version string. If the version requested by the user is
     /// different, this method should can return [`ExistingLayerStrategy::Recreate`], causing a new
-    /// language runtime version to be installed from scratch.
+    /// language runtime version to be installed from scratch. Conversely, if the metadata matches,
+    /// this method can return [`ExistingLayerStrategy::Keep`], causing the layer to stay as-is and
+    /// no calls to [`crate`](Layer::create) or [`update`](Layer::update) will be made.
     ///
     /// It can also be used cause a call to [`update`](Layer::update), updating the contents of the
     /// existing layer. Installing additional application dependencies with a package manager is
     /// one common case where this strategy makes sense. Implementations need to return
     /// [`ExistingLayerStrategy::Update`] to trigger that behavior.
     ///
+    ///
     /// When not implemented, the default implementation will return
-    /// [`ExistingLayerStrategy::Keep`], causing the layer to stay as-is (i.e. no calls to either
-    /// [`create`](Layer::create) nor [`update`](Layer::update)).
+    /// [`ExistingLayerStrategy::Recreate`], causing the layer to be recreated from scratch every
+    /// time.
     ///
     /// # Implementation Requirements
     /// Implementations **MUST NOT** modify the file-system.
@@ -72,7 +75,7 @@ pub trait Layer {
         context: &BuildContext<Self::Buildpack>,
         layer_data: &LayerData<Self::Metadata>,
     ) -> Result<ExistingLayerStrategy, <Self::Buildpack as Buildpack>::Error> {
-        Ok(ExistingLayerStrategy::Keep)
+        Ok(ExistingLayerStrategy::Recreate)
     }
 
     /// Updates the layer contents and metadata based on the cached version of a previous run.
