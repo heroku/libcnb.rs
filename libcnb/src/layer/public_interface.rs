@@ -98,7 +98,9 @@ pub trait Layer {
         context: &BuildContext<Self::Buildpack>,
         layer_data: &LayerData<Self::Metadata>,
     ) -> Result<LayerResult<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {
-        LayerResultBuilder::new(layer_data.content_metadata.metadata.clone()).build()
+        LayerResultBuilder::new(layer_data.content_metadata.metadata.clone())
+            .env(layer_data.env.clone())
+            .build()
     }
 
     /// This method will be called by libcnb when parsing of the layer's metadata into
