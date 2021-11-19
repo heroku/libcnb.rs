@@ -1,7 +1,7 @@
 use crate::layers::{BundlerLayer, RubyLayer};
 use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
 use libcnb::data::launch::{Launch, Process};
-use libcnb::data::process_type;
+use libcnb::data::{layer_name, process_type};
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::generic::GenericPlatform;
 use libcnb::layer_env::TargetLifecycle;
@@ -36,10 +36,10 @@ impl Buildpack for RubyBuildpack {
     fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildResult, Self::Error> {
         println!("---> Ruby Buildpack");
 
-        let ruby_layer = context.handle_layer("ruby", RubyLayer)?;
+        let ruby_layer = context.handle_layer(layer_name!("ruby"), RubyLayer)?;
 
         context.handle_layer(
-            "bundler",
+            layer_name!("bundler"),
             BundlerLayer {
                 ruby_env: ruby_layer.env.apply(TargetLifecycle::Build, &Env::new()),
             },

@@ -1,5 +1,7 @@
 use crate::build::BuildContext;
+use crate::data::layer::LayerName;
 use crate::data::layer_content_metadata::LayerContentMetadata;
+
 use crate::generic::GenericMetadata;
 use crate::layer::{ExistingLayerStrategy, Layer, LayerData, MetadataMigration};
 use crate::layer_env::LayerEnv;
@@ -13,11 +15,11 @@ use std::path::Path;
 
 pub(crate) fn handle_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
     context: &BuildContext<B>,
-    layer_name: impl AsRef<str>,
+    layer_name: LayerName,
     layer: L,
 ) -> Result<LayerData<L::Metadata>, HandleLayerErrorOrBuildpackError<B::Error>> {
-    match read_layer(&context.layers_dir, layer_name.as_ref()) {
-        Ok(None) => handle_create_layer(context, layer_name, layer),
+    match read_layer(&context.layers_dir, &layer_name) {
+        Ok(None) => handle_create_layer(context, &layer_name, layer),
         Ok(Some(layer_data)) => {
             let existing_layer_strategy = layer
                 .existing_layer_strategy(context, &layer_data)
@@ -25,8 +27,8 @@ pub(crate) fn handle_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
 
             match existing_layer_strategy {
                 ExistingLayerStrategy::Recreate => {
-                    delete_layer(&context.layers_dir, layer_name.as_ref())?;
-                    handle_create_layer(context, layer_name, layer)
+                    delete_layer(&context.layers_dir, &layer_name)?;
+                    handle_create_layer(context, &layer_name, layer)
                 }
                 ExistingLayerStrategy::Update => handle_update_layer(context, layer_data, layer),
                 ExistingLayerStrategy::Keep => {
@@ -53,14 +55,14 @@ pub(crate) fn handle_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
 
                     // Reread the layer from disk to ensure the returned layer data accurately reflects
                     // the state on disk after we messed with it.
-                    read_layer(&context.layers_dir, layer_name.as_ref())?
+                    read_layer(&context.layers_dir, &layer_name)?
                         .ok_or(HandleLayerError::UnexpectedMissingLayer)
                         .map_err(HandleLayerErrorOrBuildpackError::HandleLayerError)
                 }
             }
         }
         Err(ReadLayerError::LayerContentMetadataParseError(_)) => {
-            match read_layer::<GenericMetadata, _, _>(&context.layers_dir, layer_name.as_ref()) {
+            match read_layer::<GenericMetadata, _>(&context.layers_dir, &layer_name) {
                 Ok(Some(generic_layer_data)) => {
                     let metadata_migration_strategy = layer
                         .migrate_incompatible_metadata(
@@ -71,12 +73,12 @@ pub(crate) fn handle_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
 
                     match metadata_migration_strategy {
                         MetadataMigration::RecreateLayer => {
-                            delete_layer(&context.layers_dir, layer_name.as_ref())?;
+                            delete_layer(&context.layers_dir, &layer_name)?;
                         }
                         MetadataMigration::ReplaceMetadata(migrated_metadata) => {
                             write_layer(
                                 &context.layers_dir,
-                                layer_name.as_ref(),
+                                &layer_name,
                                 generic_layer_data.env,
                                 LayerContentMetadata {
                                     types: generic_layer_data.content_metadata.types,
@@ -100,10 +102,10 @@ pub(crate) fn handle_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
 
 fn handle_create_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
     context: &BuildContext<B>,
-    layer_name: impl AsRef<str>,
+    layer_name: &LayerName,
     layer: L,
 ) -> Result<LayerData<L::Metadata>, HandleLayerErrorOrBuildpackError<B::Error>> {
-    let layer_dir = context.layers_dir.join(layer_name.as_ref());
+    let layer_dir = context.layers_dir.join(layer_name.as_str());
 
     let layer_result = layer
         .create(context, &layer_dir)
@@ -111,7 +113,7 @@ fn handle_create_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
 
     write_layer(
         &context.layers_dir,
-        layer_name.as_ref(),
+        layer_name,
         layer_result.env.unwrap_or_default(),
         LayerContentMetadata {
             types: layer.types(),
@@ -119,7 +121,7 @@ fn handle_create_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
         },
     )?;
 
-    read_layer(&context.layers_dir, layer_name.as_ref())?
+    read_layer(&context.layers_dir, layer_name)?
         .ok_or(HandleLayerError::UnexpectedMissingLayer)
         .map_err(HandleLayerErrorOrBuildpackError::HandleLayerError)
 }
@@ -212,11 +214,11 @@ pub enum WriteLayerError {
 }
 
 /// Does not error if the layer doesn't exist.
-fn delete_layer<P: AsRef<Path>, S: AsRef<str>>(
+fn delete_layer<P: AsRef<Path>>(
     layers_dir: P,
-    layer_name: S,
+    layer_name: &LayerName,
 ) -> Result<(), std::io::Error> {
-    let layer_dir = layers_dir.as_ref().join(layer_name.as_ref());
+    let layer_dir = layers_dir.as_ref().join(layer_name.as_str());
     let layer_toml = layers_dir
         .as_ref()
         .join(format!("{}.toml", layer_name.as_ref()));
@@ -228,13 +230,13 @@ fn delete_layer<P: AsRef<Path>, S: AsRef<str>>(
 }
 
 /// Updates layer metadata on disk
-fn write_layer<M: Serialize, P: AsRef<Path>, S: AsRef<str>>(
+fn write_layer<M: Serialize, P: AsRef<Path>>(
     layers_dir: P,
-    layer_name: S,
+    layer_name: &LayerName,
     layer_env: LayerEnv,
     layer_content_metadata: LayerContentMetadata<M>,
 ) -> Result<(), WriteLayerError> {
-    let layer_dir = layers_dir.as_ref().join(layer_name.as_ref());
+    let layer_dir = layers_dir.as_ref().join(layer_name.as_str());
     let layer_content_metadata_path = layers_dir
         .as_ref()
         .join(format!("{}.toml", layer_name.as_ref()));
@@ -246,14 +248,12 @@ fn write_layer<M: Serialize, P: AsRef<Path>, S: AsRef<str>>(
     Ok(())
 }
 
-fn read_layer<M: DeserializeOwned, P: AsRef<Path>, S: AsRef<str>>(
+fn read_layer<M: DeserializeOwned, P: AsRef<Path>>(
     layers_dir: P,
-    layer_name: S,
+    layer_name: &LayerName,
 ) -> Result<Option<LayerData<M>>, ReadLayerError> {
-    let layer_dir_path = layers_dir.as_ref().join(layer_name.as_ref());
-    let layer_toml_path = layers_dir
-        .as_ref()
-        .join(format!("{}.toml", layer_name.as_ref()));
+    let layer_dir_path = layers_dir.as_ref().join(layer_name.as_str());
+    let layer_toml_path = layers_dir.as_ref().join(format!("{}.toml", layer_name));
 
     if !layer_dir_path.exists() && !layer_toml_path.exists() {
         return Ok(None);
@@ -287,7 +287,7 @@ fn read_layer<M: DeserializeOwned, P: AsRef<Path>, S: AsRef<str>>(
     let layer_env = LayerEnv::read_from_layer_dir(&layer_dir_path)?;
 
     Ok(Some(LayerData {
-        name: String::from(layer_name.as_ref()),
+        name: layer_name.clone(),
         path: layer_dir_path,
         env: layer_env,
         content_metadata: layer_content_metadata,
@@ -298,7 +298,7 @@ fn read_layer<M: DeserializeOwned, P: AsRef<Path>, S: AsRef<str>>(
 mod test {
     use super::*;
     use crate::data::layer_content_metadata::{LayerContentMetadata, LayerTypes};
-
+    use crate::data::layer_name;
     use crate::generic::GenericMetadata;
     use crate::layer_env::{ModificationBehavior, TargetLifecycle};
     use crate::{read_toml_file, Env};
@@ -310,10 +310,10 @@ mod test {
 
     #[test]
     fn delete_layer() {
-        let layer_name = "foo";
+        let layer_name = layer_name!("foo");
         let temp_dir = tempdir().unwrap();
         let layers_dir = temp_dir.path();
-        let layer_dir = layers_dir.join(&layer_name);
+        let layer_dir = layers_dir.join(layer_name.as_str());
 
         fs::create_dir_all(&layer_dir).unwrap();
         fs::write(
@@ -335,10 +335,10 @@ mod test {
 
     #[test]
     fn delete_disjointed_layer() {
-        let layer_name = "foo";
+        let layer_name = layer_name!("foo");
         let temp_dir = tempdir().unwrap();
         let layers_dir = temp_dir.path();
-        let layer_dir = layers_dir.join(&layer_name);
+        let layer_dir = layers_dir.join(layer_name.as_str());
 
         fs::write(
             layers_dir.join(format!("{}.toml", &layer_name)),
@@ -359,7 +359,7 @@ mod test {
 
     #[test]
     fn delete_nonexisting_layer() {
-        let layer_name = "foo";
+        let layer_name = layer_name!("foo");
         let temp_dir = tempdir().unwrap();
         let layers_dir = temp_dir.path();
 
@@ -368,10 +368,10 @@ mod test {
 
     #[test]
     fn write_nonexisting_layer() {
-        let layer_name = "foo";
+        let layer_name = layer_name!("foo");
         let temp_dir = tempdir().unwrap();
         let layers_dir = temp_dir.path();
-        let layer_dir = layers_dir.join(&layer_name);
+        let layer_dir = layers_dir.join(layer_name.as_str());
 
         super::write_layer(
             &layers_dir,
@@ -415,10 +415,10 @@ mod test {
 
     #[test]
     fn write_existing_layer() {
-        let layer_name = "foo";
+        let layer_name = layer_name!("foo");
         let temp_dir = tempdir().unwrap();
         let layers_dir = temp_dir.path();
-        let layer_dir = layers_dir.join(&layer_name);
+        let layer_dir = layers_dir.join(layer_name.as_str());
 
         super::write_layer(
             &layers_dir,
@@ -504,10 +504,10 @@ mod test {
             sha: String,
         }
 
-        let layer_name = "foo";
+        let layer_name = layer_name!("foo");
         let temp_dir = tempdir().unwrap();
         let layers_dir = temp_dir.path();
-        let layer_dir = layers_dir.join(&layer_name);
+        let layer_dir = layers_dir.join(layer_name.as_str());
 
         fs::create_dir_all(&layer_dir).unwrap();
         fs::write(
@@ -532,13 +532,13 @@ mod test {
         fs::create_dir_all(layer_dir.join("env")).unwrap();
         fs::write(layer_dir.join("env/CUSTOM_ENV"), "CUSTOM_ENV_VALUE").unwrap();
 
-        let layer_data = super::read_layer::<TestLayerMetadata, _, _>(&layers_dir, &layer_name)
+        let layer_data = super::read_layer::<TestLayerMetadata, _>(&layers_dir, &layer_name)
             .unwrap()
             .unwrap();
 
         assert_eq!(layer_data.path, layer_dir);
 
-        assert_eq!(layer_data.name, String::from(layer_name));
+        assert_eq!(layer_data.name, layer_name);
 
         assert_eq!(
             layer_data.content_metadata.types,
@@ -573,10 +573,10 @@ mod test {
 
     #[test]
     fn read_malformed_toml_layer() {
-        let layer_name = "foo";
+        let layer_name = layer_name!("foo");
         let temp_dir = tempdir().unwrap();
         let layers_dir = temp_dir.path();
-        let layer_dir = layers_dir.join(&layer_name);
+        let layer_dir = layers_dir.join(layer_name.as_str());
 
         fs::create_dir_all(&layer_dir).unwrap();
         fs::write(
@@ -590,7 +590,7 @@ mod test {
         )
         .unwrap();
 
-        match super::read_layer::<GenericMetadata, _, _>(&layers_dir, &layer_name) {
+        match super::read_layer::<GenericMetadata, _>(&layers_dir, &layer_name) {
             Err(ReadLayerError::LayerContentMetadataParseError(toml_error)) => {
                 assert_eq!(toml_error.line_col(), Some((1, 18)));
             }
@@ -606,10 +606,10 @@ mod test {
             sha: String,
         }
 
-        let layer_name = "foo";
+        let layer_name = layer_name!("foo");
         let temp_dir = tempdir().unwrap();
         let layers_dir = temp_dir.path();
-        let layer_dir = layers_dir.join(&layer_name);
+        let layer_dir = layers_dir.join(layer_name.as_str());
 
         fs::create_dir_all(&layer_dir).unwrap();
         fs::write(
@@ -626,7 +626,7 @@ mod test {
         )
         .unwrap();
 
-        match super::read_layer::<TestLayerMetadata, _, _>(&layers_dir, &layer_name) {
+        match super::read_layer::<TestLayerMetadata, _>(&layers_dir, &layer_name) {
             Err(ReadLayerError::LayerContentMetadataParseError(toml_error)) => {
                 assert_eq!(toml_error.line_col(), Some((6, 12)));
             }
@@ -636,14 +636,14 @@ mod test {
 
     #[test]
     fn read_layer_without_layer_directory() {
-        let layer_name = "foo";
+        let layer_name = layer_name!("foo");
         let temp_dir = tempdir().unwrap();
         let layers_dir = temp_dir.path();
-        let layer_dir = layers_dir.join(&layer_name);
+        let layer_dir = layers_dir.join(layer_name.as_str());
 
         fs::create_dir_all(&layer_dir).unwrap();
 
-        match super::read_layer::<GenericMetadata, _, _>(&layers_dir, &layer_name) {
+        match super::read_layer::<GenericMetadata, _>(&layers_dir, &layer_name) {
             Ok(Some(layer_data)) => {
                 assert_eq!(layer_data.content_metadata, LayerContentMetadata::default());
             }
@@ -653,13 +653,13 @@ mod test {
 
     #[test]
     fn read_layer_without_layer_content_metadata() {
-        let layer_name = "foo";
+        let layer_name = layer_name!("foo");
         let temp_dir = tempdir().unwrap();
         let layers_dir = temp_dir.path();
 
         fs::write(layers_dir.join(format!("{}.toml", &layer_name)), "").unwrap();
 
-        match super::read_layer::<GenericMetadata, _, _>(&layers_dir, &layer_name) {
+        match super::read_layer::<GenericMetadata, _>(&layers_dir, &layer_name) {
             Ok(None) => {}
             _ => panic!("Expected Ok(None)!"),
         }
@@ -667,11 +667,11 @@ mod test {
 
     #[test]
     fn read_nonexistent_layer() {
-        let layer_name = "foo";
+        let layer_name = layer_name!("foo");
         let temp_dir = tempdir().unwrap();
         let layers_dir = temp_dir.path();
 
-        match super::read_layer::<GenericMetadata, _, _>(&layers_dir, &layer_name) {
+        match super::read_layer::<GenericMetadata, _>(&layers_dir, &layer_name) {
             Ok(None) => {}
             _ => panic!("Expected Ok(None)!"),
         }
