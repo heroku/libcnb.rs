@@ -1,3 +1,4 @@
+use crate::data::buildpack::StackIdError;
 use crate::data::launch::ProcessTypeError;
 use crate::layer::HandleLayerError;
 use crate::toml_file::TomlFileError;
@@ -16,6 +17,9 @@ pub enum Error<E: Debug + Display> {
 
     #[error("Process type error: {0}")]
     ProcessTypeError(#[from] ProcessTypeError),
+
+    #[error("Stack ID error: {0}")]
+    StackIdError(#[from] StackIdError),
 
     #[error("Could not determine app directory: {0}")]
     CannotDetermineAppDirectory(std::io::Error),
