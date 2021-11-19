@@ -1,5 +1,5 @@
 use crate::data::launch::ProcessTypeError;
-use crate::layer_lifecycle::LayerLifecycleError;
+use crate::layer::HandleLayerError;
 use crate::toml_file::TomlFileError;
 use std::fmt::{Debug, Display};
 
@@ -11,8 +11,8 @@ pub type Result<T, E> = std::result::Result<T, Error<E>>;
 /// An error that occurred during buildpack execution.
 #[derive(thiserror::Error, Debug)]
 pub enum Error<E: Debug + Display> {
-    #[error("Layer lifecycle error: {0}")]
-    LayerLifecycleError(#[from] LayerLifecycleError),
+    #[error("HandleLayer error: {0}")]
+    HandleLayerError(#[from] HandleLayerError),
 
     #[error("Process type error: {0}")]
     ProcessTypeError(#[from] ProcessTypeError),

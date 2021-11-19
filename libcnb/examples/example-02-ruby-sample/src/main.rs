@@ -1,23 +1,22 @@
-use crate::layers::BundlerLayerLifecycle;
-use crate::layers::RubyLayerLifecycle;
+use crate::layers::{BundlerLayer, RubyLayer};
 use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
-use libcnb::buildpack_main;
 use libcnb::data::launch::{Launch, Process};
 use libcnb::data::process_type;
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::generic::GenericPlatform;
-use libcnb::layer_lifecycle::execute_layer_lifecycle;
-use libcnb::Buildpack;
+use libcnb::layer_env::TargetLifecycle;
+use libcnb::{buildpack_main, Buildpack, Env};
+
 use serde::Deserialize;
 
 mod layers;
 
 #[derive(Deserialize, Debug)]
-struct RubyBuildpackMetadata {
+pub struct RubyBuildpackMetadata {
     pub ruby_url: String,
 }
 
-struct RubyBuildpack;
+pub struct RubyBuildpack;
 
 impl Buildpack for RubyBuildpack {
     type Platform = GenericPlatform;
@@ -37,9 +36,14 @@ impl Buildpack for RubyBuildpack {
     fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildResult, Self::Error> {
         println!("---> Ruby Buildpack");
 
-        let ruby_env = execute_layer_lifecycle("ruby", RubyLayerLifecycle, &context)?;
+        let ruby_layer = context.handle_layer("ruby", RubyLayer)?;
 
-        execute_layer_lifecycle("bundler", BundlerLayerLifecycle { ruby_env }, &context)?;
+        context.handle_layer(
+            "bundler",
+            BundlerLayer {
+                ruby_env: ruby_layer.env.apply(TargetLifecycle::Build, &Env::new()),
+            },
+        )?;
 
         Ok(BuildResultBuilder::new()
             .launch(

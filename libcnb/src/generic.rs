@@ -9,9 +9,6 @@ use std::fmt::{Debug, Display, Formatter};
 /// Generic TOML metadata.
 pub type GenericMetadata = Option<toml::value::Table>;
 
-/// Generic output type for layer lifecycles.
-pub type GenericLayerLifecycleOutput = ();
-
 #[derive(Debug)]
 pub enum GenericError {}
 

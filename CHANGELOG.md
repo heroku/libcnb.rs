@@ -30,5 +30,13 @@
 - `LayerEnv` and `ModificationBehavior` now implement `Clone`.
 - Add `stack_id!`, `buildpack_id!` and `process_type!` macros.
 - `Process::new` no longer returns a `Result` and it's `type` argument now is of type `ProcessType`. 
+- Made it easier to work with buildpack errors during all phases of a `LayerLifecycle`.
+- `LayerEnv` was integrated into the `LayerLifecycle`, allowing buildpack authors to both write environment variables
+  in a declarative way and using them between different layers without explicit IO.
+- Layer types are no longer part of create/update in `LayerLifecycle`. They moved up to the layer itself, allowing the
+  implementation of implicit layer handling when no update or crate happens.
+- New trait design for `LayerLifecycle` which also was renamed to `Layer`.
+- Removed low-level layer functions from `BuildContext`. They don't fit well with the design of the library at this
+  point and are potential footguns. Implementing a `Layer` should work for all use-cases.
 
 ## [0.3.0] 2021/09/17
