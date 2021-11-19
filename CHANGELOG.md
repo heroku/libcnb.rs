@@ -28,5 +28,7 @@
 - Add `PartialEq` and `Eq` implementations for `LayerTypes`.
 - Add `LayerEnv::chainable_insert`
 - `LayerEnv` and `ModificationBehavior` now implement `Clone`.
+- Add `stack_id!`, `buildpack_id!` and `process_type!` macros.
+- `Process::new` no longer returns a `Result` and it's `type` argument now is of type `ProcessType`. 
 
 ## [0.3.0] 2021/09/17
