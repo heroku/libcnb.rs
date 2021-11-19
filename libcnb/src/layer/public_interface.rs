@@ -25,7 +25,7 @@ pub trait Layer {
     type Metadata: DeserializeOwned + Serialize + Clone;
 
     /// Returns the types of this layer. Will be called by libcnb whenever it needs to determine
-    /// the types for this layer. This includes, but is not limited to, after create, update and
+    /// the types for this layer. This includes, but is not limited to: after create, update and
     /// when the layer is not modified at all.
     ///
     /// # Implementation Requirements
