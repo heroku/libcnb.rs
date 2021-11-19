@@ -1,7 +1,6 @@
 use crate::bom;
 use crate::newtypes::libcnb_newtype;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Launch {
@@ -67,19 +66,19 @@ pub struct Process {
 
 impl Process {
     pub fn new(
-        r#type: impl AsRef<str>,
+        r#type: ProcessType,
         command: impl Into<String>,
         args: impl IntoIterator<Item = impl Into<String>>,
         direct: bool,
         default: bool,
-    ) -> Result<Self, ProcessTypeError> {
-        Ok(Self {
-            r#type: ProcessType::from_str(r#type.as_ref())?,
+    ) -> Self {
+        Self {
+            r#type,
             command: command.into(),
             args: args.into_iter().map(std::convert::Into::into).collect(),
             direct,
             default,
-        })
+        }
     }
 }
 
