@@ -24,3 +24,7 @@ pub mod layer_content_metadata;
 pub mod store;
 
 mod newtypes;
+
+// Internals that need to be public for macros
+#[doc(hidden)]
+pub mod internals;

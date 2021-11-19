@@ -52,12 +52,13 @@ pub(crate) enum InnerBuildResult {
 /// # Examples:
 /// ```
 /// use libcnb::build::BuildResultBuilder;
-/// use libcnb_data::launch::{Launch, Process};
+/// use libcnb::data::launch::{Launch, Process};
+/// use libcnb::data::process_type;
 ///
 /// let simple = BuildResultBuilder::new().build();
 ///
 /// let with_launch = BuildResultBuilder::new()
-///    .launch(Launch::new().process(Process::new("type", "command", vec!["-v"], false, false).unwrap()))
+///    .launch(Launch::new().process(Process::new(process_type!("type"), "command", vec!["-v"], false, false)))
 ///    .build();
 /// ```
 pub struct BuildResultBuilder {

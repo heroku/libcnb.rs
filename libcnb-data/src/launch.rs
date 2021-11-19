@@ -19,9 +19,11 @@ pub struct Launch {
 /// # Examples
 /// ```
 /// use libcnb_data::launch;
+/// use libcnb_data::process_type;
+///
 /// let mut launch_toml = launch::Launch::new();
-/// let web = launch::Process::new("web", "bundle", vec!["exec", "ruby", "app.rb"],
-/// false, false).unwrap();
+/// let web = launch::Process::new(process_type!("web"), "bundle", vec!["exec", "ruby", "app.rb"],
+/// false, false);
 ///
 /// launch_toml.processes.push(web);
 /// assert!(toml::to_string(&launch_toml).is_ok());
@@ -88,6 +90,7 @@ pub struct Slice {
 }
 
 libcnb_newtype!(
+    launch,
     /// Construct a [`ProcessType`] value at compile time.
     ///
     /// Passing a string that is not a valid `ProcessType` value will yield a compilation error.

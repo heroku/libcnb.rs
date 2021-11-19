@@ -2,7 +2,6 @@ use crate::layers::BundlerLayerLifecycle;
 use crate::layers::RubyLayerLifecycle;
 use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
 use libcnb::buildpack_main;
-use libcnb::data::launch::ProcessType;
 use libcnb::data::launch::{Launch, Process};
 use libcnb::data::process_type;
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};

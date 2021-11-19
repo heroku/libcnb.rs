@@ -178,6 +178,7 @@ impl Display for BuildpackApi {
 }
 
 libcnb_newtype!(
+    buildpack,
     /// Construct a [`BuildpackId`] value at compile time.
     ///
     /// Passing a string that is not a valid `BuildpackId` value will yield a compilation error.
@@ -212,6 +213,7 @@ libcnb_newtype!(
 );
 
 libcnb_newtype!(
+    buildpack,
     /// Construct a [`StackId`] value at compile time.
     ///
     /// Passing a string that is not a valid `StackId` value will yield a compilation error.

@@ -24,6 +24,10 @@ use libcnb_proc_macros as _;
 /// # Usage:
 /// ```
 /// libcnb_newtype!(
+///     // The module of this crate that exports the newtype publicly. Since it might differ from
+///     // the actual module structure, the macro needs a way to determine how to import the type
+///     // from a user's buildpack crate.
+///     tests::doctest
 ///     /// RustDoc for the macro (optional)
 ///     buildpack_id,
 ///     /// RustDoc for the newtype itself (optional)
@@ -43,6 +47,7 @@ use libcnb_proc_macros as _;
 /// ```
 macro_rules! libcnb_newtype {
     (
+        $path:path,
         $(#[$macro_attributes:meta])*
         $macro_name:ident,
         $(#[$type_attributes:meta])*
@@ -117,10 +122,13 @@ macro_rules! libcnb_newtype {
         $(#[$macro_attributes])*
         macro_rules! $macro_name {
             ($value:expr) => {
-                ::libcnb_proc_macros::verify_regex!(
+                $crate::internals::verify_regex!(
                     $regex,
                     $value,
-                    $value.parse::<$name>().unwrap(),
+                    {
+                        use $crate::$path as base;
+                        $value.parse::<base::$name>().unwrap()
+                    },
                     compile_error!(concat!(
                         stringify!($value),
                         " is not a valid ",
@@ -140,6 +148,7 @@ mod test {
     use super::libcnb_newtype;
 
     libcnb_newtype!(
+        newtypes::test,
         capitalized_name,
         CapitalizedName,
         CapitalizedNameError,
