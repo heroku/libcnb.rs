@@ -88,8 +88,11 @@ pub trait Layer {
     /// The return value of this method is the canonical value for metadata and environment variables.
     /// If the returned [`LayerResult`](LayerResult) does not contain metadata or environment
     /// variables, the resulting layer will not have either. To keep the values from the cached
-    /// version you need to explicitly add them to the result. This can be done by reading that
+    /// version they must be explicitly added to the result. This can be done by reading the env
     /// data from the given [`LayerData`](LayerData) value.
+    ///
+    /// The default implementation will copy both the previous metadata and environment and not
+    /// change the layer data itself, making the default implementation a no-op.
     ///
     /// # Implementation Requirements
     /// Implementations **MUST NOT** write to any other location than `layer_path`.
