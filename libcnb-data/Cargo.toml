@@ -18,4 +18,4 @@ semver = { version = "^1.0.4", features = ["serde"] }
 serde = { version = "^1.0.126", features = ["derive"] }
 thiserror = "^1.0.26"
 toml = "^0.5.8"
-libcnb-proc-macros = { path = "../libcnb-proc-macros" }
+libcnb-proc-macros = { path = "../libcnb-proc-macros", version = "0.1.0" }
