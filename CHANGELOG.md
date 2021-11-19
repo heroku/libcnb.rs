@@ -27,5 +27,6 @@
 - Add `PartialEq` implementation for `LayerContentMetadata`.
 - Add `PartialEq` and `Eq` implementations for `LayerTypes`.
 - Add `LayerEnv::chainable_insert`
+- `LayerEnv` and `ModificationBehavior` now implement `Clone`.
 
 ## [0.3.0] 2021/09/17

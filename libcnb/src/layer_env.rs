@@ -82,7 +82,7 @@ use crate::Env;
 /// assert_eq!(modified_env.get("PATH").unwrap(), layer_dir.join("bin"));
 /// assert_eq!(modified_env.get("CPATH"), None); // None, because CPATH is only added during build
 /// ```
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Eq, PartialEq, Debug, Clone)]
 pub struct LayerEnv {
     all: LayerEnvDelta,
     build: LayerEnvDelta,
@@ -385,7 +385,7 @@ impl Default for LayerEnv {
 
 /// Environment variable modification behavior.
 /// ([CNB spec: Environment Variable Modification Rules](https://github.com/buildpacks/spec/blob/main/buildpack.md#environment-variable-modification-rules))
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Eq, PartialEq, Debug, Clone)]
 pub enum ModificationBehavior {
     Append,
     Default,
@@ -427,7 +427,7 @@ pub enum TargetLifecycle {
     Process(String),
 }
 
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Eq, PartialEq, Debug, Clone)]
 struct LayerEnvDelta {
     entries: BTreeMap<(ModificationBehavior, OsString), OsString>,
 }
