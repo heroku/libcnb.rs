@@ -34,7 +34,7 @@ use libcnb_proc_macros as _;
 ///     BuildpackId,
 ///     /// RustDoc for the newtype error (optional)
 ///     BuildpackIdError,
-///     // The regular expression that must match for the String to be valid. Uses the fancy_regex
+///     // The regular expression that must match for the String to be valid. Uses the `fancy_regex`
 ///     // crate which supports negative lookarounds.
 ///     r"^[[:alnum:]./-]+$",
 /// );

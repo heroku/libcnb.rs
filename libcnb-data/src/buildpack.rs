@@ -188,7 +188,7 @@ libcnb_newtype!(
     /// use libcnb_data::buildpack_id;
     /// use libcnb_data::buildpack::BuildpackId;
     ///
-    /// let process_type: BuildpackId = buildpack_id!("heroku/java");
+    /// let buildpack_id: BuildpackId = buildpack_id!("heroku/java");
     /// ```
     buildpack_id,
     /// buildpack.toml Buildpack Id. This is a newtype wrapper around a String.
@@ -223,7 +223,7 @@ libcnb_newtype!(
     /// use libcnb_data::stack_id;
     /// use libcnb_data::buildpack::StackId;
     ///
-    /// let process_type: StackId = stack_id!("heroku-20");
+    /// let stack_id: StackId = stack_id!("heroku-20");
     /// ```
     stack_id,
     /// buildpack.toml Stack Id. This is a newtype wrapper around a String.
