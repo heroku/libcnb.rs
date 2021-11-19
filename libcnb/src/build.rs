@@ -6,6 +6,7 @@ use crate::buildpack::Buildpack;
 use crate::data::store::Store;
 use crate::layer::{HandleLayerErrorOrBuildpackError, Layer, LayerData};
 
+use crate::data::buildpack::StackId;
 use crate::data::{buildpack::BuildpackToml, buildpack_plan::BuildpackPlan, launch::Launch};
 
 /// Context for the build phase execution.
@@ -13,7 +14,7 @@ pub struct BuildContext<B: Buildpack + ?Sized> {
     pub layers_dir: PathBuf,
     pub app_dir: PathBuf,
     pub buildpack_dir: PathBuf,
-    pub stack_id: String,
+    pub stack_id: StackId,
     pub platform: B::Platform,
     pub buildpack_plan: BuildpackPlan,
     pub buildpack_descriptor: BuildpackToml<B::Metadata>,

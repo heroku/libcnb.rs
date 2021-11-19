@@ -8,7 +8,7 @@ use serde::de::DeserializeOwned;
 
 use crate::build::{BuildContext, InnerBuildResult};
 use crate::buildpack::Buildpack;
-use crate::data::buildpack::BuildpackToml;
+use crate::data::buildpack::{BuildpackToml, StackId};
 use crate::detect::{DetectContext, InnerDetectResult};
 use crate::error::Error;
 use crate::platform::Platform;
@@ -86,7 +86,9 @@ fn libcnb_runtime_detect<B: Buildpack>(buildpack: &B) -> Result<(), B::Error> {
 
     let app_dir = env::current_dir().map_err(Error::CannotDetermineAppDirectory)?;
 
-    let stack_id: String = env::var("CNB_STACK_ID").map_err(Error::CannotDetermineStackId)?;
+    let stack_id: StackId = env::var("CNB_STACK_ID")
+        .map_err(Error::CannotDetermineStackId)
+        .and_then(|stack_id_string| stack_id_string.parse().map_err(Error::StackIdError))?;
 
     let platform = B::Platform::from_path(&args.platform_dir_path)
         .map_err(Error::CannotCreatePlatformFromPath)?;
@@ -121,7 +123,9 @@ fn libcnb_runtime_build<B: Buildpack>(buildpack: &B) -> Result<(), B::Error> {
 
     let app_dir = env::current_dir().map_err(Error::CannotDetermineAppDirectory)?;
 
-    let stack_id: String = env::var("CNB_STACK_ID").map_err(Error::CannotDetermineStackId)?;
+    let stack_id: StackId = env::var("CNB_STACK_ID")
+        .map_err(Error::CannotDetermineStackId)
+        .and_then(|stack_id_string| stack_id_string.parse().map_err(Error::StackIdError))?;
 
     let platform = B::Platform::from_path(&args.platform_dir_path)
         .map_err(Error::CannotCreatePlatformFromPath)?;
