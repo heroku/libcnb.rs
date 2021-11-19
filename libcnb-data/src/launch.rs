@@ -1,7 +1,6 @@
 use crate::bom;
 use crate::newtypes::libcnb_newtype;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Launch {
@@ -20,9 +19,11 @@ pub struct Launch {
 /// # Examples
 /// ```
 /// use libcnb_data::launch;
+/// use libcnb_data::process_type;
+///
 /// let mut launch_toml = launch::Launch::new();
-/// let web = launch::Process::new("web", "bundle", vec!["exec", "ruby", "app.rb"],
-/// false, false).unwrap();
+/// let web = launch::Process::new(process_type!("web"), "bundle", vec!["exec", "ruby", "app.rb"],
+/// false, false);
 ///
 /// launch_toml.processes.push(web);
 /// assert!(toml::to_string(&launch_toml).is_ok());
@@ -67,19 +68,19 @@ pub struct Process {
 
 impl Process {
     pub fn new(
-        r#type: impl AsRef<str>,
+        r#type: ProcessType,
         command: impl Into<String>,
         args: impl IntoIterator<Item = impl Into<String>>,
         direct: bool,
         default: bool,
-    ) -> Result<Self, ProcessTypeError> {
-        Ok(Self {
-            r#type: ProcessType::from_str(r#type.as_ref())?,
+    ) -> Self {
+        Self {
+            r#type,
             command: command.into(),
             args: args.into_iter().map(std::convert::Into::into).collect(),
             direct,
             default,
-        })
+        }
     }
 }
 
@@ -89,6 +90,19 @@ pub struct Slice {
 }
 
 libcnb_newtype!(
+    launch,
+    /// Construct a [`ProcessType`] value at compile time.
+    ///
+    /// Passing a string that is not a valid `ProcessType` value will yield a compilation error.
+    ///
+    /// # Examples:
+    /// ```
+    /// use libcnb_data::launch::ProcessType;
+    /// use libcnb_data::process_type;
+    ///
+    /// let process_type: ProcessType = process_type!("web");
+    /// ```
+    process_type,
     /// launch.toml Process Type. This is a newtype wrapper around a String. It MUST only contain numbers, letters, and the characters ., _, and -. Use [`std::str::FromStr`] to create a new instance of this struct.
     ///
     /// # Examples

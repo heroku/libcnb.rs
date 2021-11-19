@@ -1,6 +1,7 @@
 use crate::layers::{BundlerLayer, RubyLayer};
 use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
 use libcnb::data::launch::{Launch, Process};
+use libcnb::data::process_type;
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::generic::GenericPlatform;
 use libcnb::layer_env::TargetLifecycle;
@@ -48,19 +49,19 @@ impl Buildpack for RubyBuildpack {
             .launch(
                 Launch::new()
                     .process(Process::new(
-                        "web",
+                        process_type!("web"),
                         "bundle",
                         vec!["exec", "ruby", "app.rb"],
                         false,
                         true,
-                    )?)
+                    ))
                     .process(Process::new(
-                        "worker",
+                        process_type!("worker"),
                         "bundle",
                         vec!["exec", "ruby", "worker.rb"],
                         false,
                         false,
-                    )?),
+                    )),
             )
             .build())
     }
