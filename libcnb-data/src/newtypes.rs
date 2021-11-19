@@ -1,7 +1,3 @@
-// The compiler has a hard time figuring out that we actually use libcnb_sys in here. To avoid
-// false-positive warnings about unused crates, we import it as _ here:
-use libcnb_proc_macros as _;
-
 /// Macro to generate a newtype backed by `String` that is validated by a regular expression.
 ///
 /// Automatically implements the following traits for the newtype:
