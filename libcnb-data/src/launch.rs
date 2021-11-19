@@ -89,6 +89,17 @@ pub struct Slice {
 }
 
 libcnb_newtype!(
+    /// Construct a [`ProcessType`] value at compile time.
+    ///
+    /// Passing a string that is not a valid `ProcessType` value will yield a compilation error.
+    ///
+    /// # Examples:
+    /// ```
+    /// use libcnb_data::launch::ProcessType;
+    /// use libcnb_data::process_type;
+    ///
+    /// let process_type: ProcessType = process_type!("web");
+    /// ```
     process_type,
     /// launch.toml Process Type. This is a newtype wrapper around a String. It MUST only contain numbers, letters, and the characters ., _, and -. Use [`std::str::FromStr`] to create a new instance of this struct.
     ///

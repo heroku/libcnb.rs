@@ -178,6 +178,17 @@ impl Display for BuildpackApi {
 }
 
 libcnb_newtype!(
+    /// Construct a [`BuildpackId`] value at compile time.
+    ///
+    /// Passing a string that is not a valid `BuildpackId` value will yield a compilation error.
+    ///
+    /// # Examples:
+    /// ```
+    /// use libcnb_data::buildpack_id;
+    /// use libcnb_data::buildpack::BuildpackId;
+    ///
+    /// let process_type: BuildpackId = buildpack_id!("heroku/java");
+    /// ```
     buildpack_id,
     /// buildpack.toml Buildpack Id. This is a newtype wrapper around a String.
     /// It MUST only contain numbers, letters, and the characters ., /, and -.
@@ -201,6 +212,17 @@ libcnb_newtype!(
 );
 
 libcnb_newtype!(
+    /// Construct a [`StackId`] value at compile time.
+    ///
+    /// Passing a string that is not a valid `StackId` value will yield a compilation error.
+    ///
+    /// # Examples:
+    /// ```
+    /// use libcnb_data::stack_id;
+    /// use libcnb_data::buildpack::StackId;
+    ///
+    /// let process_type: StackId = stack_id!("heroku-20");
+    /// ```
     stack_id,
     /// buildpack.toml Stack Id. This is a newtype wrapper around a String.
     /// It MUST only contain numbers, letters, and the characters ., /, and -.
