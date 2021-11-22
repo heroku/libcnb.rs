@@ -3,11 +3,11 @@
 use std::path::PathBuf;
 
 use crate::buildpack::Buildpack;
-use crate::data::store::Store;
-use crate::layer::{HandleLayerErrorOrBuildpackError, Layer, LayerData};
-
 use crate::data::buildpack::StackId;
+use crate::data::layer::LayerName;
+use crate::data::store::Store;
 use crate::data::{buildpack::BuildpackToml, buildpack_plan::BuildpackPlan, launch::Launch};
+use crate::layer::{HandleLayerErrorOrBuildpackError, Layer, LayerData};
 
 /// Context for the build phase execution.
 pub struct BuildContext<B: Buildpack + ?Sized> {
@@ -33,6 +33,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     /// # Example:
     /// ```
     /// # use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
+    /// # use libcnb::data::layer_name;
     /// # use libcnb::data::layer_content_metadata::LayerTypes;
     /// # use libcnb::detect::{DetectContext, DetectResult};
     /// # use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};
@@ -54,7 +55,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     /// #    }
     /// #
     ///     fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildResult, Self::Error> {
-    ///         let example_layer = context.handle_layer("example-layer", ExampleLayer)?;
+    ///         let example_layer = context.handle_layer(layer_name!("example-layer"), ExampleLayer)?;
     ///
     ///         println!(
     ///             "Monologue from layer metadata: {}",
@@ -93,10 +94,10 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     /// ```
     pub fn handle_layer<L: Layer<Buildpack = B>>(
         &self,
-        name: impl AsRef<str>,
+        layer_name: LayerName,
         layer: L,
     ) -> crate::Result<LayerData<L::Metadata>, B::Error> {
-        crate::layer::handle_layer(self, name.as_ref(), layer).map_err(|error| match error {
+        crate::layer::handle_layer(self, layer_name, layer).map_err(|error| match error {
             HandleLayerErrorOrBuildpackError::HandleLayerError(e) => {
                 crate::Error::HandleLayerError(e)
             }

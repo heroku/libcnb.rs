@@ -1,6 +1,7 @@
 /// Macro to generate a newtype backed by `String` that is validated by a regular expression.
 ///
 /// Automatically implements the following traits for the newtype:
+/// - [`Clone`]
 /// - [`Debug`]
 /// - [`Display`]
 /// - [`Eq`]
@@ -52,7 +53,7 @@ macro_rules! libcnb_newtype {
         $error_name:ident,
         $regex:expr
     ) => {
-        #[derive(Debug, Eq, PartialEq, ::serde::Deserialize, ::serde::Serialize)]
+        #[derive(Debug, Eq, PartialEq, ::serde::Deserialize, ::serde::Serialize, Clone)]
         $(#[$type_attributes])*
         pub struct $name(String);
 

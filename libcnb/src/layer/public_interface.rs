@@ -1,4 +1,5 @@
 use crate::build::BuildContext;
+use crate::data::layer::LayerName;
 use crate::data::layer_content_metadata::{LayerContentMetadata, LayerTypes};
 use crate::generic::GenericMetadata;
 use crate::layer_env::LayerEnv;
@@ -151,7 +152,7 @@ pub enum MetadataMigration<M> {
 
 /// Information about an existing CNB layer.
 pub struct LayerData<M> {
-    pub name: String,
+    pub name: LayerName,
     /// The layer's path, should not be modified outside of a [`Layer`] implementation.
     pub path: PathBuf,
     pub env: LayerEnv,
