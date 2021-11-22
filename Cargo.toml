@@ -3,6 +3,6 @@ members = [
     "libcnb",
     "libcnb-data",
     "libcnb-proc-macros",
-    "libcnb/examples/example-01-basics",
-    "libcnb/examples/example-02-ruby-sample"
+    "examples/example-01-basics",
+    "examples/example-02-ruby-sample"
 ]
