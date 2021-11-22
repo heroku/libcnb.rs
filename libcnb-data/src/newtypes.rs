@@ -1,6 +1,7 @@
 /// Macro to generate a newtype backed by `String` that is validated by a regular expression.
 ///
 /// Automatically implements the following traits for the newtype:
+/// - [`Clone`]
 /// - [`Debug`]
 /// - [`Display`]
 /// - [`Eq`]
