@@ -1,5 +1,4 @@
-/target
+target/
+target-cargo/
 .idea
 Cargo.lock
-libcnb/examples/**/target
-libcnb/examples/**/target-cargo
