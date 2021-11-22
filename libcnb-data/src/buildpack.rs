@@ -191,20 +191,28 @@ libcnb_newtype!(
     /// let buildpack_id: BuildpackId = buildpack_id!("heroku/java");
     /// ```
     buildpack_id,
-    /// buildpack.toml Buildpack Id. This is a newtype wrapper around a String.
-    /// It MUST only contain numbers, letters, and the characters ., /, and -.
-    /// It also cannot be `config` or `app`.
-    /// Use [`std::str::FromStr`] to create a new instance of this struct.
+    /// The ID of a buildpack.
+    ///
+    /// It MUST only contain numbers, letters, and the characters `.`, `/`, and `-`.
+    /// It also MUST NOT be `config` or `app`.
+    ///
+    /// Use the [`buildpack_id`](crate::buildpack_id) macro to construct a `BuildpackId` from a
+    /// literal string. To parse a dynamic string into a `BuildpackId`, use
+    /// [`str::parse`](str::parse).
     ///
     /// # Examples
     /// ```
-    /// use std::str::FromStr;
     /// use libcnb_data::buildpack::BuildpackId;
+    /// use libcnb_data::buildpack_id;
     ///
-    /// let valid = BuildpackId::from_str("heroku/ruby-engine.MRI3");
-    /// assert_eq!(valid.unwrap().as_str(), "heroku/ruby-engine.MRI3");
+    /// let from_literal = buildpack_id!("heroku/jvm");
     ///
-    /// let invalid = BuildpackId::from_str("!nvalid");
+    /// let input = "heroku/jvm";
+    /// let from_dynamic: BuildpackId = input.parse().unwrap();
+    /// assert_eq!(from_dynamic, from_literal);
+    ///
+    /// let input = "app";
+    /// let invalid: Result<BuildpackId, _> = input.parse();
     /// assert!(invalid.is_err());
     /// ```
     BuildpackId,
@@ -226,25 +234,28 @@ libcnb_newtype!(
     /// let stack_id: StackId = stack_id!("heroku-20");
     /// ```
     stack_id,
-    /// buildpack.toml Stack Id. This is a newtype wrapper around a String.
-    /// It MUST only contain numbers, letters, and the characters ., /, and -.
-    /// or be `*`.
+    /// The ID of a stack.
     ///
-    /// Use [`std::str::FromStr`] to create a new instance of this struct.
+    /// It MUST only contain numbers, letters, and the characters `.`, `/`, and `-`.
+    ///
+    /// Use the [`stack_id`](crate::buildpack_id) macro to construct a `StackId` from a
+    /// literal string. To parse a dynamic string into a `StackId`, use
+    /// [`str::parse`](str::parse).
     ///
     /// # Examples
     /// ```
-    /// use std::str::FromStr;
-    /// use libcnb_data::buildpack::StackId;
+    /// use libcnb_data::buildpack::BuildpackId;
+    /// use libcnb_data::buildpack_id;
     ///
-    /// let valid = StackId::from_str("io.buildpacks.bionic/Latest-2020");
-    /// assert_eq!(valid.unwrap().as_str(), "io.buildpacks.bionic/Latest-2020");
+    /// let from_literal = buildpack_id!("heroku/jvm");
     ///
-    /// let invalid = StackId::from_str("!nvalid");
+    /// let input = "heroku/jvm";
+    /// let from_dynamic: BuildpackId = input.parse().unwrap();
+    /// assert_eq!(from_dynamic, from_literal);
+    ///
+    /// let input = "app";
+    /// let invalid: Result<BuildpackId, _> = input.parse();
     /// assert!(invalid.is_err());
-    ///
-    /// let invalid = StackId::from_str("*");
-    /// assert!(invalid.is_ok());
     /// ```
     StackId,
     StackIdError,

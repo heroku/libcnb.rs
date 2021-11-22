@@ -103,17 +103,27 @@ libcnb_newtype!(
     /// let process_type: ProcessType = process_type!("web");
     /// ```
     process_type,
-    /// launch.toml Process Type. This is a newtype wrapper around a String. It MUST only contain numbers, letters, and the characters ., _, and -. Use [`std::str::FromStr`] to create a new instance of this struct.
+    /// The type of a process.
+    ///
+    /// It MUST only contain numbers, letters, and the characters `.`, `_`, and `-`.
+    ///
+    /// Use the [`process_type`](crate::process_type) macro to construct a `ProcessType` from a
+    /// literal string. To parse a dynamic string into a `ProcessType`, use
+    /// [`str::parse`](str::parse).
     ///
     /// # Examples
     /// ```
-    /// use std::str::FromStr;
     /// use libcnb_data::launch::ProcessType;
+    /// use libcnb_data::process_type;
     ///
-    /// let valid = ProcessType::from_str("foo-Bar_9");
-    /// assert_eq!(valid.unwrap().as_str(), "foo-Bar_9");
+    /// let from_literal = process_type!("web");
     ///
-    /// let invalid = ProcessType::from_str("!nv4lid");
+    /// let input = "web";
+    /// let from_dynamic: ProcessType = input.parse().unwrap();
+    /// assert_eq!(from_dynamic, from_literal);
+    ///
+    /// let input = "!nv4lid";
+    /// let invalid: Result<ProcessType, _> = input.parse();
     /// assert!(invalid.is_err());
     /// ```
     ProcessType,
