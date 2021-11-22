@@ -244,17 +244,17 @@ libcnb_newtype!(
     ///
     /// # Examples
     /// ```
-    /// use libcnb_data::buildpack::BuildpackId;
-    /// use libcnb_data::buildpack_id;
+    /// use libcnb_data::buildpack::StackId;
+    /// use libcnb_data::stack_id;
     ///
-    /// let from_literal = buildpack_id!("heroku/jvm");
+    /// let from_literal = stack_id!("heroku-20");
     ///
-    /// let input = "heroku/jvm";
-    /// let from_dynamic: BuildpackId = input.parse().unwrap();
+    /// let input = "heroku-20";
+    /// let from_dynamic: StackId = input.parse().unwrap();
     /// assert_eq!(from_dynamic, from_literal);
     ///
-    /// let input = "app";
-    /// let invalid: Result<BuildpackId, _> = input.parse();
+    /// let input = "_stack_";
+    /// let invalid: Result<StackId, _> = input.parse();
     /// assert!(invalid.is_err());
     /// ```
     StackId,
