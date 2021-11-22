@@ -40,5 +40,6 @@
 - Removed low-level layer functions from `BuildContext`. They don't fit well with the design of the library at this
   point and are potential footguns. Implementing a `Layer` should work for all use-cases.
 - The `stack_id` field in `BuildContext` and `DetectContext` is now of type `StackId` instead of `String`.
+- Remove `defaults` module from libcnb-data.
 
 ## [0.3.0] 2021/09/17

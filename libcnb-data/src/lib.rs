@@ -18,7 +18,6 @@ pub mod build;
 pub mod build_plan;
 pub mod buildpack;
 pub mod buildpack_plan;
-pub mod defaults;
 pub mod launch;
 pub mod layer;
 pub mod layer_content_metadata;
