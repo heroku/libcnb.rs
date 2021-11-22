@@ -25,7 +25,7 @@ libcnb = "0.5.0"
 *Compiler support requires rustc 1.56+ for 2021 edition*
 
 ## Usage
-View the [examples](./libcnb/examples) for some buildpack samples.
+View the [examples](./examples) for some buildpack samples.
 
 All spec data files are implemented in the [`libcnb-data`](https://docs.rs/libcnb-data) crate and
 can be used without the framework to implement Cloud Native Buildpacks tooling in Rust.
