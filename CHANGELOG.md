@@ -33,6 +33,7 @@
 - Made it easier to work with buildpack errors during all phases of a `LayerLifecycle`.
 - `LayerEnv` was integrated into the `LayerLifecycle`, allowing buildpack authors to both write environment variables
   in a declarative way and using them between different layers without explicit IO.
+- Introduce `LayerName` for layer names to enforce layer name constraints in the CNB specification.
 - Layer types are no longer part of create/update in `LayerLifecycle`. They moved up to the layer itself, allowing the
   implementation of implicit layer handling when no update or crate happens.
 - New trait design for `LayerLifecycle` which also was renamed to `Layer`.
