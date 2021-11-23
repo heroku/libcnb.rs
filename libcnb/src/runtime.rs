@@ -13,7 +13,7 @@ use crate::detect::{DetectContext, InnerDetectResult};
 use crate::error::Error;
 use crate::platform::Platform;
 use crate::toml_file::{read_toml_file, write_toml_file};
-use crate::{Result, LIBCNB_SUPPORTED_BUILDPACK_API};
+use crate::LIBCNB_SUPPORTED_BUILDPACK_API;
 use std::fmt::Debug;
 
 /// Main entry point for this framework.
@@ -81,7 +81,7 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: B) {
     }
 }
 
-fn libcnb_runtime_detect<B: Buildpack>(buildpack: &B) -> Result<(), B::Error> {
+fn libcnb_runtime_detect<B: Buildpack>(buildpack: &B) -> crate::Result<(), B::Error> {
     let args = parse_detect_args_or_exit();
 
     let app_dir = env::current_dir().map_err(Error::CannotDetermineAppDirectory)?;
@@ -116,7 +116,7 @@ fn libcnb_runtime_detect<B: Buildpack>(buildpack: &B) -> Result<(), B::Error> {
     }
 }
 
-fn libcnb_runtime_build<B: Buildpack>(buildpack: &B) -> Result<(), B::Error> {
+fn libcnb_runtime_build<B: Buildpack>(buildpack: &B) -> crate::Result<(), B::Error> {
     let args = parse_build_args_or_exit();
 
     let layers_dir = args.layers_dir_path;
