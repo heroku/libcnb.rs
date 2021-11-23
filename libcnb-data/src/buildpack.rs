@@ -242,8 +242,7 @@ libcnb_newtype!(
     stack_id,
     /// The ID of a stack.
     ///
-    /// It MUST only contain numbers, letters, and the characters `.`, `/`, and `-`. It can also be
-    /// `*`.
+    /// It MUST only contain numbers, letters, and the characters `.`, `/`, and `-`.
     ///
     /// Use the [`stack_id`](crate::stack_id) macro to construct a `StackId` from a
     /// literal string. To parse a dynamic string into a `StackId`, use
