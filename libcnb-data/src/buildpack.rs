@@ -101,7 +101,7 @@ impl TryFrom<StackUnchecked> for Stack {
             if mixins.is_empty() {
                 Ok(Stack::Any)
             } else {
-                Err(Self::Error::InvalidAnyStack(mixins.join(", ")))
+                Err(Self::Error::InvalidAnyStack(mixins))
             }
         } else {
             Ok(Stack::Specific {
@@ -273,8 +273,8 @@ pub enum BuildpackTomlError {
     #[error("Found `{0}` but value MUST be in the form `<major>.<minor>` or `<major>` and only contain numbers.")]
     InvalidBuildpackApi(String),
 
-    #[error("Stack with id `*` MUST NOT contain mixins, however the following mixins were specified: {0}")]
-    InvalidAnyStack(String),
+    #[error("Stack with id `*` MUST NOT contain mixins, however the following mixins were specified: `{}`", .0.join("`, `"))]
+    InvalidAnyStack(Vec<String>),
 
     #[error("Invalid Stack ID: {0}")]
     InvalidStackId(#[from] StackIdError),
@@ -508,7 +508,7 @@ mixins = ["foo", "bar"]
         let err = toml::from_str::<GenericBuildpackToml>(raw).unwrap_err();
         assert!(err
             .to_string()
-            .contains("Stack with id `*` MUST NOT contain mixins, however the following mixins were specified: foo, bar"));
+            .contains("Stack with id `*` MUST NOT contain mixins, however the following mixins were specified: `foo`, `bar`"));
     }
 
     #[test]
