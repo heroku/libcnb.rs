@@ -39,5 +39,34 @@ libcnb_newtype!(
     /// ```
     LayerName,
     LayerNameError,
-    r"^(?!build|launch|store).*$"
+    r"^(?!(build|launch|store)$).+$"
 );
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn layer_name_validation() {
+        assert!("abc 123_!".parse::<LayerName>().is_ok());
+        assert!("build-foo".parse::<LayerName>().is_ok());
+        assert!("foo-build".parse::<LayerName>().is_ok());
+
+        assert_eq!(
+            "build".parse::<LayerName>(),
+            Err(LayerNameError::InvalidValue(String::from("build")))
+        );
+        assert_eq!(
+            "launch".parse::<LayerName>(),
+            Err(LayerNameError::InvalidValue(String::from("launch")))
+        );
+        assert_eq!(
+            "store".parse::<LayerName>(),
+            Err(LayerNameError::InvalidValue(String::from("store")))
+        );
+        assert_eq!(
+            "".parse::<LayerName>(),
+            Err(LayerNameError::InvalidValue(String::new()))
+        );
+    }
+}
