@@ -14,7 +14,7 @@ use crate::error::Error;
 use crate::platform::Platform;
 use crate::toml_file::{read_toml_file, write_toml_file};
 use crate::{Result, LIBCNB_SUPPORTED_BUILDPACK_API};
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 
 /// Main entry point for this framework.
 ///
@@ -200,13 +200,13 @@ fn parse_build_args_or_exit() -> BuildArgs {
     }
 }
 
-fn read_buildpack_dir<E: Display + Debug>() -> Result<PathBuf, E> {
+fn read_buildpack_dir<E: Debug>() -> crate::Result<PathBuf, E> {
     env::var("CNB_BUILDPACK_DIR")
         .map_err(Error::CannotDetermineBuildpackDirectory)
         .map(PathBuf::from)
 }
 
-fn read_buildpack_toml<BM: DeserializeOwned, E: Display + Debug>() -> Result<BuildpackToml<BM>, E> {
+fn read_buildpack_toml<BM: DeserializeOwned, E: Debug>() -> crate::Result<BuildpackToml<BM>, E> {
     read_buildpack_dir().and_then(|buildpack_dir| {
         read_toml_file(buildpack_dir.join("buildpack.toml"))
             .map_err(Error::CannotReadBuildpackDescriptor)

@@ -2,7 +2,7 @@ use crate::data::buildpack::StackIdError;
 use crate::data::launch::ProcessTypeError;
 use crate::layer::HandleLayerError;
 use crate::toml_file::TomlFileError;
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 
 /// A specialized Result type for libcnb.
 ///
@@ -11,7 +11,7 @@ pub type Result<T, E> = std::result::Result<T, Error<E>>;
 
 /// An error that occurred during buildpack execution.
 #[derive(thiserror::Error, Debug)]
-pub enum Error<E: Debug + Display> {
+pub enum Error<E: Debug> {
     #[error("HandleLayer error: {0}")]
     HandleLayerError(#[from] HandleLayerError),
 
@@ -48,7 +48,7 @@ pub enum Error<E: Debug + Display> {
     #[error("Cannot write store.toml: {0}")]
     CannotWriteStore(TomlFileError),
 
-    #[error("Buildpack error: {0}")]
+    #[error("Buildpack error: {0:?}")]
     BuildpackError(E),
 }
 

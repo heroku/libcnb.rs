@@ -2,7 +2,7 @@ use crate::build::{BuildContext, BuildResult};
 use crate::detect::{DetectContext, DetectResult};
 use crate::Platform;
 use serde::de::DeserializeOwned;
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 
 /// Represents a buildpack written with the libcnb framework.
 ///
@@ -24,7 +24,7 @@ pub trait Buildpack {
     /// enum are: `MavenExecutionFailed`, `InvalidGemfileLock`, `IncompatiblePythonVersion`. The
     /// framework itself has its [own error type](crate::error::Error) that contains more low-level errors that can occur
     /// during buildpack execution.
-    type Error: Debug + Display;
+    type Error: Debug;
 
     /// Detect logic for this buildpack. Directly corresponds to
     /// [detect in the CNB buildpack interface](https://github.com/buildpacks/spec/blob/platform/v0.6/buildpack.md#detection).
@@ -45,7 +45,7 @@ pub trait Buildpack {
     /// (using its [`Display`] implementation) to stderr.
     fn handle_error(&self, error: crate::Error<Self::Error>) -> i32 {
         eprintln!("Unhandled error:");
-        eprintln!("> {}", error);
+        eprintln!("> {:?}", error);
         eprintln!("Buildpack will exit!");
         100
     }
