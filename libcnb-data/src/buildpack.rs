@@ -74,22 +74,21 @@ pub struct License {
     pub uri: Option<String>,
 }
 
-#[derive(Deserialize, Debug)]
-#[serde(try_from = "StackUnchecked")]
-pub struct Stack {
-    pub id: StackId,
-    pub mixins: Vec<String>,
-}
-
 // Used as a "shadow" struct to store
 // potentially invalid `Stack` data when deserializing
 // https://dev.to/equalma/validate-fields-and-types-in-serde-with-tryfrom-c2n
 #[derive(Deserialize)]
 struct StackUnchecked {
-    pub id: StackId,
-
+    pub id: String,
     #[serde(default)]
     pub mixins: Vec<String>,
+}
+
+#[derive(Deserialize, Debug, Eq, PartialEq)]
+#[serde(try_from = "StackUnchecked")]
+pub enum Stack {
+    Any,
+    Specific { id: StackId, mixins: Vec<String> },
 }
 
 impl TryFrom<StackUnchecked> for Stack {
@@ -98,10 +97,17 @@ impl TryFrom<StackUnchecked> for Stack {
     fn try_from(value: StackUnchecked) -> Result<Self, Self::Error> {
         let StackUnchecked { id, mixins } = value;
 
-        if id.as_str() == "*" && !mixins.is_empty() {
-            Err(BuildpackTomlError::InvalidStarStack(mixins.join(", ")))
+        if id.as_str() == "*" {
+            if mixins.is_empty() {
+                Ok(Stack::Any)
+            } else {
+                Err(Self::Error::InvalidAnyStack(mixins.join(", ")))
+            }
         } else {
-            Ok(Self { id, mixins })
+            Ok(Stack::Specific {
+                id: id.parse()?,
+                mixins,
+            })
         }
     }
 }
@@ -239,7 +245,7 @@ libcnb_newtype!(
     /// It MUST only contain numbers, letters, and the characters `.`, `/`, and `-`. It can also be
     /// `*`.
     ///
-    /// Use the [`stack_id`](crate::buildpack_id) macro to construct a `StackId` from a
+    /// Use the [`stack_id`](crate::stack_id) macro to construct a `StackId` from a
     /// literal string. To parse a dynamic string into a `StackId`, use
     /// [`str::parse`](str::parse).
     ///
@@ -260,7 +266,7 @@ libcnb_newtype!(
     /// ```
     StackId,
     StackIdError,
-    r"^([[:alnum:]./-]+|\*)$"
+    r"^[[:alnum:]./-]+$"
 );
 
 #[derive(thiserror::Error, Debug)]
@@ -268,8 +274,8 @@ pub enum BuildpackTomlError {
     #[error("Found `{0}` but value MUST be in the form `<major>.<minor>` or `<major>` and only contain numbers.")]
     InvalidBuildpackApi(String),
 
-    #[error("Stack with id `*` MUST not contain mixins. mixins: [{0}]")]
-    InvalidStarStack(String),
+    #[error("Stack with id `*` MUST NOT contain mixins, however the following mixins were specified: {0}")]
+    InvalidAnyStack(String),
 
     #[error("Invalid Stack ID: {0}")]
     InvalidStackId(#[from] StackIdError),
@@ -281,6 +287,8 @@ pub enum BuildpackTomlError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    type GenericBuildpackToml = BuildpackToml<Option<toml::value::Table>>;
 
     #[test]
     fn buildpack_id_does_not_allow_app() {
@@ -415,9 +423,78 @@ id = "io.buildpacks.stacks.bionic"
     }
 
     #[test]
-    fn cannot_use_star_stack_id_with_mixins() {
+    fn stacks_valid() {
         let raw = r#"
-api = "0.4"
+api = "0.6"
+
+[buildpack]
+id = "foo/bar"
+name = "Bar Buildpack"
+version = "0.0.1"
+
+[[stacks]]
+id = "heroku-20"
+
+[[stacks]]
+id = "io.buildpacks.stacks.bionic"
+mixins = []
+
+[[stacks]]
+id = "io.buildpacks.stacks.focal"
+mixins = ["yj", "yq"]
+
+# As counter-intuitive as it may seem, the CNB spec permits specifying
+# the "any" stack at the same time as stacks with specific IDs.
+[[stacks]]
+id = "*"
+"#;
+
+        let buildpack_toml = toml::from_str::<GenericBuildpackToml>(raw).unwrap();
+        assert_eq!(
+            buildpack_toml.stacks,
+            vec![
+                Stack::Specific {
+                    // Cannot use the `stack_id!` macro due to: https://github.com/Malax/libcnb.rs/issues/179
+                    id: "heroku-20".parse().unwrap(),
+                    mixins: Vec::new()
+                },
+                Stack::Specific {
+                    id: "io.buildpacks.stacks.bionic".parse().unwrap(),
+                    mixins: Vec::new()
+                },
+                Stack::Specific {
+                    id: "io.buildpacks.stacks.focal".parse().unwrap(),
+                    mixins: vec![String::from("yj"), String::from("yq")]
+                },
+                Stack::Any
+            ]
+        );
+    }
+
+    #[test]
+    fn stacks_invalid_stack_id() {
+        let raw = r#"
+api = "0.6"
+
+[buildpack]
+id = "foo/bar"
+name = "Bar Buildpack"
+version = "0.0.1"
+
+[[stacks]]
+id = "io.buildpacks.stacks.*"
+"#;
+
+        let err = toml::from_str::<GenericBuildpackToml>(raw).unwrap_err();
+        assert!(err
+            .to_string()
+            .contains("Invalid Stack ID: Invalid Value: io.buildpacks.stacks.*"));
+    }
+
+    #[test]
+    fn stacks_invalid_any_stack() {
+        let raw = r#"
+api = "0.6"
 
 [buildpack]
 id = "foo/bar"
@@ -426,14 +503,13 @@ version = "0.0.1"
 
 [[stacks]]
 id = "*"
-mixins = ["yolo"]
-
-[metadata]
-checksum = "awesome"
+mixins = ["foo", "bar"]
 "#;
 
-        let result = toml::from_str::<BuildpackToml<toml::value::Table>>(raw);
-        assert!(&result.is_err());
+        let err = toml::from_str::<GenericBuildpackToml>(raw).unwrap_err();
+        assert!(err
+            .to_string()
+            .contains("Stack with id `*` MUST NOT contain mixins, however the following mixins were specified: foo, bar"));
     }
 
     #[test]
