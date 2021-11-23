@@ -42,5 +42,8 @@
 - The `stack_id` field in `BuildContext` and `DetectContext` is now of type `StackId` instead of `String`.
 - Remove `defaults` module from libcnb-data.
 - Remove `Display` trait bound from `Buildpack::Error` type.
+- `Stack` is now an enum with `Any` and `Specific` variants, rather than a struct.
+- `StackId` no longer permits IDs of `*`, use `Stack::Any` instead.
+- `BuildpackTomlError::InvalidStarStack` has been replaced by `BuildpackTomlError::InvalidAnyStack`.
 
 ## [0.3.0] 2021/09/17
