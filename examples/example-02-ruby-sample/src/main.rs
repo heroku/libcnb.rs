@@ -7,21 +7,19 @@ use libcnb::generic::GenericPlatform;
 use libcnb::layer_env::TargetLifecycle;
 use libcnb::{buildpack_main, Buildpack, Env};
 
+use crate::util::{DownloadError, UntarError};
 use serde::Deserialize;
+use std::process::ExitStatus;
 
 mod layers;
-
-#[derive(Deserialize, Debug)]
-pub struct RubyBuildpackMetadata {
-    pub ruby_url: String,
-}
+mod util;
 
 pub struct RubyBuildpack;
 
 impl Buildpack for RubyBuildpack {
     type Platform = GenericPlatform;
     type Metadata = RubyBuildpackMetadata;
-    type Error = anyhow::Error;
+    type Error = RubyBuildpackError;
 
     fn detect(&self, context: DetectContext<Self>) -> libcnb::Result<DetectResult, Self::Error> {
         let result = if context.app_dir.join("Gemfile.lock").exists() {
@@ -65,6 +63,25 @@ impl Buildpack for RubyBuildpack {
             )
             .build())
     }
+}
+
+#[derive(Deserialize, Debug)]
+pub struct RubyBuildpackMetadata {
+    pub ruby_url: String,
+}
+
+#[derive(Debug)]
+pub enum RubyBuildpackError {
+    RubyDownloadError(DownloadError),
+    RubyUntarError(UntarError),
+    CouldNotCreateTemporaryFile(std::io::Error),
+    CouldNotGenerateChecksum(std::io::Error),
+    GemInstallBundlerCommandError(std::io::Error),
+    GemInstallBundlerUnexpectedExitStatus(ExitStatus),
+    BundleInstallCommandError(std::io::Error),
+    BundleInstallUnexpectedExitStatus(ExitStatus),
+    BundleConfigCommandError(std::io::Error),
+    BundleConfigUnexpectedExitStatus(ExitStatus),
 }
 
 buildpack_main!(RubyBuildpack);

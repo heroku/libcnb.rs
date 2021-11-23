@@ -1,17 +1,16 @@
-use std::fs;
-use std::io;
 use std::path::Path;
 
-use flate2::read::GzDecoder;
-use tar::Archive;
+use crate::util;
+
 use tempfile::NamedTempFile;
 
-use crate::RubyBuildpack;
+use crate::{RubyBuildpack, RubyBuildpackError};
 use libcnb::build::BuildContext;
 use libcnb::data::layer_content_metadata::LayerTypes;
 use libcnb::generic::GenericMetadata;
 use libcnb::layer::{Layer, LayerResult, LayerResultBuilder};
 use libcnb::layer_env::{LayerEnv, ModificationBehavior, TargetLifecycle};
+use libcnb::Buildpack;
 
 pub struct RubyLayer;
 
@@ -31,17 +30,19 @@ impl Layer for RubyLayer {
         &self,
         context: &BuildContext<Self::Buildpack>,
         layer_path: &Path,
-    ) -> anyhow::Result<LayerResult<Self::Metadata>> {
+    ) -> Result<LayerResult<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {
         println!("---> Download and extracting Ruby");
 
-        let ruby_tgz = NamedTempFile::new()?;
+        let ruby_tgz =
+            NamedTempFile::new().map_err(RubyBuildpackError::CouldNotCreateTemporaryFile)?;
 
-        download(
+        util::download(
             &context.buildpack_descriptor.metadata.ruby_url,
             ruby_tgz.path(),
-        )?;
+        )
+        .map_err(RubyBuildpackError::RubyDownloadError)?;
 
-        untar(ruby_tgz.path(), &layer_path)?;
+        util::untar(ruby_tgz.path(), &layer_path).map_err(RubyBuildpackError::RubyUntarError)?;
 
         LayerResultBuilder::new(GenericMetadata::default())
             .env(
@@ -61,22 +62,4 @@ impl Layer for RubyLayer {
             )
             .build()
     }
-}
-
-fn download(uri: impl AsRef<str>, dst: impl AsRef<Path>) -> anyhow::Result<()> {
-    let response = ureq::get(uri.as_ref()).call()?;
-    let mut reader = response.into_reader();
-    let mut file = fs::File::create(dst.as_ref())?;
-    io::copy(&mut reader, &mut file)?;
-
-    Ok(())
-}
-
-fn untar(file: impl AsRef<Path>, dst: impl AsRef<Path>) -> anyhow::Result<()> {
-    let tar_gz = fs::File::open(file.as_ref())?;
-    let tar = GzDecoder::new(tar_gz);
-    let mut archive = Archive::new(tar);
-    archive.unpack(dst.as_ref())?;
-
-    Ok(())
 }
