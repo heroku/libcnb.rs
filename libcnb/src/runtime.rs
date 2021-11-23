@@ -28,7 +28,7 @@ use std::fmt::Debug;
 ///
 /// Don't implement this directly and use the [`buildpack_main`] macro instead!
 #[doc(hidden)]
-pub fn libcnb_runtime<B: Buildpack>(buildpack: B) {
+pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
     match read_buildpack_toml::<B::Metadata, B::Error>() {
         Ok(buildpack_toml) => {
             if buildpack_toml.api != LIBCNB_SUPPORTED_BUILDPACK_API {
@@ -62,8 +62,8 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: B) {
 
     #[cfg(any(target_family = "unix"))]
     let result = match current_exe_file_name {
-        Some("detect") => libcnb_runtime_detect(&buildpack),
-        Some("build") => libcnb_runtime_build(&buildpack),
+        Some("detect") => libcnb_runtime_detect(buildpack),
+        Some("build") => libcnb_runtime_build(buildpack),
         other => {
             eprintln!(
                 "Error: Expected the name of this executable to be 'detect' or 'build', but it was '{}'",

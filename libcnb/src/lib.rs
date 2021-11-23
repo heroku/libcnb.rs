@@ -14,8 +14,6 @@
 #![allow(clippy::missing_errors_doc)]
 // https://github.com/Malax/libcnb.rs/issues/57
 #![allow(clippy::must_use_candidate)]
-// https://github.com/Malax/libcnb.rs/issues/63
-#![allow(clippy::needless_pass_by_value)]
 
 pub mod build;
 pub mod detect;
@@ -78,7 +76,7 @@ const LIBCNB_SUPPORTED_BUILDPACK_API: data::buildpack::BuildpackApi =
 macro_rules! buildpack_main {
     ($buildpack:expr) => {
         fn main() {
-            ::libcnb::libcnb_runtime($buildpack);
+            ::libcnb::libcnb_runtime(&$buildpack);
         }
     };
 }
