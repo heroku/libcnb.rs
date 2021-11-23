@@ -10,7 +10,6 @@ use libcnb::data::layer_content_metadata::LayerTypes;
 use libcnb::generic::GenericMetadata;
 use libcnb::layer::{Layer, LayerResult, LayerResultBuilder};
 use libcnb::layer_env::{LayerEnv, ModificationBehavior, TargetLifecycle};
-use libcnb::Buildpack;
 
 pub struct RubyLayer;
 
@@ -30,7 +29,7 @@ impl Layer for RubyLayer {
         &self,
         context: &BuildContext<Self::Buildpack>,
         layer_path: &Path,
-    ) -> Result<LayerResult<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {
+    ) -> Result<LayerResult<Self::Metadata>, RubyBuildpackError> {
         println!("---> Download and extracting Ruby");
 
         let ruby_tgz =

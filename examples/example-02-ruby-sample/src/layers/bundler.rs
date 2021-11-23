@@ -9,7 +9,7 @@ use std::process::Command;
 use crate::RubyBuildpack;
 use libcnb::build::BuildContext;
 use libcnb::layer::{ExistingLayerStrategy, Layer, LayerData, LayerResult, LayerResultBuilder};
-use libcnb::{Buildpack, Env};
+use libcnb::Env;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct BundlerLayerMetadata {
@@ -36,7 +36,7 @@ impl Layer for BundlerLayer {
         &self,
         context: &BuildContext<Self::Buildpack>,
         layer_path: &Path,
-    ) -> Result<LayerResult<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {
+    ) -> Result<LayerResult<Self::Metadata>, RubyBuildpackError> {
         println!("---> Installing bundler");
 
         util::run_simple_command(
@@ -74,7 +74,7 @@ impl Layer for BundlerLayer {
         &self,
         context: &BuildContext<Self::Buildpack>,
         layer: &LayerData<Self::Metadata>,
-    ) -> Result<ExistingLayerStrategy, <Self::Buildpack as Buildpack>::Error> {
+    ) -> Result<ExistingLayerStrategy, RubyBuildpackError> {
         util::sha256_checksum(context.app_dir.join("Gemfile.lock"))
             .map_err(RubyBuildpackError::CouldNotGenerateChecksum)
             .map(|checksum| {
@@ -90,7 +90,7 @@ impl Layer for BundlerLayer {
         &self,
         context: &BuildContext<Self::Buildpack>,
         layer: &LayerData<Self::Metadata>,
-    ) -> Result<LayerResult<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {
+    ) -> Result<LayerResult<Self::Metadata>, RubyBuildpackError> {
         println!("---> Reusing gems");
 
         util::run_simple_command(
