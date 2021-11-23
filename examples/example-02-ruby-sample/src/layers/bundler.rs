@@ -39,45 +39,29 @@ impl Layer for BundlerLayer {
     ) -> Result<LayerResult<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {
         println!("---> Installing bundler");
 
-        Command::new("gem")
-            .args(&["install", "bundler", "--no-ri", "--no-rdoc"])
-            .envs(&self.ruby_env)
-            .spawn()
-            .and_then(|mut child| child.wait())
-            .map_err(RubyBuildpackError::GemInstallBundlerCommandError)
-            .and_then(|exit_status| {
-                if !exit_status.success() {
-                    Err(RubyBuildpackError::GemInstallBundlerUnexpectedExitStatus(
-                        exit_status,
-                    ))
-                } else {
-                    Ok(exit_status)
-                }
-            })?;
+        util::run_simple_command(
+            Command::new("gem")
+                .args(&["install", "bundler", "--no-ri", "--no-rdoc"])
+                .envs(&self.ruby_env),
+            RubyBuildpackError::GemInstallBundlerCommandError,
+            RubyBuildpackError::GemInstallBundlerUnexpectedExitStatus,
+        )?;
 
         println!("---> Installing gems");
 
-        Command::new("bundle")
-            .args(&[
-                "install",
-                "--path",
-                layer_path.to_str().unwrap(),
-                "--binstubs",
-                layer_path.join("bin").to_str().unwrap(),
-            ])
-            .envs(&self.ruby_env)
-            .spawn()
-            .and_then(|mut child| child.wait())
-            .map_err(RubyBuildpackError::BundleInstallCommandError)
-            .and_then(|exit_status| {
-                if !exit_status.success() {
-                    Err(RubyBuildpackError::BundleInstallUnexpectedExitStatus(
-                        exit_status,
-                    ))
-                } else {
-                    Ok(exit_status)
-                }
-            })?;
+        util::run_simple_command(
+            Command::new("bundle")
+                .args(&[
+                    "install",
+                    "--path",
+                    layer_path.to_str().unwrap(),
+                    "--binstubs",
+                    layer_path.join("bin").to_str().unwrap(),
+                ])
+                .envs(&self.ruby_env),
+            RubyBuildpackError::BundleInstallCommandError,
+            RubyBuildpackError::BundleInstallUnexpectedExitStatus,
+        )?;
 
         LayerResultBuilder::new(BundlerLayerMetadata {
             gemfile_lock_checksum: util::sha256_checksum(context.app_dir.join("Gemfile.lock"))
@@ -109,42 +93,26 @@ impl Layer for BundlerLayer {
     ) -> Result<LayerResult<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {
         println!("---> Reusing gems");
 
-        Command::new("bundle")
-            .args(&["config", "--local", "path", layer.path.to_str().unwrap()])
-            .envs(&self.ruby_env)
-            .spawn()
-            .and_then(|mut child| child.wait())
-            .map_err(RubyBuildpackError::BundleConfigCommandError)
-            .and_then(|exit_status| {
-                if !exit_status.success() {
-                    Err(RubyBuildpackError::BundleConfigUnexpectedExitStatus(
-                        exit_status,
-                    ))
-                } else {
-                    Ok(exit_status)
-                }
-            })?;
+        util::run_simple_command(
+            Command::new("bundle")
+                .args(&["config", "--local", "path", layer.path.to_str().unwrap()])
+                .envs(&self.ruby_env),
+            RubyBuildpackError::BundleConfigCommandError,
+            RubyBuildpackError::BundleConfigUnexpectedExitStatus,
+        )?;
 
-        Command::new("bundle")
-            .args(&[
-                "config",
-                "--local",
-                "bin",
-                layer.path.join("bin").as_path().to_str().unwrap(),
-            ])
-            .envs(&self.ruby_env)
-            .spawn()
-            .and_then(|mut child| child.wait())
-            .map_err(RubyBuildpackError::BundleConfigCommandError)
-            .and_then(|exit_status| {
-                if !exit_status.success() {
-                    Err(RubyBuildpackError::BundleConfigUnexpectedExitStatus(
-                        exit_status,
-                    ))
-                } else {
-                    Ok(exit_status)
-                }
-            })?;
+        util::run_simple_command(
+            Command::new("bundle")
+                .args(&[
+                    "config",
+                    "--local",
+                    "bin",
+                    layer.path.join("bin").as_path().to_str().unwrap(),
+                ])
+                .envs(&self.ruby_env),
+            RubyBuildpackError::BundleConfigCommandError,
+            RubyBuildpackError::BundleConfigUnexpectedExitStatus,
+        )?;
 
         LayerResultBuilder::new(BundlerLayerMetadata {
             gemfile_lock_checksum: util::sha256_checksum(context.app_dir.join("Gemfile.lock"))
