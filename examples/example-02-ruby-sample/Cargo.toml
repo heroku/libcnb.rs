@@ -6,12 +6,11 @@ edition = "2021"
 rust-version = "1.56"
 
 [dependencies]
-anyhow = "1"
 flate2 = "1"
 ureq = "2.2.1"
 sha2 = "0.9"
 tar = "0.4"
 toml = "0.5"
 tempfile = "3"
-"libcnb" = { path = "../../libcnb", features = ["anyhow"]  }
+"libcnb" = { path = "../../libcnb" }
 serde = "1.0.126"

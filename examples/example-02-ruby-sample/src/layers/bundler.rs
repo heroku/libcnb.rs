@@ -1,8 +1,8 @@
+use crate::{util, RubyBuildpackError};
 use libcnb::data::layer_content_metadata::LayerTypes;
 use serde::Deserialize;
 use serde::Serialize;
-use sha2::Digest;
-use std::fs;
+
 use std::path::Path;
 use std::process::Command;
 
@@ -36,39 +36,36 @@ impl Layer for BundlerLayer {
         &self,
         context: &BuildContext<Self::Buildpack>,
         layer_path: &Path,
-    ) -> anyhow::Result<LayerResult<Self::Metadata>> {
+    ) -> Result<LayerResult<Self::Metadata>, RubyBuildpackError> {
         println!("---> Installing bundler");
 
-        let install_bundler_exit_code = Command::new("gem")
-            .args(&["install", "bundler", "--no-ri", "--no-rdoc"])
-            .envs(&self.ruby_env)
-            .spawn()?
-            .wait()?;
-
-        if !install_bundler_exit_code.success() {
-            return Err(anyhow::anyhow!("Could not install bundler!"));
-        }
+        util::run_simple_command(
+            Command::new("gem")
+                .args(&["install", "bundler", "--force"])
+                .envs(&self.ruby_env),
+            RubyBuildpackError::GemInstallBundlerCommandError,
+            RubyBuildpackError::GemInstallBundlerUnexpectedExitStatus,
+        )?;
 
         println!("---> Installing gems");
 
-        let bundle_exit_code = Command::new("bundle")
-            .args(&[
-                "install",
-                "--path",
-                layer_path.to_str().unwrap(),
-                "--binstubs",
-                layer_path.join("bin").to_str().unwrap(),
-            ])
-            .envs(&self.ruby_env)
-            .spawn()?
-            .wait()?;
-
-        if !bundle_exit_code.success() {
-            return Err(anyhow::anyhow!("Could not bundle install"));
-        }
+        util::run_simple_command(
+            Command::new("bundle")
+                .args(&[
+                    "install",
+                    "--path",
+                    layer_path.to_str().unwrap(),
+                    "--binstubs",
+                    layer_path.join("bin").to_str().unwrap(),
+                ])
+                .envs(&self.ruby_env),
+            RubyBuildpackError::BundleInstallCommandError,
+            RubyBuildpackError::BundleInstallUnexpectedExitStatus,
+        )?;
 
         LayerResultBuilder::new(BundlerLayerMetadata {
-            gemfile_lock_checksum: sha256_checksum(context.app_dir.join("Gemfile.lock"))?,
+            gemfile_lock_checksum: util::sha256_checksum(context.app_dir.join("Gemfile.lock"))
+                .map_err(RubyBuildpackError::CouldNotGenerateChecksum)?,
         })
         .build()
     }
@@ -77,49 +74,50 @@ impl Layer for BundlerLayer {
         &self,
         context: &BuildContext<Self::Buildpack>,
         layer: &LayerData<Self::Metadata>,
-    ) -> anyhow::Result<ExistingLayerStrategy> {
-        sha256_checksum(context.app_dir.join("Gemfile.lock")).map(|checksum| {
-            if checksum != layer.content_metadata.metadata.gemfile_lock_checksum {
-                ExistingLayerStrategy::Update
-            } else {
-                ExistingLayerStrategy::Keep
-            }
-        })
+    ) -> Result<ExistingLayerStrategy, RubyBuildpackError> {
+        util::sha256_checksum(context.app_dir.join("Gemfile.lock"))
+            .map_err(RubyBuildpackError::CouldNotGenerateChecksum)
+            .map(|checksum| {
+                if checksum != layer.content_metadata.metadata.gemfile_lock_checksum {
+                    ExistingLayerStrategy::Update
+                } else {
+                    ExistingLayerStrategy::Keep
+                }
+            })
     }
 
     fn update(
         &self,
         context: &BuildContext<Self::Buildpack>,
         layer: &LayerData<Self::Metadata>,
-    ) -> anyhow::Result<LayerResult<Self::Metadata>> {
+    ) -> Result<LayerResult<Self::Metadata>, RubyBuildpackError> {
         println!("---> Reusing gems");
 
-        Command::new("bundle")
-            .args(&["config", "--local", "path", layer.path.to_str().unwrap()])
-            .envs(&self.ruby_env)
-            .spawn()?
-            .wait()?;
+        util::run_simple_command(
+            Command::new("bundle")
+                .args(&["config", "--local", "path", layer.path.to_str().unwrap()])
+                .envs(&self.ruby_env),
+            RubyBuildpackError::BundleConfigCommandError,
+            RubyBuildpackError::BundleConfigUnexpectedExitStatus,
+        )?;
 
-        Command::new("bundle")
-            .args(&[
-                "config",
-                "--local",
-                "bin",
-                layer.path.join("bin").as_path().to_str().unwrap(),
-            ])
-            .envs(&self.ruby_env)
-            .spawn()?
-            .wait()?;
+        util::run_simple_command(
+            Command::new("bundle")
+                .args(&[
+                    "config",
+                    "--local",
+                    "bin",
+                    layer.path.join("bin").as_path().to_str().unwrap(),
+                ])
+                .envs(&self.ruby_env),
+            RubyBuildpackError::BundleConfigCommandError,
+            RubyBuildpackError::BundleConfigUnexpectedExitStatus,
+        )?;
 
         LayerResultBuilder::new(BundlerLayerMetadata {
-            gemfile_lock_checksum: sha256_checksum(context.app_dir.join("Gemfile.lock"))?,
+            gemfile_lock_checksum: util::sha256_checksum(context.app_dir.join("Gemfile.lock"))
+                .map_err(RubyBuildpackError::CouldNotGenerateChecksum)?,
         })
         .build()
     }
-}
-
-fn sha256_checksum(path: impl AsRef<Path>) -> anyhow::Result<String> {
-    Ok(fs::read(path)
-        .map(|bytes| sha2::Sha256::digest(bytes.as_ref()))
-        .map(|bytes| format!("{:x}", bytes))?)
 }
