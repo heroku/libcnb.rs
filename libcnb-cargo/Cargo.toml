@@ -8,3 +8,16 @@ name = "cargo-libcnb"
 path = "src/main.rs"
 
 [dependencies]
+toml = "0.5.8"
+serde = "1.0.130"
+libcnb-data = { path = "../libcnb-data" }
+cargo_metadata = "0.14.1"
+which = "4.2.2"
+tempfile = "3.2.0"
+flate2 = "1.0.22"
+tar = "0.4.37"
+clap = "2.33.1"
+log = "0.4.14"
+stderrlog = "0.5.1"
+size_format = "1.0.2"
+pathdiff = "0.2.1"
