@@ -43,7 +43,7 @@ libcnb_newtype!(
 );
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     #[test]

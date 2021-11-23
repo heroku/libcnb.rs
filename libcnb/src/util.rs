@@ -13,7 +13,7 @@ pub(crate) fn default_on_not_found<T: Default>(
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use crate::util::default_on_not_found;
     use std::io::ErrorKind;
 

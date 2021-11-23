@@ -141,11 +141,11 @@ macro_rules! libcnb_newtype {
 pub(crate) use libcnb_newtype;
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::libcnb_newtype;
 
     libcnb_newtype!(
-        newtypes::test,
+        newtypes::tests,
         capitalized_name,
         CapitalizedName,
         CapitalizedNameError,

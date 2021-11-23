@@ -295,7 +295,7 @@ fn read_layer<M: DeserializeOwned, P: AsRef<Path>>(
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
     use crate::data::layer_content_metadata::{LayerContentMetadata, LayerTypes};
     use crate::data::layer_name;

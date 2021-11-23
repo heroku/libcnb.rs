@@ -592,7 +592,7 @@ impl LayerEnvDelta {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use std::cmp::Ordering;
     use std::collections::HashMap;
     use std::fs;
