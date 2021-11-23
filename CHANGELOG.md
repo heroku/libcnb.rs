@@ -44,6 +44,6 @@
 - Remove `Display` trait bound from `Buildpack::Error` type.
 - `Stack` is now an enum with `Any` and `Specific` variants, rather than a struct.
 - `StackId` no longer permits IDs of `*`, use `Stack::Any` instead.
-- `BuildpackTomlError::InvalidStarStack` has been renamed to `BuildpackTomlError::InvalidAnyStack`.
+- `BuildpackTomlError::InvalidStarStack` has been replaced by `BuildpackTomlError::InvalidAnyStack`.
 
 ## [0.3.0] 2021/09/17
