@@ -41,5 +41,6 @@
   point and are potential footguns. Implementing a `Layer` should work for all use-cases.
 - The `stack_id` field in `BuildContext` and `DetectContext` is now of type `StackId` instead of `String`.
 - Remove `defaults` module from libcnb-data.
+- Remove `Display` trait bound from `Buildpack::Error` type.
 
 ## [0.3.0] 2021/09/17
