@@ -562,7 +562,7 @@ impl LayerEnvDelta {
             let file_extension = match modification_behavior {
                 ModificationBehavior::Append => ".append",
                 ModificationBehavior::Default => ".default",
-                ModificationBehavior::Delimiter => ".delimiter",
+                ModificationBehavior::Delimiter => ".delim",
                 ModificationBehavior::Override => ".override",
                 ModificationBehavior::Prepend => ".prepend",
             };
