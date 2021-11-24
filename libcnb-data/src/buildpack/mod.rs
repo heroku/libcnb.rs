@@ -45,7 +45,6 @@ use serde::Deserialize;
 /// ```
 #[derive(Deserialize, Debug)]
 pub struct BuildpackToml<BM> {
-    // MUST be in form <major>.<minor> or <major>, where <major> is equivalent to <major>.0.
     pub api: BuildpackApi,
     pub buildpack: Buildpack,
     pub stacks: Vec<Stack>,

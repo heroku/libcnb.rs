@@ -20,6 +20,9 @@ impl TryFrom<BuildpackApiUnchecked> for BuildpackApi {
     }
 }
 
+/// The Buildpack API version.
+///
+/// This MUST be in form `<major>.<minor>` or `<major>`, where `<major>` is equivalent to `<major>.0`.
 #[derive(Deserialize, Debug, Eq, PartialEq)]
 #[serde(try_from = "BuildpackApiUnchecked")]
 pub struct BuildpackApi {
@@ -75,30 +78,78 @@ pub enum BuildpackApiError {
 mod tests {
     use super::*;
 
-    #[test]
-    fn buildpack_api_from_str_major_minor() {
-        let result = BuildpackApi::from_str("0.4");
-        assert!(result.is_ok());
-        if let Ok(api) = result {
-            assert_eq!(0, api.major);
-            assert_eq!(4, api.minor);
-        }
+    // Containing struct required due to: https://github.com/alexcrichton/toml-rs/issues/253
+    #[derive(Deserialize, Debug, Eq, PartialEq)]
+    struct TestBuildpackToml {
+        api: BuildpackApi,
     }
 
     #[test]
-    fn buildpack_api_from_str_major() {
-        let result = BuildpackApi::from_str("1");
-        assert!(result.is_ok());
-        if let Ok(api) = result {
-            assert_eq!(1, api.major);
-            assert_eq!(0, api.minor);
-        }
+    fn deserialize_valid_api_versions() {
+        assert_eq!(
+            toml::from_str::<TestBuildpackToml>("api = '1.3'"),
+            Ok(TestBuildpackToml {
+                api: BuildpackApi { major: 1, minor: 3 }
+            }),
+        );
+        assert_eq!(
+            toml::from_str::<TestBuildpackToml>("api = '0.0'"),
+            Ok(TestBuildpackToml {
+                api: BuildpackApi { major: 0, minor: 0 }
+            }),
+        );
+        assert_eq!(
+            toml::from_str::<TestBuildpackToml>("api = '2020.10'"),
+            Ok(TestBuildpackToml {
+                api: BuildpackApi {
+                    major: 2020,
+                    minor: 10
+                }
+            }),
+        );
+        assert_eq!(
+            toml::from_str::<TestBuildpackToml>("api = '2'"),
+            Ok(TestBuildpackToml {
+                api: BuildpackApi { major: 2, minor: 0 }
+            }),
+        );
+    }
+
+    #[test]
+    fn reject_invalid_api_versions() {
+        let err = toml::from_str::<TestBuildpackToml>("api = '1.2.3'").unwrap_err();
+        assert!(err.to_string().contains("Found `1.2.3` but value MUST"));
+
+        let err = toml::from_str::<TestBuildpackToml>("api = '1.2-dev'").unwrap_err();
+        assert!(err.to_string().contains("Found `1.2-dev` but value MUST"));
+
+        let err = toml::from_str::<TestBuildpackToml>("api = '-1'").unwrap_err();
+        assert!(err.to_string().contains("Found `-1` but value MUST"));
+
+        let err = toml::from_str::<TestBuildpackToml>("api = '.1'").unwrap_err();
+        assert!(err.to_string().contains("Found `.1` but value MUST"));
+
+        let err = toml::from_str::<TestBuildpackToml>("api = '1.'").unwrap_err();
+        assert!(err.to_string().contains("Found `1.` but value MUST"));
+
+        let err = toml::from_str::<TestBuildpackToml>("api = '1..2'").unwrap_err();
+        assert!(err.to_string().contains("Found `1..2` but value MUST"));
+
+        let err = toml::from_str::<TestBuildpackToml>("api = ''").unwrap_err();
+        assert!(err.to_string().contains("Found `` but value MUST"));
     }
 
     #[test]
     fn buildpack_api_display() {
         assert_eq!(BuildpackApi { major: 1, minor: 0 }.to_string(), "1.0");
         assert_eq!(BuildpackApi { major: 1, minor: 2 }.to_string(), "1.2");
-        assert_eq!(BuildpackApi { major: 0, minor: 5 }.to_string(), "0.5");
+        assert_eq!(
+            BuildpackApi {
+                major: 0,
+                minor: 10
+            }
+            .to_string(),
+            "0.10"
+        );
     }
 }
