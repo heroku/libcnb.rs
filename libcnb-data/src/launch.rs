@@ -128,32 +128,36 @@ libcnb_newtype!(
     /// ```
     ProcessType,
     ProcessTypeError,
-    r"^[[:alnum:]\._-]+$"
+    r"^[[:alnum:]._-]+$"
 );
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::str::FromStr;
 
     #[test]
-    fn test_process_type_eq() {
-        assert_eq!(
-            ProcessType::from_str("web").unwrap(),
-            ProcessType::from_str("web").unwrap()
-        );
-        assert_ne!(
-            ProcessType::from_str("web").unwrap(),
-            ProcessType::from_str("nope").unwrap()
-        );
+    fn process_type_validation_valid() {
+        assert!("web".parse::<ProcessType>().is_ok());
+        assert!("Abc123._-".parse::<ProcessType>().is_ok());
     }
 
     #[test]
-    fn test_process_type_with_special_chars() {
-        assert!(ProcessType::from_str("java_jar").is_ok());
-        assert!(ProcessType::from_str("java-jar").is_ok());
-        assert!(ProcessType::from_str("java.jar").is_ok());
-
-        assert!(ProcessType::from_str("java~jar").is_err());
+    fn process_type_validation_invalid() {
+        assert_eq!(
+            "worker/foo".parse::<ProcessType>(),
+            Err(ProcessTypeError::InvalidValue(String::from("worker/foo")))
+        );
+        assert_eq!(
+            "worker:foo".parse::<ProcessType>(),
+            Err(ProcessTypeError::InvalidValue(String::from("worker:foo")))
+        );
+        assert_eq!(
+            "worker foo".parse::<ProcessType>(),
+            Err(ProcessTypeError::InvalidValue(String::from("worker foo")))
+        );
+        assert_eq!(
+            "".parse::<ProcessType>(),
+            Err(ProcessTypeError::InvalidValue(String::new()))
+        );
     }
 }
