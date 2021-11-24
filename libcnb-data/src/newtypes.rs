@@ -57,14 +57,6 @@ macro_rules! libcnb_newtype {
         $(#[$type_attributes])*
         pub struct $name(String);
 
-        impl<'de> ::serde::Deserialize<'de> for $name {
-            fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
-                String::deserialize(d)?
-                    .parse::<$name>()
-                    .map_err(::serde::de::Error::custom)
-            }
-        }
-
         #[derive(::thiserror::Error, Debug, Eq, PartialEq)]
         $(#[$error_type_attributes])*
         pub enum $error_name {
@@ -94,6 +86,14 @@ macro_rules! libcnb_newtype {
                 } else {
                     Err($error_name::InvalidValue(String::from(value)))
                 }
+            }
+        }
+
+        impl<'de> ::serde::Deserialize<'de> for $name {
+            fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+                String::deserialize(d)?
+                    .parse::<$name>()
+                    .map_err(::serde::de::Error::custom)
             }
         }
 
