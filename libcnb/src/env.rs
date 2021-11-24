@@ -95,7 +95,7 @@ impl<'a> IntoIterator for &'a Env {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     #[test]
     #[cfg(target_family = "unix")]
     fn test_into_iterator() {
