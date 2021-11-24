@@ -168,6 +168,18 @@ mod tests {
     }
 
     #[test]
+    fn test_type_eq() {
+        assert_eq!(
+            "Katrin".parse::<CapitalizedName>(),
+            "Katrin".parse::<CapitalizedName>()
+        );
+        assert_ne!(
+            "Katrin".parse::<CapitalizedName>(),
+            "Manuel".parse::<CapitalizedName>()
+        );
+    }
+
+    #[test]
     fn test_literal_macro_success() {
         assert_eq!("Jonas", capitalized_name!("Jonas").as_ref());
     }

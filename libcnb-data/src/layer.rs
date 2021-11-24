@@ -47,11 +47,15 @@ mod tests {
     use super::*;
 
     #[test]
-    fn layer_name_validation() {
-        assert!("abc 123_!".parse::<LayerName>().is_ok());
+    fn layer_name_validation_valid() {
+        assert!("gems".parse::<LayerName>().is_ok());
+        assert!("Abc 123.-_!".parse::<LayerName>().is_ok());
         assert!("build-foo".parse::<LayerName>().is_ok());
         assert!("foo-build".parse::<LayerName>().is_ok());
+    }
 
+    #[test]
+    fn layer_name_validation_invalid() {
         assert_eq!(
             "build".parse::<LayerName>(),
             Err(LayerNameError::InvalidValue(String::from("build")))

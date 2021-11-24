@@ -41,3 +41,34 @@ libcnb_newtype!(
     StackIdError,
     r"^[[:alnum:]./-]+$"
 );
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn stack_id_validation_valid() {
+        assert!("heroku-20".parse::<StackId>().is_ok());
+        assert!("Abc123./-".parse::<StackId>().is_ok());
+    }
+
+    #[test]
+    fn stack_id_validation_invalid() {
+        assert_eq!(
+            "heroku_20".parse::<StackId>(),
+            Err(StackIdError::InvalidValue(String::from("heroku_20")))
+        );
+        assert_eq!(
+            "heroku:20".parse::<StackId>(),
+            Err(StackIdError::InvalidValue(String::from("heroku:20")))
+        );
+        assert_eq!(
+            "heroku 20".parse::<StackId>(),
+            Err(StackIdError::InvalidValue(String::from("heroku 20")))
+        );
+        assert_eq!(
+            "".parse::<StackId>(),
+            Err(StackIdError::InvalidValue(String::new()))
+        );
+    }
+}
