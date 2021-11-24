@@ -19,7 +19,7 @@ pub(crate) fn handle_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
     layer: L,
 ) -> Result<LayerData<L::Metadata>, HandleLayerErrorOrBuildpackError<B::Error>> {
     match read_layer(&context.layers_dir, &layer_name) {
-        Ok(None) => handle_create_layer(context, &layer_name, layer),
+        Ok(None) => handle_create_layer(context, &layer_name, &layer),
         Ok(Some(layer_data)) => {
             let existing_layer_strategy = layer
                 .existing_layer_strategy(context, &layer_data)
@@ -28,9 +28,9 @@ pub(crate) fn handle_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
             match existing_layer_strategy {
                 ExistingLayerStrategy::Recreate => {
                     delete_layer(&context.layers_dir, &layer_name)?;
-                    handle_create_layer(context, &layer_name, layer)
+                    handle_create_layer(context, &layer_name, &layer)
                 }
-                ExistingLayerStrategy::Update => handle_update_layer(context, layer_data, layer),
+                ExistingLayerStrategy::Update => handle_update_layer(context, &layer_data, &layer),
                 ExistingLayerStrategy::Keep => {
                     // We need to rewrite the metadata even if we just want to keep the layer around
                     // since cached layers are restored without their types, causing the layer to be
@@ -38,8 +38,8 @@ pub(crate) fn handle_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
                     write_layer(
                         &context.layers_dir,
                         &layer_data.name,
-                        layer_data.env,
-                        LayerContentMetadata {
+                        &layer_data.env,
+                        &LayerContentMetadata {
                             // We cannot copy the types from layer_data due to an issue with the current
                             // libcnb implementation. The types will be missing in the TOML file on disk
                             // but if they're not there, their default values will be used when
@@ -79,8 +79,8 @@ pub(crate) fn handle_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
                             write_layer(
                                 &context.layers_dir,
                                 &layer_name,
-                                generic_layer_data.env,
-                                LayerContentMetadata {
+                                &generic_layer_data.env,
+                                &LayerContentMetadata {
                                     types: generic_layer_data.content_metadata.types,
                                     metadata: migrated_metadata,
                                 },
@@ -103,7 +103,7 @@ pub(crate) fn handle_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
 fn handle_create_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
     context: &BuildContext<B>,
     layer_name: &LayerName,
-    layer: L,
+    layer: &L,
 ) -> Result<LayerData<L::Metadata>, HandleLayerErrorOrBuildpackError<B::Error>> {
     let layer_dir = context.layers_dir.join(layer_name.as_str());
 
@@ -114,8 +114,8 @@ fn handle_create_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
     write_layer(
         &context.layers_dir,
         layer_name,
-        layer_result.env.unwrap_or_default(),
-        LayerContentMetadata {
+        &layer_result.env.unwrap_or_default(),
+        &LayerContentMetadata {
             types: layer.types(),
             metadata: layer_result.metadata,
         },
@@ -128,18 +128,18 @@ fn handle_create_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
 
 fn handle_update_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
     context: &BuildContext<B>,
-    layer_data: LayerData<L::Metadata>,
-    layer: L,
+    layer_data: &LayerData<L::Metadata>,
+    layer: &L,
 ) -> Result<LayerData<L::Metadata>, HandleLayerErrorOrBuildpackError<B::Error>> {
     let layer_result = layer
-        .update(context, &layer_data)
+        .update(context, layer_data)
         .map_err(HandleLayerErrorOrBuildpackError::BuildpackError)?;
 
     write_layer(
         &context.layers_dir,
         &layer_data.name,
-        layer_result.env.unwrap_or_default(),
-        LayerContentMetadata {
+        &layer_result.env.unwrap_or_default(),
+        &LayerContentMetadata {
             types: layer.types(),
             metadata: layer_result.metadata,
         },
@@ -233,8 +233,8 @@ fn delete_layer<P: AsRef<Path>>(
 fn write_layer<M: Serialize, P: AsRef<Path>>(
     layers_dir: P,
     layer_name: &LayerName,
-    layer_env: LayerEnv,
-    layer_content_metadata: LayerContentMetadata<M>,
+    layer_env: &LayerEnv,
+    layer_content_metadata: &LayerContentMetadata<M>,
 ) -> Result<(), WriteLayerError> {
     let layer_dir = layers_dir.as_ref().join(layer_name.as_str());
     let layer_content_metadata_path = layers_dir
@@ -376,13 +376,13 @@ mod tests {
         super::write_layer(
             &layers_dir,
             &layer_name,
-            LayerEnv::new().chainable_insert(
+            &LayerEnv::new().chainable_insert(
                 TargetLifecycle::All,
                 ModificationBehavior::Default,
                 "ENV_VAR",
                 "ENV_VAR_VALUE",
             ),
-            LayerContentMetadata {
+            &LayerContentMetadata {
                 types: LayerTypes {
                     launch: true,
                     build: true,
@@ -423,7 +423,7 @@ mod tests {
         super::write_layer(
             &layers_dir,
             &layer_name,
-            LayerEnv::new()
+            &LayerEnv::new()
                 .chainable_insert(
                     TargetLifecycle::All,
                     ModificationBehavior::Default,
@@ -436,7 +436,7 @@ mod tests {
                     "SOME_OTHER_ENV_VAR",
                     "SOME_OTHER_ENV_VAR_VALUE",
                 ),
-            LayerContentMetadata {
+            &LayerContentMetadata {
                 types: LayerTypes {
                     launch: false,
                     build: false,
@@ -452,13 +452,13 @@ mod tests {
         super::write_layer(
             &layers_dir,
             &layer_name,
-            LayerEnv::new().chainable_insert(
+            &LayerEnv::new().chainable_insert(
                 TargetLifecycle::All,
                 ModificationBehavior::Default,
                 "ENV_VAR",
                 "NEW_ENV_VAR_VALUE",
             ),
-            LayerContentMetadata {
+            &LayerContentMetadata {
                 types: LayerTypes {
                     launch: false,
                     build: false,
