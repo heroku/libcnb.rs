@@ -46,5 +46,6 @@
 - `StackId` no longer permits IDs of `*`, use `Stack::Any` instead.
 - `BuildpackTomlError::InvalidStarStack` has been replaced by `BuildpackTomlError::InvalidAnyStack`.
 - Update the Ruby example buildpack to no longer use anyhow and better demonstrate the intended way to work with errors.
+- `BuildpackTomlError` has been split into `BuildpackApiError` and `StackError`.
 
 ## [0.3.0] 2021/09/17
