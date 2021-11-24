@@ -47,5 +47,6 @@
 - `BuildpackTomlError::InvalidStarStack` has been replaced by `BuildpackTomlError::InvalidAnyStack`.
 - Update the Ruby example buildpack to no longer use anyhow and better demonstrate the intended way to work with errors.
 - `BuildpackTomlError` has been split into `BuildpackApiError` and `StackError`.
+- Add an external Cargo command for packaging libcnb buildpacks. See the README for usage.
 
 ## [0.3.0] 2021/09/17
