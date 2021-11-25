@@ -244,45 +244,4 @@ id = "*"
             ]
         );
     }
-
-    #[test]
-    fn stacks_invalid_stack_id() {
-        let raw = r#"
-api = "0.6"
-
-[buildpack]
-id = "foo/bar"
-name = "Bar Buildpack"
-version = "0.0.1"
-
-[[stacks]]
-id = "io.buildpacks.stacks.*"
-"#;
-
-        let err = toml::from_str::<GenericBuildpackToml>(raw).unwrap_err();
-        assert!(err
-            .to_string()
-            .contains("Invalid Stack ID: Invalid Value: io.buildpacks.stacks.*"));
-    }
-
-    #[test]
-    fn stacks_invalid_any_stack() {
-        let raw = r#"
-api = "0.6"
-
-[buildpack]
-id = "foo/bar"
-name = "Bar Buildpack"
-version = "0.0.1"
-
-[[stacks]]
-id = "*"
-mixins = ["foo", "bar"]
-"#;
-
-        let err = toml::from_str::<GenericBuildpackToml>(raw).unwrap_err();
-        assert!(err
-            .to_string()
-            .contains("Stack with id `*` MUST NOT contain mixins, however the following mixins were specified: `foo`, `bar`"));
-    }
 }
