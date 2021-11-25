@@ -2,8 +2,6 @@ use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
-use fancy_regex::Regex;
-use lazy_static::lazy_static;
 use serde::Deserialize;
 
 /// The Buildpack API version.
@@ -21,31 +19,16 @@ impl TryFrom<&str> for BuildpackApi {
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         // We're not using the `semver` crate, since it only supports non-range versions of form `X.Y.Z`.
-        lazy_static! {
-            static ref RE: Regex = Regex::new(r"^(?P<major>\d+)(\.(?P<minor>\d+))?$").unwrap();
-        }
-
-        if let Some(captures) = RE.captures(value).unwrap_or_default() {
-            if let Some(major) = captures.name("major") {
-                // these should never panic since we check with the regex unless it's greater than
-                // `std::u32::MAX`
-                let major = major
-                    .as_str()
-                    .parse::<u32>()
-                    .map_err(|_| Self::Error::InvalidBuildpackApi(String::from(value)))?;
-
-                // If no minor version is specified default to 0.
-                let minor = captures
-                    .name("minor")
-                    .map_or("0", |s| s.as_str())
-                    .parse::<u32>()
-                    .map_err(|_| Self::Error::InvalidBuildpackApi(String::from(value)))?;
-
-                return Ok(Self { major, minor });
-            }
-        }
-
-        Err(Self::Error::InvalidBuildpackApi(String::from(value)))
+        // If no minor version is specified, it defaults to `0`.
+        let (major, minor) = value.split_once('.').unwrap_or((value, "0"));
+        Ok(Self {
+            major: major
+                .parse()
+                .map_err(|_| Self::Error::InvalidBuildpackApi(String::from(value)))?,
+            minor: minor
+                .parse()
+                .map_err(|_| Self::Error::InvalidBuildpackApi(String::from(value)))?,
+        })
     }
 }
 
@@ -57,7 +40,7 @@ impl Display for BuildpackApi {
 
 #[derive(thiserror::Error, Debug)]
 pub enum BuildpackApiError {
-    #[error("Found `{0}` but value MUST be in the form `<major>.<minor>` or `<major>` and only contain numbers.")]
+    #[error("Invalid Buildpack API version: `{0}`")]
     InvalidBuildpackApi(String),
 }
 
@@ -94,31 +77,31 @@ mod tests {
     fn reject_invalid_api_versions() {
         assert_de_tokens_error::<BuildpackApi>(
             &[Token::BorrowedStr("1.2.3")],
-            "Found `1.2.3` but value MUST be in the form `<major>.<minor>` or `<major>` and only contain numbers.",
+            "Invalid Buildpack API version: `1.2.3`",
         );
         assert_de_tokens_error::<BuildpackApi>(
             &[Token::BorrowedStr("1.2-dev")],
-             "Found `1.2-dev` but value MUST be in the form `<major>.<minor>` or `<major>` and only contain numbers.",
+            "Invalid Buildpack API version: `1.2-dev`",
         );
         assert_de_tokens_error::<BuildpackApi>(
             &[Token::BorrowedStr("-1")],
-             "Found `-1` but value MUST be in the form `<major>.<minor>` or `<major>` and only contain numbers.",
+            "Invalid Buildpack API version: `-1`",
         );
         assert_de_tokens_error::<BuildpackApi>(
             &[Token::BorrowedStr(".1")],
-             "Found `.1` but value MUST be in the form `<major>.<minor>` or `<major>` and only contain numbers.",
+            "Invalid Buildpack API version: `.1`",
         );
         assert_de_tokens_error::<BuildpackApi>(
             &[Token::BorrowedStr("1.")],
-             "Found `1.` but value MUST be in the form `<major>.<minor>` or `<major>` and only contain numbers.",
+            "Invalid Buildpack API version: `1.`",
         );
         assert_de_tokens_error::<BuildpackApi>(
             &[Token::BorrowedStr("1..2")],
-             "Found `1..2` but value MUST be in the form `<major>.<minor>` or `<major>` and only contain numbers.",
+            "Invalid Buildpack API version: `1..2`",
         );
         assert_de_tokens_error::<BuildpackApi>(
             &[Token::BorrowedStr("")],
-             "Found `` but value MUST be in the form `<major>.<minor>` or `<major>` and only contain numbers.",
+            "Invalid Buildpack API version: ``",
         );
     }
 
