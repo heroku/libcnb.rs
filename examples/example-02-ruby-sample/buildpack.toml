@@ -1,13 +1,10 @@
-# Buildpack API version
 api = "0.6"
 
-# Buildpack ID and metadata
 [buildpack]
-id = "com.examples.buildpacks.ruby"
-version = "0.0.1"
-name = "Ruby Buildpack"
+id = "libcnb-examples/ruby"
+version = "0.1.0"
+name = "Example libcnb buildpack: ruby"
 
-# Stacks that the buildpack will work with
 [[stacks]]
 id = "heroku-20"
 
