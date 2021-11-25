@@ -12,7 +12,6 @@ readme = "../README.md"
 include = ["src/**/*", "../LICENSE", "../README.md"]
 
 [dependencies]
-lazy_static = "^1.4.0"
 fancy-regex = "^0.7.1"
 semver = { version = "^1.0.4", features = ["serde"] }
 serde = { version = "^1.0.126", features = ["derive"] }
