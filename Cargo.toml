@@ -1,9 +1,9 @@
 [workspace]
 members = [
     "libcnb",
+    "libcnb-cargo",
     "libcnb-data",
     "libcnb-proc-macros",
-    "libcnb-cargo",
     "examples/example-01-basics",
     "examples/example-02-ruby-sample"
 ]
