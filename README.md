@@ -21,6 +21,7 @@ demonstrate how to package your buildpack and how to build an application image 
 In addition to the libcnb crate, we need some tools to compile, package and run the buildpack. These steps only need to
 be carried out once and don't need to be repeated for each buildpack you will write. 
 
+
 #### libcnb Cargo Command
 Start by installing the libcnb Cargo command which we will later use to package our buildpack:
 
