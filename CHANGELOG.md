@@ -48,5 +48,6 @@
 - Update the Ruby example buildpack to no longer use anyhow and better demonstrate the intended way to work with errors.
 - `BuildpackTomlError` has been split into `BuildpackApiError` and `StackError`.
 - `BuildpackApi` no longer implements `FromStr`, use `BuildpackApi::try_from()` instead.
+- Fixed file extension for delimiters when writing `LayerEnv` to disk.
 
 ## [0.3.0] 2021/09/17
