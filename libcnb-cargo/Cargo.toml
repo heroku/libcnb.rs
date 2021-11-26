@@ -2,6 +2,12 @@
 name = "libcnb-cargo"
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.56"
+license = "BSD-3-Clause"
+description = "Cargo command for managing buildpacks written with libcnb.rs"
+repository = "https://github.com/Malax/libcnb.rs"
+readme = "../README.md"
+include = ["src/**/*", "../LICENSE", "../README.md"]
 
 [[bin]]
 name = "cargo-libcnb"
@@ -10,7 +16,7 @@ path = "src/main.rs"
 [dependencies]
 toml = "0.5.8"
 serde = "1.0.130"
-libcnb-data = { path = "../libcnb-data" }
+libcnb-data = { version = "0.3.0", path = "../libcnb-data" }
 cargo_metadata = "0.14.1"
 which = "4.2.2"
 tempfile = "3.2.0"
