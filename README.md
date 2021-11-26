@@ -196,7 +196,7 @@ application code at all, we just create an empty directory and use that as our a
 
 ```shell
 $ mkdir bogus-app
-$ pack build my-image -b target/libcnb-examples_my-buildpack_0.1.0_dev.tar.gz --path bogus-app
+$ pack build my-image -b target/libcnb-examples_my-buildpack_0.1.0_dev.tar.gz --path bogus-app --builder heroku/buildpacks:20
 20: Pulling from heroku/buildpacks
 Digest: sha256:04e8ea7a1f482f289d432d9518edcfaaf9f3a10432cd1b624e58225f22e7c416
 Status: Image is up to date for heroku/buildpacks:20
