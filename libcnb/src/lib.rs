@@ -62,11 +62,11 @@ const LIBCNB_SUPPORTED_BUILDPACK_API: data::buildpack::BuildpackApi =
 ///     type Error = GenericError;
 ///
 ///     fn detect(&self, context: DetectContext<Self>) -> libcnb::Result<DetectResult, Self::Error> {
-///         Ok(DetectResultBuilder::pass().build())
+///         DetectResultBuilder::pass().build()
 ///     }
 ///
 ///     fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildResult, Self::Error> {
-///         Ok(BuildResultBuilder::new().build())
+///         BuildResultBuilder::new().build()
 ///     }
 /// }
 ///
