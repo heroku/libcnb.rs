@@ -22,13 +22,11 @@ impl Buildpack for RubyBuildpack {
     type Error = RubyBuildpackError;
 
     fn detect(&self, context: DetectContext<Self>) -> libcnb::Result<DetectResult, Self::Error> {
-        let result = if context.app_dir.join("Gemfile.lock").exists() {
+        if context.app_dir.join("Gemfile.lock").exists() {
             DetectResultBuilder::pass().build()
         } else {
             DetectResultBuilder::fail().build()
-        };
-
-        Ok(result)
+        }
     }
 
     fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildResult, Self::Error> {
@@ -43,7 +41,7 @@ impl Buildpack for RubyBuildpack {
             },
         )?;
 
-        Ok(BuildResultBuilder::new()
+        BuildResultBuilder::new()
             .launch(
                 Launch::new()
                     .process(Process::new(
@@ -61,7 +59,7 @@ impl Buildpack for RubyBuildpack {
                         false,
                     )),
             )
-            .build())
+            .build()
     }
 }
 
