@@ -138,7 +138,7 @@ impl Buildpack for HelloWorldBuildpack {
     // according to the returned value, handle both writing the build plan and exiting with
     // the correct status code for you.
     fn detect(&self, _context: DetectContext<Self>) -> libcnb::Result<DetectResult, Self::Error> {
-        Ok(DetectResultBuilder::pass().build())
+        DetectResultBuilder::pass().build()
     }
 
     // Similar to detect, this method will be called when the CNB lifecycle executes the
@@ -147,7 +147,7 @@ impl Buildpack for HelloWorldBuildpack {
         println!("Hello World!");
         println!("Build runs on stack {}!", context.stack_id);
 
-        Ok(BuildResultBuilder::new()
+        BuildResultBuilder::new()
             .launch(Launch::new().process(Process::new(
                 process_type!("web"),
                 "echo",
@@ -155,7 +155,7 @@ impl Buildpack for HelloWorldBuildpack {
                 false,
                 true,
             )))
-            .build())
+            .build()
     }
 }
 

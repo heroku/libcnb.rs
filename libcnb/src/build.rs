@@ -62,7 +62,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     ///             &example_layer.content_metadata.metadata.monologue
     ///         );
     ///
-    ///         Ok(BuildResultBuilder::new().build())
+    ///         BuildResultBuilder::new().build()
     ///     }
     /// }
     ///
@@ -130,13 +130,13 @@ pub(crate) enum InnerBuildResult {
 ///
 /// # Examples:
 /// ```
-/// use libcnb::build::BuildResultBuilder;
+/// use libcnb::build::{BuildResultBuilder, BuildResult};
 /// use libcnb::data::launch::{Launch, Process};
 /// use libcnb::data::process_type;
 ///
-/// let simple = BuildResultBuilder::new().build();
+/// let simple: Result<BuildResult, ()> = BuildResultBuilder::new().build();
 ///
-/// let with_launch = BuildResultBuilder::new()
+/// let with_launch: Result<BuildResult, ()> = BuildResultBuilder::new()
 ///    .launch(Launch::new().process(Process::new(process_type!("type"), "command", vec!["-v"], false, false)))
 ///    .build();
 /// ```
@@ -155,7 +155,18 @@ impl BuildResultBuilder {
 }
 
 impl BuildResultBuilder {
-    pub fn build(self) -> BuildResult {
+    /// Builds the final [`BuildResult`].
+    ///
+    /// This method returns the [`BuildResult`] wrapped in a [`Result`] even though its technically
+    /// not fallible. This is done to simplify using this method in the context it's most often used
+    /// in: a buildpack's [build method](crate::Buildpack::build).
+    ///
+    /// See [`build_unwrapped`](Self::build_unwrapped) for an unwrapped version of this method.
+    pub fn build<E>(self) -> Result<BuildResult, E> {
+        Ok(self.build_unwrapped())
+    }
+
+    pub fn build_unwrapped(self) -> BuildResult {
         BuildResult(InnerBuildResult::Pass {
             launch: self.launch,
             store: self.store,

@@ -1,0 +1,9 @@
+api = "0.6"
+
+[buildpack]
+id = "libcnb-examples/basics"
+version = "0.1.0"
+name = "Example libcnb buildpack: basics"
+
+[[stacks]]
+id = "heroku-20"

@@ -1,61 +1,34 @@
 use std::convert::TryFrom;
+use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::{fmt, str::FromStr};
 
-use fancy_regex::Regex;
-use lazy_static::lazy_static;
 use serde::Deserialize;
 
-// Used as a "shadow" struct to store
-// potentially invalid `BuildpackApi` data when deserializing
-// <https://dev.to/equalma/validate-fields-and-types-in-serde-with-tryfrom-c2n>
-#[derive(Deserialize)]
-struct BuildpackApiUnchecked(String);
-
-impl TryFrom<BuildpackApiUnchecked> for BuildpackApi {
-    type Error = BuildpackApiError;
-
-    fn try_from(value: BuildpackApiUnchecked) -> Result<Self, Self::Error> {
-        Self::from_str(value.0.as_str())
-    }
-}
-
+/// The Buildpack API version.
+///
+/// This MUST be in form `<major>.<minor>` or `<major>`, where `<major>` is equivalent to `<major>.0`.
 #[derive(Deserialize, Debug, Eq, PartialEq)]
-#[serde(try_from = "BuildpackApiUnchecked")]
+#[serde(try_from = "&str")]
 pub struct BuildpackApi {
     pub major: u32,
     pub minor: u32,
 }
 
-impl FromStr for BuildpackApi {
-    type Err = BuildpackApiError;
+impl TryFrom<&str> for BuildpackApi {
+    type Error = BuildpackApiError;
 
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        lazy_static! {
-            static ref RE: Regex = Regex::new(r"^(?P<major>\d+)(\.(?P<minor>\d+))?$").unwrap();
-        }
-
-        if let Some(captures) = RE.captures(value).unwrap_or_default() {
-            if let Some(major) = captures.name("major") {
-                // these should never panic since we check with the regex unless it's greater than
-                // `std::u32::MAX`
-                let major = major
-                    .as_str()
-                    .parse::<u32>()
-                    .map_err(|_| Self::Err::InvalidBuildpackApi(String::from(value)))?;
-
-                // If no minor version is specified default to 0.
-                let minor = captures
-                    .name("minor")
-                    .map_or("0", |s| s.as_str())
-                    .parse::<u32>()
-                    .map_err(|_| Self::Err::InvalidBuildpackApi(String::from(value)))?;
-
-                return Ok(Self { major, minor });
-            }
-        }
-
-        Err(Self::Err::InvalidBuildpackApi(String::from(value)))
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        // We're not using the `semver` crate, since it only supports non-range versions of form `X.Y.Z`.
+        // If no minor version is specified, it defaults to `0`.
+        let (major, minor) = value.split_once('.').unwrap_or((value, "0"));
+        Ok(Self {
+            major: major
+                .parse()
+                .map_err(|_| Self::Error::InvalidBuildpackApi(String::from(value)))?,
+            minor: minor
+                .parse()
+                .map_err(|_| Self::Error::InvalidBuildpackApi(String::from(value)))?,
+        })
     }
 }
 
@@ -67,38 +40,82 @@ impl Display for BuildpackApi {
 
 #[derive(thiserror::Error, Debug)]
 pub enum BuildpackApiError {
-    #[error("Found `{0}` but value MUST be in the form `<major>.<minor>` or `<major>` and only contain numbers.")]
+    #[error("Invalid Buildpack API version: `{0}`")]
     InvalidBuildpackApi(String),
 }
 
 #[cfg(test)]
 mod tests {
+    use serde_test::{assert_de_tokens, assert_de_tokens_error, Token};
+
     use super::*;
 
     #[test]
-    fn buildpack_api_from_str_major_minor() {
-        let result = BuildpackApi::from_str("0.4");
-        assert!(result.is_ok());
-        if let Ok(api) = result {
-            assert_eq!(0, api.major);
-            assert_eq!(4, api.minor);
-        }
+    fn deserialize_valid_api_versions() {
+        assert_de_tokens(
+            &BuildpackApi { major: 1, minor: 3 },
+            &[Token::BorrowedStr("1.3")],
+        );
+        assert_de_tokens(
+            &BuildpackApi { major: 0, minor: 0 },
+            &[Token::BorrowedStr("0.0")],
+        );
+        assert_de_tokens(
+            &BuildpackApi {
+                major: 2020,
+                minor: 10,
+            },
+            &[Token::BorrowedStr("2020.10")],
+        );
+        assert_de_tokens(
+            &BuildpackApi { major: 2, minor: 0 },
+            &[Token::BorrowedStr("2")],
+        );
     }
 
     #[test]
-    fn buildpack_api_from_str_major() {
-        let result = BuildpackApi::from_str("1");
-        assert!(result.is_ok());
-        if let Ok(api) = result {
-            assert_eq!(1, api.major);
-            assert_eq!(0, api.minor);
-        }
+    fn reject_invalid_api_versions() {
+        assert_de_tokens_error::<BuildpackApi>(
+            &[Token::BorrowedStr("1.2.3")],
+            "Invalid Buildpack API version: `1.2.3`",
+        );
+        assert_de_tokens_error::<BuildpackApi>(
+            &[Token::BorrowedStr("1.2-dev")],
+            "Invalid Buildpack API version: `1.2-dev`",
+        );
+        assert_de_tokens_error::<BuildpackApi>(
+            &[Token::BorrowedStr("-1")],
+            "Invalid Buildpack API version: `-1`",
+        );
+        assert_de_tokens_error::<BuildpackApi>(
+            &[Token::BorrowedStr(".1")],
+            "Invalid Buildpack API version: `.1`",
+        );
+        assert_de_tokens_error::<BuildpackApi>(
+            &[Token::BorrowedStr("1.")],
+            "Invalid Buildpack API version: `1.`",
+        );
+        assert_de_tokens_error::<BuildpackApi>(
+            &[Token::BorrowedStr("1..2")],
+            "Invalid Buildpack API version: `1..2`",
+        );
+        assert_de_tokens_error::<BuildpackApi>(
+            &[Token::BorrowedStr("")],
+            "Invalid Buildpack API version: ``",
+        );
     }
 
     #[test]
     fn buildpack_api_display() {
         assert_eq!(BuildpackApi { major: 1, minor: 0 }.to_string(), "1.0");
         assert_eq!(BuildpackApi { major: 1, minor: 2 }.to_string(), "1.2");
-        assert_eq!(BuildpackApi { major: 0, minor: 5 }.to_string(), "0.5");
+        assert_eq!(
+            BuildpackApi {
+                major: 0,
+                minor: 10
+            }
+            .to_string(),
+            "0.10"
+        );
     }
 }

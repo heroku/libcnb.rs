@@ -187,10 +187,22 @@ impl<M> LayerResultBuilder<M> {
         self
     }
 
+    /// Builds the final [`LayerResult`].
+    ///
+    /// This method returns the [`LayerResult`] wrapped in a [`Result`] even though its technically
+    /// not fallible. This is done to simplify using this method in the contexts it's most often
+    /// used in: a layer's [create](crate::layer::Layer::create) and/or
+    /// [update](crate::layer::Layer::update) methods.
+    ///
+    /// See [`build_unwrapped`](Self::build_unwrapped) for an unwrapped version of this method.
     pub fn build<E>(self) -> Result<LayerResult<M>, E> {
-        Ok(LayerResult {
+        Ok(self.build_unwrapped())
+    }
+
+    pub fn build_unwrapped(self) -> LayerResult<M> {
+        LayerResult {
             metadata: self.metadata,
             env: self.env,
-        })
+        }
     }
 }

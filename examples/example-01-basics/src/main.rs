@@ -10,12 +10,12 @@ impl Buildpack for BasicBuildpack {
     type Error = GenericError;
 
     fn detect(&self, _context: DetectContext<Self>) -> libcnb::Result<DetectResult, Self::Error> {
-        Ok(DetectResultBuilder::pass().build())
+        DetectResultBuilder::pass().build()
     }
 
     fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildResult, Self::Error> {
         println!("Build runs on stack {}!", context.stack_id);
-        Ok(BuildResultBuilder::new().build())
+        BuildResultBuilder::new().build()
     }
 }
 

@@ -53,7 +53,7 @@ macro_rules! libcnb_newtype {
         $error_name:ident,
         $regex:expr
     ) => {
-        #[derive(Debug, Eq, PartialEq, ::serde::Deserialize, ::serde::Serialize, Clone)]
+        #[derive(Debug, Eq, PartialEq, ::serde::Serialize, Clone)]
         $(#[$type_attributes])*
         pub struct $name(String);
 
@@ -86,6 +86,14 @@ macro_rules! libcnb_newtype {
                 } else {
                     Err($error_name::InvalidValue(String::from(value)))
                 }
+            }
+        }
+
+        impl<'de> ::serde::Deserialize<'de> for $name {
+            fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+                String::deserialize(d)?
+                    .parse::<$name>()
+                    .map_err(::serde::de::Error::custom)
             }
         }
 
@@ -143,6 +151,7 @@ pub(crate) use libcnb_newtype;
 #[cfg(test)]
 mod tests {
     use super::libcnb_newtype;
+    use serde_test::{assert_de_tokens, assert_de_tokens_error, Token};
 
     libcnb_newtype!(
         newtypes::tests,
@@ -168,6 +177,18 @@ mod tests {
     }
 
     #[test]
+    fn test_type_eq() {
+        assert_eq!(
+            "Katrin".parse::<CapitalizedName>(),
+            "Katrin".parse::<CapitalizedName>()
+        );
+        assert_ne!(
+            "Katrin".parse::<CapitalizedName>(),
+            "Manuel".parse::<CapitalizedName>()
+        );
+    }
+
+    #[test]
     fn test_literal_macro_success() {
         assert_eq!("Jonas", capitalized_name!("Jonas").as_ref());
     }
@@ -180,5 +201,14 @@ mod tests {
 
         let name = "Johanna".parse::<CapitalizedName>().unwrap();
         foo(&name);
+    }
+
+    #[test]
+    fn test_deserialize() {
+        assert_de_tokens(&capitalized_name!("Jonas"), &[Token::Str("Jonas")]);
+        assert_de_tokens(&capitalized_name!("Johanna"), &[Token::Str("Johanna")]);
+
+        assert_de_tokens_error::<CapitalizedName>(&[Token::Str("Manuel")], "Invalid Value: Manuel");
+        assert_de_tokens_error::<CapitalizedName>(&[Token::Str("katrin")], "Invalid Value: katrin");
     }
 }

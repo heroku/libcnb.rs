@@ -33,13 +33,13 @@ pub(crate) enum InnerDetectResult {
 ///
 /// # Examples:
 /// ```
-/// use libcnb::detect::DetectResultBuilder;
+/// use libcnb::detect::{DetectResultBuilder, DetectResult};
 /// use libcnb_data::build_plan::{BuildPlan, BuildPlanBuilder};
 ///
-/// let simple_pass = DetectResultBuilder::pass().build();
-/// let simple_fail = DetectResultBuilder::fail().build();
+/// let simple_pass: Result<DetectResult, ()> = DetectResultBuilder::pass().build();
+/// let simple_fail: Result<DetectResult, ()> = DetectResultBuilder::fail().build();
 ///
-/// let with_build_plan = DetectResultBuilder::pass()
+/// let with_build_plan: Result<DetectResult, ()> = DetectResultBuilder::pass()
 ///    .build_plan(BuildPlanBuilder::new().provides("something").build())
 ///    .build();
 /// ```
@@ -62,7 +62,18 @@ pub struct PassDetectResultBuilder {
 }
 
 impl PassDetectResultBuilder {
-    pub fn build(self) -> DetectResult {
+    /// Builds the final [`DetectResult`].
+    ///
+    /// This method returns the [`DetectResult`] wrapped in a [`Result`] even though its technically
+    /// not fallible. This is done to simplify using this method in the context it's most often used
+    /// in: a buildpack's [detect method](crate::Buildpack::detect).
+    ///
+    /// See [`build_unwrapped`](Self::build_unwrapped) for an unwrapped version of this method.
+    pub fn build<E>(self) -> Result<DetectResult, E> {
+        Ok(self.build_unwrapped())
+    }
+
+    pub fn build_unwrapped(self) -> DetectResult {
         DetectResult(InnerDetectResult::Pass {
             build_plan: self.build_plan,
         })
@@ -79,8 +90,19 @@ impl PassDetectResultBuilder {
 pub struct FailDetectResultBuilder;
 
 impl FailDetectResultBuilder {
+    /// Builds the final [`DetectResult`].
+    ///
+    /// This method returns the [`DetectResult`] wrapped in a [`Result`] even though its technically
+    /// not fallible. This is done to simplify using this method in the context it's most often used
+    /// in: a buildpack's [detect method](crate::Buildpack::detect).
+    ///
+    /// See [`build_unwrapped`](Self::build_unwrapped) for an unwrapped version of this method.
+    pub fn build<E>(self) -> Result<DetectResult, E> {
+        Ok(self.build_unwrapped())
+    }
+
     #[allow(clippy::unused_self)]
-    pub fn build(self) -> DetectResult {
+    pub fn build_unwrapped(self) -> DetectResult {
         DetectResult(InnerDetectResult::Fail)
     }
 }

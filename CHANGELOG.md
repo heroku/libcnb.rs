@@ -47,6 +47,8 @@
 - `BuildpackTomlError::InvalidStarStack` has been replaced by `BuildpackTomlError::InvalidAnyStack`.
 - Update the Ruby example buildpack to no longer use anyhow and better demonstrate the intended way to work with errors.
 - `BuildpackTomlError` has been split into `BuildpackApiError` and `StackError`.
+- `BuildpackApi` no longer implements `FromStr`, use `BuildpackApi::try_from()` instead.
+- Fixed file extension for delimiters when writing `LayerEnv` to disk.
 - Add an external Cargo command for packaging libcnb buildpacks. See the README for usage.
 
 ## [0.3.0] 2021/09/17

@@ -40,23 +40,46 @@ libcnb_newtype!(
     /// ```
     BuildpackId,
     BuildpackIdError,
-    r"^(?!app$|config$)[[:alnum:]./-]+$"
+    r"^(?!(app|config)$)[[:alnum:]./-]+$"
 );
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::str::FromStr;
 
     #[test]
-    fn buildpack_id_does_not_allow_app() {
-        let result = BuildpackId::from_str("app");
-        assert!(result.is_err());
+    fn buildpack_id_validation_valid() {
+        assert!("heroku/jvm".parse::<BuildpackId>().is_ok());
+        assert!("Abc123./-".parse::<BuildpackId>().is_ok());
+        assert!("app-foo".parse::<BuildpackId>().is_ok());
+        assert!("foo-app".parse::<BuildpackId>().is_ok());
     }
 
     #[test]
-    fn buildpack_id_does_not_allow_config() {
-        let result = BuildpackId::from_str("config");
-        assert!(result.is_err());
+    fn buildpack_id_validation_invalid() {
+        assert_eq!(
+            "heroku_jvm".parse::<BuildpackId>(),
+            Err(BuildpackIdError::InvalidValue(String::from("heroku_jvm")))
+        );
+        assert_eq!(
+            "heroku:jvm".parse::<BuildpackId>(),
+            Err(BuildpackIdError::InvalidValue(String::from("heroku:jvm")))
+        );
+        assert_eq!(
+            "heroku jvm".parse::<BuildpackId>(),
+            Err(BuildpackIdError::InvalidValue(String::from("heroku jvm")))
+        );
+        assert_eq!(
+            "app".parse::<BuildpackId>(),
+            Err(BuildpackIdError::InvalidValue(String::from("app")))
+        );
+        assert_eq!(
+            "config".parse::<BuildpackId>(),
+            Err(BuildpackIdError::InvalidValue(String::from("config")))
+        );
+        assert_eq!(
+            "".parse::<BuildpackId>(),
+            Err(BuildpackIdError::InvalidValue(String::new()))
+        );
     }
 }
