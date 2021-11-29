@@ -42,7 +42,7 @@ pub enum CrossCompileError {
     CouldNotFindRequiredBinary(String),
 }
 
-/// Returns a human-readable help text about cross compiling from the user's host platform to
+/// Returns a human-readable help text about cross-compiling from the user's host platform to
 /// the desired target platform.
 pub fn cross_compile_help(target_triple: impl AsRef<str>) -> Option<String> {
     if target_triple.as_ref() == "x86_64-unknown-linux-musl" && cfg!(target_os = "macos") {

@@ -163,7 +163,7 @@ fn handle_libcnb_package(matches: &ArgMatches) {
     };
 
     info!(
-        "Successfully wrote buildpack tarball {} ({})",
+        "Successfully wrote buildpack tarball: {} ({})",
         relative_output_path.to_string_lossy(),
         output_path
             .metadata()

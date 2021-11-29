@@ -14,7 +14,7 @@ use tar::{EntryType, Header};
 /// Builds a buildpack binary using Cargo.
 ///
 /// It is designed to handle cross-compilation without requiring custom configuration in the Cargo
-/// manifest of the the user's buildpack. The triple for the target platform is a mandatory
+/// manifest of the user's buildpack. The triple for the target platform is a mandatory
 /// argument of this function.
 ///
 /// Depending on the host platform, this function will try to set the required cross compilation
@@ -28,7 +28,7 @@ use tar::{EntryType, Header};
 /// function to obtain human-readable instructions on how to setup the required tools.
 ///
 /// This function currently only supports projects with a single binary target. If the project
-/// contains not exactly one target, the appropriate `BuildError` is returned.
+/// does not contain exactly one target, the appropriate `BuildError` is returned.
 ///
 /// This function will write Cargo's output to stdout and stderr.
 pub fn build_buildpack_binary(
@@ -151,7 +151,7 @@ pub fn assemble_buildpack_tarball(
     tar_builder.append_file("buildpack.toml", &mut buildpack_toml_file)?;
     tar_builder.append_file("bin/build", &mut buildpack_binary_file)?;
 
-    // Build a symlink header to link bin/detect to bin/build
+    // Build a symlink header to link `bin/detect` to `bin/build`
     let mut header = Header::new_gnu();
     header.set_entry_type(EntryType::Symlink);
     header.set_path("bin/detect")?;
