@@ -92,6 +92,9 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     ///     }
     /// }
     /// ```
+    /// # Errors
+    ///
+    /// Error will either be a `HandleLayerError` or a `BuildpackError(e)`, where the error is defined in the buildpack.
     pub fn handle_layer<L: Layer<Buildpack = B>>(
         &self,
         layer_name: LayerName,

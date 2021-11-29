@@ -10,8 +10,6 @@
 // This lint triggers when both layer_dir and layers_dir are present which are quite common.
 #![allow(clippy::similar_names)]
 // Re-disable pedantic lints that are currently failing, until they are triaged and fixed/wontfixed.
-// https://github.com/Malax/libcnb.rs/issues/53
-#![allow(clippy::missing_errors_doc)]
 // https://github.com/Malax/libcnb.rs/issues/57
 #![allow(clippy::must_use_candidate)]
 
