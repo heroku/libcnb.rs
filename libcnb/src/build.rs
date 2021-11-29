@@ -165,6 +165,9 @@ impl BuildResultBuilder {
     /// in: a buildpack's [build method](crate::Buildpack::build).
     ///
     /// See [`build_unwrapped`](Self::build_unwrapped) for an unwrapped version of this method.
+    /// # Errors
+    ///
+    /// This error is a `std::io::Error`, an I/O error.
     pub fn build<E>(self) -> Result<BuildResult, E> {
         Ok(self.build_unwrapped())
     }

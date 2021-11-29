@@ -28,7 +28,7 @@ where
     /// ```
     /// # Errors
     ///
-    /// This error is a `std::io::Err`, an I/O error.
+    /// This error is a `std::io::Error`, an I/O error.
     fn from_path(platform_dir: impl AsRef<Path>) -> io::Result<Self>;
 }
 
