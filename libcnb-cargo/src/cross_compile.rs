@@ -7,6 +7,10 @@ use which::which;
 /// This function will not install required toolchains, linkers or compilers automatically. It will
 /// look for the required tools and returns an error if they cannot be found. See
 /// [`cross_compile_help`] on how to support users setting up their machine for cross-compilation.
+///
+/// # Errors
+/// Will return `Err` if the cross-compile environment could not be created for the current host
+/// and target platform.
 pub fn cross_compile_env(
     target_triple: impl AsRef<str>,
 ) -> Result<Vec<(OsString, OsString)>, CrossCompileError> {

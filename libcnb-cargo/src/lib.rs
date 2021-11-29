@@ -1,3 +1,8 @@
+// https://rust-lang.github.io/rust-clippy/stable/index.html
+#![warn(clippy::pedantic)]
+// This lint is too noisy and enforces a style that reduces readability in many cases.
+#![allow(clippy::module_name_repetitions)]
+
 pub mod cross_compile;
 
 use cargo_metadata::MetadataCommand;
@@ -31,6 +36,9 @@ use tar::{EntryType, Header};
 /// does not contain exactly one target, the appropriate `BuildError` is returned.
 ///
 /// This function will write Cargo's output to stdout and stderr.
+///
+/// # Errors
+/// Will return `Err` if the build did not finish successfully.
 pub fn build_buildpack_binary(
     project_path: impl AsRef<Path>,
     cargo_profile: CargoProfile,
@@ -101,6 +109,9 @@ pub enum CargoProfile {
 }
 
 /// Reads buildpack data from the given project path.
+///
+/// # Errors
+/// Will return `Err` if the buildpack data could not be read successfully.
 pub fn read_buildpack_data(
     project_path: impl AsRef<Path>,
 ) -> Result<BuildpackData<Option<toml::Value>>, BuildpackDataError> {
@@ -136,6 +147,9 @@ pub struct BuildpackData<BM> {
 ///
 /// This function will not validate if the buildpack descriptor at the given path is valid and will
 /// use it as-is.
+///
+/// # Errors
+/// Will return `Err` if the tarball could not be assembled successfully.
 pub fn assemble_buildpack_tarball(
     destination_path: impl AsRef<Path>,
     buildpack_toml_path: impl AsRef<Path>,

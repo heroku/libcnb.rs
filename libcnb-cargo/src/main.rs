@@ -1,3 +1,8 @@
+// https://rust-lang.github.io/rust-clippy/stable/index.html
+#![warn(clippy::pedantic)]
+// This lint is too noisy and enforces a style that reduces readability in many cases.
+#![allow(clippy::module_name_repetitions)]
+
 use cargo_metadata::MetadataCommand;
 use clap::{App, AppSettings, Arg, ArgMatches};
 use libcnb_cargo::cross_compile::cross_compile_help;
@@ -24,6 +29,7 @@ fn main() {
     }
 }
 
+#[allow(clippy::too_many_lines)]
 fn handle_libcnb_package(matches: &ArgMatches) {
     let cargo_profile = if matches.is_present("release") {
         CargoProfile::Release
@@ -56,14 +62,14 @@ fn handle_libcnb_package(matches: &ArgMatches) {
             match error {
                 BuildpackDataError::IoError(io_error) => {
                     error!("IO error while reading buildpack metadata: {}", io_error);
-                    error!("Hint: Verify that a readable file named \"buildpack.toml\" exists at the root of your project.")
+                    error!("Hint: Verify that a readable file named \"buildpack.toml\" exists at the root of your project.");
                 }
                 BuildpackDataError::DeserializationError(deserialization_error) => {
                     error!(
                         "Could not deserialize buildpack metadata: {}",
                         deserialization_error
                     );
-                    error!("Hint: Verify that your \"buildpack.toml\" is valid.")
+                    error!("Hint: Verify that your \"buildpack.toml\" is valid.");
                 }
             }
 
@@ -95,12 +101,11 @@ fn handle_libcnb_package(matches: &ArgMatches) {
                 .ok()
         });
 
-    let output_path = match output_path {
-        Some(output_path) => output_path,
-        None => {
-            error!("Could not determine output path for tarball!");
-            std::process::exit(1);
-        }
+    let output_path = if let Some(output_path) = output_path {
+        output_path
+    } else {
+        error!("Could not determine output path for tarball!");
+        std::process::exit(1);
     };
 
     let relative_output_path =
@@ -121,10 +126,9 @@ fn handle_libcnb_package(matches: &ArgMatches) {
                         "Unexpected Cargo exit status: {}",
                         exit_status
                             .code()
-                            .map(|code| code.to_string())
-                            .unwrap_or_else(|| String::from("<unknown>"))
+                            .map_or_else(|| String::from("<unknown>"), |code| code.to_string())
                     );
-                    error!("Examine Cargo output for details and potential compilation errors.")
+                    error!("Examine Cargo output for details and potential compilation errors.");
                 }
                 BuildError::CrossCompileError(_) => {
                     error!(
@@ -135,16 +139,16 @@ fn handle_libcnb_package(matches: &ArgMatches) {
                     }
                 }
                 BuildError::NoTargetsFound => {
-                    error!("No targets were found in the Cargo manifest. Ensure that there is exactly one binary target and try again.")
+                    error!("No targets were found in the Cargo manifest. Ensure that there is exactly one binary target and try again.");
                 }
                 BuildError::MultipleTargetsFound => {
-                    error!("Multiple targets were found in the Cargo manifest. Ensure that there is exactly one binary target and try again.")
+                    error!("Multiple targets were found in the Cargo manifest. Ensure that there is exactly one binary target and try again.");
                 }
                 BuildError::MetadataError(metadata_error) => {
-                    error!("Unable to obtain metadata from Cargo: {}", metadata_error)
+                    error!("Unable to obtain metadata from Cargo: {}", metadata_error);
                 }
                 BuildError::CouldNotFindRootPackage => {
-                    error!("Root package could not be determined from the Cargo manifest.")
+                    error!("Root package could not be determined from the Cargo manifest.");
                 }
             }
 
@@ -165,10 +169,10 @@ fn handle_libcnb_package(matches: &ArgMatches) {
     info!(
         "Successfully wrote buildpack tarball: {} ({})",
         relative_output_path.to_string_lossy(),
-        output_path
-            .metadata()
-            .map(|metadata| SizeFormatterSI::new(metadata.len()).to_string())
-            .unwrap_or_else(|_| String::from("unknown size"))
+        output_path.metadata().map_or_else(
+            |_| String::from("unknown size"),
+            |metadata| SizeFormatterSI::new(metadata.len()).to_string()
+        )
     );
 
     info!("Packaging successfully finished!");
