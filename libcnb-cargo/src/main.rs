@@ -57,16 +57,14 @@ fn handle_libcnb_package(matches: &ArgMatches) {
     let buildpack_data = match read_buildpack_data(&current_dir) {
         Ok(buildpack_data) => buildpack_data,
         Err(error) => {
-            error!("Packaging buildpack failed due to an error while reading buildpack metadata!");
-
             match error {
                 BuildpackDataError::IoError(io_error) => {
-                    error!("IO error while reading buildpack metadata: {}", io_error);
+                    error!("Unable to read buildpack metadata: {}", io_error);
                     error!("Hint: Verify that a readable file named \"buildpack.toml\" exists at the root of your project.");
                 }
                 BuildpackDataError::DeserializationError(deserialization_error) => {
                     error!(
-                        "Could not deserialize buildpack metadata: {}",
+                        "Unable to deserialize buildpack metadata: {}",
                         deserialization_error
                     );
                     error!("Hint: Verify that your \"buildpack.toml\" is valid.");
