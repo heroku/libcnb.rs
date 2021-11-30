@@ -216,7 +216,10 @@ fn setup_cli_parsing<'a, 'b>() -> clap::App<'a, 'b> {
 }
 
 fn setup_logging() {
-    if let Err(error) = stderrlog::new().quiet(false).verbosity(2).init() {
+    if let Err(error) = stderrlog::new()
+        .verbosity(2) // LevelFilter::Info
+        .init()
+    {
         eprintln!("Unable to initialize logger: {}", error);
         std::process::exit(1);
     }
