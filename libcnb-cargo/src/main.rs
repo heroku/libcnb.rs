@@ -78,7 +78,7 @@ fn handle_libcnb_package(matches: &ArgMatches) {
     };
 
     info!(
-        "Found valid buildpack with id \"{}\" @ {}!",
+        "Found buildpack {} with version {}.",
         buildpack_data.buildpack_toml.buildpack.id, buildpack_data.buildpack_toml.buildpack.version
     );
 
