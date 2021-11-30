@@ -4,7 +4,7 @@
 #![allow(clippy::module_name_repetitions)]
 
 use cargo_metadata::MetadataCommand;
-use clap::{App, AppSettings, Arg, ArgMatches};
+use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use libcnb_cargo::cross_compile::cross_compile_help;
 use libcnb_cargo::{
     assemble_buildpack_tarball, build_buildpack_binary, default_buildpack_tarball_filename,
@@ -184,10 +184,10 @@ fn setup_cli_parsing<'a, 'b>() -> clap::App<'a, 'b> {
         .bin_name("cargo")
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .subcommand(
-            App::new("libcnb")
+            SubCommand::with_name("libcnb")
                 .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(
-                    App::new("package")
+                    SubCommand::with_name("package")
                         .arg(
                             Arg::with_name("release")
                                 .long("release")
