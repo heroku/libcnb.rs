@@ -1,7 +1,9 @@
-use std::ffi::OsString;
+use std::{env, ffi::OsString};
 use which::which;
 
 const MUSL_TARGET: &str = "x86_64-unknown-linux-musl";
+const CARGO_MUSL_LINKER_ENV_VAR: &str = "CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER";
+const CC_MUSL_ENV_VAR: &str = "CC_x86_64_unknown_linux_musl";
 const MAC_BINARY: Binary = Binary("x86_64-linux-musl-gcc");
 const LINUX_BINARY: Binary = Binary("musl-gcc");
 
@@ -25,16 +27,13 @@ pub fn cross_compile_env(
 ) -> Result<Vec<(OsString, OsString)>, CrossCompileError> {
     if target_triple.as_ref() == MUSL_TARGET {
         if cfg!(target_os = "macos") {
-            return Ok(vec![
-                (
-                    OsString::from("CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER"),
-                    MAC_BINARY.which()?,
-                ),
-                (
-                    OsString::from("CC_x86_64_unknown_linux_musl"),
-                    MAC_BINARY.which()?,
-                ),
-            ]);
+            let envs = [CARGO_MUSL_LINKER_ENV_VAR, CC_MUSL_ENV_VAR]
+                .iter()
+                .filter(|env_var| env::var_os(env_var).is_none())
+                .map(|env_var| Ok((OsString::from(env_var), MAC_BINARY.which()?)))
+                .collect::<Result<Vec<(OsString, OsString)>, CrossCompileError>>()?;
+
+            return Ok(envs);
         } else if cfg!(target_os = "linux") {
             LINUX_BINARY.which()?;
         }
