@@ -180,7 +180,7 @@ INFO - Building buildpack binary (x86_64-unknown-linux-musl)...
 INFO - Writing buildpack tarball...
 INFO - Successfully wrote buildpack tarball target/libcnb-examples_my-buildpack_0.1.0_dev.tar.gz (6.5M)
 INFO - Packaging successfully finished!
-INFO - Hint: To test your buildpack locally with pack, run: pack build my-image -b target/libcnb-examples_my-buildpack_0.1.0_dev.tar.gz --path /path/to/application
+INFO - Hint: To test your buildpack locally with pack, run: pack build my-image --buildpack target/libcnb-examples_my-buildpack_0.1.0_dev.tar.gz --path /path/to/application
 ```
 
 If you get errors with hints about how to install required tools to cross-compile from your host platform to the

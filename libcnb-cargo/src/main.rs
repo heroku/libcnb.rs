@@ -176,7 +176,7 @@ fn handle_libcnb_package(matches: &ArgMatches) {
     );
 
     info!("Packaging successfully finished!");
-    info!("Hint: To test your buildpack locally with pack, run: pack build my-image -b {} --path /path/to/application", relative_output_path.to_string_lossy());
+    info!("Hint: To test your buildpack locally with pack, run: pack build my-image --buildpack {} --path /path/to/application", relative_output_path.to_string_lossy());
 }
 
 fn setup_cli_parsing<'a, 'b>() -> clap::App<'a, 'b> {
