@@ -15,11 +15,9 @@ path = "src/main.rs"
 
 [dependencies]
 toml = "0.5.8"
-serde = "1.0.130"
 libcnb-data = { version = "0.3.0", path = "../libcnb-data" }
 cargo_metadata = "0.14.1"
 which = "4.2.2"
-tempfile = "3.2.0"
 flate2 = "1.0.22"
 tar = "0.4.37"
 clap = "2.33.1"
