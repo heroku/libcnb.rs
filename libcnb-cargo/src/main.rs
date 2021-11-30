@@ -80,31 +80,29 @@ fn handle_libcnb_package(matches: &ArgMatches) {
         buildpack_data.buildpack_toml.buildpack.id, buildpack_data.buildpack_toml.buildpack.version
     );
 
-    let output_path = matches
-        .value_of("output-path")
-        .map(PathBuf::from)
-        .or_else(|| {
-            MetadataCommand::new()
-                .manifest_path(&current_dir.join("Cargo.toml"))
-                .exec()
-                .map(|metadata| {
-                    metadata
-                        .target_directory
-                        .join(default_buildpack_tarball_filename(
-                            &buildpack_data.buildpack_toml,
-                            cargo_profile,
-                        ))
-                        .into_std_path_buf()
-                })
-                .ok()
-        });
-
-    let output_path = if let Some(output_path) = output_path {
-        output_path
-    } else {
-        error!("Could not determine output path for tarball!");
-        std::process::exit(1);
+    let cargo_metadata = match MetadataCommand::new()
+        .manifest_path(&current_dir.join("Cargo.toml"))
+        .exec()
+    {
+        Ok(cargo_metadata) => cargo_metadata,
+        Err(error) => {
+            error!("Could obtain metadata from Cargo: {}", error);
+            std::process::exit(1);
+        }
     };
+
+    let output_path = matches.value_of("output-path").map_or_else(
+        || {
+            cargo_metadata
+                .target_directory
+                .join(default_buildpack_tarball_filename(
+                    &buildpack_data.buildpack_toml,
+                    cargo_profile,
+                ))
+                .into_std_path_buf()
+        },
+        PathBuf::from,
+    );
 
     let relative_output_path =
         pathdiff::diff_paths(&output_path, &current_dir).unwrap_or_else(|| output_path.clone());
