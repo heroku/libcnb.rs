@@ -29,7 +29,7 @@ pub(crate) fn setup_cli_parsing<'a, 'b>() -> clap::App<'a, 'b> {
                             Arg::with_name("output-path")
                                 .long("output")
                                 .short("o")
-                                .help("Write buildpack tarball to this path instead of Cargo's target directory")
+                                .help("Write buildpack to this directory")
                                 .takes_value(true),
                         ),
                 ),

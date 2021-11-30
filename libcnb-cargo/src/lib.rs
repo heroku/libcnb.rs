@@ -7,14 +7,10 @@ pub mod cross_compile;
 
 use cargo_metadata::MetadataCommand;
 use cross_compile::CrossCompileError;
-use flate2::write::GzEncoder;
-use flate2::Compression;
 use libcnb_data::buildpack::BuildpackToml;
 use std::fs;
-use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus};
-use tar::{EntryType, Header};
 
 /// Builds a buildpack binary using Cargo.
 ///
@@ -141,62 +137,65 @@ pub struct BuildpackData<BM> {
     pub buildpack_toml: BuildpackToml<BM>,
 }
 
-/// Assembles a buildpack tarball and writes it to the given destination path.
+/// Creates a buildpack directory and copies all buildpack assets to it.
 ///
-/// Assembly of the tarball follows the constraints set by the libcnb framework. For example,
-/// the buildpack binary is only stored once and symlinks are used to refer to it when the CNB
+/// Assembly of the directory follows the constraints set by the libcnb framework. For example,
+/// the buildpack binary is only copied once and symlinks are used to refer to it when the CNB
 /// spec requires different file(name)s.
 ///
 /// This function will not validate if the buildpack descriptor at the given path is valid and will
 /// use it as-is.
 ///
 /// # Errors
-/// Will return `Err` if the tarball could not be assembled successfully.
-pub fn assemble_buildpack_tarball(
+/// Will return `Err` if the buildpack directory could not be assembled.
+pub fn assemble_buildpack_directory(
     destination_path: impl AsRef<Path>,
     buildpack_toml_path: impl AsRef<Path>,
     buildpack_binary_path: impl AsRef<Path>,
 ) -> std::io::Result<()> {
-    let destination_file = fs::File::create(destination_path.as_ref())?;
-    let mut buildpack_toml_file = fs::File::open(buildpack_toml_path.as_ref())?;
-    let mut buildpack_binary_file = fs::File::open(buildpack_binary_path.as_ref())?;
+    fs::create_dir_all(destination_path.as_ref())?;
 
-    let mut tar_builder =
-        tar::Builder::new(GzEncoder::new(destination_file, Compression::default()));
+    fs::copy(
+        buildpack_toml_path.as_ref(),
+        destination_path.as_ref().join("buildpack.toml"),
+    )?;
 
-    tar_builder.append_file("buildpack.toml", &mut buildpack_toml_file)?;
-    tar_builder.append_file("bin/build", &mut buildpack_binary_file)?;
+    let bin_path = destination_path.as_ref().join("bin");
+    fs::create_dir_all(&bin_path)?;
 
-    // Build a symlink header to link `bin/detect` to `bin/build`
-    let mut header = Header::new_gnu();
-    header.set_entry_type(EntryType::Symlink);
-    header.set_path("bin/detect")?;
-    header.set_link_name("build")?;
-    header.set_size(0);
-    header.set_mtime(
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or(std::time::Duration::ZERO)
-            .as_secs(),
-    );
-    header.set_cksum();
+    fs::copy(buildpack_binary_path.as_ref(), bin_path.join("build"))?;
+    create_file_symlink("build", bin_path.join("detect"))?;
 
-    tar_builder.append(&header, &[][..])?;
-
-    tar_builder.into_inner()?.finish()?.flush()
+    Ok(())
 }
 
-/// Construct a good default filename for a buildpack tarball.
+#[cfg(target_family = "unix")]
+fn create_file_symlink<P: AsRef<Path>, Q: AsRef<Path>>(
+    original: P,
+    link: Q,
+) -> std::io::Result<()> {
+    std::os::unix::fs::symlink(original.as_ref(), link.as_ref())
+}
+
+#[cfg(target_family = "windows")]
+fn create_file_symlink<P: AsRef<Path>, Q: AsRef<Path>>(
+    original: P,
+    link: Q,
+) -> std::io::Result<()> {
+    std::os::windows::fs::symlink_file(original.as_ref(), link.as_ref())
+}
+
+/// Construct a good default filename for a buildpack directory.
 ///
 /// It uses the given buildpack metadata and cargo profile to construct a good default name for the
-/// buildpack tarball. This function ensures the resulting filename is valid and does not contain
+/// buildpack directory. This function ensures the resulting name is valid and does not contain
 /// problematic characters such as `/`.
-pub fn default_buildpack_tarball_filename<BM>(
+pub fn default_buildpack_directory_name<BM>(
     buildpack_toml: &BuildpackToml<BM>,
     cargo_profile: CargoProfile,
 ) -> String {
     format!(
-        "{}_{}_{}.tar.gz",
+        "{}_{}_{}",
         buildpack_toml.buildpack.id.replace("/", "_"),
         buildpack_toml.buildpack.version,
         match cargo_profile {

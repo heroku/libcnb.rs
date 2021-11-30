@@ -8,7 +8,7 @@ use cargo_metadata::MetadataCommand;
 use clap::ArgMatches;
 use libcnb_cargo::cross_compile::cross_compile_help;
 use libcnb_cargo::{
-    assemble_buildpack_tarball, build_buildpack_binary, default_buildpack_tarball_filename,
+    assemble_buildpack_directory, build_buildpack_binary, default_buildpack_directory_name,
     read_buildpack_data, BuildError, BuildpackDataError, CargoProfile,
 };
 use log::error;
@@ -96,7 +96,7 @@ fn handle_libcnb_package(matches: &ArgMatches) {
         || {
             cargo_metadata
                 .target_directory
-                .join(default_buildpack_tarball_filename(
+                .join(default_buildpack_directory_name(
                     &buildpack_data.buildpack_toml,
                     cargo_profile,
                 ))
@@ -153,22 +153,22 @@ fn handle_libcnb_package(matches: &ArgMatches) {
         }
     };
 
-    info!("Writing buildpack tarball...");
-    if let Err(io_error) = assemble_buildpack_tarball(
+    info!("Writing buildpack directory...");
+    if let Err(io_error) = assemble_buildpack_directory(
         &output_path,
         &buildpack_data.buildpack_toml_path,
         &binary_path,
     ) {
-        error!("IO error while writing buildpack tarball: {}", io_error);
+        error!("IO error while writing buildpack directory: {}", io_error);
         std::process::exit(1);
     };
 
     info!(
-        "Successfully wrote buildpack tarball: {} ({})",
+        "Successfully wrote buildpack directory: {} ({})",
         relative_output_path.to_string_lossy(),
-        output_path.metadata().map_or_else(
+        fs_extra::dir::get_size(&output_path).map_or_else(
             |_| String::from("unknown size"),
-            |metadata| SizeFormatterSI::new(metadata.len()).to_string()
+            |size| SizeFormatterSI::new(size).to_string()
         )
     );
 
