@@ -77,7 +77,7 @@ pub fn build_buildpack_binary(
         .map_err(BuildError::IoError)?;
 
     if exit_status.success() {
-        Ok(cargo_metadata
+        let binary_path = cargo_metadata
             .target_directory
             .join(target_triple.as_ref())
             .join(match cargo_profile {
@@ -85,7 +85,9 @@ pub fn build_buildpack_binary(
                 CargoProfile::Release => "release",
             })
             .join(&target.name)
-            .into_std_path_buf())
+            .into_std_path_buf();
+
+        Ok(binary_path)
     } else {
         Err(BuildError::UnexpectedExitStatus(exit_status))
     }
