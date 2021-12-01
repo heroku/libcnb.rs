@@ -3,11 +3,13 @@
 Cargo command for managing buildpacks written with [libcnb.rs](https://github.com/malax/libcnb.rs).
 
 ## Installation
+
 ```shell
 $ cargo install libcnb-cargo
 ```
 
 ## Usage
+
 Currently, there is only one sub-command: `package`. It allows users to package their Rust buildpack in a spec-compliant
 manner and helps with cross-compilation. Using it is fairly simple, run `cargo libcnb package` inside the buildpack's
 project directory:

@@ -9,6 +9,7 @@ use which::which;
 /// [`cross_compile_help`] on how to support users setting up their machine for cross-compilation.
 ///
 /// # Errors
+///
 /// Will return `Err` if the cross-compile environment could not be created for the current host
 /// and target platform.
 pub fn cross_compile_env(

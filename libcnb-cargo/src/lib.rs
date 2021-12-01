@@ -34,6 +34,7 @@ use std::process::{Command, ExitStatus};
 /// This function will write Cargo's output to stdout and stderr.
 ///
 /// # Errors
+///
 /// Will return `Err` if the build did not finish successfully.
 pub fn build_buildpack_binary(
     project_path: impl AsRef<Path>,
@@ -109,6 +110,7 @@ pub enum CargoProfile {
 /// Reads buildpack data from the given project path.
 ///
 /// # Errors
+///
 /// Will return `Err` if the buildpack data could not be read successfully.
 pub fn read_buildpack_data(
     project_path: impl AsRef<Path>,
@@ -147,6 +149,7 @@ pub struct BuildpackData<BM> {
 /// use it as-is.
 ///
 /// # Errors
+///
 /// Will return `Err` if the buildpack directory could not be assembled.
 pub fn assemble_buildpack_directory(
     destination_path: impl AsRef<Path>,

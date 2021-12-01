@@ -14,13 +14,17 @@
 It currently targets version `0.6` of the CNB spec.
 
 ## Quick Start Guide
+
 This quick start guide walks you through writing a simple Cloud Native Buildpack in Rust with libcnb.rs. It will also 
 demonstrate how to package your buildpack and how to build an application image with it.
 
 ### Development Environment Setup
+
 In addition to the libcnb crate, we need some tools to compile, package and run the buildpack. These steps only need to
 be carried out once and don't need to be repeated for each buildpack you will write. 
+
 #### libcnb Cargo Command
+
 Start by installing the libcnb Cargo command which we will later use to package our buildpack:
 
 ```shell
@@ -28,6 +32,7 @@ $ cargo install libcnb-cargo
 ```
 
 #### Cross-compilation prerequisites
+
 It is common to write and build your buildpack on a platform that is different from the platform the buildpack will
 eventually run on. This means we have to cross-compile our buildpack. The `libcnb package` Cargo command tries to help you setting
 up your environment depending on your host platform, but we always need the appropriate target platform for Rust which 
@@ -38,6 +43,7 @@ $ rustup target add x86_64-unknown-linux-musl
 ```
 
 #### Docker
+
 If you don't have it already, we need to install Docker. Refer to the Docker documentation on how to install it for your
 operating system: https://docs.docker.com/engine/install/
 
@@ -162,6 +168,7 @@ buildpack_main!(HelloWorldBuildpack);
 ```
 
 ### Packaging the Buildpack
+
 Now that our buildpack is written, it's time to package it, so that it can be run. If you followed the steps to setup
 your development environment, you have access to the `libcnb` Cargo command that will handle packaging for you.
 
@@ -188,6 +195,7 @@ target platform, follow them and try again. These differ from platform to platfo
 quick start guide.
 
 ### Running the Buildpack
+
 You might have seen in the hint in the output of the packaging step that we're now ready to run our buildpack locally 
 with `pack`. Before we can do this, we need an application to build. Since our buildpack does not interact with the
 application code at all, we just create an empty directory and use that as our application:
