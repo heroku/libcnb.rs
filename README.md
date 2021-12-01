@@ -179,15 +179,13 @@ $ cargo libcnb package
 INFO - Reading buildpack metadata...
 INFO - Found buildpack libcnb-examples/my-buildpack with version 0.1.0.
 INFO - Building buildpack binary (x86_64-unknown-linux-musl)...
-   Compiling syn v1.0.82
-   Compiling bit-vec v0.6.3
-   Compiling regex-syntax v0.6.25
-   # Omitting further compilation output...
-    Finished dev [unoptimized + debuginfo] target(s) in 19.71s
+Compiling my-buildpack v0.1.0 (/Users/manuel.fuchs/projects/my-buildpack)
+# Omitting compilation output...
+Finished dev [unoptimized + debuginfo] target(s) in 2.67s
 INFO - Writing buildpack directory...
-INFO - Successfully wrote buildpack directory: ../../target/libcnb-examples_ruby_0.1.0_dev (103.6M)
+INFO - Successfully wrote buildpack directory: target/debug/libcnb-examples_my-buildpack_0.1.0 (53.1M)
 INFO - Packaging successfully finished!
-INFO - Hint: To test your buildpack locally with pack, run: pack build my-image --buildpack ../../target/libcnb-examples_ruby_0.1.0_dev --path /path/to/application
+INFO - Hint: To test your buildpack locally with pack, run: pack build my-image --buildpack target/debug/libcnb-examples_my-buildpack_0.1.0 --path /path/to/application
 ```
 
 If you get errors with hints about how to install required tools to cross-compile from your host platform to the
@@ -202,7 +200,7 @@ application code at all, we just create an empty directory and use that as our a
 
 ```shell
 $ mkdir bogus-app
-$ pack build my-image -b target/libcnb-examples_my-buildpack_0.1.0_dev.tar.gz --path bogus-app --builder heroku/buildpacks:20
+$ pack build my-image --buildpack target/debug/libcnb-examples_my-buildpack_0.1.0 --path bogus-app --builder heroku/buildpacks:20
 20: Pulling from heroku/buildpacks
 Digest: sha256:04e8ea7a1f482f289d432d9518edcfaaf9f3a10432cd1b624e58225f22e7c416
 Status: Image is up to date for heroku/buildpacks:20
