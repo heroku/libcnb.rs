@@ -196,7 +196,7 @@ quick start guide.
 
 ### Running the Buildpack
 
-You might have seen in the hint in the output of the packaging step that we're now ready to run our buildpack locally 
+You might have seen in the output that we're now ready to run our buildpack locally 
 with `pack`. Before we can do this, we need an application to build. Since our buildpack does not interact with the
 application code at all, we just create an empty directory and use that as our application:
 
