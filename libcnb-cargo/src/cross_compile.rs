@@ -16,6 +16,7 @@ use which::which;
 pub fn cross_compile_env(
     target_triple: impl AsRef<str>,
 ) -> Result<Vec<(OsString, OsString)>, CrossCompileError> {
+    // Background: https://omarkhawaja.com/cross-compiling-rust-from-macos-to-linux/
     if target_triple.as_ref() == X86_64_UNKNOWN_LINUX_MUSL && cfg!(target_os = "macos") {
         let gcc_binary_name = "x86_64-linux-musl-gcc";
 
