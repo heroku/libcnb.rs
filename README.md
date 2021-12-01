@@ -128,7 +128,7 @@ impl Buildpack for HelloWorldBuildpack {
     // `InvalidGemfileLock`. This example buildpack uses `GenericError` which means this buildpack
     // does not specify any errors.
     //
-    // More generic errors that happen during buildpack execution such as I/O errors while
+    // Common errors that happen during buildpack execution such as I/O errors while
     // writing CNB TOML files are handled by libcnb.rs itself.
     type Error = GenericError;
 
