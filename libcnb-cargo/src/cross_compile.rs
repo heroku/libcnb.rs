@@ -16,27 +16,31 @@ pub fn cross_compile_env(
     target_triple: impl AsRef<str>,
 ) -> Result<Vec<(OsString, OsString)>, CrossCompileError> {
     if target_triple.as_ref() == "x86_64-unknown-linux-musl" && cfg!(target_os = "macos") {
-        let ld_binary_name = "x86_64-linux-musl-ld";
-        let cc_binary_name = "x86_64-linux-musl-gcc";
+        let gcc_binary_name = "x86_64-linux-musl-gcc";
 
-        Ok(vec![
-            (
-                OsString::from("CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER"),
-                which(ld_binary_name)
-                    .map_err(|_| {
-                        CrossCompileError::CouldNotFindRequiredBinary(String::from(ld_binary_name))
-                    })?
-                    .into_os_string(),
-            ),
-            (
-                OsString::from("CC_x86_64_unknown_linux_musl"),
-                which(cc_binary_name)
-                    .map_err(|_| {
-                        CrossCompileError::CouldNotFindRequiredBinary(String::from(cc_binary_name))
-                    })?
-                    .into_os_string(),
-            ),
-        ])
+        which(gcc_binary_name)
+            .map(|gcc_binary_path| {
+                vec![
+                    (
+                        // Required until Cargo can auto-detect the musl-cross gcc/linker itself,
+                        // since otherwise it checks for a binary named 'musl-gcc'
+                        // not 'x86_64-linux-musl-gcc':
+                        // https://github.com/FiloSottile/homebrew-musl-cross/issues/16
+                        // https://github.com/rust-lang/cargo/issues/4133
+                        OsString::from("CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER"),
+                        OsString::from(&gcc_binary_path),
+                    ),
+                    (
+                        // Required so that any crates that call out to gcc are also cross-compiled:
+                        // https://github.com/alexcrichton/cc-rs/issues/82
+                        OsString::from("CC_x86_64_unknown_linux_musl"),
+                        OsString::from(&gcc_binary_path),
+                    ),
+                ]
+            })
+            .map_err(|_| {
+                CrossCompileError::CouldNotFindRequiredBinary(String::from(gcc_binary_name))
+            })
     } else {
         Ok(vec![])
     }
