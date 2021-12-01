@@ -96,9 +96,12 @@ fn handle_libcnb_package(matches: &ArgMatches) {
         || {
             cargo_metadata
                 .target_directory
+                .join(match cargo_profile {
+                    CargoProfile::Dev => "debug",
+                    CargoProfile::Release => "release",
+                })
                 .join(default_buildpack_directory_name(
                     &buildpack_data.buildpack_toml,
-                    cargo_profile,
                 ))
                 .into_std_path_buf()
         },

@@ -193,17 +193,10 @@ fn create_file_symlink<P: AsRef<Path>, Q: AsRef<Path>>(
 /// It uses the given buildpack metadata and cargo profile to construct a good default name for the
 /// buildpack directory. This function ensures the resulting name is valid and does not contain
 /// problematic characters such as `/`.
-pub fn default_buildpack_directory_name<BM>(
-    buildpack_toml: &BuildpackToml<BM>,
-    cargo_profile: CargoProfile,
-) -> String {
+pub fn default_buildpack_directory_name<BM>(buildpack_toml: &BuildpackToml<BM>) -> String {
     format!(
-        "{}_{}_{}",
+        "{}_{}",
         buildpack_toml.buildpack.id.replace("/", "_"),
-        buildpack_toml.buildpack.version,
-        match cargo_profile {
-            CargoProfile::Dev => "dev",
-            CargoProfile::Release => "release",
-        }
+        buildpack_toml.buildpack.version
     )
 }
