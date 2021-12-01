@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::ffi::OsString;
 use which::which;
 
@@ -15,7 +16,7 @@ use which::which;
 pub fn cross_compile_env(
     target_triple: impl AsRef<str>,
 ) -> Result<Vec<(OsString, OsString)>, CrossCompileError> {
-    if target_triple.as_ref() == "x86_64-unknown-linux-musl" && cfg!(target_os = "macos") {
+    if target_triple.as_ref() == X86_64_UNKNOWN_LINUX_MUSL && cfg!(target_os = "macos") {
         let gcc_binary_name = "x86_64-linux-musl-gcc";
 
         which(gcc_binary_name)
@@ -54,17 +55,36 @@ pub enum CrossCompileError {
 /// Returns a human-readable help text about cross-compiling from the user's host platform to
 /// the desired target platform.
 pub fn cross_compile_help(target_triple: impl AsRef<str>) -> Option<String> {
-    if target_triple.as_ref() == "x86_64-unknown-linux-musl" && cfg!(target_os = "macos") {
-        Some(String::from(
-            r#"For cross-compilation from macOS to x86_64-unknown-linux-musl, a C compiler and linker for the
-target platform must be installed on your computer.
+    let mut help_texts = HashMap::new();
 
-The easiest way to install 'x86_64-linux-musl-ld' and 'x86_64-linux-musl-gcc', is to follow the
-instructions in the linked GitHub repository:
+    help_texts.insert(
+        ("macos", X86_64_UNKNOWN_LINUX_MUSL),
+        String::from(
+            r#"For cross-compilation from macOS to x86_64-unknown-linux-musl, a C compiler and
+linker for the target platform must be installed on your computer.
+
+The easiest way to install 'x86_64-linux-musl-gcc' is to follow the instructions in the linked
+GitHub repository:
 
 https://github.com/FiloSottile/homebrew-musl-cross"#,
-        ))
-    } else {
-        None
-    }
+        ),
+    );
+
+    help_texts.insert(
+        ("linux", X86_64_UNKNOWN_LINUX_MUSL),
+        String::from(
+            r#"For cross-compilation from Linux to x86_64-unknown-linux-musl, a C compiler and
+linker for the target platform must be installed on your computer.
+
+The easiest way to install 'musl-gcc' is to install the 'musl-tools' package:
+- https://packages.ubuntu.com/focal/musl-tools
+- https://packages.debian.org/bullseye/musl-tools"#,
+        ),
+    );
+
+    help_texts
+        .get(&(std::env::consts::OS, target_triple.as_ref()))
+        .cloned()
 }
+
+const X86_64_UNKNOWN_LINUX_MUSL: &str = "x86_64-unknown-linux-musl";
