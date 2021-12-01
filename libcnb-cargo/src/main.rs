@@ -87,7 +87,7 @@ fn handle_libcnb_package(matches: &ArgMatches) {
     {
         Ok(cargo_metadata) => cargo_metadata,
         Err(error) => {
-            error!("Could obtain metadata from Cargo: {}", error);
+            error!("Could not obtain metadata from Cargo: {}", error);
             std::process::exit(1);
         }
     };
