@@ -49,5 +49,6 @@
 - `BuildpackTomlError` has been split into `BuildpackApiError` and `StackError`.
 - `BuildpackApi` no longer implements `FromStr`, use `BuildpackApi::try_from()` instead.
 - Fixed file extension for delimiters when writing `LayerEnv` to disk.
+- Fixed the `group` field on `buildpack::Order` to now be public.
 
 ## [0.3.0] 2021/09/17

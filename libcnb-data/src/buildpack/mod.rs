@@ -77,7 +77,7 @@ pub struct License {
 
 #[derive(Deserialize, Debug, Eq, PartialEq)]
 pub struct Order {
-    group: Vec<Group>,
+    pub group: Vec<Group>,
 }
 
 #[derive(Deserialize, Debug, Eq, PartialEq)]
