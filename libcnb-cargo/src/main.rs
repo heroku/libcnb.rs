@@ -6,13 +6,13 @@
 mod cli;
 use cargo_metadata::MetadataCommand;
 use clap::ArgMatches;
-use libcnb_cargo::cross_compile::cross_compile_help;
+use libcnb_cargo::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
 use libcnb_cargo::{
     assemble_buildpack_directory, build_buildpack_binary, default_buildpack_directory_name,
     read_buildpack_data, BuildError, BuildpackDataError, CargoProfile,
 };
-use log::error;
 use log::info;
+use log::{error, warn};
 use size_format::SizeFormatterSI;
 use std::fs;
 
@@ -106,8 +106,36 @@ fn handle_libcnb_package(matches: &ArgMatches) {
     let relative_output_path =
         pathdiff::diff_paths(&output_path, &current_dir).unwrap_or_else(|| output_path.clone());
 
+    let cargo_build_env = if matches.is_present("no-cross-compile-assistance") {
+        vec![]
+    } else {
+        info!("Determining automatic cross-compile settings...");
+        match cross_compile_assistance(target_triple) {
+            CrossCompileAssistance::HelpText(help_text) => {
+                error!("{}", help_text);
+                info!("To disable cross-compile assistance, pass --no-cross-compile-assistance.");
+                std::process::exit(1);
+            }
+            CrossCompileAssistance::NoAssistance => {
+                warn!(
+                    "Could not determine automatic cross-compile settings for target triple {}.",
+                    &target_triple
+                );
+                warn!("This is not an error, but without proper cross-compile settings in your Cargo manifest and locally installed toolchains, compilation might fail.");
+                warn!("To disable this warning, pass --no-cross-compile-assistance.");
+                vec![]
+            }
+            CrossCompileAssistance::Configuration { cargo_env } => cargo_env,
+        }
+    };
+
     info!("Building buildpack binary ({})...", &target_triple);
-    let binary_path = match build_buildpack_binary(&current_dir, cargo_profile, &target_triple) {
+    let binary_path = match build_buildpack_binary(
+        &current_dir,
+        cargo_profile,
+        &target_triple,
+        cargo_build_env,
+    ) {
         Ok(binary_path) => binary_path,
         Err(error) => {
             error!("Packaging buildpack failed due to a build related error!");
@@ -124,14 +152,6 @@ fn handle_libcnb_package(matches: &ArgMatches) {
                             .map_or_else(|| String::from("<unknown>"), |code| code.to_string())
                     );
                     error!("Examine Cargo output for details and potential compilation errors.");
-                }
-                BuildError::CrossCompileError(_) => {
-                    error!(
-                        "Could not find required linker and C compiler for the target platform!"
-                    );
-                    if let Some(help_text) = cross_compile_help(&target_triple) {
-                        error!("Hint:\n{}", help_text);
-                    }
                 }
                 BuildError::NoTargetsFound => {
                     error!("No targets were found in the Cargo manifest. Ensure that there is exactly one binary target and try again.");

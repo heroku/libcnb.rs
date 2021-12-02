@@ -6,8 +6,8 @@
 pub mod cross_compile;
 
 use cargo_metadata::MetadataCommand;
-use cross_compile::CrossCompileError;
 use libcnb_data::buildpack::BuildpackToml;
+use std::ffi::OsStr;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -37,11 +37,17 @@ use std::process::{Command, ExitStatus};
 /// # Errors
 ///
 /// Will return `Err` if the build did not finish successfully.
-pub fn build_buildpack_binary(
+pub fn build_buildpack_binary<I, K, V>(
     project_path: impl AsRef<Path>,
     cargo_profile: CargoProfile,
     target_triple: impl AsRef<str>,
-) -> Result<PathBuf, BuildError> {
+    cargo_env: I,
+) -> Result<PathBuf, BuildError>
+where
+    I: IntoIterator<Item = (K, V)>,
+    K: AsRef<OsStr>,
+    V: AsRef<OsStr>,
+{
     let cargo_metadata = MetadataCommand::new()
         .manifest_path(project_path.as_ref().join("Cargo.toml"))
         .exec()
@@ -65,10 +71,7 @@ pub fn build_buildpack_binary(
 
     let exit_status = Command::new("cargo")
         .args(cargo_args)
-        .envs(
-            cross_compile::cross_compile_env(target_triple.as_ref())
-                .map_err(BuildError::CrossCompileError)?,
-        )
+        .envs(cargo_env)
         .current_dir(&project_path)
         .spawn()
         .and_then(|mut child| child.wait())
@@ -95,7 +98,6 @@ pub fn build_buildpack_binary(
 pub enum BuildError {
     IoError(std::io::Error),
     UnexpectedExitStatus(ExitStatus),
-    CrossCompileError(CrossCompileError),
     NoTargetsFound,
     MultipleTargetsFound,
     MetadataError(cargo_metadata::Error),

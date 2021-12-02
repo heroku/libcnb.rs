@@ -24,6 +24,11 @@ pub(crate) fn setup_cli_parsing<'a, 'b>() -> clap::App<'a, 'b> {
                                 .long("target")
                                 .default_value("x86_64-unknown-linux-musl")
                                 .help("Build for the target triple"),
+                        )
+                        .arg(
+                            Arg::with_name("no-cross-compile-assistance")
+                                .long("no-cross-compile-assistance")
+                                .help("Disable cross-compile assistance"),
                         ),
                 ),
         )
