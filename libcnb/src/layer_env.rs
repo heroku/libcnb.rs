@@ -746,8 +746,23 @@ mod tests {
     #[test]
     fn test_layer_env_delta_fs_read_write() {
         let mut original_delta = LayerEnvDelta::new();
-        original_delta.insert(ModificationBehavior::Default, "FOO", "BAR");
         original_delta.insert(ModificationBehavior::Append, "APPEND_TO_ME", "NEW_VALUE");
+        original_delta.insert(
+            ModificationBehavior::Default,
+            "SET_THE_DEFAULT",
+            "DEFAULT_VAUE",
+        );
+        original_delta.insert(ModificationBehavior::Delimiter, "APPEND_TO_ME", ";");
+        original_delta.insert(
+            ModificationBehavior::Override,
+            "OVERRIDE_THIS",
+            "OVERRIDE_VALUE",
+        );
+        original_delta.insert(
+            ModificationBehavior::Prepend,
+            "PREPEND_THIS",
+            "PREPEND_VALUE",
+        );
 
         let temp_dir = tempdir().unwrap();
 
