@@ -14,6 +14,7 @@ use libcnb_cargo::{
 use log::error;
 use log::info;
 use size_format::SizeFormatterSI;
+use std::fs;
 
 fn main() {
     setup_logging();
@@ -151,6 +152,13 @@ fn handle_libcnb_package(matches: &ArgMatches) {
     };
 
     info!("Writing buildpack directory...");
+    if output_path.exists() {
+        if let Err(error) = fs::remove_dir_all(&output_path) {
+            error!("Could not remove buildpack directory: {}", &error);
+            std::process::exit(1);
+        };
+    }
+
     if let Err(io_error) = assemble_buildpack_directory(
         &output_path,
         &buildpack_data.buildpack_toml_path,
