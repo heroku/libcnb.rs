@@ -14,7 +14,6 @@ use libcnb_cargo::{
 use log::error;
 use log::info;
 use size_format::SizeFormatterSI;
-use std::path::PathBuf;
 
 fn main() {
     setup_logging();
@@ -92,21 +91,16 @@ fn handle_libcnb_package(matches: &ArgMatches) {
         }
     };
 
-    let output_path = matches.value_of("output-path").map_or_else(
-        || {
-            cargo_metadata
-                .target_directory
-                .join(match cargo_profile {
-                    CargoProfile::Dev => "debug",
-                    CargoProfile::Release => "release",
-                })
-                .join(default_buildpack_directory_name(
-                    &buildpack_data.buildpack_toml,
-                ))
-                .into_std_path_buf()
-        },
-        PathBuf::from,
-    );
+    let output_path = cargo_metadata
+        .target_directory
+        .join(match cargo_profile {
+            CargoProfile::Dev => "debug",
+            CargoProfile::Release => "release",
+        })
+        .join(default_buildpack_directory_name(
+            &buildpack_data.buildpack_toml,
+        ))
+        .into_std_path_buf();
 
     let relative_output_path =
         pathdiff::diff_paths(&output_path, &current_dir).unwrap_or_else(|| output_path.clone());
