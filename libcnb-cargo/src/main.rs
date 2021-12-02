@@ -94,6 +94,7 @@ fn handle_libcnb_package(matches: &ArgMatches) {
 
     let output_path = cargo_metadata
         .target_directory
+        .join("buildpack")
         .join(match cargo_profile {
             CargoProfile::Dev => "debug",
             CargoProfile::Release => "release",
