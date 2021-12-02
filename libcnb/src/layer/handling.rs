@@ -107,6 +107,10 @@ fn handle_create_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
 ) -> Result<LayerData<L::Metadata>, HandleLayerErrorOrBuildpackError<B::Error>> {
     let layer_dir = context.layers_dir.join(layer_name.as_str());
 
+    fs::create_dir_all(&layer_dir)
+        .map_err(HandleLayerError::IoError)
+        .map_err(HandleLayerErrorOrBuildpackError::HandleLayerError)?;
+
     let layer_result = layer
         .create(context, &layer_dir)
         .map_err(HandleLayerErrorOrBuildpackError::BuildpackError)?;
