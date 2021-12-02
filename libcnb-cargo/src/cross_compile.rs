@@ -66,7 +66,7 @@ pub enum CrossCompileAssistance {
     /// A human-readable help text with instructions on how to setup the
     /// host machine for cross-compilation.
     HelpText(String),
-    /// Required configuration to cross-compile to the target platoform.
+    /// Required configuration to cross-compile to the target platform.
     Configuration {
         cargo_env: Vec<(OsString, OsString)>,
     },
