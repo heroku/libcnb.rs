@@ -17,8 +17,8 @@ use serde::Deserialize;
 /// ```
 /// use libcnb_data::buildpack::BuildpackToml;
 ///
-///         let raw = r#"
-/// api = "0.4"
+/// let toml_str = r#"
+/// api = "0.6"
 ///
 /// [buildpack]
 /// id = "foo/bar"
@@ -40,8 +40,8 @@ use serde::Deserialize;
 /// checksum = "awesome"
 /// "#;
 ///
-///         let result = toml::from_str::<BuildpackToml<toml::value::Table>>(raw);
-///         assert!(result.is_ok());
+/// let result = toml::from_str::<BuildpackToml<toml::value::Table>>(toml_str);
+/// assert!(result.is_ok());
 /// ```
 #[derive(Deserialize, Debug)]
 pub struct BuildpackToml<BM> {
@@ -60,8 +60,7 @@ pub struct Buildpack {
     // MUST be in the form <X>.<Y>.<Z> where X, Y, and Z are non-negative integers and must not contain leading zeroes
     pub version: Version,
     pub homepage: Option<String>,
-    #[serde(rename = "clear-env")]
-    #[serde(default)]
+    #[serde(default, rename = "clear-env")]
     pub clear_env: bool,
     pub description: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -70,18 +69,18 @@ pub struct Buildpack {
     pub licenses: Vec<License>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Eq, PartialEq)]
 pub struct License {
     pub r#type: Option<String>,
     pub uri: Option<String>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Eq, PartialEq)]
 pub struct Order {
-    group: Vec<Group>,
+    pub group: Vec<Group>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Eq, PartialEq)]
 pub struct Group {
     pub id: BuildpackId,
     pub version: Version,
@@ -96,15 +95,15 @@ mod tests {
     type GenericBuildpackToml = BuildpackToml<Option<toml::value::Table>>;
 
     #[test]
-    fn can_deserialize_metabuildpack() {
-        let raw = r#"
-api = "0.4"
+    fn deserialize_buildpack() {
+        let toml_str = r#"
+api = "0.6"
 
 [buildpack]
 id = "foo/bar"
 name = "Bar Buildpack"
 version = "0.0.1"
-homepage = "https://www.foo.com/bar"
+homepage = "https://example.tld"
 clear-env = true
 description = "A buildpack for Foo Bar"
 keywords = ["foo", "bar"]
@@ -119,92 +118,6 @@ uri = "https://example.tld/my-license"
 [[buildpack.licenses]]
 uri = "https://example.tld/my-license"
 
-[[order]]
-[[order.group]]
-id = "foo/baz"
-version = "0.0.2"
-optional = false
-
-[[stacks]]
-id = "io.buildpacks.stacks.bionic"
-mixins = ["yj", "yq"]
-
-[metadata]
-checksum = "awesome"
-"#;
-
-        let result = toml::from_str::<BuildpackToml<toml::value::Table>>(raw);
-        assert!(result.is_ok());
-        if let Ok(toml) = result {
-            assert_eq!(
-                toml.buildpack.description.unwrap(),
-                "A buildpack for Foo Bar"
-            );
-            assert_eq!(toml.buildpack.keywords.len(), 2);
-            assert_eq!(toml.buildpack.licenses.len(), 3);
-        }
-    }
-
-    #[test]
-    fn can_deserialize_minimal_buildpack() {
-        let raw = r#"
-api = "0.4"
-
-[buildpack]
-id = "foo/bar"
-name = "Bar Buildpack"
-version = "0.0.1"
-
-[[stacks]]
-id = "io.buildpacks.stacks.bionic"
-
-[metadata]
-checksum = "awesome"
-"#;
-
-        let result = toml::from_str::<BuildpackToml<toml::value::Table>>(raw);
-        assert!(result.is_ok());
-        if let Ok(toml) = result {
-            assert!(!toml.buildpack.clear_env);
-        }
-    }
-
-    #[test]
-    fn can_deserialize_minimal_metabuildpack() {
-        let raw = r#"
-api = "0.4"
-
-[buildpack]
-id = "foo/bar"
-name = "Bar Buildpack"
-version = "0.0.1"
-
-[[order]]
-[[order.group]]
-id = "foo/baz"
-version = "0.0.2"
-
-[[stacks]]
-id = "io.buildpacks.stacks.bionic"
-"#;
-
-        let result = toml::from_str::<BuildpackToml<Option<toml::value::Table>>>(raw);
-        assert!(result.is_ok());
-        if let Ok(toml) = result {
-            assert!(!toml.order.get(0).unwrap().group.get(0).unwrap().optional);
-        }
-    }
-
-    #[test]
-    fn stacks_valid() {
-        let raw = r#"
-api = "0.6"
-
-[buildpack]
-id = "foo/bar"
-name = "Bar Buildpack"
-version = "0.0.1"
-
 [[stacks]]
 id = "heroku-20"
 
@@ -214,15 +127,53 @@ mixins = []
 
 [[stacks]]
 id = "io.buildpacks.stacks.focal"
-mixins = ["yj", "yq"]
+mixins = ["build:jq", "wget"]
 
 # As counter-intuitive as it may seem, the CNB spec permits specifying
 # the "any" stack at the same time as stacks with specific IDs.
 [[stacks]]
 id = "*"
-"#;
 
-        let buildpack_toml = toml::from_str::<GenericBuildpackToml>(raw).unwrap();
+[metadata]
+checksum = "abc123"
+        "#;
+
+        let buildpack_toml = toml::from_str::<GenericBuildpackToml>(toml_str).unwrap();
+
+        assert_eq!(buildpack_toml.api, BuildpackApi { major: 0, minor: 6 });
+        assert_eq!(buildpack_toml.buildpack.id, "foo/bar".parse().unwrap());
+        assert_eq!(buildpack_toml.buildpack.name, String::from("Bar Buildpack"));
+        assert_eq!(buildpack_toml.buildpack.version, Version::new(0, 0, 1));
+        assert_eq!(
+            buildpack_toml.buildpack.homepage,
+            Some(String::from("https://example.tld"))
+        );
+        assert!(buildpack_toml.buildpack.clear_env);
+        assert_eq!(
+            buildpack_toml.buildpack.description,
+            Some(String::from("A buildpack for Foo Bar"))
+        );
+        assert_eq!(
+            buildpack_toml.buildpack.keywords,
+            vec![String::from("foo"), String::from("bar")]
+        );
+        assert_eq!(
+            buildpack_toml.buildpack.licenses,
+            vec![
+                License {
+                    r#type: Some(String::from("BSD-3-Clause")),
+                    uri: None
+                },
+                License {
+                    r#type: Some(String::from("Custom license with type and URI")),
+                    uri: Some(String::from("https://example.tld/my-license"))
+                },
+                License {
+                    r#type: None,
+                    uri: Some(String::from("https://example.tld/my-license"))
+                }
+            ]
+        );
         assert_eq!(
             buildpack_toml.stacks,
             vec![
@@ -237,10 +188,220 @@ id = "*"
                 },
                 Stack::Specific {
                     id: "io.buildpacks.stacks.focal".parse().unwrap(),
-                    mixins: vec![String::from("yj"), String::from("yq")]
+                    mixins: vec![String::from("build:jq"), String::from("wget")]
                 },
                 Stack::Any
             ]
         );
+        assert_eq!(buildpack_toml.order, Vec::new());
+        assert_eq!(
+            buildpack_toml.metadata.unwrap().get("checksum"),
+            Some(&toml::value::Value::try_from("abc123").unwrap())
+        );
+    }
+
+    #[test]
+    fn deserialize_metabuildpack() {
+        let toml_str = r#"
+api = "0.6"
+
+[buildpack]
+id = "foo/bar"
+name = "Bar Buildpack"
+version = "0.0.1"
+homepage = "https://example.tld"
+clear-env = true
+description = "A buildpack for Foo Bar"
+keywords = ["foo", "bar"]
+
+[[buildpack.licenses]]
+type = "BSD-3-Clause"
+
+[[buildpack.licenses]]
+type = "Custom license with type and URI"
+uri = "https://example.tld/my-license"
+
+[[buildpack.licenses]]
+uri = "https://example.tld/my-license"
+
+# This is invalid according to the spec, however libcnb currently requires it:
+# https://github.com/Malax/libcnb.rs/issues/211
+[[stacks]]
+id = "*"
+
+[[order]]
+
+[[order.group]]
+id = "foo/bar"
+version = "0.0.1"
+
+[[order.group]]
+id = "foo/baz"
+version = "0.1.0"
+optional = true
+
+[metadata]
+checksum = "abc123"
+        "#;
+
+        let buildpack_toml = toml::from_str::<GenericBuildpackToml>(toml_str).unwrap();
+
+        assert_eq!(buildpack_toml.api, BuildpackApi { major: 0, minor: 6 });
+        assert_eq!(buildpack_toml.buildpack.id, "foo/bar".parse().unwrap());
+        assert_eq!(buildpack_toml.buildpack.name, String::from("Bar Buildpack"));
+        assert_eq!(buildpack_toml.buildpack.version, Version::new(0, 0, 1));
+        assert_eq!(
+            buildpack_toml.buildpack.homepage,
+            Some(String::from("https://example.tld"))
+        );
+        assert!(buildpack_toml.buildpack.clear_env);
+        assert_eq!(
+            buildpack_toml.buildpack.description,
+            Some(String::from("A buildpack for Foo Bar"))
+        );
+        assert_eq!(
+            buildpack_toml.buildpack.keywords,
+            vec![String::from("foo"), String::from("bar")]
+        );
+        assert_eq!(
+            buildpack_toml.buildpack.licenses,
+            vec![
+                License {
+                    r#type: Some(String::from("BSD-3-Clause")),
+                    uri: None
+                },
+                License {
+                    r#type: Some(String::from("Custom license with type and URI")),
+                    uri: Some(String::from("https://example.tld/my-license"))
+                },
+                License {
+                    r#type: None,
+                    uri: Some(String::from("https://example.tld/my-license"))
+                }
+            ]
+        );
+        // This is invalid according to the spec, however libcnb currently requires it:
+        // https://github.com/Malax/libcnb.rs/issues/211
+        assert_eq!(buildpack_toml.stacks, vec![Stack::Any]);
+        assert_eq!(
+            buildpack_toml.order,
+            vec![Order {
+                group: vec![
+                    Group {
+                        id: "foo/bar".parse().unwrap(),
+                        version: Version::new(0, 0, 1),
+                        optional: false
+                    },
+                    Group {
+                        id: "foo/baz".parse().unwrap(),
+                        version: Version::new(0, 1, 0),
+                        optional: true
+                    }
+                ]
+            }]
+        );
+        assert_eq!(
+            buildpack_toml.metadata.unwrap().get("checksum"),
+            Some(&toml::value::Value::try_from("abc123").unwrap())
+        );
+    }
+
+    #[test]
+    fn deserialize_minimal_buildpack() {
+        let toml_str = r#"
+api = "0.6"
+
+[buildpack]
+id = "foo/bar"
+name = "Bar Buildpack"
+version = "0.0.1"
+
+[[stacks]]
+id = "*"
+        "#;
+
+        let buildpack_toml = toml::from_str::<GenericBuildpackToml>(toml_str).unwrap();
+
+        assert_eq!(buildpack_toml.api, BuildpackApi { major: 0, minor: 6 });
+        assert_eq!(buildpack_toml.buildpack.id, "foo/bar".parse().unwrap());
+        assert_eq!(buildpack_toml.buildpack.name, String::from("Bar Buildpack"));
+        assert_eq!(buildpack_toml.buildpack.version, Version::new(0, 0, 1));
+        assert_eq!(buildpack_toml.buildpack.homepage, None);
+        assert!(!buildpack_toml.buildpack.clear_env);
+        assert_eq!(buildpack_toml.buildpack.description, None);
+        assert_eq!(buildpack_toml.buildpack.keywords, Vec::<String>::new());
+        assert_eq!(buildpack_toml.buildpack.licenses, Vec::new());
+        assert_eq!(buildpack_toml.stacks, vec![Stack::Any]);
+        assert_eq!(buildpack_toml.order, Vec::new());
+        assert_eq!(buildpack_toml.metadata, None);
+    }
+
+    #[test]
+    fn deserialize_minimal_metabuildpack() {
+        let toml_str = r#"
+api = "0.6"
+
+[buildpack]
+id = "foo/bar"
+name = "Bar Buildpack"
+version = "0.0.1"
+
+# This is invalid according to the spec, however libcnb currently requires it:
+# https://github.com/Malax/libcnb.rs/issues/211
+[[stacks]]
+id = "*"
+
+[[order]]
+
+[[order.group]]
+id = "foo/bar"
+version = "0.0.1"
+"#;
+
+        let buildpack_toml = toml::from_str::<GenericBuildpackToml>(toml_str).unwrap();
+
+        assert_eq!(buildpack_toml.api, BuildpackApi { major: 0, minor: 6 });
+        assert_eq!(buildpack_toml.buildpack.id, "foo/bar".parse().unwrap());
+        assert_eq!(buildpack_toml.buildpack.name, String::from("Bar Buildpack"));
+        assert_eq!(buildpack_toml.buildpack.version, Version::new(0, 0, 1));
+        assert_eq!(buildpack_toml.buildpack.homepage, None);
+        assert!(!buildpack_toml.buildpack.clear_env);
+        assert_eq!(buildpack_toml.buildpack.description, None);
+        assert_eq!(buildpack_toml.buildpack.keywords, Vec::<String>::new());
+        assert_eq!(buildpack_toml.buildpack.licenses, Vec::new());
+        // This is invalid according to the spec, however libcnb currently requires it:
+        // https://github.com/Malax/libcnb.rs/issues/211
+        assert_eq!(buildpack_toml.stacks, vec![Stack::Any]);
+        assert_eq!(
+            buildpack_toml.order,
+            vec![Order {
+                group: vec![Group {
+                    id: "foo/bar".parse().unwrap(),
+                    version: Version::new(0, 0, 1),
+                    optional: false
+                }]
+            }]
+        );
+        assert_eq!(buildpack_toml.metadata, None);
+    }
+
+    #[test]
+    fn reject_invalid_buildpack_version() {
+        let toml_str = r#"
+api = "0.6"
+
+[buildpack]
+id = "foo/bar"
+name = "Bar Buildpack"
+version = "1.0"
+
+[[stacks]]
+id = "*"
+        "#;
+
+        let err = toml::from_str::<GenericBuildpackToml>(toml_str).unwrap_err();
+        assert!(err
+            .to_string()
+            .contains("unexpected end of input while parsing minor version number for key `buildpack.version`"));
     }
 }

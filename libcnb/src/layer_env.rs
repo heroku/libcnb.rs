@@ -517,11 +517,7 @@ impl LayerEnvDelta {
 
             if let Some(file_name_stem) = file_name_stem {
                 let modification_behavior = match file_name_extension {
-                    None => {
-                        // TODO: This is different for CNB API versions > 0.5:
-                        // https://github.com/buildpacks/lifecycle/blob/a7428a55c2a14d8a37e84285b95dc63192e3264e/env/env.go#L66-L71
-                        Some(ModificationBehavior::Override)
-                    }
+                    None => Some(ModificationBehavior::Override),
                     Some(file_name_extension) => match file_name_extension.to_str() {
                         Some("append") => Some(ModificationBehavior::Append),
                         Some("default") => Some(ModificationBehavior::Default),
@@ -750,8 +746,23 @@ mod tests {
     #[test]
     fn test_layer_env_delta_fs_read_write() {
         let mut original_delta = LayerEnvDelta::new();
-        original_delta.insert(ModificationBehavior::Default, "FOO", "BAR");
         original_delta.insert(ModificationBehavior::Append, "APPEND_TO_ME", "NEW_VALUE");
+        original_delta.insert(
+            ModificationBehavior::Default,
+            "SET_THE_DEFAULT",
+            "DEFAULT_VAUE",
+        );
+        original_delta.insert(ModificationBehavior::Delimiter, "APPEND_TO_ME", ";");
+        original_delta.insert(
+            ModificationBehavior::Override,
+            "OVERRIDE_THIS",
+            "OVERRIDE_VALUE",
+        );
+        original_delta.insert(
+            ModificationBehavior::Prepend,
+            "PREPEND_THIS",
+            "PREPEND_VALUE",
+        );
 
         let temp_dir = tempdir().unwrap();
 
