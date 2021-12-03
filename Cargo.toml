@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "libcnb",
+    "libcnb-cargo",
     "libcnb-data",
     "libcnb-proc-macros",
     "examples/example-01-basics",
