@@ -286,10 +286,6 @@ impl LayerEnv {
     /// assert_eq!(modified_env.get("PATH").unwrap(), layer_dir.join("bin"));
     /// assert_eq!(modified_env.get("ZERO_WING").unwrap(), "ALL_YOUR_BASE_ARE_BELONG_TO_US");
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// This is an error that arises from reading the file.
     pub fn read_from_layer_dir(layer_dir: impl AsRef<Path>) -> Result<Self, std::io::Error> {
         let mut result_layer_env = Self::new();
 
@@ -363,9 +359,6 @@ impl LayerEnv {
     /// assert_eq!(fs::read_to_string(temp_dir.path().join("env.build").join("FOO.default")).unwrap(), "bar");
     /// assert_eq!(fs::read_to_string(temp_dir.path().join("env").join("PATH.append")).unwrap(), "some-path");
     /// ```
-    /// # Errors
-    ///
-    /// This error is a `std::io::Err`, an I/O error.
     pub fn write_to_layer_dir(&self, layer_dir: impl AsRef<Path>) -> std::io::Result<()> {
         self.all.write_to_env_dir(layer_dir.as_ref().join("env"))?;
 

@@ -69,9 +69,6 @@ impl PassDetectResultBuilder {
     /// in: a buildpack's [detect method](crate::Buildpack::detect).
     ///
     /// See [`build_unwrapped`](Self::build_unwrapped) for an unwrapped version of this method.
-    /// # Errors
-    ///
-    /// This error is a `std::io::Error`, an I/O error.
     pub fn build<E>(self) -> Result<DetectResult, E> {
         Ok(self.build_unwrapped())
     }
@@ -100,9 +97,6 @@ impl FailDetectResultBuilder {
     /// in: a buildpack's [detect method](crate::Buildpack::detect).
     ///
     /// See [`build_unwrapped`](Self::build_unwrapped) for an unwrapped version of this method.
-    /// # Errors
-    ///
-    /// This error is a `std::io::Error`, an I/O error.
     pub fn build<E>(self) -> Result<DetectResult, E> {
         Ok(self.build_unwrapped())
     }

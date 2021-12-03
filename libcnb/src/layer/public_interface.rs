@@ -41,12 +41,7 @@ pub trait Layer {
     /// will be written to the appropriate locations by libcnb automatically.
     ///
     /// # Implementation Requirements
-    ///
     /// Implementations **MUST NOT** write to any other location than `layer_path`.
-    ///
-    /// # Errors
-    ///
-    /// This error is a `BuildpackError(e)`, where the error is defined in the buildpack.
     fn create(
         &self,
         context: &BuildContext<Self::Buildpack>,
@@ -76,9 +71,6 @@ pub trait Layer {
     ///
     /// # Implementation Requirements
     /// Implementations **MUST NOT** modify the file-system.
-    /// # Errors
-    ///
-    /// This error is a `BuildpackError(e)`, where the error is defined in the buildpack.
     fn existing_layer_strategy(
         &self,
         context: &BuildContext<Self::Buildpack>,
@@ -105,9 +97,6 @@ pub trait Layer {
     ///
     /// # Implementation Requirements
     /// Implementations **MUST NOT** write to any other location than `layer_path`.
-    /// # Errors
-    ///
-    /// This error is a `BuildpackError(e)`, where the error is defined in the buildpack.
     fn update(
         &self,
         context: &BuildContext<Self::Buildpack>,
@@ -133,9 +122,6 @@ pub trait Layer {
     /// # Implementation Requirements
     /// Implementations **MUST** be read-only. They **MUST NOT** modify the file-system or write
     /// anything to stdout/stdout or any other stream.
-    /// # Errors
-    ///
-    /// This error is a `BuildpackError(e)`, where the error is defined in the buildpack.
     fn migrate_incompatible_metadata(
         &self,
         context: &BuildContext<Self::Buildpack>,
@@ -209,9 +195,6 @@ impl<M> LayerResultBuilder<M> {
     /// [update](crate::layer::Layer::update) methods.
     ///
     /// See [`build_unwrapped`](Self::build_unwrapped) for an unwrapped version of this method.
-    /// # Errors
-    ///
-    /// Hey Manuel, pls explain error here.
     pub fn build<E>(self) -> Result<LayerResult<M>, E> {
         Ok(self.build_unwrapped())
     }

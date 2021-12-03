@@ -28,16 +28,10 @@ pub trait Buildpack {
 
     /// Detect logic for this buildpack. Directly corresponds to
     /// [detect in the CNB buildpack interface](https://github.com/buildpacks/spec/blob/platform/v0.6/buildpack.md#detection).
-    /// # Errors
-    ///
-    /// This error is a `BuildpackError(e)`, where the error is defined in the buildpack.
     fn detect(&self, context: DetectContext<Self>) -> crate::Result<DetectResult, Self::Error>;
 
     /// Build logic for this buildpack. Directly corresponds to
     /// [build in the CNB buildpack interface](https://github.com/buildpacks/spec/blob/platform/v0.6/buildpack.md#build).
-    /// # Errors
-    ///
-    /// This error is a `BuildpackError(e)`, where the error is defined in the buildpack.
     fn build(&self, context: BuildContext<Self>) -> crate::Result<BuildResult, Self::Error>;
 
     /// If an unhandled error occurred within the framework or the buildpack, this method will be

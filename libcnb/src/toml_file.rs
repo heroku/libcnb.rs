@@ -14,9 +14,6 @@ pub enum TomlFileError {
     TomlSerializationError(#[from] toml::ser::Error),
 }
 
-/// # Errors
-///
-/// This error is a `TomlFileError` that is either an `IoError` or `TomlSerializationError` from writing a toml file.
 pub fn write_toml_file(
     value: &impl Serialize,
     path: impl AsRef<Path>,
@@ -26,9 +23,6 @@ pub fn write_toml_file(
     Ok(())
 }
 
-/// # Errors
-///
-/// This error is a `TomlFileError` that is either an `IoError` or `TomlDeserializationError` from writing a toml file.
 pub fn read_toml_file<A: DeserializeOwned>(path: impl AsRef<Path>) -> Result<A, TomlFileError> {
     let contents = fs::read_to_string(path)?;
     Ok(toml::from_str(&contents)?)
