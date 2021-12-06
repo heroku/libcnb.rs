@@ -750,7 +750,7 @@ mod tests {
         original_delta.insert(
             ModificationBehavior::Default,
             "SET_THE_DEFAULT",
-            "DEFAULT_VAUE",
+            "DEFAULT_VALUE",
         );
         original_delta.insert(ModificationBehavior::Delimiter, "APPEND_TO_ME", ";");
         original_delta.insert(
