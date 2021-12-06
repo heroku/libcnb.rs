@@ -177,7 +177,7 @@ mod tests {
     }
 
     #[test]
-    fn test_type_eq() {
+    fn type_eq() {
         assert_eq!(
             "Katrin".parse::<CapitalizedName>(),
             "Katrin".parse::<CapitalizedName>()
@@ -189,12 +189,12 @@ mod tests {
     }
 
     #[test]
-    fn test_literal_macro_success() {
+    fn literal_macro_success() {
         assert_eq!("Jonas", capitalized_name!("Jonas").as_ref());
     }
 
     #[test]
-    fn test_deref() {
+    fn deref() {
         fn foo(name: &str) {
             assert_eq!(name, "Johanna");
         }
@@ -204,7 +204,7 @@ mod tests {
     }
 
     #[test]
-    fn test_deserialize() {
+    fn deserialize() {
         assert_de_tokens(&capitalized_name!("Jonas"), &[Token::Str("Jonas")]);
         assert_de_tokens(&capitalized_name!("Johanna"), &[Token::Str("Johanna")]);
 

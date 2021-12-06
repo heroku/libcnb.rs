@@ -98,7 +98,7 @@ impl<'a> IntoIterator for &'a Env {
 mod tests {
     #[test]
     #[cfg(target_family = "unix")]
-    fn test_into_iterator() {
+    fn into_iterator() {
         use crate::Env;
         use std::process::Command;
 
