@@ -388,7 +388,16 @@ fn create_then_keep() {
     )
     .unwrap();
 
-    let handle_layer_result = handle_layer(&context, layer_name.clone(), test_layer).unwrap();
+    let handle_layer_result = handle_layer(
+        &context,
+        layer_name.clone(),
+        TestLayer {
+            // Since we want to keep an existing layer as-is, this version must not be written
+            write_version: String::from("UNUSED_BECAUSE_OF_EXISTING_LAYER_STRATEGY_KEEP"),
+            ..test_layer
+        },
+    )
+    .unwrap();
 
     // Assert layer content metadata, returned and on disk
     let expected_content_layer_metadata = LayerContentMetadata {
