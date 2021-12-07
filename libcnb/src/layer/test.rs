@@ -29,7 +29,7 @@ use rand::Rng;
 use serde::Deserialize;
 use serde::Serialize;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use tempfile::{tempdir, TempDir};
 
 const TEST_LAYER_LAUNCH: bool = true;
@@ -744,6 +744,91 @@ fn write_layer_env() {
             .unwrap();
 
     assert_eq!(layer_env_from_disk, layer_env);
+}
+
+#[test]
+fn default_layer_method_implementations() {
+    struct SimpleLayer;
+
+    impl Layer for SimpleLayer {
+        type Buildpack = TestBuildpack;
+        type Metadata = SimpleLayerMetadata;
+
+        fn types(&self) -> LayerTypes {
+            LayerTypes {
+                launch: false,
+                build: false,
+                cache: false,
+            }
+        }
+
+        fn create(
+            &self,
+            _context: &BuildContext<Self::Buildpack>,
+            _layer_path: &Path,
+        ) -> Result<LayerResult<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {
+            LayerResultBuilder::new(SimpleLayerMetadata {
+                field_one: String::from("value one"),
+                field_two: 2,
+            })
+            .build()
+        }
+    }
+
+    #[derive(Deserialize, Serialize, Debug, Eq, PartialEq, Clone)]
+    struct SimpleLayerMetadata {
+        field_one: String,
+        field_two: i32,
+    }
+
+    let temp_dir = tempdir().unwrap();
+    let context = build_context(&temp_dir);
+    let layer_name = random_layer_name();
+    let simple_layer = SimpleLayer;
+
+    let simple_layer_metadata = SimpleLayerMetadata {
+        field_one: String::from("value one"),
+        field_two: 2,
+    };
+
+    let layer_data = LayerData {
+        name: layer_name,
+        path: PathBuf::default(),
+        env: LayerEnv::new().chainable_insert(
+            TargetLifecycle::All,
+            ModificationBehavior::Default,
+            "FOO",
+            "bar",
+        ),
+        content_metadata: LayerContentMetadata {
+            types: LayerTypes::default(),
+            metadata: simple_layer_metadata.clone(),
+        },
+    };
+
+    // Assert that the default migrate_incompatible_metadata implementation always returns
+    // MetadataMigration::RecreateLayer.
+    match simple_layer.migrate_incompatible_metadata(&context, &GenericMetadata::default()) {
+        Ok(MetadataMigration::RecreateLayer) => {}
+        // Since GenericMetadata does not implement PartialEq, we cannot do an assert_eq here
+        _ => panic!("Expected Ok(MetadataMigration::RecreateLayer)!"),
+    }
+
+    // Assert that the default existing_layer_strategy implementation always returns
+    // ExistingLayerStrategy::Recreate.
+    assert_eq!(
+        simple_layer
+            .existing_layer_strategy(&context, &layer_data)
+            .unwrap(),
+        ExistingLayerStrategy::Recreate
+    );
+
+    // Assert that the default update implementation returns both the layer metadata and environment
+    // they way they were.
+    let update_result = simple_layer.update(&context, &layer_data).unwrap();
+
+    assert_eq!(update_result.env, Some(layer_data.env));
+    assert_eq!(update_result.metadata, simple_layer_metadata);
 }
 
 fn build_context(temp_dir: &TempDir) -> BuildContext<TestBuildpack> {
