@@ -656,13 +656,13 @@ fn error_handling_no_directory() {
     let context = build_context(&temp_dir);
     let layer_name = random_layer_name();
 
-    let layer_dir = temp_dir
+    let layer_toml_path = temp_dir
         .path()
         .join("layers")
         .join(format!("{}.toml", layer_name.as_str()));
 
     fs::write(
-        &layer_dir,
+        &layer_toml_path,
         r#"
 [types]
 launch = true
