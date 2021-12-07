@@ -29,47 +29,11 @@ const TEST_LAYER_UPDATE_FILE_CONTENTS: &str = "ran";
 const TEST_LAYER_CREATE_FILE_NAME: &str = "create";
 const TEST_LAYER_UPDATE_FILE_NAME: &str = "update";
 
-struct TestBuildpack;
-
-impl Buildpack for TestBuildpack {
-    type Platform = GenericPlatform;
-    type Metadata = GenericMetadata;
-    type Error = TestBuildpackError;
-
-    fn detect(&self, _context: DetectContext<Self>) -> crate::Result<DetectResult, Self::Error> {
-        DetectResultBuilder::pass().build()
-    }
-
-    fn build(&self, _context: BuildContext<Self>) -> crate::Result<BuildResult, Self::Error> {
-        BuildResultBuilder::new().build()
-    }
-}
-
-#[derive(Debug)]
-enum TestBuildpackError {
-    IoError(std::io::Error),
-}
-
 #[derive(Clone)]
 struct TestLayer {
     existing_layer_strategy: ExistingLayerStrategy,
     write_layer_env: Option<LayerEnv>,
     write_version: String,
-}
-
-impl Default for TestLayer {
-    fn default() -> Self {
-        TestLayer {
-            existing_layer_strategy: ExistingLayerStrategy::Recreate,
-            write_version: String::from("1.0.0"),
-            write_layer_env: None,
-        }
-    }
-}
-
-#[derive(Deserialize, Serialize, Debug, Clone, Eq, PartialEq)]
-struct TestLayerMetadata {
-    version: String,
 }
 
 impl Layer for TestLayer {
@@ -133,6 +97,21 @@ impl Layer for TestLayer {
                 }))
             }
             _ => Ok(MetadataMigration::RecreateLayer),
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, Eq, PartialEq)]
+struct TestLayerMetadata {
+    version: String,
+}
+
+impl Default for TestLayer {
+    fn default() -> Self {
+        TestLayer {
+            existing_layer_strategy: ExistingLayerStrategy::Recreate,
+            write_version: String::from("1.0.0"),
+            write_layer_env: None,
         }
     }
 }
@@ -778,4 +757,25 @@ fn random_layer_name() -> LayerName {
         .collect::<String>()
         .parse()
         .unwrap()
+}
+
+struct TestBuildpack;
+
+impl Buildpack for TestBuildpack {
+    type Platform = GenericPlatform;
+    type Metadata = GenericMetadata;
+    type Error = TestBuildpackError;
+
+    fn detect(&self, _context: DetectContext<Self>) -> crate::Result<DetectResult, Self::Error> {
+        DetectResultBuilder::pass().build()
+    }
+
+    fn build(&self, _context: BuildContext<Self>) -> crate::Result<BuildResult, Self::Error> {
+        BuildResultBuilder::new().build()
+    }
+}
+
+#[derive(Debug)]
+enum TestBuildpackError {
+    IoError(std::io::Error),
 }
