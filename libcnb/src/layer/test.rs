@@ -277,6 +277,7 @@ fn create_then_recreate() {
     let layer_name = random_layer_name();
     let residue_file_name = "RESIDUE.txt";
     let metadata_version_string = String::from("2.3.4");
+    let recreated_metadata_version_string = String::from("1.0.0");
     let test_layer = TestLayer {
         existing_layer_strategy: ExistingLayerStrategy::Recreate,
         write_version: metadata_version_string.clone(),
@@ -294,7 +295,15 @@ fn create_then_recreate() {
     )
     .unwrap();
 
-    let handle_layer_result = handle_layer(&context, layer_name.clone(), test_layer).unwrap();
+    let handle_layer_result = handle_layer(
+        &context,
+        layer_name.clone(),
+        TestLayer {
+            write_version: recreated_metadata_version_string.clone(),
+            ..test_layer
+        },
+    )
+    .unwrap();
 
     // Assert layer content metadata, returned and on disk
     let expected_content_layer_metadata = LayerContentMetadata {
@@ -304,7 +313,7 @@ fn create_then_recreate() {
             cache: TEST_LAYER_CACHE,
         },
         metadata: TestLayerMetadata {
-            version: metadata_version_string,
+            version: recreated_metadata_version_string,
         },
     };
 
