@@ -602,7 +602,7 @@ mod tests {
     /// Direct port of a test from the reference lifecycle implementation:
     /// See: <https://github.com/buildpacks/lifecycle/blob/a7428a55c2a14d8a37e84285b95dc63192e3264e/env/env_test.go#L105-L154>
     #[test]
-    fn test_reference_impl_env_files_have_a_suffix_it_performs_the_matching_action() {
+    fn reference_impl_env_files_have_a_suffix_it_performs_the_matching_action() {
         let temp_dir = tempdir().unwrap();
 
         let mut files = HashMap::new();
@@ -671,7 +671,7 @@ mod tests {
     /// Direct port of a test from the reference lifecycle implementation:
     /// See: <https://github.com/buildpacks/lifecycle/blob/a7428a55c2a14d8a37e84285b95dc63192e3264e/env/env_test.go#L188-L210>
     #[test]
-    fn test_reference_impl_env_files_have_no_suffix_default_action_is_override() {
+    fn reference_impl_env_files_have_no_suffix_default_action_is_override() {
         let temp_dir = tempdir().unwrap();
 
         let mut files = HashMap::new();
@@ -707,7 +707,7 @@ mod tests {
     /// Direct port of a test from the reference lifecycle implementation:
     /// See: <https://github.com/buildpacks/lifecycle/blob/a7428a55c2a14d8a37e84285b95dc63192e3264e/env/env_test.go#L55-L80>
     #[test]
-    fn test_reference_impl_add_root_dir_should_append_posix_directories() {
+    fn reference_impl_add_root_dir_should_append_posix_directories() {
         let temp_dir = tempdir().unwrap();
         fs::create_dir_all(temp_dir.path().join("bin")).unwrap();
         fs::create_dir_all(temp_dir.path().join("lib")).unwrap();
@@ -744,7 +744,7 @@ mod tests {
     }
 
     #[test]
-    fn test_layer_env_delta_fs_read_write() {
+    fn layer_env_delta_fs_read_write() {
         let mut original_delta = LayerEnvDelta::new();
         original_delta.insert(ModificationBehavior::Append, "APPEND_TO_ME", "NEW_VALUE");
         original_delta.insert(
@@ -773,7 +773,7 @@ mod tests {
     }
 
     #[test]
-    fn test_layer_env_insert() {
+    fn layer_env_insert() {
         let mut layer_env = LayerEnv::new();
         layer_env.insert(
             TargetLifecycle::Build,
@@ -814,7 +814,7 @@ mod tests {
     }
 
     #[test]
-    fn test_modification_behavior_order() {
+    fn modification_behavior_order() {
         let tests = vec![
             (
                 ModificationBehavior::Append,
@@ -849,7 +849,7 @@ mod tests {
     }
 
     #[test]
-    fn test_layer_env_delta_eq() {
+    fn layer_env_delta_eq() {
         let mut delta_1 = LayerEnvDelta::new();
         delta_1.insert(ModificationBehavior::Default, "a", "avalue");
         delta_1.insert(ModificationBehavior::Default, "b", "bvalue");
@@ -864,7 +864,7 @@ mod tests {
     }
 
     #[test]
-    fn test_read_from_layer_dir_layer_paths_launch() {
+    fn read_from_layer_dir_layer_paths_launch() {
         let temp_dir = tempdir().unwrap();
         let layer_dir = temp_dir.path();
 
@@ -889,7 +889,7 @@ mod tests {
     }
 
     #[test]
-    fn test_read_from_layer_dir_layer_paths_build() {
+    fn read_from_layer_dir_layer_paths_build() {
         let temp_dir = tempdir().unwrap();
         let layer_dir = temp_dir.path();
 
