@@ -64,8 +64,11 @@ impl Layer for TestLayer {
         _context: &BuildContext<Self::Buildpack>,
         layer_path: &Path,
     ) -> Result<LayerResult<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {
-        fs::write(layer_path.join("create"), TEST_LAYER_CREATE_FILE_CONTENTS)
-            .map_err(TestBuildpackError::IoError)?;
+        fs::write(
+            layer_path.join(TEST_LAYER_CREATE_FILE_NAME),
+            TEST_LAYER_CREATE_FILE_CONTENTS,
+        )
+        .map_err(TestBuildpackError::IoError)?;
 
         LayerResultBuilder::new(TestLayerMetadata {
             version: self.write_version.clone(),
@@ -88,7 +91,7 @@ impl Layer for TestLayer {
         layer_data: &LayerData<Self::Metadata>,
     ) -> Result<LayerResult<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {
         fs::write(
-            layer_data.path.join("update"),
+            layer_data.path.join(TEST_LAYER_UPDATE_FILE_NAME),
             TEST_LAYER_UPDATE_FILE_CONTENTS,
         )
         .map_err(TestBuildpackError::IoError)?;
