@@ -280,7 +280,7 @@ fn create_then_recreate() {
     let recreated_metadata_version_string = String::from("1.0.0");
     let test_layer = TestLayer {
         existing_layer_strategy: ExistingLayerStrategy::Recreate,
-        write_version: metadata_version_string.clone(),
+        write_version: metadata_version_string,
         write_layer_env: None,
     };
 
