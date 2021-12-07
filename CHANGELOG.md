@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Add `PartialEq` and `Eq` implementations for `Process`.
 - Add support for `default` key in `launch.toml` in `Process` struct
 - Support the new `buildpack.toml` fields `description`, `keywords` and `licenses`
 - Set a minimum required Rust version of 1.56 and switch to the 2021 Rust edition
@@ -29,7 +30,7 @@
 - Add `LayerEnv::chainable_insert`
 - `LayerEnv` and `ModificationBehavior` now implement `Clone`.
 - Add `stack_id!`, `buildpack_id!` and `process_type!` macros.
-- `Process::new` no longer returns a `Result` and it's `type` argument now is of type `ProcessType`. 
+- `Process::new` no longer returns a `Result` and it's `type` argument now is of type `ProcessType`.
 - Made it easier to work with buildpack errors during all phases of a `LayerLifecycle`.
 - `LayerEnv` was integrated into the `LayerLifecycle`, allowing buildpack authors to both write environment variables
   in a declarative way and using them between different layers without explicit IO.
