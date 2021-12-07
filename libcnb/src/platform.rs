@@ -112,7 +112,7 @@ mod tests {
     }
 
     #[test]
-    fn read_platform_env_doesnt_blow_up_if_platform_env_is_missing() {
+    fn read_platform_env_does_not_blow_up_if_platform_env_is_missing() {
         let tmpdir = tempfile::tempdir().unwrap();
 
         let result = read_platform_env(tmpdir.path());

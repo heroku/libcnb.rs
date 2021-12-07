@@ -4,7 +4,7 @@
 
 - Add support for `default` key in `launch.toml` in `Process` struct
 - Support the new `buildpack.toml` fields `description`, `keywords` and `licenses`
-- Set a minumim required Rust version of 1.56 and switch to the 2021 Rust edition
+- Set a minimum required Rust version of 1.56 and switch to the 2021 Rust edition
 - Stack id in `buildpack.toml` can now be `*` indicating "any" stack
 - LayerContentMetadata values (build, cache, launch) are now under a "types" key
 - Allow ProcessType to contain a dot (`.`) character
