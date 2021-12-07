@@ -1,3 +1,14 @@
+//! Tests for [`Layer`] and [`layer::handle_layer`].
+//!
+//! Even though they are implemented as unit tests, they are really integration tests since they
+//! need files on disk, an implementation of [`Layer`] and [`Buildpack`] and test logic across all
+//! of these parts. There is no other way of testing this if we want to keep the public API as-is.
+//! Please note that individual building blocks that are used in [`layer::handle_layer`] are unit
+//! tested separately.
+//!
+//! All tests in this module assume a specific [`Layer`] implementation that is also in this file.
+//! Look for the `TestLayer` type and it's [`Layer`] implementation.
+
 use crate::build::{BuildContext, BuildResult, BuildResultBuilder};
 use crate::data::buildpack_id;
 use crate::data::layer_content_metadata::LayerTypes;
