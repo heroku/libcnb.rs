@@ -43,7 +43,7 @@ pub enum UntarError {
 }
 
 pub fn sha256_checksum(path: impl AsRef<Path>) -> Result<String, std::io::Error> {
-    fs::read(path).map(|bytes| format!("{:x}", sha2::Sha256::digest(bytes.as_ref())))
+    fs::read(path).map(|bytes| format!("{:x}", sha2::Sha256::digest(bytes)))
 }
 
 /// Helper to run very simple commands where we just need to handle IO errors and non-zero exit
