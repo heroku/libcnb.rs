@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.4.0] 2021/12/08
+
 - Add `PartialEq` and `Eq` implementations for `Process`.
 - Add support for `default` key in `launch.toml` in `Process` struct
 - Support the new `buildpack.toml` fields `description`, `keywords` and `licenses`
