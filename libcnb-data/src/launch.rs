@@ -56,7 +56,7 @@ pub struct Label {
     pub value: String,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq)]
 pub struct Process {
     pub r#type: ProcessType,
     pub command: String,
