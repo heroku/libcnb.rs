@@ -132,10 +132,10 @@ impl Buildpack for HelloWorldBuildpack {
     // writing CNB TOML files are handled by libcnb.rs itself.
     type Error = GenericError;
 
-    // This method will be called when the CNB lifecycle calls detect. Use the `DetectContext` to
-    // access CNB data such as the stack this buildpack is currently executed on, the app
-    // directory and similar things. When using libcnb.rs, you never have to read environment
-    // variables or read/write files to disk to interact with the CNB lifecycle.
+    // This method will be called when the CNB lifecycle executes the detect phase (`bin/detect`).
+    // Use the `DetectContext` to access CNB data such as the stack this buildpack is currently
+    // executed on, the app directory and similar things. When using libcnb.rs, you never have
+    // to read environment variables or read/write files to disk to interact with the CNB lifecycle.
     //
     // One example of this is the return type of this method. `DetectResult` encapsulates the
     // required exit code as well as the data written to the build plan. libcnb.rs will,
@@ -146,7 +146,7 @@ impl Buildpack for HelloWorldBuildpack {
     }
 
     // Similar to detect, this method will be called when the CNB lifecycle executes the
-    // build phase.
+    // build phase (`bin/build`).
     fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildResult, Self::Error> {
         println!("Hello World!");
         println!("Build runs on stack {}!", context.stack_id);
