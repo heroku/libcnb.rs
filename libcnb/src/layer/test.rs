@@ -826,6 +826,77 @@ fn default_layer_method_implementations() {
     assert_eq!(update_result.metadata, simple_layer_metadata);
 }
 
+#[test]
+fn layer_env_read_write() {
+    #[derive(Clone)]
+    struct LayerDataTestLayer {
+        expected_layer_env: LayerEnv,
+    }
+
+    impl Layer for LayerDataTestLayer {
+        type Buildpack = TestBuildpack;
+        type Metadata = GenericMetadata;
+
+        fn types(&self) -> LayerTypes {
+            LayerTypes {
+                launch: true,
+                build: true,
+                cache: true,
+            }
+        }
+
+        fn create(
+            &self,
+            _context: &BuildContext<Self::Buildpack>,
+            _layer_path: &Path,
+        ) -> Result<LayerResult<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {
+            LayerResultBuilder::new(GenericMetadata::default())
+                .env(self.expected_layer_env.clone())
+                .build()
+        }
+
+        fn existing_layer_strategy(
+            &self,
+            _context: &BuildContext<Self::Buildpack>,
+            layer_data: &LayerData<Self::Metadata>,
+        ) -> Result<ExistingLayerStrategy, <Self::Buildpack as Buildpack>::Error> {
+            assert_eq!(&layer_data.env, &self.expected_layer_env);
+
+            Ok(ExistingLayerStrategy::Update)
+        }
+
+        fn update(
+            &self,
+            _context: &BuildContext<Self::Buildpack>,
+            layer_data: &LayerData<Self::Metadata>,
+        ) -> Result<LayerResult<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {
+            assert_eq!(&layer_data.env, &self.expected_layer_env);
+
+            LayerResultBuilder::new(GenericMetadata::default()).build()
+        }
+    }
+    let temp_dir = tempdir().unwrap();
+    let context = build_context(&temp_dir);
+    let layer_name = random_layer_name();
+
+    let layer = LayerDataTestLayer {
+        expected_layer_env: LayerEnv::new().chainable_insert(
+            TargetLifecycle::All,
+            ModificationBehavior::Override,
+            "FOO",
+            "bar",
+        ),
+    };
+
+    let handle_layer_result = handle_layer(&context, layer_name.clone(), layer.clone());
+    assert!(handle_layer_result.is_ok());
+
+    let handle_layer_result = handle_layer(&context, layer_name, layer);
+    assert!(handle_layer_result.is_ok());
+
+    // See the Layer implementation for more asserts
+}
+
 fn build_context(temp_dir: &TempDir) -> BuildContext<TestBuildpack> {
     let layers_dir = temp_dir.path().join("layers");
     let app_dir = temp_dir.path().join("app");
