@@ -6,7 +6,7 @@ rust-version = "1.56"
 license = "BSD-3-Clause"
 description = "Procedural macros used within libcnb.rs"
 repository = "https://github.com/Malax/libcnb.rs"
-readme = "README.md"
+readme = "../README.md"
 include = ["src/**/*", "../LICENSE", "../README.md"]
 
 [lib]
