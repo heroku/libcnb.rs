@@ -481,11 +481,6 @@ fn update_with_incompatible_metadata_replace() {
     fs::write(
         &test_layer_toml,
         r#"
-[types]
-launch = true
-build = true
-cache = true
-
 [metadata]
 v = "3.2.1"
     "#,
@@ -576,11 +571,6 @@ fn update_with_incompatible_metadata_recreate() {
     fs::write(
         &test_layer_toml,
         r#"
-[types]
-launch = true
-build = true
-cache = true
-
 [metadata]
 versi_on = "3.2.1"
     "#,
