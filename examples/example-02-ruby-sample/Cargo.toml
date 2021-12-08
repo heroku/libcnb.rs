@@ -1,7 +1,6 @@
 [package]
 name = "example-02-ruby-sample"
 version = "0.1.0"
-authors = ["Terence Lee <hone02@gmail.com>"]
 edition = "2021"
 rust-version = "1.56"
 
