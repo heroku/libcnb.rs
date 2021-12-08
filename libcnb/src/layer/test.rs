@@ -907,7 +907,7 @@ fn build_context(temp_dir: &TempDir) -> BuildContext<TestBuildpack> {
             api: LIBCNB_SUPPORTED_BUILDPACK_API,
             buildpack: crate::data::buildpack::Buildpack {
                 id: buildpack_id!("libcnb/test"),
-                name: "libcnb test buildpack".to_string(),
+                name: None,
                 version: "1.0.0".parse().unwrap(),
                 homepage: None,
                 clear_env: true,
