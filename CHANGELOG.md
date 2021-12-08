@@ -53,5 +53,6 @@
 - Fixed the `group` field on `buildpack::Order` to now be public.
 - Add an external Cargo command for packaging libcnb buildpacks. See the README for usage.
 - `libcnb_data::build_plan::Require` fields are now public.
+- `libcnb_data::buildpack::Buildpack` name field is now an `Option`.
 
 ## [0.3.0] 2021/09/17

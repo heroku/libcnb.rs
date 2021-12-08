@@ -56,7 +56,7 @@ pub struct BuildpackToml<BM> {
 #[derive(Deserialize, Debug)]
 pub struct Buildpack {
     pub id: BuildpackId,
-    pub name: String,
+    pub name: Option<String>,
     // MUST be in the form <X>.<Y>.<Z> where X, Y, and Z are non-negative integers and must not contain leading zeroes
     pub version: Version,
     pub homepage: Option<String>,
@@ -142,7 +142,10 @@ checksum = "abc123"
 
         assert_eq!(buildpack_toml.api, BuildpackApi { major: 0, minor: 6 });
         assert_eq!(buildpack_toml.buildpack.id, "foo/bar".parse().unwrap());
-        assert_eq!(buildpack_toml.buildpack.name, String::from("Bar Buildpack"));
+        assert_eq!(
+            buildpack_toml.buildpack.name,
+            Some(String::from("Bar Buildpack"))
+        );
         assert_eq!(buildpack_toml.buildpack.version, Version::new(0, 0, 1));
         assert_eq!(
             buildpack_toml.buildpack.homepage,
@@ -248,7 +251,10 @@ checksum = "abc123"
 
         assert_eq!(buildpack_toml.api, BuildpackApi { major: 0, minor: 6 });
         assert_eq!(buildpack_toml.buildpack.id, "foo/bar".parse().unwrap());
-        assert_eq!(buildpack_toml.buildpack.name, String::from("Bar Buildpack"));
+        assert_eq!(
+            buildpack_toml.buildpack.name,
+            Some(String::from("Bar Buildpack"))
+        );
         assert_eq!(buildpack_toml.buildpack.version, Version::new(0, 0, 1));
         assert_eq!(
             buildpack_toml.buildpack.homepage,
@@ -313,7 +319,6 @@ api = "0.6"
 
 [buildpack]
 id = "foo/bar"
-name = "Bar Buildpack"
 version = "0.0.1"
 
 [[stacks]]
@@ -324,7 +329,7 @@ id = "*"
 
         assert_eq!(buildpack_toml.api, BuildpackApi { major: 0, minor: 6 });
         assert_eq!(buildpack_toml.buildpack.id, "foo/bar".parse().unwrap());
-        assert_eq!(buildpack_toml.buildpack.name, String::from("Bar Buildpack"));
+        assert_eq!(buildpack_toml.buildpack.name, None);
         assert_eq!(buildpack_toml.buildpack.version, Version::new(0, 0, 1));
         assert_eq!(buildpack_toml.buildpack.homepage, None);
         assert!(!buildpack_toml.buildpack.clear_env);
@@ -343,7 +348,6 @@ api = "0.6"
 
 [buildpack]
 id = "foo/bar"
-name = "Bar Buildpack"
 version = "0.0.1"
 
 # This is invalid according to the spec, however libcnb currently requires it:
@@ -362,7 +366,7 @@ version = "0.0.1"
 
         assert_eq!(buildpack_toml.api, BuildpackApi { major: 0, minor: 6 });
         assert_eq!(buildpack_toml.buildpack.id, "foo/bar".parse().unwrap());
-        assert_eq!(buildpack_toml.buildpack.name, String::from("Bar Buildpack"));
+        assert_eq!(buildpack_toml.buildpack.name, None);
         assert_eq!(buildpack_toml.buildpack.version, Version::new(0, 0, 1));
         assert_eq!(buildpack_toml.buildpack.homepage, None);
         assert!(!buildpack_toml.buildpack.clear_env);
