@@ -14,13 +14,13 @@ name = "cargo-libcnb"
 path = "src/main.rs"
 
 [dependencies]
-toml = "0.5.8"
-libcnb-data = { version = "0.3.0", path = "../libcnb-data" }
 cargo_metadata = "0.14.1"
-which = "4.2.2"
-clap = "2.33.1"
-log = "0.4.14"
-stderrlog = "0.5.1"
-size_format = "1.0.2"
-pathdiff = "0.2.1"
+clap = "2.34.0"
 fs_extra = "1.2.0"
+libcnb-data = { version = "0.3.0", path = "../libcnb-data" }
+log = "0.4.14"
+pathdiff = "0.2.1"
+size_format = "1.0.2"
+stderrlog = "0.5.1"
+toml = "0.5.8"
+which = "4.2.2"

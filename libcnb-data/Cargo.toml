@@ -11,12 +11,12 @@ readme = "../README.md"
 include = ["src/**/*", "../LICENSE", "../README.md"]
 
 [dependencies]
-fancy-regex = "^0.7.1"
-semver = { version = "^1.0.4", features = ["serde"] }
-serde = { version = "^1.0.126", features = ["derive"] }
-thiserror = "^1.0.26"
-toml = "^0.5.8"
+fancy-regex = "0.7.1"
 libcnb-proc-macros = { path = "../libcnb-proc-macros", version = "0.1.0" }
+semver = { version = "1.0.4", features = ["serde"] }
+serde = { version = "1.0.130", features = ["derive"] }
+thiserror = "1.0.30"
+toml = "0.5.8"
 
 [dev-dependencies]
 serde_test = "1.0.130"

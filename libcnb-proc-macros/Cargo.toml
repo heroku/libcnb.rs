@@ -13,6 +13,6 @@ include = ["src/**/*", "../LICENSE", "../README.md"]
 proc-macro = true
 
 [dependencies]
-syn = {version = "1.0.81", features = ["full"]}
-quote = "1.0.10"
 fancy-regex = "0.7.1"
+quote = "1.0.10"
+syn = { version = "1.0.82", features = ["full"] }
