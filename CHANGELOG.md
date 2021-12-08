@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Add `must_use` attributes to a number of pure public methods.
+
 ## [0.4.0] 2021/12/08
 
 - Add `PartialEq` and `Eq` implementations for `Process`.

@@ -38,11 +38,13 @@ impl Env {
     /// variables afterwards will not be reflected in the returned value.
     ///
     /// See [`std::env::vars_os`]
+    #[must_use]
     pub fn from_current() -> Self {
         env::vars_os().into()
     }
 
     /// Creates an empty `Env` struct.
+    #[must_use]
     pub fn new() -> Self {
         Self {
             inner: HashMap::new(),
@@ -57,15 +59,18 @@ impl Env {
     }
 
     /// Returns a cloned value corresponding to the given key.
+    #[must_use]
     pub fn get(&self, key: impl AsRef<OsStr>) -> Option<OsString> {
         self.inner.get(key.as_ref()).cloned()
     }
 
     /// Returns true if the environment contains a value for the specified key.
+    #[must_use]
     pub fn contains_key(&self, key: impl AsRef<OsStr>) -> bool {
         self.inner.contains_key(key.as_ref())
     }
 
+    #[must_use]
     pub fn iter(&self) -> std::collections::hash_map::Iter<'_, OsString, OsString> {
         self.inner.iter()
     }

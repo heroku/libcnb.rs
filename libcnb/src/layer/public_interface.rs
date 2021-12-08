@@ -175,6 +175,7 @@ pub struct LayerResultBuilder<M> {
 }
 
 impl<M> LayerResultBuilder<M> {
+    #[must_use]
     pub fn new(metadata: M) -> Self {
         Self {
             metadata,
@@ -182,6 +183,7 @@ impl<M> LayerResultBuilder<M> {
         }
     }
 
+    #[must_use]
     pub fn env(mut self, layer_env: LayerEnv) -> Self {
         self.env = Some(layer_env);
         self
@@ -199,6 +201,7 @@ impl<M> LayerResultBuilder<M> {
         Ok(self.build_unwrapped())
     }
 
+    #[must_use]
     pub fn build_unwrapped(self) -> LayerResult<M> {
         LayerResult {
             metadata: self.metadata,
