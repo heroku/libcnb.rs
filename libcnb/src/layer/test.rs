@@ -682,11 +682,6 @@ fn error_handling_no_directory() {
     fs::write(
         &layer_toml_path,
         r#"
-[types]
-launch = true
-build = true
-cache = true
-
 [metadata]
 version = "3.2.1"
     "#,
