@@ -52,5 +52,6 @@
 - Fixed file extension for delimiters when writing `LayerEnv` to disk.
 - Fixed the `group` field on `buildpack::Order` to now be public.
 - Add an external Cargo command for packaging libcnb buildpacks. See the README for usage.
+- `libcnb_data::build_plan::Require` fields are now public.
 
 ## [0.3.0] 2021/09/17

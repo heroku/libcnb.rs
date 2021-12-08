@@ -111,8 +111,8 @@ impl Provide {
 
 #[derive(Serialize, Debug)]
 pub struct Require {
-    name: String,
-    metadata: Table,
+    pub name: String,
+    pub metadata: Table,
 }
 
 impl Require {
