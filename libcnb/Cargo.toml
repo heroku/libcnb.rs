@@ -1,7 +1,6 @@
 [package]
 name = "libcnb"
 version = "0.3.0"
-authors = ["Manuel Fuchs <malax@malax.de>", "Terence Lee <hone02@gmail.com>"]
 edition = "2021"
 rust-version = "1.56"
 license = "BSD-3-Clause"
