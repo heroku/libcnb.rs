@@ -29,6 +29,7 @@ pub struct Launch {
 /// assert!(toml::to_string(&launch_toml).is_ok());
 /// ```
 impl Launch {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             bom: bom::Bom::new(),
@@ -38,6 +39,7 @@ impl Launch {
         }
     }
 
+    #[must_use]
     pub fn process(mut self, process: Process) -> Self {
         self.processes.push(process);
         self

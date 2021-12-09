@@ -24,6 +24,7 @@ pub struct GenericPlatform {
 }
 
 impl GenericPlatform {
+    #[must_use]
     pub fn new(env: Env) -> Self {
         Self { env }
     }

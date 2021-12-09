@@ -46,10 +46,12 @@ pub(crate) enum InnerDetectResult {
 pub struct DetectResultBuilder;
 
 impl DetectResultBuilder {
+    #[must_use]
     pub fn pass() -> PassDetectResultBuilder {
         PassDetectResultBuilder { build_plan: None }
     }
 
+    #[must_use]
     pub fn fail() -> FailDetectResultBuilder {
         FailDetectResultBuilder {}
     }
@@ -73,12 +75,14 @@ impl PassDetectResultBuilder {
         Ok(self.build_unwrapped())
     }
 
+    #[must_use]
     pub fn build_unwrapped(self) -> DetectResult {
         DetectResult(InnerDetectResult::Pass {
             build_plan: self.build_plan,
         })
     }
 
+    #[must_use]
     pub fn build_plan(mut self, build_plan: BuildPlan) -> Self {
         self.build_plan = Some(build_plan);
         self
@@ -102,6 +106,7 @@ impl FailDetectResultBuilder {
     }
 
     #[allow(clippy::unused_self)]
+    #[must_use]
     pub fn build_unwrapped(self) -> DetectResult {
         DetectResult(InnerDetectResult::Fail)
     }

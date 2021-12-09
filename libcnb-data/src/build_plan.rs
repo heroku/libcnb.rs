@@ -13,6 +13,7 @@ pub struct BuildPlan {
 }
 
 impl BuildPlan {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             provides: vec![],
@@ -35,6 +36,7 @@ pub struct BuildPlanBuilder {
 }
 
 impl BuildPlanBuilder {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             acc: VecDeque::new(),
@@ -53,6 +55,7 @@ impl BuildPlanBuilder {
         self
     }
 
+    #[must_use]
     pub fn or(mut self) -> Self {
         self.acc
             .push_back((self.current_provides, self.current_requires));
@@ -62,6 +65,7 @@ impl BuildPlanBuilder {
         self
     }
 
+    #[must_use]
     pub fn build(self) -> BuildPlan {
         let mut xyz = self.or();
 

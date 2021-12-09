@@ -7,9 +7,6 @@
 #![warn(clippy::pedantic)]
 // This lint is too noisy and enforces a style that reduces readability in many cases.
 #![allow(clippy::module_name_repetitions)]
-// Re-disable pedantic lints that are currently failing, until they are triaged and fixed/wontfixed.
-// https://github.com/Malax/libcnb.rs/issues/57
-#![allow(clippy::must_use_candidate)]
 
 pub mod bom;
 pub mod build;
