@@ -1,5 +1,22 @@
 use serde::{Deserialize, Serialize};
 
+/// Describes Layer Content Metadata
+///
+/// See [Cloud Native Buildpack specification](https://github.com/buildpacks/spec/blob/main/buildpack.md#layer-content-metadata-toml)
+#[derive(Debug, Deserialize, Serialize)]
+pub struct LayerContentMetadata<M> {
+    pub types: Option<LayerTypes>,
+
+    /// Metadata that describes the layer contents.
+    pub metadata: M,
+}
+
+impl<M: PartialEq> PartialEq for LayerContentMetadata<M> {
+    fn eq(&self, other: &Self) -> bool {
+        self.types == other.types && self.metadata == other.metadata
+    }
+}
+
 /// Used to specify layer availability based
 /// on buildpack phase.
 #[derive(Debug, Default, Deserialize, Serialize, Eq, PartialEq)]
@@ -17,78 +34,59 @@ pub struct LayerTypes {
     pub cache: bool,
 }
 
-/// Describes Layer Content Metadata
-///
-/// See [Cloud Native Buildpack specification](https://github.com/buildpacks/spec/blob/main/buildpack.md#layer-content-metadata-toml)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct LayerContentMetadata<M> {
-    #[serde(default)]
-    pub types: LayerTypes,
-
-    /// Metadata that describes the layer contents.
-    pub metadata: M,
-}
-
-impl<M: PartialEq> PartialEq for LayerContentMetadata<M> {
-    fn eq(&self, other: &Self) -> bool {
-        self.types == other.types && self.metadata == other.metadata
-    }
-}
-
-impl<M: Default> Default for LayerContentMetadata<M> {
-    fn default() -> Self {
-        Self {
-            types: LayerTypes::default(),
-            metadata: M::default(),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    type GenericLayerContentMetadata = LayerContentMetadata<Option<toml::value::Table>>;
+
     #[test]
-    fn layer_types_have_defaults() {
-        let layer: Result<LayerContentMetadata<Option<toml::value::Table>>, toml::de::Error> =
-            toml::from_str(
-                r#"
-            [types]
-            "#,
-            );
+    fn deserialize_everything() {
+        let toml_str = r#"
+        [types]
+        launch = true
+        build = true
+        cache = false
 
-        let layer = layer.unwrap();
-        assert_eq!(layer.metadata, None);
-        assert!(!layer.types.launch);
-        assert!(!layer.types.build);
-        assert!(!layer.types.cache);
-
-        let layer: Result<LayerContentMetadata<Option<toml::value::Table>>, toml::de::Error> =
-            toml::from_str(r#""#);
-
-        let layer = layer.unwrap();
-        assert_eq!(layer.metadata, None);
-        assert!(!layer.types.launch);
-        assert!(!layer.types.build);
-        assert!(!layer.types.cache);
+        [metadata]
+        version = "1.2.3"
+        "#;
+        let layer = toml::from_str::<GenericLayerContentMetadata>(toml_str).unwrap();
+        assert_eq!(
+            layer.types,
+            Some(LayerTypes {
+                launch: true,
+                build: true,
+                cache: false
+            })
+        );
+        assert_eq!(
+            layer.metadata.unwrap().get("version"),
+            Some(&toml::value::Value::try_from("1.2.3").unwrap())
+        );
     }
 
     #[test]
-    fn metadata_is_optional() {
-        let layer: Result<LayerContentMetadata<Option<toml::value::Table>>, toml::de::Error> =
-            toml::from_str(
-                r#"
-            [types]
-            launch = true
-            build = true
-            cache = false
-            "#,
-            );
-
-        let layer = layer.unwrap();
+    fn deserialize_empty() {
+        let layer = toml::from_str::<GenericLayerContentMetadata>("").unwrap();
+        assert_eq!(layer.types, None);
         assert_eq!(layer.metadata, None);
-        assert!(layer.types.launch);
-        assert!(layer.types.build);
-        assert!(!layer.types.cache);
+    }
+
+    #[test]
+    fn types_table_with_no_entries_has_defaults() {
+        let toml_str = r#"
+        [types]
+        "#;
+        let layer = toml::from_str::<GenericLayerContentMetadata>(toml_str).unwrap();
+        assert_eq!(
+            layer.types,
+            Some(LayerTypes {
+                launch: false,
+                build: false,
+                cache: false
+            })
+        );
+        assert_eq!(layer.metadata, None);
     }
 }

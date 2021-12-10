@@ -4,6 +4,8 @@
 
 - Add `must_use` attributes to a number of pure public methods.
 - Remove builder-style methods from `LayerContentMetadata`.
+- Make `LayerContentMetadata`'s `types` field an `Option`.
+- Remove `LayerContentMetadata::Default()`.
 
 ## [0.4.0] 2021/12/08
 

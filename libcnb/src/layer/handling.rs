@@ -40,15 +40,9 @@ pub(crate) fn handle_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
                         &layer_data.name,
                         &layer_data.env,
                         &LayerContentMetadata {
-                            // We cannot copy the types from layer_data due to an issue with the current
-                            // libcnb implementation. The types will be missing in the TOML file on disk
-                            // but if they're not there, their default values will be used when
-                            // deserializing. Issue: https://github.com/Malax/libcnb.rs/issues/146
-                            //
-                            // Even if the deserialization of LayerContentMetadata is fixed, it would
-                            // not contain the layer types as they're not restored by the CNB lifecycle.
+                            // We cannot copy the types from layer_data since they're not restored by the CNB lifecycle.
                             // We must call layer.types here to get the correct types for the layer.
-                            types: layer.types(),
+                            types: Some(layer.types()),
                             metadata: layer_data.content_metadata.metadata,
                         },
                     )?;
@@ -120,7 +114,7 @@ fn handle_create_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
         layer_name,
         &layer_result.env.unwrap_or_default(),
         &LayerContentMetadata {
-            types: layer.types(),
+            types: Some(layer.types()),
             metadata: layer_result.metadata,
         },
     )?;
@@ -144,7 +138,7 @@ fn handle_update_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
         &layer_data.name,
         &layer_result.env.unwrap_or_default(),
         &LayerContentMetadata {
-            types: layer.types(),
+            types: Some(layer.types()),
             metadata: layer_result.metadata,
         },
     )?;
@@ -387,11 +381,11 @@ mod tests {
                 "ENV_VAR_VALUE",
             ),
             &LayerContentMetadata {
-                types: LayerTypes {
+                types: Some(LayerTypes {
                     launch: true,
                     build: true,
                     cache: false,
-                },
+                }),
                 metadata: GenericMetadata::default(),
             },
         )
@@ -409,11 +403,11 @@ mod tests {
 
         assert_eq!(
             layer_content_metadata.types,
-            LayerTypes {
+            Some(LayerTypes {
                 launch: true,
                 build: true,
                 cache: false
-            }
+            })
         );
     }
 
@@ -441,11 +435,11 @@ mod tests {
                     "SOME_OTHER_ENV_VAR_VALUE",
                 ),
             &LayerContentMetadata {
-                types: LayerTypes {
+                types: Some(LayerTypes {
                     launch: false,
                     build: false,
                     cache: true,
-                },
+                }),
                 metadata: GenericMetadata::default(),
             },
         )
@@ -463,11 +457,11 @@ mod tests {
                 "NEW_ENV_VAR_VALUE",
             ),
             &LayerContentMetadata {
-                types: LayerTypes {
+                types: Some(LayerTypes {
                     launch: false,
                     build: false,
                     cache: true,
-                },
+                }),
                 metadata: GenericMetadata::default(),
             },
         )
@@ -492,11 +486,11 @@ mod tests {
 
         assert_eq!(
             layer_content_metadata.types,
-            LayerTypes {
+            Some(LayerTypes {
                 launch: false,
                 build: false,
                 cache: true
-            }
+            })
         );
     }
 
@@ -546,11 +540,11 @@ mod tests {
 
         assert_eq!(
             layer_data.content_metadata.types,
-            LayerTypes {
+            Some(LayerTypes {
                 launch: true,
                 build: false,
                 cache: true
-            }
+            })
         );
 
         assert_eq!(
@@ -649,7 +643,13 @@ mod tests {
 
         match super::read_layer::<GenericMetadata, _>(&layers_dir, &layer_name) {
             Ok(Some(layer_data)) => {
-                assert_eq!(layer_data.content_metadata, LayerContentMetadata::default());
+                assert_eq!(
+                    layer_data.content_metadata,
+                    LayerContentMetadata {
+                        types: None,
+                        metadata: None
+                    }
+                );
             }
             _ => panic!("Expected Ok(Some(_)!"),
         }
