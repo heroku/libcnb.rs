@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Add `must_use` attributes to a number of pure public methods.
+- Remove builder-style methods from `LayerContentMetadata`.
 
 ## [0.4.0] 2021/12/08
 

@@ -20,26 +20,6 @@ pub struct LayerTypes {
 /// Describes Layer Content Metadata
 ///
 /// See [Cloud Native Buildpack specification](https://github.com/buildpacks/spec/blob/main/buildpack.md#layer-content-metadata-toml)
-///
-/// ```
-/// use libcnb_data::layer_content_metadata::LayerContentMetadata;
-/// use toml::toml;
-///
-/// let layer = LayerContentMetadata::<()>::default()
-///   .build(true)
-///   .cache(true)
-///   .launch(true)
-///   .metadata(
-///     toml! {
-///       version = "2.5"
-///       name = "ACME Corp."
-///     });
-///
-/// assert!(layer.types.build);
-///
-/// let version = layer.metadata.get("version").unwrap().as_str().unwrap();
-/// assert_eq!(version, "2.5");
-/// ```
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LayerContentMetadata<M> {
     #[serde(default)]
@@ -60,35 +40,6 @@ impl<M: Default> Default for LayerContentMetadata<M> {
         Self {
             types: LayerTypes::default(),
             metadata: M::default(),
-        }
-    }
-}
-
-impl<M> LayerContentMetadata<M> {
-    pub fn launch(mut self, launch: bool) -> Self {
-        self.types.launch = launch;
-        self
-    }
-
-    pub fn build(mut self, build: bool) -> Self {
-        self.types.build = build;
-        self
-    }
-
-    pub fn cache(mut self, cache: bool) -> Self {
-        self.types.cache = cache;
-        self
-    }
-
-    pub fn metadata<NM>(&mut self, metadata: NM) -> LayerContentMetadata<NM> {
-        LayerContentMetadata {
-            types: LayerTypes {
-                cache: self.types.cache,
-                build: self.types.build,
-                launch: self.types.launch,
-            },
-
-            metadata,
         }
     }
 }
