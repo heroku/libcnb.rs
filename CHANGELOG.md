@@ -2,10 +2,10 @@
 
 ## [Unreleased]
 
-- Add `must_use` attributes to a number of pure public methods.
-- Remove builder-style methods from `LayerContentMetadata`.
-- Make `LayerContentMetadata`'s `types` field an `Option`.
-- Remove `LayerContentMetadata::Default()`.
+- Add `must_use` attributes to a number of pure public methods ([#232](https://github.com/Malax/libcnb.rs/pull/232)).
+- Remove builder-style methods from `LayerContentMetadata` ([#235](https://github.com/Malax/libcnb.rs/pull/235)).
+- Make `LayerContentMetadata`'s `types` field an `Option` ([#236](https://github.com/Malax/libcnb.rs/pull/236)).
+- Remove `LayerContentMetadata::Default()` ([#236](https://github.com/Malax/libcnb.rs/pull/236)).
 
 ## [0.4.0] 2021/12/08
 
