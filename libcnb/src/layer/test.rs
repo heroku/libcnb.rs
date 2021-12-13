@@ -146,11 +146,11 @@ fn create() {
 
     // Assert layer content metadata, returned and on disk
     let expected_content_layer_metadata = LayerContentMetadata {
-        types: LayerTypes {
+        types: Some(LayerTypes {
             launch: TEST_LAYER_LAUNCH,
             build: TEST_LAYER_BUILD,
             cache: TEST_LAYER_CACHE,
-        },
+        }),
         metadata: TestLayerMetadata {
             version: metadata_version_string,
         },
@@ -215,11 +215,11 @@ fn create_then_update() {
 
     // Assert layer content metadata, returned and on disk
     let expected_content_layer_metadata = LayerContentMetadata {
-        types: LayerTypes {
+        types: Some(LayerTypes {
             launch: TEST_LAYER_LAUNCH,
             build: TEST_LAYER_BUILD,
             cache: TEST_LAYER_CACHE,
-        },
+        }),
         metadata: TestLayerMetadata {
             version: metadata_version_string,
         },
@@ -307,11 +307,11 @@ fn create_then_recreate() {
 
     // Assert layer content metadata, returned and on disk
     let expected_content_layer_metadata = LayerContentMetadata {
-        types: LayerTypes {
+        types: Some(LayerTypes {
             launch: TEST_LAYER_LAUNCH,
             build: TEST_LAYER_BUILD,
             cache: TEST_LAYER_CACHE,
-        },
+        }),
         metadata: TestLayerMetadata {
             version: recreated_metadata_version_string,
         },
@@ -401,11 +401,11 @@ fn create_then_keep() {
 
     // Assert layer content metadata, returned and on disk
     let expected_content_layer_metadata = LayerContentMetadata {
-        types: LayerTypes {
+        types: Some(LayerTypes {
             launch: TEST_LAYER_LAUNCH,
             build: TEST_LAYER_BUILD,
             cache: TEST_LAYER_CACHE,
-        },
+        }),
         metadata: TestLayerMetadata {
             version: metadata_version_string,
         },
@@ -491,11 +491,11 @@ v = "3.2.1"
 
     // Assert layer content metadata, returned and on disk
     let expected_content_layer_metadata = LayerContentMetadata {
-        types: LayerTypes {
+        types: Some(LayerTypes {
             launch: TEST_LAYER_LAUNCH,
             build: TEST_LAYER_BUILD,
             cache: TEST_LAYER_CACHE,
-        },
+        }),
         metadata: TestLayerMetadata {
             // This is the version from a hand-rolled, incompatible metadata TOML file and
             // intentionally not metadata_version_string.
@@ -581,11 +581,11 @@ versi_on = "3.2.1"
 
     // Assert layer content metadata, returned and on disk
     let expected_content_layer_metadata = LayerContentMetadata {
-        types: LayerTypes {
+        types: Some(LayerTypes {
             launch: TEST_LAYER_LAUNCH,
             build: TEST_LAYER_BUILD,
             cache: TEST_LAYER_CACHE,
-        },
+        }),
         metadata: TestLayerMetadata {
             version: metadata_version_string,
         },
@@ -786,7 +786,7 @@ fn default_layer_method_implementations() {
             "bar",
         ),
         content_metadata: LayerContentMetadata {
-            types: LayerTypes::default(),
+            types: Some(LayerTypes::default()),
             metadata: simple_layer_metadata.clone(),
         },
     };
