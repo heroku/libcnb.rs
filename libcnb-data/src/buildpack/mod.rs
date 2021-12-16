@@ -2,13 +2,14 @@ mod api;
 mod id;
 mod stack;
 mod stack_id;
+mod version;
 
 pub use api::*;
 pub use id::*;
 pub use stack::*;
 pub use stack_id::*;
+pub use version::*;
 
-use semver::Version;
 use serde::Deserialize;
 
 /// Data structure for the Buildpack descriptor (buildpack.toml).
@@ -57,8 +58,7 @@ pub struct BuildpackToml<BM> {
 pub struct Buildpack {
     pub id: BuildpackId,
     pub name: Option<String>,
-    // MUST be in the form <X>.<Y>.<Z> where X, Y, and Z are non-negative integers and must not contain leading zeroes
-    pub version: Version,
+    pub version: BuildpackVersion,
     pub homepage: Option<String>,
     #[serde(default, rename = "clear-env")]
     pub clear_env: bool,
@@ -83,7 +83,7 @@ pub struct Order {
 #[derive(Deserialize, Debug, Eq, PartialEq)]
 pub struct Group {
     pub id: BuildpackId,
-    pub version: Version,
+    pub version: BuildpackVersion,
     #[serde(default)]
     pub optional: bool,
 }
@@ -146,7 +146,10 @@ checksum = "abc123"
             buildpack_toml.buildpack.name,
             Some(String::from("Bar Buildpack"))
         );
-        assert_eq!(buildpack_toml.buildpack.version, Version::new(0, 0, 1));
+        assert_eq!(
+            buildpack_toml.buildpack.version,
+            BuildpackVersion::new(0, 0, 1)
+        );
         assert_eq!(
             buildpack_toml.buildpack.homepage,
             Some(String::from("https://example.tld"))
@@ -255,7 +258,10 @@ checksum = "abc123"
             buildpack_toml.buildpack.name,
             Some(String::from("Bar Buildpack"))
         );
-        assert_eq!(buildpack_toml.buildpack.version, Version::new(0, 0, 1));
+        assert_eq!(
+            buildpack_toml.buildpack.version,
+            BuildpackVersion::new(0, 0, 1)
+        );
         assert_eq!(
             buildpack_toml.buildpack.homepage,
             Some(String::from("https://example.tld"))
@@ -295,12 +301,12 @@ checksum = "abc123"
                 group: vec![
                     Group {
                         id: "foo/bar".parse().unwrap(),
-                        version: Version::new(0, 0, 1),
+                        version: BuildpackVersion::new(0, 0, 1),
                         optional: false
                     },
                     Group {
                         id: "foo/baz".parse().unwrap(),
-                        version: Version::new(0, 1, 0),
+                        version: BuildpackVersion::new(0, 1, 0),
                         optional: true
                     }
                 ]
@@ -330,7 +336,10 @@ id = "*"
         assert_eq!(buildpack_toml.api, BuildpackApi { major: 0, minor: 6 });
         assert_eq!(buildpack_toml.buildpack.id, "foo/bar".parse().unwrap());
         assert_eq!(buildpack_toml.buildpack.name, None);
-        assert_eq!(buildpack_toml.buildpack.version, Version::new(0, 0, 1));
+        assert_eq!(
+            buildpack_toml.buildpack.version,
+            BuildpackVersion::new(0, 0, 1)
+        );
         assert_eq!(buildpack_toml.buildpack.homepage, None);
         assert!(!buildpack_toml.buildpack.clear_env);
         assert_eq!(buildpack_toml.buildpack.description, None);
@@ -367,7 +376,10 @@ version = "0.0.1"
         assert_eq!(buildpack_toml.api, BuildpackApi { major: 0, minor: 6 });
         assert_eq!(buildpack_toml.buildpack.id, "foo/bar".parse().unwrap());
         assert_eq!(buildpack_toml.buildpack.name, None);
-        assert_eq!(buildpack_toml.buildpack.version, Version::new(0, 0, 1));
+        assert_eq!(
+            buildpack_toml.buildpack.version,
+            BuildpackVersion::new(0, 0, 1)
+        );
         assert_eq!(buildpack_toml.buildpack.homepage, None);
         assert!(!buildpack_toml.buildpack.clear_env);
         assert_eq!(buildpack_toml.buildpack.description, None);
@@ -381,31 +393,11 @@ version = "0.0.1"
             vec![Order {
                 group: vec![Group {
                     id: "foo/bar".parse().unwrap(),
-                    version: Version::new(0, 0, 1),
+                    version: BuildpackVersion::new(0, 0, 1),
                     optional: false
                 }]
             }]
         );
         assert_eq!(buildpack_toml.metadata, None);
-    }
-
-    #[test]
-    fn reject_invalid_buildpack_version() {
-        let toml_str = r#"
-api = "0.6"
-
-[buildpack]
-id = "foo/bar"
-name = "Bar Buildpack"
-version = "1.0"
-
-[[stacks]]
-id = "*"
-        "#;
-
-        let err = toml::from_str::<GenericBuildpackToml>(toml_str).unwrap_err();
-        assert!(err
-            .to_string()
-            .contains("unexpected end of input while parsing minor version number for key `buildpack.version`"));
     }
 }
