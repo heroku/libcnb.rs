@@ -65,7 +65,9 @@ pub struct Label {
 pub struct Process {
     pub r#type: ProcessType,
     pub command: String,
+    #[serde(default)]
     pub args: Vec<String>,
+    #[serde(default)]
     pub direct: bool,
     #[serde(default)]
     pub default: bool,
