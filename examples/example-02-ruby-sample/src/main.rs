@@ -47,16 +47,16 @@ impl Buildpack for RubyBuildpack {
                     .process(Process::new(
                         process_type!("web"),
                         "bundle",
-                        vec!["exec", "ruby", "app.rb"],
-                        false,
-                        true,
+                        Some(vec!["exec", "ruby", "app.rb"]),
+                        Some(false),
+                        Some(true),
                     ))
                     .process(Process::new(
                         process_type!("worker"),
                         "bundle",
-                        vec!["exec", "ruby", "worker.rb"],
-                        false,
-                        false,
+                        Some(vec!["exec", "ruby", "worker.rb"]),
+                        Some(false),
+                        Some(false),
                     )),
             )
             .build()
