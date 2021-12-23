@@ -84,10 +84,7 @@ impl Process {
         Self {
             r#type,
             command: command.into(),
-            args: match args {
-                Some(args) => Some(args.into_iter().map(std::convert::Into::into).collect()),
-                None => None,
-            },
+            args: args.map(|args| args.into_iter().map(std::convert::Into::into).collect()),
             direct,
             default,
         }
