@@ -65,28 +65,45 @@ pub struct Label {
 pub struct Process {
     pub r#type: ProcessType,
     pub command: String,
-    #[serde(default)]
-    pub args: Vec<String>,
-    #[serde(default)]
-    pub direct: bool,
-    #[serde(default)]
-    pub default: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub args: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub direct: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default: Option<bool>,
 }
 
 impl Process {
     pub fn new(
         r#type: ProcessType,
         command: impl Into<String>,
-        args: impl IntoIterator<Item = impl Into<String>>,
-        direct: bool,
-        default: bool,
+        args: Option<impl IntoIterator<Item = impl Into<String>>>,
+        direct: Option<bool>,
+        default: Option<bool>,
     ) -> Self {
         Self {
             r#type,
             command: command.into(),
-            args: args.into_iter().map(std::convert::Into::into).collect(),
+            args: match args {
+                Some(args) => Some(args.into_iter().map(std::convert::Into::into).collect()),
+                None => None,
+            },
             direct,
             default,
+        }
+    }
+
+    pub fn update(&mut self, process: Process) {
+        self.r#type = process.r#type;
+        self.command = process.command;
+        if process.args.is_some() {
+            self.args = process.args;
+        }
+        if process.direct.is_some() {
+            self.direct = process.direct;
+        }
+        if process.default.is_some() {
+            self.default = process.default;
         }
     }
 }
