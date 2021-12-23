@@ -23,8 +23,8 @@ pub struct Launch {
 /// use libcnb_data::process_type;
 ///
 /// let mut launch_toml = launch::Launch::new();
-/// let web = launch::Process::new(process_type!("web"), "bundle", vec!["exec", "ruby", "app.rb"],
-/// false, false);
+/// let web = launch::Process::new(process_type!("web"), "bundle", Some(vec!["exec", "ruby", "app.rb"]),
+/// Some(false), Some(false));
 ///
 /// launch_toml.processes.push(web);
 /// assert!(toml::to_string(&launch_toml).is_ok());
