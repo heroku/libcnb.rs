@@ -9,7 +9,7 @@ use tar::Archive;
 pub fn download(uri: impl AsRef<str>, destination: impl AsRef<Path>) -> Result<(), DownloadError> {
     let mut response_reader = ureq::get(uri.as_ref())
         .call()
-        .map_err(DownloadError::RequestError)?
+        .map_err(|err| DownloadError::RequestError(Box::new(err)))?
         .into_reader();
 
     let mut destination_file = fs::File::create(destination.as_ref())
@@ -23,7 +23,8 @@ pub fn download(uri: impl AsRef<str>, destination: impl AsRef<Path>) -> Result<(
 
 #[derive(Debug)]
 pub enum DownloadError {
-    RequestError(ureq::Error),
+    // Boxed to prevent `large_enum_variant` errors since `ureq::Error` is massive.
+    RequestError(Box<ureq::Error>),
     CouldNotCreateDestinationFile(std::io::Error),
     CouldNotWriteDestinationFile(std::io::Error),
 }
