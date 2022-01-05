@@ -8,7 +8,7 @@ use serde::de::DeserializeOwned;
 
 use crate::build::{BuildContext, InnerBuildResult};
 use crate::buildpack::Buildpack;
-use crate::data::buildpack::{BuildpackToml, StackId};
+use crate::data::buildpack::{SingleBuildpackDescriptor, StackId};
 use crate::detect::{DetectContext, InnerDetectResult};
 use crate::error::Error;
 use crate::platform::Platform;
@@ -206,7 +206,8 @@ fn read_buildpack_dir<E: Debug>() -> crate::Result<PathBuf, E> {
         .map(PathBuf::from)
 }
 
-fn read_buildpack_toml<BM: DeserializeOwned, E: Debug>() -> crate::Result<BuildpackToml<BM>, E> {
+fn read_buildpack_toml<BM: DeserializeOwned, E: Debug>(
+) -> crate::Result<SingleBuildpackDescriptor<BM>, E> {
     read_buildpack_dir().and_then(|buildpack_dir| {
         read_toml_file(buildpack_dir.join("buildpack.toml"))
             .map_err(Error::CannotReadBuildpackDescriptor)

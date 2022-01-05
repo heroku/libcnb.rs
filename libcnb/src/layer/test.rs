@@ -21,7 +21,7 @@ use crate::layer::{
 };
 use crate::layer_env::{LayerEnv, ModificationBehavior, TargetLifecycle};
 use crate::{read_toml_file, Buildpack, Env, LIBCNB_SUPPORTED_BUILDPACK_API};
-use libcnb_data::buildpack::{BuildpackToml, BuildpackVersion, Stack};
+use libcnb_data::buildpack::{BuildpackVersion, SingleBuildpackDescriptor, Stack};
 use libcnb_data::buildpack_plan::BuildpackPlan;
 use libcnb_data::layer::LayerName;
 use libcnb_data::layer_content_metadata::LayerContentMetadata;
@@ -903,7 +903,7 @@ fn build_context(temp_dir: &TempDir) -> BuildContext<TestBuildpack> {
         stack_id: stack_id!("heroku-20"),
         platform: GenericPlatform::new(Env::new()),
         buildpack_plan: BuildpackPlan { entries: vec![] },
-        buildpack_descriptor: BuildpackToml {
+        buildpack_descriptor: SingleBuildpackDescriptor {
             api: LIBCNB_SUPPORTED_BUILDPACK_API,
             buildpack: crate::data::buildpack::Buildpack {
                 id: buildpack_id!("libcnb/test"),
@@ -916,7 +916,6 @@ fn build_context(temp_dir: &TempDir) -> BuildContext<TestBuildpack> {
                 licenses: vec![],
             },
             stacks: vec![Stack::Any],
-            order: vec![],
             metadata: GenericMetadata::default(),
         },
     }

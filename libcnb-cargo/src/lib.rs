@@ -6,7 +6,7 @@
 pub mod cross_compile;
 
 use cargo_metadata::MetadataCommand;
-use libcnb_data::buildpack::BuildpackToml;
+use libcnb_data::buildpack::SingleBuildpackDescriptor;
 use std::ffi::OsStr;
 use std::fs;
 use std::io;
@@ -139,7 +139,7 @@ pub enum BuildpackDataError {
 
 pub struct BuildpackData<BM> {
     pub buildpack_toml_path: PathBuf,
-    pub buildpack_toml: BuildpackToml<BM>,
+    pub buildpack_toml: SingleBuildpackDescriptor<BM>,
 }
 
 /// Creates a buildpack directory and copies all buildpack assets to it.
@@ -202,6 +202,8 @@ fn create_file_symlink<P: AsRef<Path>, Q: AsRef<Path>>(
 ///
 /// This function ensures the resulting name is valid and does not contain problematic characters
 /// such as `/`.
-pub fn default_buildpack_directory_name<BM>(buildpack_toml: &BuildpackToml<BM>) -> String {
+pub fn default_buildpack_directory_name<BM>(
+    buildpack_toml: &SingleBuildpackDescriptor<BM>,
+) -> String {
     buildpack_toml.buildpack.id.replace("/", "_")
 }

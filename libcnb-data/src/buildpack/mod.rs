@@ -12,11 +12,17 @@ pub use version::*;
 
 use serde::Deserialize;
 
-/// Data structure for the Buildpack descriptor (buildpack.toml).
+/// Data structures for the Buildpack descriptor (buildpack.toml).
 ///
-/// # Examples
+/// For parsing of [buildpack.toml](https://github.com/buildpacks/spec/blob/main/buildpack.md#buildpacktoml-toml)
+/// files when support for multiple types of buildpack is required.
+///
+/// When a specific buildpack type is expected, use [`SingleBuildpackDescriptor`] or [`MetaBuildpackDescriptor`] directly instead,
+/// since it allows for more detailed error messages if parsing fails.
+///
+/// # Example:
 /// ```
-/// use libcnb_data::buildpack::BuildpackToml;
+/// use libcnb_data::buildpack::BuildpackDescriptor;
 ///
 /// let toml_str = r#"
 /// api = "0.6"
@@ -34,23 +40,108 @@ use serde::Deserialize;
 /// type = "BSD-3-Clause"
 ///
 /// [[stacks]]
-/// id = "io.buildpacks.stacks.bionic"
-/// mixins = ["yj", "yq"]
-///
-/// [metadata]
-/// checksum = "awesome"
+/// id = "*"
 /// "#;
 ///
-/// let result = toml::from_str::<BuildpackToml<toml::value::Table>>(toml_str);
-/// assert!(result.is_ok());
+/// let buildpack_descriptor = toml::from_str::<BuildpackDescriptor<Option<toml::value::Table>>>(toml_str).expect("buildpack.toml did not match a known type!");
+/// match buildpack_descriptor {
+///     BuildpackDescriptor::Single(buildpack) => println!("Found buildpack: {}", buildpack.buildpack.id),
+///     BuildpackDescriptor::Meta(buildpack) => println!("Found meta-buildpack: {}", buildpack.buildpack.id),
+/// };
+/// ```
+#[derive(Deserialize, Debug)]
+#[serde(untagged)]
+pub enum BuildpackDescriptor<BM> {
+    Single(SingleBuildpackDescriptor<BM>),
+    Meta(MetaBuildpackDescriptor<BM>),
+}
+
+/// Data structure for the Buildpack descriptor (buildpack.toml) of a single buildpack.
+///
+/// Representation of [buildpack.toml](https://github.com/buildpacks/spec/blob/main/buildpack.md#buildpacktoml-toml)
+/// when the buildpack is a single buildpack that implements the Buildpack Interface (ie: not a meta-buildpack).
+///
+/// If support for multiple buildpack types is required, use [`BuildpackDescriptor`] instead.
+///
+/// # Example:
+/// ```
+/// use libcnb_data::buildpack_id;
+/// use libcnb_data::buildpack::{SingleBuildpackDescriptor, Stack};
+///
+/// let toml_str = r#"
+/// api = "0.6"
+///
+/// [buildpack]
+/// id = "foo/bar"
+/// name = "Bar Buildpack"
+/// version = "0.0.1"
+/// homepage = "https://www.foo.com/bar"
+/// clear-env = false
+/// description = "A buildpack for Foo Bar"
+/// keywords = ["foo"]
+///
+/// [[buildpack.licenses]]
+/// type = "BSD-3-Clause"
+///
+/// [[stacks]]
+/// id = "*"
+/// "#;
+///
+/// let buildpack_descriptor = toml::from_str::<SingleBuildpackDescriptor<Option<toml::value::Table>>>(toml_str).unwrap();
+/// assert_eq!(buildpack_descriptor.buildpack.id, buildpack_id!("foo/bar"));
+/// assert_eq!(buildpack_descriptor.stacks, vec![Stack::Any]);
 /// ```
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct BuildpackToml<BM> {
+pub struct SingleBuildpackDescriptor<BM> {
     pub api: BuildpackApi,
     pub buildpack: Buildpack,
     pub stacks: Vec<Stack>,
-    #[serde(default)]
+    pub metadata: BM,
+}
+
+/// Data structure for the Buildpack descriptor (buildpack.toml) of a meta-buildpack.
+///
+/// Representation of [buildpack.toml](https://github.com/buildpacks/spec/blob/main/buildpack.md#buildpacktoml-toml)
+/// when the buildpack is a meta-buildpack.
+///
+/// If support for multiple buildpack types is required, use [`BuildpackDescriptor`] instead.
+///
+/// # Example:
+/// ```
+/// use libcnb_data::buildpack_id;
+/// use libcnb_data::buildpack::MetaBuildpackDescriptor;
+///
+/// let toml_str = r#"
+/// api = "0.6"
+///
+/// [buildpack]
+/// id = "foo/bar"
+/// name = "Bar Buildpack"
+/// version = "0.0.1"
+/// homepage = "https://www.foo.com/bar"
+/// clear-env = false
+/// description = "A buildpack for Foo Bar"
+/// keywords = ["foo"]
+///
+/// [[buildpack.licenses]]
+/// type = "BSD-3-Clause"
+///
+/// [[order]]
+///
+/// [[order.group]]
+/// id = "foo/baz"
+/// version = "0.0.1"
+/// "#;
+///
+/// let buildpack_descriptor = toml::from_str::<MetaBuildpackDescriptor<Option<toml::value::Table>>>(toml_str).unwrap();
+/// assert_eq!(buildpack_descriptor.buildpack.id, buildpack_id!("foo/bar"));
+/// ```
+#[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct MetaBuildpackDescriptor<BM> {
+    pub api: BuildpackApi,
+    pub buildpack: Buildpack,
     pub order: Vec<Order>,
     pub metadata: BM,
 }
@@ -97,10 +188,11 @@ pub struct Group {
 mod tests {
     use super::*;
 
-    type GenericBuildpackToml = BuildpackToml<Option<toml::value::Table>>;
+    type GenericMetadata = Option<toml::value::Table>;
 
     #[test]
-    fn deserialize_buildpack() {
+    #[allow(clippy::too_many_lines)]
+    fn deserialize_singlebuildpack() {
         let toml_str = r#"
 api = "0.6"
 
@@ -143,33 +235,40 @@ id = "*"
 checksum = "abc123"
         "#;
 
-        let buildpack_toml = toml::from_str::<GenericBuildpackToml>(toml_str).unwrap();
+        let buildpack_descriptor =
+            toml::from_str::<SingleBuildpackDescriptor<GenericMetadata>>(toml_str).unwrap();
 
-        assert_eq!(buildpack_toml.api, BuildpackApi { major: 0, minor: 6 });
-        assert_eq!(buildpack_toml.buildpack.id, "foo/bar".parse().unwrap());
         assert_eq!(
-            buildpack_toml.buildpack.name,
+            buildpack_descriptor.api,
+            BuildpackApi { major: 0, minor: 6 }
+        );
+        assert_eq!(
+            buildpack_descriptor.buildpack.id,
+            "foo/bar".parse().unwrap()
+        );
+        assert_eq!(
+            buildpack_descriptor.buildpack.name,
             Some(String::from("Bar Buildpack"))
         );
         assert_eq!(
-            buildpack_toml.buildpack.version,
+            buildpack_descriptor.buildpack.version,
             BuildpackVersion::new(0, 0, 1)
         );
         assert_eq!(
-            buildpack_toml.buildpack.homepage,
+            buildpack_descriptor.buildpack.homepage,
             Some(String::from("https://example.tld"))
         );
-        assert!(buildpack_toml.buildpack.clear_env);
+        assert!(buildpack_descriptor.buildpack.clear_env);
         assert_eq!(
-            buildpack_toml.buildpack.description,
+            buildpack_descriptor.buildpack.description,
             Some(String::from("A buildpack for Foo Bar"))
         );
         assert_eq!(
-            buildpack_toml.buildpack.keywords,
+            buildpack_descriptor.buildpack.keywords,
             vec![String::from("foo"), String::from("bar")]
         );
         assert_eq!(
-            buildpack_toml.buildpack.licenses,
+            buildpack_descriptor.buildpack.licenses,
             vec![
                 License {
                     r#type: Some(String::from("BSD-3-Clause")),
@@ -186,7 +285,7 @@ checksum = "abc123"
             ]
         );
         assert_eq!(
-            buildpack_toml.stacks,
+            buildpack_descriptor.stacks,
             vec![
                 Stack::Specific {
                     // Cannot use the `stack_id!` macro due to: https://github.com/Malax/libcnb.rs/issues/179
@@ -204,9 +303,8 @@ checksum = "abc123"
                 Stack::Any
             ]
         );
-        assert_eq!(buildpack_toml.order, Vec::new());
         assert_eq!(
-            buildpack_toml.metadata.unwrap().get("checksum"),
+            buildpack_descriptor.metadata.unwrap().get("checksum"),
             Some(&toml::value::Value::try_from("abc123").unwrap())
         );
     }
@@ -235,11 +333,6 @@ uri = "https://example.tld/my-license"
 [[buildpack.licenses]]
 uri = "https://example.tld/my-license"
 
-# This is invalid according to the spec, however libcnb currently requires it:
-# https://github.com/Malax/libcnb.rs/issues/211
-[[stacks]]
-id = "*"
-
 [[order]]
 
 [[order.group]]
@@ -255,33 +348,40 @@ optional = true
 checksum = "abc123"
         "#;
 
-        let buildpack_toml = toml::from_str::<GenericBuildpackToml>(toml_str).unwrap();
+        let buildpack_descriptor =
+            toml::from_str::<MetaBuildpackDescriptor<GenericMetadata>>(toml_str).unwrap();
 
-        assert_eq!(buildpack_toml.api, BuildpackApi { major: 0, minor: 6 });
-        assert_eq!(buildpack_toml.buildpack.id, "foo/bar".parse().unwrap());
         assert_eq!(
-            buildpack_toml.buildpack.name,
+            buildpack_descriptor.api,
+            BuildpackApi { major: 0, minor: 6 }
+        );
+        assert_eq!(
+            buildpack_descriptor.buildpack.id,
+            "foo/bar".parse().unwrap()
+        );
+        assert_eq!(
+            buildpack_descriptor.buildpack.name,
             Some(String::from("Bar Buildpack"))
         );
         assert_eq!(
-            buildpack_toml.buildpack.version,
+            buildpack_descriptor.buildpack.version,
             BuildpackVersion::new(0, 0, 1)
         );
         assert_eq!(
-            buildpack_toml.buildpack.homepage,
+            buildpack_descriptor.buildpack.homepage,
             Some(String::from("https://example.tld"))
         );
-        assert!(buildpack_toml.buildpack.clear_env);
+        assert!(buildpack_descriptor.buildpack.clear_env);
         assert_eq!(
-            buildpack_toml.buildpack.description,
+            buildpack_descriptor.buildpack.description,
             Some(String::from("A buildpack for Foo Bar"))
         );
         assert_eq!(
-            buildpack_toml.buildpack.keywords,
+            buildpack_descriptor.buildpack.keywords,
             vec![String::from("foo"), String::from("bar")]
         );
         assert_eq!(
-            buildpack_toml.buildpack.licenses,
+            buildpack_descriptor.buildpack.licenses,
             vec![
                 License {
                     r#type: Some(String::from("BSD-3-Clause")),
@@ -297,11 +397,8 @@ checksum = "abc123"
                 }
             ]
         );
-        // This is invalid according to the spec, however libcnb currently requires it:
-        // https://github.com/Malax/libcnb.rs/issues/211
-        assert_eq!(buildpack_toml.stacks, vec![Stack::Any]);
         assert_eq!(
-            buildpack_toml.order,
+            buildpack_descriptor.order,
             vec![Order {
                 group: vec![
                     Group {
@@ -318,13 +415,13 @@ checksum = "abc123"
             }]
         );
         assert_eq!(
-            buildpack_toml.metadata.unwrap().get("checksum"),
+            buildpack_descriptor.metadata.unwrap().get("checksum"),
             Some(&toml::value::Value::try_from("abc123").unwrap())
         );
     }
 
     #[test]
-    fn deserialize_minimal_buildpack() {
+    fn deserialize_minimal_singlebuildpack() {
         let toml_str = r#"
 api = "0.6"
 
@@ -336,23 +433,32 @@ version = "0.0.1"
 id = "*"
         "#;
 
-        let buildpack_toml = toml::from_str::<GenericBuildpackToml>(toml_str).unwrap();
+        let buildpack_descriptor =
+            toml::from_str::<SingleBuildpackDescriptor<GenericMetadata>>(toml_str).unwrap();
 
-        assert_eq!(buildpack_toml.api, BuildpackApi { major: 0, minor: 6 });
-        assert_eq!(buildpack_toml.buildpack.id, "foo/bar".parse().unwrap());
-        assert_eq!(buildpack_toml.buildpack.name, None);
         assert_eq!(
-            buildpack_toml.buildpack.version,
+            buildpack_descriptor.api,
+            BuildpackApi { major: 0, minor: 6 }
+        );
+        assert_eq!(
+            buildpack_descriptor.buildpack.id,
+            "foo/bar".parse().unwrap()
+        );
+        assert_eq!(buildpack_descriptor.buildpack.name, None);
+        assert_eq!(
+            buildpack_descriptor.buildpack.version,
             BuildpackVersion::new(0, 0, 1)
         );
-        assert_eq!(buildpack_toml.buildpack.homepage, None);
-        assert!(!buildpack_toml.buildpack.clear_env);
-        assert_eq!(buildpack_toml.buildpack.description, None);
-        assert_eq!(buildpack_toml.buildpack.keywords, Vec::<String>::new());
-        assert_eq!(buildpack_toml.buildpack.licenses, Vec::new());
-        assert_eq!(buildpack_toml.stacks, vec![Stack::Any]);
-        assert_eq!(buildpack_toml.order, Vec::new());
-        assert_eq!(buildpack_toml.metadata, None);
+        assert_eq!(buildpack_descriptor.buildpack.homepage, None);
+        assert!(!buildpack_descriptor.buildpack.clear_env);
+        assert_eq!(buildpack_descriptor.buildpack.description, None);
+        assert_eq!(
+            buildpack_descriptor.buildpack.keywords,
+            Vec::<String>::new()
+        );
+        assert_eq!(buildpack_descriptor.buildpack.licenses, Vec::new());
+        assert_eq!(buildpack_descriptor.stacks, vec![Stack::Any]);
+        assert_eq!(buildpack_descriptor.metadata, None);
     }
 
     #[test]
@@ -364,11 +470,6 @@ api = "0.6"
 id = "foo/bar"
 version = "0.0.1"
 
-# This is invalid according to the spec, however libcnb currently requires it:
-# https://github.com/Malax/libcnb.rs/issues/211
-[[stacks]]
-id = "*"
-
 [[order]]
 
 [[order.group]]
@@ -376,25 +477,32 @@ id = "foo/bar"
 version = "0.0.1"
 "#;
 
-        let buildpack_toml = toml::from_str::<GenericBuildpackToml>(toml_str).unwrap();
+        let buildpack_descriptor =
+            toml::from_str::<MetaBuildpackDescriptor<GenericMetadata>>(toml_str).unwrap();
 
-        assert_eq!(buildpack_toml.api, BuildpackApi { major: 0, minor: 6 });
-        assert_eq!(buildpack_toml.buildpack.id, "foo/bar".parse().unwrap());
-        assert_eq!(buildpack_toml.buildpack.name, None);
         assert_eq!(
-            buildpack_toml.buildpack.version,
+            buildpack_descriptor.api,
+            BuildpackApi { major: 0, minor: 6 }
+        );
+        assert_eq!(
+            buildpack_descriptor.buildpack.id,
+            "foo/bar".parse().unwrap()
+        );
+        assert_eq!(buildpack_descriptor.buildpack.name, None);
+        assert_eq!(
+            buildpack_descriptor.buildpack.version,
             BuildpackVersion::new(0, 0, 1)
         );
-        assert_eq!(buildpack_toml.buildpack.homepage, None);
-        assert!(!buildpack_toml.buildpack.clear_env);
-        assert_eq!(buildpack_toml.buildpack.description, None);
-        assert_eq!(buildpack_toml.buildpack.keywords, Vec::<String>::new());
-        assert_eq!(buildpack_toml.buildpack.licenses, Vec::new());
-        // This is invalid according to the spec, however libcnb currently requires it:
-        // https://github.com/Malax/libcnb.rs/issues/211
-        assert_eq!(buildpack_toml.stacks, vec![Stack::Any]);
+        assert_eq!(buildpack_descriptor.buildpack.homepage, None);
+        assert!(!buildpack_descriptor.buildpack.clear_env);
+        assert_eq!(buildpack_descriptor.buildpack.description, None);
         assert_eq!(
-            buildpack_toml.order,
+            buildpack_descriptor.buildpack.keywords,
+            Vec::<String>::new()
+        );
+        assert_eq!(buildpack_descriptor.buildpack.licenses, Vec::new());
+        assert_eq!(
+            buildpack_descriptor.order,
             vec![Order {
                 group: vec![Group {
                     id: "foo/bar".parse().unwrap(),
@@ -403,6 +511,81 @@ version = "0.0.1"
                 }]
             }]
         );
-        assert_eq!(buildpack_toml.metadata, None);
+        assert_eq!(buildpack_descriptor.metadata, None);
+    }
+
+    #[test]
+    fn deserialize_buildpackdescriptor_single() {
+        let toml_str = r#"
+api = "0.6"
+
+[buildpack]
+id = "foo/bar"
+version = "0.0.1"
+
+[[stacks]]
+id = "*"
+        "#;
+
+        let buildpack_descriptor =
+            toml::from_str::<BuildpackDescriptor<GenericMetadata>>(toml_str).unwrap();
+        assert!(matches!(
+            buildpack_descriptor,
+            BuildpackDescriptor::Single(_)
+        ));
+    }
+
+    #[test]
+    fn deserialize_buildpackdescriptor_meta() {
+        let toml_str = r#"
+api = "0.6"
+
+[buildpack]
+id = "foo/bar"
+version = "0.0.1"
+
+[[order]]
+
+[[order.group]]
+id = "foo/baz"
+version = "0.0.1"
+        "#;
+
+        let buildpack_descriptor =
+            toml::from_str::<BuildpackDescriptor<GenericMetadata>>(toml_str).unwrap();
+        assert!(matches!(buildpack_descriptor, BuildpackDescriptor::Meta(_)));
+    }
+
+    #[test]
+    fn reject_buildpack_with_both_stacks_and_order() {
+        let toml_str = r#"
+api = "0.6"
+
+[buildpack]
+id = "foo/bar"
+version = "0.0.1"
+
+[[stacks]]
+id = "*"
+
+[[order]]
+
+[[order.group]]
+id = "foo/baz"
+version = "0.0.1"
+"#;
+
+        let err = toml::from_str::<BuildpackDescriptor<GenericMetadata>>(toml_str).unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "data did not match any variant of untagged enum BuildpackDescriptor"
+        );
+
+        let err =
+            toml::from_str::<SingleBuildpackDescriptor<GenericMetadata>>(toml_str).unwrap_err();
+        assert!(err.to_string().contains("unknown field `order`"));
+
+        let err = toml::from_str::<MetaBuildpackDescriptor<GenericMetadata>>(toml_str).unwrap_err();
+        assert!(err.to_string().contains("unknown field `stacks`"));
     }
 }
