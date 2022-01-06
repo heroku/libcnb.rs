@@ -45,6 +45,7 @@ use serde::Deserialize;
 /// assert!(result.is_ok());
 /// ```
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct BuildpackToml<BM> {
     pub api: BuildpackApi,
     pub buildpack: Buildpack,
@@ -55,6 +56,7 @@ pub struct BuildpackToml<BM> {
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Buildpack {
     pub id: BuildpackId,
     pub name: Option<String>,
@@ -70,17 +72,20 @@ pub struct Buildpack {
 }
 
 #[derive(Deserialize, Debug, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
 pub struct License {
     pub r#type: Option<String>,
     pub uri: Option<String>,
 }
 
 #[derive(Deserialize, Debug, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
 pub struct Order {
     pub group: Vec<Group>,
 }
 
 #[derive(Deserialize, Debug, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
 pub struct Group {
     pub id: BuildpackId,
     pub version: BuildpackVersion,

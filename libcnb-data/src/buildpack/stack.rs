@@ -6,6 +6,7 @@ use super::{StackId, StackIdError};
 // potentially invalid `Stack` data when deserializing
 // https://dev.to/equalma/validate-fields-and-types-in-serde-with-tryfrom-c2n
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 struct StackUnchecked {
     pub id: String,
     #[serde(default)]

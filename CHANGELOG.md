@@ -7,6 +7,7 @@
 - Make `LayerContentMetadata`'s `types` field an `Option` ([#236](https://github.com/Malax/libcnb.rs/pull/236)).
 - Remove `LayerContentMetadata::Default()` ([#236](https://github.com/Malax/libcnb.rs/pull/236)).
 - Switch `Buildpack.version` from type `semver::Version` to `BuildpackVersion`, in order to validate versions more strictly against the CNB spec ([#241](https://github.com/Malax/libcnb.rs/pull/241)).
+- All libcnb-data struct types now reject unrecognised fields when deserializing ([#252](https://github.com/Malax/libcnb.rs/pull/252)).
 
 ## [0.4.0] 2021/12/08
 

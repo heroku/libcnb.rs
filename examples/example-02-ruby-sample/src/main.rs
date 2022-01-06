@@ -64,6 +64,7 @@ impl Buildpack for RubyBuildpack {
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct RubyBuildpackMetadata {
     pub ruby_url: String,
 }
