@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 ///
 /// See [Cloud Native Buildpack specification](https://github.com/buildpacks/spec/blob/main/buildpack.md#layer-content-metadata-toml)
 #[derive(Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct LayerContentMetadata<M> {
     pub types: Option<LayerTypes>,
 
@@ -20,6 +21,7 @@ impl<M: PartialEq> PartialEq for LayerContentMetadata<M> {
 /// Used to specify layer availability based
 /// on buildpack phase.
 #[derive(Debug, Default, Deserialize, Serialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
 pub struct LayerTypes {
     /// Whether the layer is intended for launch.
     #[serde(default)]

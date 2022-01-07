@@ -3,6 +3,7 @@ use crate::newtypes::libcnb_newtype;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Launch {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub bom: bom::Bom,
@@ -53,12 +54,14 @@ impl Default for Launch {
 }
 
 #[derive(Deserialize, Serialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Label {
     pub key: String,
     pub value: String,
 }
 
 #[derive(Deserialize, Serialize, Debug, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
 pub struct Process {
     pub r#type: ProcessType,
     pub command: String,
@@ -87,6 +90,7 @@ impl Process {
 }
 
 #[derive(Deserialize, Serialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Slice {
     pub paths: Vec<String>,
 }

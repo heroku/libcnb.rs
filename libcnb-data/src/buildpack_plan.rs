@@ -2,12 +2,14 @@ use serde::Deserialize;
 use toml::value::Table;
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct BuildpackPlan {
     #[serde(default)]
     pub entries: Vec<Entry>,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Entry {
     pub name: String,
     #[serde(default)]
