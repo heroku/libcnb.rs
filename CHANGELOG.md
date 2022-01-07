@@ -8,6 +8,7 @@
 - Remove `LayerContentMetadata::Default()` ([#236](https://github.com/Malax/libcnb.rs/pull/236)).
 - Switch `Buildpack.version` from type `semver::Version` to `BuildpackVersion`, in order to validate versions more strictly against the CNB spec ([#241](https://github.com/Malax/libcnb.rs/pull/241)).
 - All libcnb-data struct types now reject unrecognised fields when deserializing ([#252](https://github.com/Malax/libcnb.rs/pull/252)).
+- `BuildpackToml` has been replaced by `BuildpackDescriptor`, which is an enum with `Single` and `Meta` variants that wrap new `SingleBuildpackDescriptor` and `MetaBuildpackDescriptor` types. The new types now reject `buildpack.toml` files where both `stacks` and `order` are present ([#248](https://github.com/Malax/libcnb.rs/pull/248)).
 
 ## [0.4.0] 2021/12/08
 

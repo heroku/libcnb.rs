@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use crate::buildpack::Buildpack;
 use crate::data::buildpack::StackId;
-use crate::{data::build_plan::BuildPlan, data::buildpack::BuildpackToml};
+use crate::{data::build_plan::BuildPlan, data::buildpack::SingleBuildpackDescriptor};
 
 /// Context for the detect phase execution.
 pub struct DetectContext<B: Buildpack + ?Sized> {
@@ -13,7 +13,7 @@ pub struct DetectContext<B: Buildpack + ?Sized> {
     pub buildpack_dir: PathBuf,
     pub stack_id: StackId,
     pub platform: B::Platform,
-    pub buildpack_descriptor: BuildpackToml<B::Metadata>,
+    pub buildpack_descriptor: SingleBuildpackDescriptor<B::Metadata>,
 }
 
 /// Describes the result of the detect phase.
