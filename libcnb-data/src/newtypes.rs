@@ -3,13 +3,14 @@
 /// Automatically implements the following traits for the newtype:
 /// - [`Clone`]
 /// - [`Debug`]
-/// - [`Display`]
+/// - [`Display`](std::fmt::Display)
 /// - [`Eq`]
 /// - [`PartialEq`]
 /// - [`serde::Deserialize`]
 /// - [`serde::Serialize`]
-/// - [`FromStr`]
-/// - [`Borrow<String>`]
+/// - [`FromStr`](std::str::FromStr)
+/// - [`Borrow<String>`](std::borrow::Borrow<String>)
+/// - [`Borrow<str>`](std::borrow::Borrow<str>)
 /// - [`Deref<Target=String>`]
 /// - [`AsRef<String>`]
 ///
