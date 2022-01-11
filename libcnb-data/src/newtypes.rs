@@ -103,6 +103,12 @@ macro_rules! libcnb_newtype {
             }
         }
 
+        impl ::std::borrow::Borrow<str> for $name {
+            fn borrow(&self) -> &str {
+                &self.0
+            }
+        }
+
         impl ::std::ops::Deref for $name {
             type Target = String;
 
@@ -201,6 +207,12 @@ mod tests {
 
         let name = "Johanna".parse::<CapitalizedName>().unwrap();
         foo(&name);
+    }
+
+    #[test]
+    fn join() {
+        let names = vec![capitalized_name!("A"), capitalized_name!("B")];
+        assert_eq!("A, B", names.join(", "));
     }
 
     #[test]
