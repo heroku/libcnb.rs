@@ -1,6 +1,11 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  # Only perform branch builds for `main`, to avoid duplicate builds on PRs.
+  push:
+    branches:
+      - main
+  pull_request:
 
 env:
   CARGO_TERM_COLOR: always
@@ -9,31 +14,54 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2.4.0
-    - name: Update Rust toolchain
-      # Most of the time this will be a no-op, since GitHub releases new images every week
-      # which include the latest stable release of Rust, Rustup, Clippy and rustfmt.
-      run: rustup update
-    - name: Clippy
-      # Using --all-targets so tests are checked and --deny to fail on warnings.
-      run: cargo clippy --all-targets --all-features -- --deny warnings
-    - name: rustfmt
-      run: cargo fmt -- --check --verbose
-    - name: Check docs
-      # Using RUSTDOCFLAGS until `cargo doc --check` is stabilised:
-      # https://github.com/rust-lang/cargo/issues/10025
-      run: RUSTDOCFLAGS="-D warnings" cargo doc --all-features --document-private-items --no-deps
+      - name: Checkout
+        uses: actions/checkout@v2.4.0
+      - name: Update Rust toolchain
+        # Most of the time this will be a no-op, since GitHub releases new images every week
+        # which include the latest stable release of Rust, Rustup, Clippy and rustfmt.
+        run: rustup update
+      - name: Clippy
+        # Using --all-targets so tests are checked and --deny to fail on warnings.
+        # Not using --locked here and below since Cargo.lock is in .gitignore.
+        run: cargo clippy --all-targets --all-features -- --deny warnings
+      - name: rustfmt
+        run: cargo fmt -- --check --verbose
+      - name: Check docs
+        # Using RUSTDOCFLAGS until `cargo doc --check` is stabilised:
+        # https://github.com/rust-lang/cargo/issues/10025
+        run: RUSTDOCFLAGS="-D warnings" cargo doc --all-features --document-private-items --no-deps
 
-  build-and-test:
+  test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2.4.0
-    - name: Update Rust toolchain
-      # Most of the time this will be a no-op, since GitHub releases new images every week
-      # which include the latest stable release of Rust, Rustup, Clippy and rustfmt.
-      run: rustup update
-    - name: Build
-      # Not using --locked since Cargo.lock is in .gitignore.
-      run: cargo build --all-features
-    - name: Run tests
-      run: cargo test --all-features
+      - name: Checkout
+        uses: actions/checkout@v2.4.0
+      - name: Update Rust toolchain
+        run: rustup update
+      - name: Run tests
+        run: cargo test --all-features
+
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2.4.0
+      - name: Install musl-tools
+        run: sudo apt-get install musl-tools --no-install-recommends
+      - name: Update Rust toolchain
+        run: rustup update
+      - name: Install Rust linux-musl target
+        run: rustup target add x86_64-unknown-linux-musl
+      - name: Install Pack CLI
+        uses: buildpacks/github-actions/setup-pack@v4.5.0
+      - name: Configure Pack CLI
+        # Default to a small non-libc image for faster CI + to validate the static musl cross-compilation.
+        # Adjust pull-policy to prevent redundant image-pulling, which slows CI and risks hitting registry rate limits.
+        run: |
+          pack config default-builder cnbs/sample-builder:alpine
+          pack config pull-policy if-not-present
+      - name: Compile and package example-01-basics
+        run: cargo run --package libcnb-cargo -- libcnb package
+        working-directory: ./examples/example-01-basics
+      - name: Pack build using example-01-basics
+        run: pack build example-01-basics --buildpack target/buildpack/debug/libcnb-examples_basics --path examples/
