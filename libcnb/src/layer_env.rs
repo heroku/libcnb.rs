@@ -36,18 +36,18 @@ use crate::Env;
 ///
 /// To apply a `LayerEnv` delta to a given `Env`, use [`LayerEnv::apply`] like so:
 ///```
-/// use libcnb::layer_env::{LayerEnv, TargetLifecycle, ModificationBehavior};
+/// use libcnb::layer_env::{LayerEnv, Scope, ModificationBehavior};
 /// use libcnb::Env;
 ///
 /// let mut layer_env = LayerEnv::new();
-/// layer_env.insert(TargetLifecycle::All, ModificationBehavior::Append, "VAR", "bar");
-/// layer_env.insert(TargetLifecycle::All, ModificationBehavior::Default, "VAR2", "default");
+/// layer_env.insert(Scope::All, ModificationBehavior::Append, "VAR", "bar");
+/// layer_env.insert(Scope::All, ModificationBehavior::Default, "VAR2", "default");
 ///
 /// let mut env = Env::new();
 /// env.insert("VAR", "foo");
 /// env.insert("VAR2", "previous-value");
 ///
-/// let modified_env = layer_env.apply(TargetLifecycle::Build, &env);
+/// let modified_env = layer_env.apply(Scope::Build, &env);
 /// assert_eq!(modified_env.get("VAR").unwrap(), "foobar");
 /// assert_eq!(modified_env.get("VAR2").unwrap(), "previous-value");
 /// ```
@@ -63,7 +63,7 @@ use crate::Env;
 /// libcnb supports these, including all precedence and lifecycle rules, when a `LayerEnv` is read
 /// from disk:
 ///```
-/// use libcnb::layer_env::{LayerEnv, TargetLifecycle};
+/// use libcnb::layer_env::{LayerEnv, Scope};
 /// use tempfile::tempdir;
 /// use libcnb::Env;
 /// use std::fs;
@@ -77,7 +77,7 @@ use crate::Env;
 /// let layer_env = LayerEnv::read_from_layer_dir(&layer_dir).unwrap();
 ///
 /// let env = Env::new();
-/// let modified_env = layer_env.apply(TargetLifecycle::Launch, &env);
+/// let modified_env = layer_env.apply(Scope::Launch, &env);
 ///
 /// assert_eq!(modified_env.get("PATH").unwrap(), layer_dir.join("bin"));
 /// assert_eq!(modified_env.get("CPATH"), None); // None, because CPATH is only added during build
@@ -104,13 +104,13 @@ impl LayerEnv {
     ///
     /// # Example:
     /// ```
-    /// use libcnb::layer_env::{LayerEnv, TargetLifecycle};
+    /// use libcnb::layer_env::{LayerEnv, Scope};
     /// use libcnb::Env;
     ///
     /// let layer_env = LayerEnv::new();
     /// let mut env = Env::new();
     ///
-    /// let modified_env = layer_env.apply(TargetLifecycle::Build, &env);
+    /// let modified_env = layer_env.apply(Scope::Build, &env);
     /// assert_eq!(env, modified_env);
     /// ```
     #[must_use]
@@ -125,32 +125,32 @@ impl LayerEnv {
         }
     }
 
-    /// Applies this [`LayerEnv`] to the given [`Env`] for the given [target lifecycle](TargetLifecycle).
+    /// Applies this [`LayerEnv`] to the given [`Env`] for the given [`Scope`].
     ///
     /// # Example:
     ///```
-    /// use libcnb::layer_env::{LayerEnv, TargetLifecycle, ModificationBehavior};
+    /// use libcnb::layer_env::{LayerEnv, Scope, ModificationBehavior};
     /// use libcnb::Env;
     ///
     /// let mut layer_env = LayerEnv::new();
-    /// layer_env.insert(TargetLifecycle::All, ModificationBehavior::Append, "VAR", "bar");
-    /// layer_env.insert(TargetLifecycle::All, ModificationBehavior::Default, "VAR2", "default");
+    /// layer_env.insert(Scope::All, ModificationBehavior::Append, "VAR", "bar");
+    /// layer_env.insert(Scope::All, ModificationBehavior::Default, "VAR2", "default");
     ///
     /// let mut env = Env::new();
     /// env.insert("VAR", "foo");
     /// env.insert("VAR2", "previous-value");
     ///
-    /// let modified_env = layer_env.apply(TargetLifecycle::Build, &env);
+    /// let modified_env = layer_env.apply(Scope::Build, &env);
     /// assert_eq!(modified_env.get("VAR").unwrap(), "foobar");
     /// assert_eq!(modified_env.get("VAR2").unwrap(), "previous-value");
     /// ```
     #[must_use]
-    pub fn apply(&self, target: TargetLifecycle, env: &Env) -> Env {
-        let deltas = match target {
-            TargetLifecycle::All => vec![&self.all],
-            TargetLifecycle::Build => vec![&self.all, &self.build, &self.layer_paths_build],
-            TargetLifecycle::Launch => vec![&self.all, &self.launch, &self.layer_paths_launch],
-            TargetLifecycle::Process(process) => {
+    pub fn apply(&self, scope: Scope, env: &Env) -> Env {
+        let deltas = match scope {
+            Scope::All => vec![&self.all],
+            Scope::Build => vec![&self.all, &self.build, &self.layer_paths_build],
+            Scope::Launch => vec![&self.all, &self.launch, &self.layer_paths_launch],
+            Scope::Process(process) => {
                 let mut process_deltas = vec![&self.all];
                 if let Some(process_specific_delta) = self.process.get(&process) {
                     process_deltas.push(process_specific_delta);
@@ -167,22 +167,22 @@ impl LayerEnv {
 
     /// Insert a new entry into this `LayerEnv`.
     ///
-    /// Should there already be an entry for the same target lifecycle, modification behavior and
+    /// Should there already be an entry for the same scope, modification behavior and
     /// name, it will be updated with the new given value.
     ///
     /// # Example:
     /// ```
-    /// use libcnb::layer_env::{LayerEnv, TargetLifecycle, ModificationBehavior};
+    /// use libcnb::layer_env::{LayerEnv, Scope, ModificationBehavior};
     /// use libcnb::Env;
     ///
     /// let mut layer_env = LayerEnv::new();
-    /// layer_env.insert(TargetLifecycle::All, ModificationBehavior::Default, "VAR", "hello");
+    /// layer_env.insert(Scope::All, ModificationBehavior::Default, "VAR", "hello");
     /// // "foo" will be overridden by "bar" here:
-    /// layer_env.insert(TargetLifecycle::All, ModificationBehavior::Append, "VAR2", "foo");
-    /// layer_env.insert(TargetLifecycle::All, ModificationBehavior::Append, "VAR2", "bar");
+    /// layer_env.insert(Scope::All, ModificationBehavior::Append, "VAR2", "foo");
+    /// layer_env.insert(Scope::All, ModificationBehavior::Append, "VAR2", "bar");
     ///
     /// let mut env = Env::new();
-    /// let modified_env = layer_env.apply(TargetLifecycle::Build, &env);
+    /// let modified_env = layer_env.apply(Scope::Build, &env);
     ///
     /// assert_eq!(modified_env.get("VAR").unwrap(), "hello");
     /// assert_eq!(modified_env.get("VAR2").unwrap(), "bar");
@@ -192,21 +192,19 @@ impl LayerEnv {
     /// without intermediate variables.
     pub fn insert(
         &mut self,
-        target: TargetLifecycle,
+        scope: Scope,
         modification_behavior: ModificationBehavior,
         name: impl Into<OsString>,
         value: impl Into<OsString>,
     ) {
-        let target_delta = match target {
-            TargetLifecycle::All => &mut self.all,
-            TargetLifecycle::Build => &mut self.build,
-            TargetLifecycle::Launch => &mut self.launch,
-            TargetLifecycle::Process(process_type_name) => {
-                match self.process.entry(process_type_name) {
-                    Entry::Occupied(entry) => entry.into_mut(),
-                    Entry::Vacant(entry) => entry.insert(LayerEnvDelta::new()),
-                }
-            }
+        let target_delta = match scope {
+            Scope::All => &mut self.all,
+            Scope::Build => &mut self.build,
+            Scope::Launch => &mut self.launch,
+            Scope::Process(process_type_name) => match self.process.entry(process_type_name) {
+                Entry::Occupied(entry) => entry.into_mut(),
+                Entry::Vacant(entry) => entry.insert(LayerEnvDelta::new()),
+            },
         };
 
         target_delta.insert(modification_behavior, name, value);
@@ -219,12 +217,12 @@ impl LayerEnv {
     ///
     /// # Example:
     /// ```
-    /// use libcnb::layer_env::{LayerEnv, ModificationBehavior, TargetLifecycle};
+    /// use libcnb::layer_env::{LayerEnv, ModificationBehavior, Scope};
     /// use libcnb::Env;
     ///
     /// fn something_that_needs_layer_env(layer_env: LayerEnv) {
     ///     let mut env = Env::new();
-    ///     let modified_env = layer_env.apply(TargetLifecycle::Build, &env);
+    ///     let modified_env = layer_env.apply(Scope::Build, &env);
     ///     assert_eq!(modified_env.get("VAR").unwrap(), "hello");
     ///     assert_eq!(modified_env.get("VAR2").unwrap(), "bar");
     /// }
@@ -232,13 +230,13 @@ impl LayerEnv {
     /// something_that_needs_layer_env(
     ///     LayerEnv::new()
     ///         .chainable_insert(
-    ///             TargetLifecycle::All,
+    ///             Scope::All,
     ///             ModificationBehavior::Default,
     ///             "VAR",
     ///             "hello",
     ///         )
     ///         .chainable_insert(
-    ///             TargetLifecycle::All,
+    ///             Scope::All,
     ///             ModificationBehavior::Append,
     ///             "VAR2",
     ///             "bar",
@@ -248,12 +246,12 @@ impl LayerEnv {
     #[must_use]
     pub fn chainable_insert(
         mut self,
-        target: TargetLifecycle,
+        scope: Scope,
         modification_behavior: ModificationBehavior,
         name: impl Into<OsString>,
         value: impl Into<OsString>,
     ) -> Self {
-        self.insert(target, modification_behavior, name, value);
+        self.insert(scope, modification_behavior, name, value);
         self
     }
 
@@ -267,7 +265,7 @@ impl LayerEnv {
     ///
     /// # Example:
     ///```
-    /// use libcnb::layer_env::{LayerEnv, TargetLifecycle};
+    /// use libcnb::layer_env::{LayerEnv, Scope};
     /// use tempfile::tempdir;
     /// use libcnb::Env;
     /// use std::fs;
@@ -284,7 +282,7 @@ impl LayerEnv {
     /// let layer_env = LayerEnv::read_from_layer_dir(&layer_dir).unwrap();
     ///
     /// let env = Env::new();
-    /// let modified_env = layer_env.apply(TargetLifecycle::Launch, &env);
+    /// let modified_env = layer_env.apply(Scope::Launch, &env);
     ///
     /// assert_eq!(modified_env.get("PATH").unwrap(), layer_dir.join("bin"));
     /// assert_eq!(modified_env.get("ZERO_WING").unwrap(), "ALL_YOUR_BASE_ARE_BELONG_TO_US");
@@ -298,21 +296,21 @@ impl LayerEnv {
         let pkgconfig_path = layer_dir.as_ref().join("pkgconfig");
 
         let layer_path_specs = vec![
-            ("PATH", TargetLifecycle::Build, &bin_path),
-            ("LIBRARY_PATH", TargetLifecycle::Build, &lib_path),
-            ("LD_LIBRARY_PATH", TargetLifecycle::Build, &lib_path),
-            ("CPATH", TargetLifecycle::Build, &include_path),
-            ("PKG_CONFIG_PATH", TargetLifecycle::Build, &pkgconfig_path),
-            ("PATH", TargetLifecycle::Launch, &bin_path),
-            ("LD_LIBRARY_PATH", TargetLifecycle::Launch, &lib_path),
+            ("PATH", Scope::Build, &bin_path),
+            ("LIBRARY_PATH", Scope::Build, &lib_path),
+            ("LD_LIBRARY_PATH", Scope::Build, &lib_path),
+            ("CPATH", Scope::Build, &include_path),
+            ("PKG_CONFIG_PATH", Scope::Build, &pkgconfig_path),
+            ("PATH", Scope::Launch, &bin_path),
+            ("LD_LIBRARY_PATH", Scope::Launch, &lib_path),
         ];
 
-        for (name, target_lifecycle, path) in layer_path_specs {
+        for (name, scope, path) in layer_path_specs {
             if path.is_dir() {
-                let target_delta = match target_lifecycle {
-                    TargetLifecycle::Build => &mut result_layer_env.layer_paths_build,
-                    TargetLifecycle::Launch => &mut result_layer_env.layer_paths_launch,
-                    _ => unreachable!("Unexpected TargetLifecycle in read_from_layer_dir implementation. This is a libcnb implementation error!"),
+                let target_delta = match scope {
+                    Scope::Build => &mut result_layer_env.layer_paths_build,
+                    Scope::Launch => &mut result_layer_env.layer_paths_launch,
+                    _ => unreachable!("Unexpected Scope in read_from_layer_dir implementation. This is a libcnb implementation error!"),
                 };
 
                 target_delta.insert(ModificationBehavior::Prepend, &name, &path);
@@ -348,13 +346,13 @@ impl LayerEnv {
     ///
     /// Example:
     /// ```
-    /// use libcnb::layer_env::{LayerEnv, TargetLifecycle, ModificationBehavior};
+    /// use libcnb::layer_env::{LayerEnv, Scope, ModificationBehavior};
     /// use tempfile::tempdir;
     /// use std::fs;
     ///
     /// let mut layer_env = LayerEnv::new();
-    /// layer_env.insert(TargetLifecycle::Build, ModificationBehavior::Default, "FOO", "bar");
-    /// layer_env.insert(TargetLifecycle::All, ModificationBehavior::Append, "PATH", "some-path");
+    /// layer_env.insert(Scope::Build, ModificationBehavior::Default, "FOO", "bar");
+    /// layer_env.insert(Scope::All, ModificationBehavior::Append, "PATH", "some-path");
     ///
     /// let mut temp_dir = tempdir().unwrap();
     /// layer_env.write_to_layer_dir(&temp_dir).unwrap();
@@ -421,9 +419,9 @@ impl PartialOrd for ModificationBehavior {
     }
 }
 
-/// Target lifecycle for an environment variable modification.
+/// The scope of an environment variable modification.
 #[derive(Eq, PartialEq, Debug)]
-pub enum TargetLifecycle {
+pub enum Scope {
     All,
     Build,
     Launch,
@@ -598,7 +596,7 @@ mod tests {
 
     use tempfile::tempdir;
 
-    use crate::layer_env::{Env, LayerEnv, ModificationBehavior, TargetLifecycle};
+    use crate::layer_env::{Env, LayerEnv, ModificationBehavior, Scope};
 
     use super::LayerEnvDelta;
 
@@ -721,7 +719,7 @@ mod tests {
         original_env.insert("LIBRARY_PATH", "some-library");
 
         let layer_env = LayerEnv::read_from_layer_dir(temp_dir.path()).unwrap();
-        let modified_env = layer_env.apply(TargetLifecycle::Build, &original_env);
+        let modified_env = layer_env.apply(Scope::Build, &original_env);
 
         assert_eq!(
             vec![
@@ -779,34 +777,34 @@ mod tests {
     fn layer_env_insert() {
         let mut layer_env = LayerEnv::new();
         layer_env.insert(
-            TargetLifecycle::Build,
+            Scope::Build,
             ModificationBehavior::Append,
             "MAVEN_OPTS",
             "-Dskip.tests=true",
         );
 
         layer_env.insert(
-            TargetLifecycle::All,
+            Scope::All,
             ModificationBehavior::Override,
             "JAVA_TOOL_OPTIONS",
             "-Xmx1G",
         );
 
         layer_env.insert(
-            TargetLifecycle::Build,
+            Scope::Build,
             ModificationBehavior::Override,
             "JAVA_TOOL_OPTIONS",
             "-Xmx2G",
         );
 
         layer_env.insert(
-            TargetLifecycle::Launch,
+            Scope::Launch,
             ModificationBehavior::Append,
             "JAVA_TOOL_OPTIONS",
             "-XX:+UseSerialGC",
         );
 
-        let result_env = layer_env.apply(TargetLifecycle::Build, &Env::new());
+        let result_env = layer_env.apply(Scope::Build, &Env::new());
         assert_eq!(
             vec![
                 ("JAVA_TOOL_OPTIONS", "-Xmx2G"),
@@ -880,7 +878,7 @@ mod tests {
         let layer_env = LayerEnv::read_from_layer_dir(&layer_dir).unwrap();
         let env = Env::new();
 
-        let modified_env = layer_env.apply(TargetLifecycle::Launch, &env);
+        let modified_env = layer_env.apply(Scope::Launch, &env);
         assert_eq!(modified_env.get("PATH").unwrap(), layer_dir.join("bin"));
         assert_eq!(
             modified_env.get("LD_LIBRARY_PATH").unwrap(),
@@ -905,7 +903,7 @@ mod tests {
         let layer_env = LayerEnv::read_from_layer_dir(&layer_dir).unwrap();
         let env = Env::new();
 
-        let modified_env = layer_env.apply(TargetLifecycle::Build, &env);
+        let modified_env = layer_env.apply(Scope::Build, &env);
         assert_eq!(modified_env.get("PATH").unwrap(), layer_dir.join("bin"));
         assert_eq!(
             modified_env.get("LD_LIBRARY_PATH").unwrap(),
