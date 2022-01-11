@@ -60,7 +60,7 @@ pub struct Label {
     pub value: String,
 }
 
-#[derive(Deserialize, Serialize, Debug, PartialEq, Eq)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct Process {
     pub r#type: ProcessType,
@@ -87,20 +87,6 @@ impl Process {
             args: args.map(|args| args.into_iter().map(std::convert::Into::into).collect()),
             direct,
             default,
-        }
-    }
-
-    pub fn update(&mut self, process: Process) {
-        self.r#type = process.r#type;
-        self.command = process.command;
-        if process.args.is_some() {
-            self.args = process.args;
-        }
-        if process.direct.is_some() {
-            self.direct = process.direct;
-        }
-        if process.default.is_some() {
-            self.default = process.default;
         }
     }
 }
