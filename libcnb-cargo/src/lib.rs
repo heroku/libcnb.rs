@@ -118,16 +118,16 @@ pub enum CargoProfile {
 pub fn read_buildpack_data(
     project_path: impl AsRef<Path>,
 ) -> Result<BuildpackData<Option<toml::Value>>, BuildpackDataError> {
-    let buildpack_toml_path = project_path.as_ref().join("buildpack.toml");
+    let buildpack_descriptor_path = project_path.as_ref().join("buildpack.toml");
 
-    fs::read_to_string(&buildpack_toml_path)
+    fs::read_to_string(&buildpack_descriptor_path)
         .map_err(BuildpackDataError::IoError)
         .and_then(|file_contents| {
             toml::from_str(&file_contents).map_err(BuildpackDataError::DeserializationError)
         })
-        .map(|buildpack_toml| BuildpackData {
-            buildpack_toml_path,
-            buildpack_toml,
+        .map(|buildpack_descriptor| BuildpackData {
+            buildpack_descriptor_path,
+            buildpack_descriptor,
         })
 }
 
@@ -138,8 +138,8 @@ pub enum BuildpackDataError {
 }
 
 pub struct BuildpackData<BM> {
-    pub buildpack_toml_path: PathBuf,
-    pub buildpack_toml: SingleBuildpackDescriptor<BM>,
+    pub buildpack_descriptor_path: PathBuf,
+    pub buildpack_descriptor: SingleBuildpackDescriptor<BM>,
 }
 
 /// Creates a buildpack directory and copies all buildpack assets to it.
@@ -156,7 +156,7 @@ pub struct BuildpackData<BM> {
 /// Will return `Err` if the buildpack directory already exists or could not be assembled.
 pub fn assemble_buildpack_directory(
     destination_path: impl AsRef<Path>,
-    buildpack_toml_path: impl AsRef<Path>,
+    buildpack_descriptor_path: impl AsRef<Path>,
     buildpack_binary_path: impl AsRef<Path>,
 ) -> std::io::Result<()> {
     if destination_path.as_ref().exists() {
@@ -168,7 +168,7 @@ pub fn assemble_buildpack_directory(
         fs::create_dir_all(destination_path.as_ref())?;
 
         fs::copy(
-            buildpack_toml_path.as_ref(),
+            buildpack_descriptor_path.as_ref(),
             destination_path.as_ref().join("buildpack.toml"),
         )?;
 
@@ -203,7 +203,7 @@ fn create_file_symlink<P: AsRef<Path>, Q: AsRef<Path>>(
 /// This function ensures the resulting name is valid and does not contain problematic characters
 /// such as `/`.
 pub fn default_buildpack_directory_name<BM>(
-    buildpack_toml: &SingleBuildpackDescriptor<BM>,
+    buildpack_descriptor: &SingleBuildpackDescriptor<BM>,
 ) -> String {
-    buildpack_toml.buildpack.id.replace("/", "_")
+    buildpack_descriptor.buildpack.id.replace("/", "_")
 }

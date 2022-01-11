@@ -29,13 +29,13 @@ use std::fmt::Debug;
 /// Don't implement this directly and use the [`buildpack_main`] macro instead!
 #[doc(hidden)]
 pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
-    match read_buildpack_toml::<B::Metadata, B::Error>() {
-        Ok(buildpack_toml) => {
-            if buildpack_toml.api != LIBCNB_SUPPORTED_BUILDPACK_API {
+    match read_buildpack_descriptor::<B::Metadata, B::Error>() {
+        Ok(buildpack_descriptor) => {
+            if buildpack_descriptor.api != LIBCNB_SUPPORTED_BUILDPACK_API {
                 eprintln!("Error: Cloud Native Buildpack API mismatch");
                 eprintln!(
                     "This buildpack ({}) uses Cloud Native Buildpacks API version {}.",
-                    &buildpack_toml.buildpack.id, &buildpack_toml.api,
+                    &buildpack_descriptor.buildpack.id, &buildpack_descriptor.api,
                 );
 
                 eprintln!(
@@ -100,7 +100,7 @@ fn libcnb_runtime_detect<B: Buildpack>(buildpack: &B) -> crate::Result<(), B::Er
         stack_id,
         platform,
         buildpack_dir: read_buildpack_dir()?,
-        buildpack_descriptor: read_buildpack_toml()?,
+        buildpack_descriptor: read_buildpack_descriptor()?,
     };
 
     match buildpack.detect(detect_context)?.0 {
@@ -140,7 +140,7 @@ fn libcnb_runtime_build<B: Buildpack>(buildpack: &B) -> crate::Result<(), B::Err
         platform,
         buildpack_plan,
         buildpack_dir: read_buildpack_dir()?,
-        buildpack_descriptor: read_buildpack_toml()?,
+        buildpack_descriptor: read_buildpack_descriptor()?,
     })?;
 
     match build_result.0 {
@@ -206,7 +206,7 @@ fn read_buildpack_dir<E: Debug>() -> crate::Result<PathBuf, E> {
         .map(PathBuf::from)
 }
 
-fn read_buildpack_toml<BM: DeserializeOwned, E: Debug>(
+fn read_buildpack_descriptor<BM: DeserializeOwned, E: Debug>(
 ) -> crate::Result<SingleBuildpackDescriptor<BM>, E> {
     read_buildpack_dir().and_then(|buildpack_dir| {
         read_toml_file(buildpack_dir.join("buildpack.toml"))

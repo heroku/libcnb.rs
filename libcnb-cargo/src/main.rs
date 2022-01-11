@@ -78,7 +78,8 @@ fn handle_libcnb_package(matches: &ArgMatches) {
 
     info!(
         "Found buildpack {} with version {}.",
-        buildpack_data.buildpack_toml.buildpack.id, buildpack_data.buildpack_toml.buildpack.version
+        buildpack_data.buildpack_descriptor.buildpack.id,
+        buildpack_data.buildpack_descriptor.buildpack.version
     );
 
     let cargo_metadata = match MetadataCommand::new()
@@ -100,7 +101,7 @@ fn handle_libcnb_package(matches: &ArgMatches) {
             CargoProfile::Release => "release",
         })
         .join(default_buildpack_directory_name(
-            &buildpack_data.buildpack_toml,
+            &buildpack_data.buildpack_descriptor,
         ))
         .into_std_path_buf();
 
@@ -182,7 +183,7 @@ fn handle_libcnb_package(matches: &ArgMatches) {
 
     if let Err(io_error) = assemble_buildpack_directory(
         &output_path,
-        &buildpack_data.buildpack_toml_path,
+        &buildpack_data.buildpack_descriptor_path,
         &binary_path,
     ) {
         error!("IO error while writing buildpack directory: {}", io_error);
