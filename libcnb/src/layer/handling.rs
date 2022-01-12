@@ -298,7 +298,7 @@ mod tests {
     use crate::data::layer_content_metadata::{LayerContentMetadata, LayerTypes};
     use crate::data::layer_name;
     use crate::generic::GenericMetadata;
-    use crate::layer_env::{ModificationBehavior, TargetLifecycle};
+    use crate::layer_env::{ModificationBehavior, Scope};
     use crate::{read_toml_file, Env};
     use serde::Deserialize;
     use std::ffi::OsString;
@@ -375,7 +375,7 @@ mod tests {
             &layers_dir,
             &layer_name,
             &LayerEnv::new().chainable_insert(
-                TargetLifecycle::All,
+                Scope::All,
                 ModificationBehavior::Default,
                 "ENV_VAR",
                 "ENV_VAR_VALUE",
@@ -423,13 +423,13 @@ mod tests {
             &layer_name,
             &LayerEnv::new()
                 .chainable_insert(
-                    TargetLifecycle::All,
+                    Scope::All,
                     ModificationBehavior::Default,
                     "ENV_VAR",
                     "INITIAL_ENV_VAR_VALUE",
                 )
                 .chainable_insert(
-                    TargetLifecycle::All,
+                    Scope::All,
                     ModificationBehavior::Default,
                     "SOME_OTHER_ENV_VAR",
                     "SOME_OTHER_ENV_VAR_VALUE",
@@ -451,7 +451,7 @@ mod tests {
             &layers_dir,
             &layer_name,
             &LayerEnv::new().chainable_insert(
-                TargetLifecycle::All,
+                Scope::All,
                 ModificationBehavior::Default,
                 "ENV_VAR",
                 "NEW_ENV_VAR_VALUE",
@@ -557,7 +557,7 @@ mod tests {
             }
         );
 
-        let applied_layer_env = layer_data.env.apply(TargetLifecycle::Build, &Env::new());
+        let applied_layer_env = layer_data.env.apply(Scope::Build, &Env::new());
         assert_eq!(
             applied_layer_env.get("PATH"),
             Some(layer_dir.join("bin").into())

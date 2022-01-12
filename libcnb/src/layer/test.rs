@@ -19,7 +19,7 @@ use crate::layer::{
     handle_layer, ExistingLayerStrategy, Layer, LayerData, LayerResult, LayerResultBuilder,
     MetadataMigration,
 };
-use crate::layer_env::{LayerEnv, ModificationBehavior, TargetLifecycle};
+use crate::layer_env::{LayerEnv, ModificationBehavior, Scope};
 use crate::{read_toml_file, Buildpack, Env, LIBCNB_SUPPORTED_BUILDPACK_API};
 use libcnb_data::buildpack::{BuildpackVersion, SingleBuildpackDescriptor, Stack};
 use libcnb_data::buildpack_plan::BuildpackPlan;
@@ -708,7 +708,7 @@ fn write_layer_env() {
     let layer_name = random_layer_name();
     let metadata_version_string = String::from("1.0.0");
     let layer_env = LayerEnv::new().chainable_insert(
-        TargetLifecycle::All,
+        Scope::All,
         ModificationBehavior::Append,
         "RANDOM",
         "4", // chosen by fair dice roll, guaranteed to be random.
@@ -780,7 +780,7 @@ fn default_layer_method_implementations() {
         name: layer_name,
         path: PathBuf::default(),
         env: LayerEnv::new().chainable_insert(
-            TargetLifecycle::All,
+            Scope::All,
             ModificationBehavior::Default,
             "FOO",
             "bar",
@@ -871,7 +871,7 @@ fn layer_env_read_write() {
 
     let layer = LayerDataTestLayer {
         expected_layer_env: LayerEnv::new().chainable_insert(
-            TargetLifecycle::All,
+            Scope::All,
             ModificationBehavior::Override,
             "FOO",
             "bar",

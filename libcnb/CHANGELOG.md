@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Add `must_use` attributes to a number of pure public methods ([#232](https://github.com/Malax/libcnb.rs/pull/232)).
+- `TargetLifecycle` has been renamed to `Scope` ([#257](https://github.com/Malax/libcnb.rs/pull/257)).
 
 ## [0.4.0] 2021-12-08
 
