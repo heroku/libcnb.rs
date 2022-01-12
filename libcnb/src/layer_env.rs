@@ -165,6 +165,14 @@ impl LayerEnv {
             .fold(env.clone(), |env, delta| delta.apply(&env))
     }
 
+    /// Applies this [`LayerEnv`] to an empty [`Env`] for the given [`Scope`].
+    ///
+    /// For applying to an existing [`Env`], see [apply](Self::apply).
+    #[must_use]
+    pub fn apply_to_empty(&self, scope: Scope) -> Env {
+        self.apply(scope, &Env::new())
+    }
+
     /// Insert a new entry into this `LayerEnv`.
     ///
     /// Should there already be an entry for the same scope, modification behavior and
