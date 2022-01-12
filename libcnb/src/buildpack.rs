@@ -35,15 +35,15 @@ pub trait Buildpack {
     fn build(&self, context: BuildContext<Self>) -> crate::Result<BuildResult, Self::Error>;
 
     /// If an unhandled error occurred within the framework or the buildpack, this method will be
-    /// called by the framework to allow custom, buildpack specific, error handling. Usually,
-    /// this method is implemented by logging the error in a user friendly manner.
+    /// called by the framework to allow custom, buildpack specific, code to run before exiting.
+    /// Usually, this method is implemented by logging the error in a user friendly manner.
     ///
     /// Implementations are not limited to just logging, for example, buildpacks might want to
     /// collect and send metrics about occurring errors to a central system.
     ///
     /// The default implementation will simply print the error
     /// (using its [`Display`](std::fmt::Display) implementation) to stderr.
-    fn handle_error(&self, error: crate::Error<Self::Error>) -> i32 {
+    fn on_error(&self, error: crate::Error<Self::Error>) -> i32 {
         eprintln!("Unhandled error:");
         eprintln!("> {:?}", error);
         eprintln!("Buildpack will exit!");

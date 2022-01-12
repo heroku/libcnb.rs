@@ -47,7 +47,7 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
             }
         }
         Err(lib_cnb_error) => {
-            exit(buildpack.handle_error(lib_cnb_error));
+            exit(buildpack.on_error(lib_cnb_error));
         }
     }
 
@@ -77,7 +77,7 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
     };
 
     if let Err(lib_cnb_error) = result {
-        exit(buildpack.handle_error(lib_cnb_error));
+        exit(buildpack.on_error(lib_cnb_error));
     }
 }
 
