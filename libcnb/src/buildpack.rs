@@ -42,7 +42,7 @@ pub trait Buildpack {
     /// collect and send metrics about occurring errors to a central system.
     ///
     /// The default implementation will simply print the error
-    /// (using its [`Display`] implementation) to stderr.
+    /// (using its [`Display`](std::fmt::Display) implementation) to stderr.
     fn handle_error(&self, error: crate::Error<Self::Error>) -> i32 {
         eprintln!("Unhandled error:");
         eprintln!("> {:?}", error);

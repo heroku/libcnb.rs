@@ -19,6 +19,10 @@ jobs:
       run: cargo clippy --all-targets --all-features -- --deny warnings
     - name: rustfmt
       run: cargo fmt -- --check --verbose
+    - name: Check docs
+      # Using RUSTDOCFLAGS until `cargo doc --check` is stabilised:
+      # https://github.com/rust-lang/cargo/issues/10025
+      run: RUSTDOCFLAGS="-D warnings" cargo doc --all-features --document-private-items --no-deps
 
   build-and-test:
     runs-on: ubuntu-latest
