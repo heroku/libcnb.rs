@@ -145,13 +145,18 @@ impl ProcessBuilder {
         self
     }
 
-    /// Sets the direct flag on the process.
+    /// Sets the `direct` flag on the process.
+    ///
+    /// If this is true, the lifecycle will launch the command directly, rather than via a shell.
     pub fn direct(&mut self, value: bool) -> &mut Self {
         self.process.direct = value;
         self
     }
 
-    /// Sets the default flag on the process.
+    /// Sets the `default` flag on the process.
+    ///
+    /// Indicates that the process type should be selected as the buildpack-provided
+    /// default during the export phase.
     pub fn default(&mut self, value: bool) -> &mut Self {
         self.process.default = value;
         self
