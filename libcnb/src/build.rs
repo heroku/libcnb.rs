@@ -155,9 +155,7 @@ impl BuildResultBuilder {
             store: None,
         }
     }
-}
 
-impl BuildResultBuilder {
     /// Builds the final [`BuildResult`].
     ///
     /// This method returns the [`BuildResult`] wrapped in a [`Result`] even though its technically
