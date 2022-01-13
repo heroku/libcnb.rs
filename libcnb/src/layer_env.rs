@@ -125,6 +125,8 @@ impl LayerEnv {
 
     /// Applies this [`LayerEnv`] to the given [`Env`] for the given [`Scope`].
     ///
+    /// For applying to an empty [`Env`], see [`apply_to_empty`](Self::apply_to_empty).
+    ///
     /// # Example:
     ///```
     /// use libcnb::layer_env::{LayerEnv, Scope, ModificationBehavior};
@@ -165,7 +167,7 @@ impl LayerEnv {
 
     /// Applies this [`LayerEnv`] to an empty [`Env`] for the given [`Scope`].
     ///
-    /// For applying to an existing [`Env`], see [apply](Self::apply).
+    /// For applying to an existing [`Env`], see [`apply`](Self::apply).
     #[must_use]
     pub fn apply_to_empty(&self, scope: Scope) -> Env {
         self.apply(scope, &Env::new())
