@@ -289,4 +289,69 @@ default = true
 "#
         );
     }
+
+    #[test]
+    fn process_builder() {
+        let mut process_builder = ProcessBuilder::new(process_type!("web"), "java");
+
+        assert_eq!(
+            process_builder.build(),
+            Process {
+                r#type: process_type!("web"),
+                command: String::from("java"),
+                args: vec![],
+                direct: false,
+                default: false
+            }
+        );
+
+        process_builder.default(true);
+
+        assert_eq!(
+            process_builder.build(),
+            Process {
+                r#type: process_type!("web"),
+                command: String::from("java"),
+                args: vec![],
+                direct: false,
+                default: true
+            }
+        );
+
+        process_builder.direct(true);
+
+        assert_eq!(
+            process_builder.build(),
+            Process {
+                r#type: process_type!("web"),
+                command: String::from("java"),
+                args: vec![],
+                direct: true,
+                default: true
+            }
+        );
+    }
+
+    #[test]
+    fn process_builder_args() {
+        assert_eq!(
+            ProcessBuilder::new(process_type!("web"), "java")
+                .arg("foo")
+                .args(vec!["baz", "eggs"])
+                .arg("bar")
+                .build(),
+            Process {
+                r#type: process_type!("web"),
+                command: String::from("java"),
+                args: vec![
+                    String::from("foo"),
+                    String::from("baz"),
+                    String::from("eggs"),
+                    String::from("bar"),
+                ],
+                direct: false,
+                default: false
+            }
+        );
+    }
 }
