@@ -5,7 +5,7 @@ use libcnb::data::{layer_name, process_type};
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::generic::GenericPlatform;
 use libcnb::layer_env::Scope;
-use libcnb::{buildpack_main, Buildpack, Env};
+use libcnb::{buildpack_main, Buildpack};
 
 use crate::util::{DownloadError, UntarError};
 use serde::Deserialize;
@@ -37,7 +37,7 @@ impl Buildpack for RubyBuildpack {
         context.handle_layer(
             layer_name!("bundler"),
             BundlerLayer {
-                ruby_env: ruby_layer.env.apply(Scope::Build, &Env::new()),
+                ruby_env: ruby_layer.env.apply_to_empty(Scope::Build),
             },
         )?;
 

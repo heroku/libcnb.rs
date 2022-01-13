@@ -75,12 +75,10 @@ use crate::Env;
 /// fs::create_dir_all(layer_dir.join("include")).unwrap();
 ///
 /// let layer_env = LayerEnv::read_from_layer_dir(&layer_dir).unwrap();
+/// let env = layer_env.apply_to_empty(Scope::Launch);
 ///
-/// let env = Env::new();
-/// let modified_env = layer_env.apply(Scope::Launch, &env);
-///
-/// assert_eq!(modified_env.get("PATH").unwrap(), layer_dir.join("bin"));
-/// assert_eq!(modified_env.get("CPATH"), None); // None, because CPATH is only added during build
+/// assert_eq!(env.get("PATH").unwrap(), layer_dir.join("bin"));
+/// assert_eq!(env.get("CPATH"), None); // None, because CPATH is only added during build
 /// ```
 #[derive(Eq, PartialEq, Debug, Clone)]
 pub struct LayerEnv {
@@ -127,6 +125,8 @@ impl LayerEnv {
 
     /// Applies this [`LayerEnv`] to the given [`Env`] for the given [`Scope`].
     ///
+    /// For applying to an empty [`Env`], see [`apply_to_empty`](Self::apply_to_empty).
+    ///
     /// # Example:
     ///```
     /// use libcnb::layer_env::{LayerEnv, Scope, ModificationBehavior};
@@ -165,6 +165,14 @@ impl LayerEnv {
             .fold(env.clone(), |env, delta| delta.apply(&env))
     }
 
+    /// Applies this [`LayerEnv`] to an empty [`Env`] for the given [`Scope`].
+    ///
+    /// For applying to an existing [`Env`], see [`apply`](Self::apply).
+    #[must_use]
+    pub fn apply_to_empty(&self, scope: Scope) -> Env {
+        self.apply(scope, &Env::new())
+    }
+
     /// Insert a new entry into this `LayerEnv`.
     ///
     /// Should there already be an entry for the same scope, modification behavior and
@@ -181,11 +189,10 @@ impl LayerEnv {
     /// layer_env.insert(Scope::All, ModificationBehavior::Append, "VAR2", "foo");
     /// layer_env.insert(Scope::All, ModificationBehavior::Append, "VAR2", "bar");
     ///
-    /// let mut env = Env::new();
-    /// let modified_env = layer_env.apply(Scope::Build, &env);
+    /// let env = layer_env.apply_to_empty(Scope::Build);
     ///
-    /// assert_eq!(modified_env.get("VAR").unwrap(), "hello");
-    /// assert_eq!(modified_env.get("VAR2").unwrap(), "bar");
+    /// assert_eq!(env.get("VAR").unwrap(), "hello");
+    /// assert_eq!(env.get("VAR2").unwrap(), "bar");
     /// ```
     ///
     /// See [`LayerEnv::chainable_insert`] that allows easy creation of inline `LayerEnv` values
@@ -221,10 +228,9 @@ impl LayerEnv {
     /// use libcnb::Env;
     ///
     /// fn something_that_needs_layer_env(layer_env: LayerEnv) {
-    ///     let mut env = Env::new();
-    ///     let modified_env = layer_env.apply(Scope::Build, &env);
-    ///     assert_eq!(modified_env.get("VAR").unwrap(), "hello");
-    ///     assert_eq!(modified_env.get("VAR2").unwrap(), "bar");
+    ///     let env = layer_env.apply_to_empty(Scope::Build);
+    ///     assert_eq!(env.get("VAR").unwrap(), "hello");
+    ///     assert_eq!(env.get("VAR2").unwrap(), "bar");
     /// }
     ///
     /// something_that_needs_layer_env(
@@ -280,12 +286,10 @@ impl LayerEnv {
     /// fs::write(layer_env_dir.join("ZERO_WING.default"), "ALL_YOUR_BASE_ARE_BELONG_TO_US").unwrap();
     ///
     /// let layer_env = LayerEnv::read_from_layer_dir(&layer_dir).unwrap();
+    /// let env = layer_env.apply_to_empty(Scope::Launch);
     ///
-    /// let env = Env::new();
-    /// let modified_env = layer_env.apply(Scope::Launch, &env);
-    ///
-    /// assert_eq!(modified_env.get("PATH").unwrap(), layer_dir.join("bin"));
-    /// assert_eq!(modified_env.get("ZERO_WING").unwrap(), "ALL_YOUR_BASE_ARE_BELONG_TO_US");
+    /// assert_eq!(env.get("PATH").unwrap(), layer_dir.join("bin"));
+    /// assert_eq!(env.get("ZERO_WING").unwrap(), "ALL_YOUR_BASE_ARE_BELONG_TO_US");
     /// ```
     pub fn read_from_layer_dir(layer_dir: impl AsRef<Path>) -> Result<Self, std::io::Error> {
         let mut result_layer_env = Self::new();
@@ -804,7 +808,7 @@ mod tests {
             "-XX:+UseSerialGC",
         );
 
-        let result_env = layer_env.apply(Scope::Build, &Env::new());
+        let result_env = layer_env.apply_to_empty(Scope::Build);
         assert_eq!(
             vec![
                 ("JAVA_TOOL_OPTIONS", "-Xmx2G"),
@@ -876,17 +880,13 @@ mod tests {
         fs::create_dir_all(layer_dir.join("pkgconfig")).unwrap();
 
         let layer_env = LayerEnv::read_from_layer_dir(&layer_dir).unwrap();
-        let env = Env::new();
 
-        let modified_env = layer_env.apply(Scope::Launch, &env);
-        assert_eq!(modified_env.get("PATH").unwrap(), layer_dir.join("bin"));
-        assert_eq!(
-            modified_env.get("LD_LIBRARY_PATH").unwrap(),
-            layer_dir.join("lib")
-        );
-        assert_eq!(modified_env.get("LIBRARY_PATH"), None);
-        assert_eq!(modified_env.get("CPATH"), None);
-        assert_eq!(modified_env.get("PKG_CONFIG_PATH"), None);
+        let env = layer_env.apply_to_empty(Scope::Launch);
+        assert_eq!(env.get("PATH").unwrap(), layer_dir.join("bin"));
+        assert_eq!(env.get("LD_LIBRARY_PATH").unwrap(), layer_dir.join("lib"));
+        assert_eq!(env.get("LIBRARY_PATH"), None);
+        assert_eq!(env.get("CPATH"), None);
+        assert_eq!(env.get("PKG_CONFIG_PATH"), None);
     }
 
     #[test]
@@ -901,24 +901,14 @@ mod tests {
         fs::create_dir_all(layer_dir.join("pkgconfig")).unwrap();
 
         let layer_env = LayerEnv::read_from_layer_dir(&layer_dir).unwrap();
-        let env = Env::new();
 
-        let modified_env = layer_env.apply(Scope::Build, &env);
-        assert_eq!(modified_env.get("PATH").unwrap(), layer_dir.join("bin"));
+        let env = layer_env.apply_to_empty(Scope::Build);
+        assert_eq!(env.get("PATH").unwrap(), layer_dir.join("bin"));
+        assert_eq!(env.get("LD_LIBRARY_PATH").unwrap(), layer_dir.join("lib"));
+        assert_eq!(env.get("LIBRARY_PATH").unwrap(), layer_dir.join("lib"));
+        assert_eq!(env.get("CPATH").unwrap(), layer_dir.join("include"));
         assert_eq!(
-            modified_env.get("LD_LIBRARY_PATH").unwrap(),
-            layer_dir.join("lib")
-        );
-        assert_eq!(
-            modified_env.get("LIBRARY_PATH").unwrap(),
-            layer_dir.join("lib")
-        );
-        assert_eq!(
-            modified_env.get("CPATH").unwrap(),
-            layer_dir.join("include")
-        );
-        assert_eq!(
-            modified_env.get("PKG_CONFIG_PATH").unwrap(),
+            env.get("PKG_CONFIG_PATH").unwrap(),
             layer_dir.join("pkgconfig")
         );
     }
