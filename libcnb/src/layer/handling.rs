@@ -299,7 +299,7 @@ mod tests {
     use crate::data::layer_name;
     use crate::generic::GenericMetadata;
     use crate::layer_env::{ModificationBehavior, Scope};
-    use crate::{read_toml_file, Env};
+    use crate::read_toml_file;
     use serde::Deserialize;
     use std::ffi::OsString;
     use std::fs;
@@ -557,7 +557,7 @@ mod tests {
             }
         );
 
-        let applied_layer_env = layer_data.env.apply(Scope::Build, &Env::new());
+        let applied_layer_env = layer_data.env.apply_to_empty(Scope::Build);
         assert_eq!(
             applied_layer_env.get("PATH"),
             Some(layer_dir.join("bin").into())
