@@ -139,7 +139,7 @@ pub(crate) enum InnerBuildResult {
 /// let simple: Result<BuildResult, ()> = BuildResultBuilder::new().build();
 ///
 /// let with_launch: Result<BuildResult, ()> = BuildResultBuilder::new()
-///    .launch(Launch::new().process(Process::new(process_type!("type"), "command", vec!["-v"], false, false)))
+///    .launch(Launch::new().process(Process::new(process_type!("type"), "command", Some(vec!["-v"]), Some(false), Some(false))))
 ///    .build();
 /// ```
 pub struct BuildResultBuilder {

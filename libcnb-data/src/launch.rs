@@ -5,13 +5,13 @@ use serde::{Deserialize, Serialize};
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct Launch {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub bom: bom::Bom,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub labels: Vec<Label>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub processes: Vec<Process>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub slices: Vec<Slice>,
 }
 
@@ -23,8 +23,8 @@ pub struct Launch {
 /// use libcnb_data::process_type;
 ///
 /// let mut launch_toml = launch::Launch::new();
-/// let web = launch::Process::new(process_type!("web"), "bundle", vec!["exec", "ruby", "app.rb"],
-/// false, false);
+/// let web = launch::Process::new(process_type!("web"), "bundle", Some(vec!["exec", "ruby", "app.rb"]),
+/// Some(false), Some(false));
 ///
 /// launch_toml.processes.push(web);
 /// assert!(toml::to_string(&launch_toml).is_ok());
@@ -60,29 +60,31 @@ pub struct Label {
     pub value: String,
 }
 
-#[derive(Deserialize, Serialize, Debug, PartialEq, Eq)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct Process {
     pub r#type: ProcessType,
     pub command: String,
-    pub args: Vec<String>,
-    pub direct: bool,
-    #[serde(default)]
-    pub default: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub args: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub direct: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default: Option<bool>,
 }
 
 impl Process {
     pub fn new(
         r#type: ProcessType,
         command: impl Into<String>,
-        args: impl IntoIterator<Item = impl Into<String>>,
-        direct: bool,
-        default: bool,
+        args: Option<impl IntoIterator<Item = impl Into<String>>>,
+        direct: Option<bool>,
+        default: Option<bool>,
     ) -> Self {
         Self {
             r#type,
             command: command.into(),
-            args: args.into_iter().map(std::convert::Into::into).collect(),
+            args: args.map(|args| args.into_iter().map(std::convert::Into::into).collect()),
             direct,
             default,
         }

@@ -155,9 +155,9 @@ impl Buildpack for HelloWorldBuildpack {
             .launch(Launch::new().process(Process::new(
                 process_type!("web"),
                 "echo",
-                vec!["Hello World!"],
-                false,
-                true,
+                Some(vec!["Hello World!"]),
+                Some(false),
+                Some(true),
             )))
             .build()
     }
