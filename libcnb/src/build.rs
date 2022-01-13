@@ -135,11 +135,12 @@ pub(crate) enum InnerBuildResult {
 /// use libcnb::build::{BuildResultBuilder, BuildResult};
 /// use libcnb::data::launch::{Launch, Process};
 /// use libcnb::data::process_type;
+/// use libcnb::data::launch::ProcessBuilder;
 ///
 /// let simple: Result<BuildResult, ()> = BuildResultBuilder::new().build();
 ///
 /// let with_launch: Result<BuildResult, ()> = BuildResultBuilder::new()
-///    .launch(Launch::new().process(Process::new(process_type!("type"), "command", Some(vec!["-v"]), Some(false), Some(false))))
+///    .launch(Launch::new().process(ProcessBuilder::new(process_type!("type"), "command").arg("-v").build()))
 ///    .build();
 /// ```
 pub struct BuildResultBuilder {

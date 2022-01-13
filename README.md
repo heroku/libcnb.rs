@@ -102,7 +102,7 @@ Modify the project's `src/main.rs` file to contain the following:
 
 ```rust,no_run
 use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
-use libcnb::data::launch::{Launch, Process};
+use libcnb::data::launch::{Launch, ProcessBuilder};
 use libcnb::data::process_type;
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};
@@ -152,13 +152,14 @@ impl Buildpack for HelloWorldBuildpack {
         println!("Build runs on stack {}!", context.stack_id);
 
         BuildResultBuilder::new()
-            .launch(Launch::new().process(Process::new(
-                process_type!("web"),
-                "echo",
-                Some(vec!["Hello World!"]),
-                Some(false),
-                Some(true),
-            )))
+            .launch(
+                Launch::new().process(
+                    ProcessBuilder::new(process_type!("web"), "echo")
+                        .arg("Hello World!")
+                        .default(true)
+                        .build(),
+                ),
+            )
             .build()
     }
 }
