@@ -23,8 +23,9 @@ pub struct Launch {
 /// use libcnb_data::process_type;
 ///
 /// let mut launch_toml = launch::Launch::new();
-/// let web = launch::Process::new(process_type!("web"), "bundle", Some(vec!["exec", "ruby", "app.rb"]),
-/// Some(false), Some(false));
+/// let web = launch::ProcessBuilder::new(process_type!("web"), "bundle")
+///     .args(vec!["exec", "ruby", "app.rb"])
+///     .build();
 ///
 /// launch_toml.processes.push(web);
 /// assert!(toml::to_string(&launch_toml).is_ok());
@@ -65,29 +66,106 @@ pub struct Label {
 pub struct Process {
     pub r#type: ProcessType,
     pub command: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub args: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub direct: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub default: Option<bool>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub args: Vec<String>,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub direct: bool,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub default: bool,
 }
 
-impl Process {
-    pub fn new(
-        r#type: ProcessType,
-        command: impl Into<String>,
-        args: Option<impl IntoIterator<Item = impl Into<String>>>,
-        direct: Option<bool>,
-        default: Option<bool>,
-    ) -> Self {
+pub struct ProcessBuilder {
+    process: Process,
+}
+
+/// A non-consuming builder for [`Process`] values.
+///
+/// # Examples
+/// ```
+/// # use libcnb_data::process_type;
+/// # use libcnb_data::launch::ProcessBuilder;
+/// ProcessBuilder::new(process_type!("web"), "java")
+///     .arg("-jar")
+///     .arg("target/application-1.0.0.jar")
+///     .default(true)
+///     .build();
+/// ```
+impl ProcessBuilder {
+    /// Constructs a new `ProcessBuilder` with the following defaults:
+    ///
+    /// * No arguments to the process
+    /// * `direct` is `false`
+    /// * `default` is `false`
+    pub fn new(r#type: ProcessType, command: impl Into<String>) -> Self {
         Self {
-            r#type,
-            command: command.into(),
-            args: args.map(|args| args.into_iter().map(std::convert::Into::into).collect()),
-            direct,
-            default,
+            process: Process {
+                r#type,
+                command: command.into(),
+                args: Vec::new(),
+                direct: false,
+                default: false,
+            },
         }
+    }
+
+    /// Adds an argument to the process.
+    ///
+    /// Only one argument can be passed per use. So instead of:
+    /// ```no_run
+    /// # use libcnb_data::process_type;
+    /// # libcnb_data::launch::ProcessBuilder::new(process_type!("web"), "command")
+    /// .arg("-C /path/to/repo")
+    /// # ;
+    /// ```
+    ///
+    /// usage would be:
+    ///
+    /// ```no_run
+    /// # use libcnb_data::process_type;
+    /// # libcnb_data::launch::ProcessBuilder::new(process_type!("web"), "command")
+    /// .arg("-C")
+    /// .arg("/path/to/repo")
+    /// # ;
+    /// ```
+    ///
+    /// To pass multiple arguments see [`args`](Self::args).
+    pub fn arg(&mut self, arg: impl Into<String>) -> &mut Self {
+        self.process.args.push(arg.into());
+        self
+    }
+
+    /// Adds multiple arguments to pass to the process.
+    ///
+    /// To pass a single argument see [`arg`](Self::arg).
+    pub fn args(&mut self, args: impl IntoIterator<Item = impl Into<String>>) -> &mut Self {
+        for arg in args {
+            self.arg(arg);
+        }
+
+        self
+    }
+
+    /// Sets the `direct` flag on the process.
+    ///
+    /// If this is true, the lifecycle will launch the command directly, rather than via a shell.
+    pub fn direct(&mut self, value: bool) -> &mut Self {
+        self.process.direct = value;
+        self
+    }
+
+    /// Sets the `default` flag on the process.
+    ///
+    /// Indicates that the process type should be selected as the buildpack-provided
+    /// default during the export phase.
+    pub fn default(&mut self, value: bool) -> &mut Self {
+        self.process.default = value;
+        self
+    }
+
+    /// Builds the `Process` based on the configuration of this builder.
+    #[must_use]
+    pub fn build(&self) -> Process {
+        self.process.clone()
     }
 }
 
@@ -166,6 +244,119 @@ mod tests {
         assert_eq!(
             "".parse::<ProcessType>(),
             Err(ProcessTypeError::InvalidValue(String::new()))
+        );
+    }
+
+    #[test]
+    fn process_with_default_values_deserialization() {
+        let toml_str = r#"
+type = "web"
+command = "foo"
+"#;
+
+        assert_eq!(
+            toml::from_str::<Process>(toml_str),
+            Ok(Process {
+                r#type: process_type!("web"),
+                command: String::from("foo"),
+                args: vec![],
+                direct: false,
+                default: false
+            })
+        );
+    }
+
+    #[test]
+    fn process_with_default_values_serialization() {
+        let process = ProcessBuilder::new(process_type!("web"), "foo").build();
+
+        let string = toml::to_string(&process).unwrap();
+        assert_eq!(
+            string,
+            r#"type = "web"
+command = "foo"
+"#
+        );
+    }
+
+    #[test]
+    fn process_with_some_default_values_serialization() {
+        let process = ProcessBuilder::new(process_type!("web"), "foo")
+            .default(true)
+            .build();
+
+        let string = toml::to_string(&process).unwrap();
+        assert_eq!(
+            string,
+            r#"type = "web"
+command = "foo"
+default = true
+"#
+        );
+    }
+
+    #[test]
+    fn process_builder() {
+        let mut process_builder = ProcessBuilder::new(process_type!("web"), "java");
+
+        assert_eq!(
+            process_builder.build(),
+            Process {
+                r#type: process_type!("web"),
+                command: String::from("java"),
+                args: vec![],
+                direct: false,
+                default: false
+            }
+        );
+
+        process_builder.default(true);
+
+        assert_eq!(
+            process_builder.build(),
+            Process {
+                r#type: process_type!("web"),
+                command: String::from("java"),
+                args: vec![],
+                direct: false,
+                default: true
+            }
+        );
+
+        process_builder.direct(true);
+
+        assert_eq!(
+            process_builder.build(),
+            Process {
+                r#type: process_type!("web"),
+                command: String::from("java"),
+                args: vec![],
+                direct: true,
+                default: true
+            }
+        );
+    }
+
+    #[test]
+    fn process_builder_args() {
+        assert_eq!(
+            ProcessBuilder::new(process_type!("web"), "java")
+                .arg("foo")
+                .args(vec!["baz", "eggs"])
+                .arg("bar")
+                .build(),
+            Process {
+                r#type: process_type!("web"),
+                command: String::from("java"),
+                args: vec![
+                    String::from("foo"),
+                    String::from("baz"),
+                    String::from("eggs"),
+                    String::from("bar"),
+                ],
+                direct: false,
+                default: false
+            }
         );
     }
 }

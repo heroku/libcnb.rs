@@ -10,7 +10,8 @@
 - All libcnb-data struct types now reject unrecognised fields when deserializing ([#252](https://github.com/Malax/libcnb.rs/pull/252)).
 - `BuildpackToml` has been replaced by `BuildpackDescriptor`, which is an enum with `Single` and `Meta` variants that wrap new `SingleBuildpackDescriptor` and `MetaBuildpackDescriptor` types. The new types now reject `buildpack.toml` files where both `stacks` and `order` are present ([#248](https://github.com/Malax/libcnb.rs/pull/248)).
 - Implement `Borrow<str>` for types generated using the `libcnb_newtype!` macro (currently `BuildpackId`, `LayerName`, `ProcessType` and `StackId`), which allows them to be used with `.join()` ([#258](https://github.com/Malax/libcnb.rs/pull/258)).
-- `Process::args`, `Process::direct`, `Process::default` are now wrapped in `Option` in accordance with the CNB spec ([#243](https://github.com/Malax/libcnb.rs/pull/243)).
+- `Launch` and `Process` can now be deserialized when optional fields are missing, and omit default values when serializing ([#243](https://github.com/Malax/libcnb.rs/pull/243) and [#265](https://github.com/Malax/libcnb.rs/pull/265)).
+- `Process::new` has been replaced by `ProcessBuilder` ([#265](https://github.com/Malax/libcnb.rs/pull/265)).
 
 ## [0.3.0] 2021-12-08
 
