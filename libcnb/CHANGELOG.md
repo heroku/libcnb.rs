@@ -2,11 +2,14 @@
 
 ## [Unreleased]
 
+## [0.5.0] 2022-01-14
+
 - Add `must_use` attributes to a number of pure public methods ([#232](https://github.com/Malax/libcnb.rs/pull/232)).
 - `TargetLifecycle` has been renamed to `Scope` ([#257](https://github.com/Malax/libcnb.rs/pull/257)).
 - Renamed `Buildpack::handle_error` to `Buildpack::on_error` to make it clearer that the error cannot be handled/resolved, just reacted upon ([#266](https://github.com/Malax/libcnb.rs/pull/266)).
 - Add `LayerEnv::apply_to_empty` ([#267](https://github.com/Malax/libcnb.rs/pull/267)).
 - Bump external dependency versions ([#233](https://github.com/Malax/libcnb.rs/pull/233) and [#275](https://github.com/Malax/libcnb.rs/pull/275)).
+- Update `libcnb-data` (which provides the types in the `data` module) from `0.3.0` to `0.4.0` - see the [libcnb-data changelog](../libcnb-data/CHANGELOG.md#040-2022-01-14) ([#276](https://github.com/Malax/libcnb.rs/pull/276)).
 
 ## [0.4.0] 2021-12-08
 

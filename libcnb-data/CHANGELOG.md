@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.4.0] 2022-01-14
+
 - Add `must_use` attributes to a number of pure public methods ([#232](https://github.com/Malax/libcnb.rs/pull/232)).
 - Remove builder-style methods from `LayerContentMetadata` ([#235](https://github.com/Malax/libcnb.rs/pull/235)).
 - Make `LayerContentMetadata`'s `types` field an `Option` ([#236](https://github.com/Malax/libcnb.rs/pull/236)).
@@ -13,6 +15,7 @@
 - `Launch` and `Process` can now be deserialized when optional fields are missing, and omit default values when serializing ([#243](https://github.com/Malax/libcnb.rs/pull/243) and [#265](https://github.com/Malax/libcnb.rs/pull/265)).
 - `Process::new` has been replaced by `ProcessBuilder` ([#265](https://github.com/Malax/libcnb.rs/pull/265)).
 - Bump external dependency versions ([#233](https://github.com/Malax/libcnb.rs/pull/233) and [#275](https://github.com/Malax/libcnb.rs/pull/275)).
+- Update `libcnb-proc-macros` from `0.1.0` to `0.1.1` - see the [libcnb-proc-macros changelog](../libcnb-proc-macros/CHANGELOG.md#011-2022-01-14) ([#276](https://github.com/Malax/libcnb.rs/pull/276)).
 
 ## [0.3.0] 2021-12-08
 
