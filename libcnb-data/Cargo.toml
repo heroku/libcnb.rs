@@ -13,9 +13,9 @@ include = ["src/**/*", "../LICENSE", "../README.md"]
 [dependencies]
 fancy-regex = "0.7.1"
 libcnb-proc-macros = { path = "../libcnb-proc-macros", version = "0.1.0" }
-serde = { version = "1.0.130", features = ["derive"] }
+serde = { version = "1.0.133", features = ["derive"] }
 thiserror = "1.0.30"
 toml = "0.5.8"
 
 [dev-dependencies]
-serde_test = "1.0.130"
+serde_test = "1.0.133"

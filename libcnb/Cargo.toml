@@ -11,12 +11,12 @@ readme = "../README.md"
 include = ["src/**/*", "../LICENSE", "../README.md"]
 
 [dependencies]
-anyhow = { version = "1.0.51", optional = true }
+anyhow = { version = "1.0.52", optional = true }
 libcnb-data = { path = "../libcnb-data", version = "0.3.0" }
-serde = { version = "1.0.130", features = ["derive"] }
+serde = { version = "1.0.133", features = ["derive"] }
 thiserror = "1.0.30"
 toml = "0.5.8"
 
 [dev-dependencies]
 rand = "0.8.4"
-tempfile = "3.2.0"
+tempfile = "3.3.0"

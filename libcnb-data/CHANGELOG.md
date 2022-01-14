@@ -12,6 +12,7 @@
 - Implement `Borrow<str>` for types generated using the `libcnb_newtype!` macro (currently `BuildpackId`, `LayerName`, `ProcessType` and `StackId`), which allows them to be used with `.join()` ([#258](https://github.com/Malax/libcnb.rs/pull/258)).
 - `Launch` and `Process` can now be deserialized when optional fields are missing, and omit default values when serializing ([#243](https://github.com/Malax/libcnb.rs/pull/243) and [#265](https://github.com/Malax/libcnb.rs/pull/265)).
 - `Process::new` has been replaced by `ProcessBuilder` ([#265](https://github.com/Malax/libcnb.rs/pull/265)).
+- Bump external dependency versions ([#233](https://github.com/Malax/libcnb.rs/pull/233) and [#275](https://github.com/Malax/libcnb.rs/pull/275)).
 
 ## [0.3.0] 2021-12-08
 

@@ -14,5 +14,5 @@ proc-macro = true
 
 [dependencies]
 fancy-regex = "0.7.1"
-quote = "1.0.10"
-syn = { version = "1.0.82", features = ["full"] }
+quote = "1.0.14"
+syn = { version = "1.0.85", features = ["full"] }
