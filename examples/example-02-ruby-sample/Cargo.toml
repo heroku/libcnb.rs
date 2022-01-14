@@ -5,11 +5,11 @@ edition = "2021"
 rust-version = "1.56"
 
 [dependencies]
-flate2 = "1"
-ureq = "2.2.1"
-sha2 = "0.10"
-tar = "0.4"
-toml = "0.5"
-tempfile = "3"
-"libcnb" = { path = "../../libcnb" }
-serde = "1.0.126"
+flate2 = "1.0.22"
+libcnb = { path = "../../libcnb" }
+serde = "1.0.133"
+sha2 = "0.10.1"
+tar = "0.4.38"
+tempfile = "3.3.0"
+toml = "0.5.8"
+ureq = "2.4.0"
