@@ -42,15 +42,39 @@ pub enum PrepareAppError {
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::collections::HashMap;
     use tempfile::tempdir;
 
     #[test]
     fn absolute_app_path() {
         let source_app_dir = tempdir().unwrap();
-        let _file1_path = source_app_dir.path().join("file1.txt");
-        let _file2_path = source_app_dir.path().join("file2.txt");
-        let _file3_path = source_app_dir.path().join("subdir").join("file3.txt");
 
-        let _app_dir = copy_app(&source_app_dir.path()).unwrap();
+        let files = HashMap::from([
+            (PathBuf::from("file1.txt"), String::from("all")),
+            (PathBuf::from("file2.txt"), String::from("your")),
+            (
+                PathBuf::from("base").join("are").join("file3.txt"),
+                String::from("belong to us!"),
+            ),
+        ]);
+
+        // Create files in temporary directory
+        for (path, contents) in &files {
+            let absolute_path = source_app_dir.path().join(path);
+
+            if let Some(dir) = absolute_path.parent() {
+                std::fs::create_dir_all(dir).unwrap();
+            }
+
+            std::fs::write(absolute_path, &contents).unwrap();
+        }
+
+        let temp_app_dir = copy_app(&source_app_dir.path()).unwrap();
+
+        for (path, contents) in files {
+            let absolute_path = temp_app_dir.path().join(path);
+
+            assert_eq!(std::fs::read_to_string(absolute_path).unwrap(), contents);
+        }
     }
 }
