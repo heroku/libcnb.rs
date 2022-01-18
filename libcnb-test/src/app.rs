@@ -4,7 +4,7 @@ use std::env::VarError;
 use std::path::{Path, PathBuf};
 use tempfile::{tempdir, TempDir};
 
-pub(crate) fn prepare_app(app_dir: impl AsRef<Path>) -> Result<TempDir, PrepareAppError> {
+pub(crate) fn copy_app(app_dir: impl AsRef<Path>) -> Result<TempDir, PrepareAppError> {
     let absolute_app_dir = if app_dir.as_ref().is_absolute() {
         PathBuf::from(app_dir.as_ref())
     } else {
@@ -48,6 +48,6 @@ mod test {
         let _file2_path = source_app_dir.path().join("file2.txt");
         let _file3_path = source_app_dir.path().join("subdir").join("file3.txt");
 
-        let _app_dir = prepare_app(&source_app_dir.path()).unwrap();
+        let _app_dir = copy_app(&source_app_dir.path()).unwrap();
     }
 }

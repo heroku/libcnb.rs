@@ -146,7 +146,7 @@ impl IntegrationTest {
     /// ```
     pub fn run<F: FnOnce(IntegrationTestContext)>(&mut self, f: F) {
         let temp_app_dir =
-            app::prepare_app(&self.app_dir).expect("Could not copy app to temporary location");
+            app::copy_app(&self.app_dir).expect("Could not copy app to temporary location");
 
         let temp_crate_buildpack_dir =
             build::package_crate_buildpack(&self.target_triple, temp_app_dir.path())
