@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- `cargo libcnb package` now allows multiple targets, as long as there is only one binary target. To support this change, the `BuildError` variants `NoTargetsFound` and `MultipleTargetsFound` have been replaced by `NoBinTargetsFound` and `MultipleBinTargetsFound` respectively. ([#282](https://github.com/Malax/libcnb.rs/pull/282))
+
 ## [0.2.0] 2022-01-14
 
 - `BuildpackData`, `assemble_buildpack_directory()` and `default_buildpack_directory_name()` have been updated for the libcnb-data replacement of `BuildpackToml` with `*BuildpackDescriptor` and rename of `*buildpack_toml` to `*buildpack_descriptor` ([#248](https://github.com/Malax/libcnb.rs/pull/248) and [#254](https://github.com/Malax/libcnb.rs/pull/254)).
