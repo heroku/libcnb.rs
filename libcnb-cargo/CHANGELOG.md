@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+- `cargo libcnb package` now allows multiple targets, as long as there is only one binary target. ([#282](https://github.com/Malax/libcnb.rs/pull/282))
 
 ## [0.2.0] 2022-01-14
 
