@@ -4,6 +4,9 @@ use std::env::VarError;
 use std::path::{Path, PathBuf};
 use tempfile::{tempdir, TempDir};
 
+/// Copies an application directory to a temporary location.
+///
+/// Relative paths are treated relative to the Crate's root.
 pub(crate) fn copy_app(app_dir: impl AsRef<Path>) -> Result<TempDir, PrepareAppError> {
     let absolute_app_dir = if app_dir.as_ref().is_absolute() {
         PathBuf::from(app_dir.as_ref())
