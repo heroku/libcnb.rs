@@ -2,6 +2,14 @@ use std::path::PathBuf;
 use std::process::Command;
 use tempfile::TempDir;
 
+pub(crate) struct PackBuildCommand {
+    builder: String,
+    path: PathBuf,
+    image_name: String,
+    buildpacks: Vec<BuildpackReference>,
+    verbose: bool,
+}
+
 pub enum BuildpackReference {
     Id(String),
     Path(PathBuf),
@@ -23,14 +31,6 @@ impl From<String> for BuildpackReference {
     fn from(id: String) -> Self {
         BuildpackReference::Id(id)
     }
-}
-
-pub(crate) struct PackBuildCommand {
-    builder: String,
-    path: PathBuf,
-    image_name: String,
-    buildpacks: Vec<BuildpackReference>,
-    verbose: bool,
 }
 
 impl PackBuildCommand {
