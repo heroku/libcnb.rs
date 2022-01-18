@@ -5,7 +5,7 @@
 
 pub mod cross_compile;
 
-use cargo_metadata::MetadataCommand;
+use cargo_metadata::{MetadataCommand, Target};
 use libcnb_data::buildpack::SingleBuildpackDescriptor;
 use std::ffi::OsStr;
 use std::fs;
@@ -57,10 +57,16 @@ where
         .root_package()
         .ok_or(BuildError::CouldNotFindRootPackage)?;
 
-    let target = match buildpack_cargo_package.targets.as_slice() {
-        [] => Err(BuildError::NoTargetsFound),
+    let buildpack_bin_targets: Vec<&Target> = buildpack_cargo_package
+        .targets
+        .iter()
+        .filter(|target| target.kind == vec!["bin"])
+        .collect();
+
+    let target = match buildpack_bin_targets.as_slice() {
+        [] => Err(BuildError::NoBinTargetsFound),
         [single_target] => Ok(single_target),
-        _ => Err(BuildError::MultipleTargetsFound),
+        _ => Err(BuildError::MultipleBinTargetsFound),
     }?;
 
     let mut cargo_args = vec!["build", "--target", target_triple.as_ref()];
@@ -98,8 +104,8 @@ where
 pub enum BuildError {
     IoError(std::io::Error),
     UnexpectedExitStatus(ExitStatus),
-    NoTargetsFound,
-    MultipleTargetsFound,
+    NoBinTargetsFound,
+    MultipleBinTargetsFound,
     MetadataError(cargo_metadata::Error),
     CouldNotFindRootPackage,
 }

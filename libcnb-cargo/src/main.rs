@@ -155,11 +155,11 @@ fn handle_libcnb_package(matches: &ArgMatches) {
                     );
                     error!("Examine Cargo output for details and potential compilation errors.");
                 }
-                BuildError::NoTargetsFound => {
-                    error!("No targets were found in the Cargo manifest. Ensure that there is exactly one binary target and try again.");
+                BuildError::NoBinTargetsFound => {
+                    error!("No binary targets were found in the Cargo manifest. Ensure that there is exactly one binary target and try again.");
                 }
-                BuildError::MultipleTargetsFound => {
-                    error!("Multiple targets were found in the Cargo manifest. Ensure that there is exactly one binary target and try again.");
+                BuildError::MultipleBinTargetsFound => {
+                    error!("Multiple binary targets were found in the Cargo manifest. Ensure that there is exactly one binary target and try again.");
                 }
                 BuildError::MetadataError(metadata_error) => {
                     error!("Unable to obtain metadata from Cargo: {}", metadata_error);
