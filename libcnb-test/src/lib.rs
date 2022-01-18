@@ -32,6 +32,11 @@ use std::process::{Command, Stdio};
 
 /// Main type for libcnb integration tests.
 ///
+/// # Dependencies
+/// Integration tests require external tools to be available on the host to run:
+/// - [pack](https://buildpacks.io/docs/tools/pack/)
+/// - [Docker](https://www.docker.com/)
+///
 /// # Example
 /// ```no_run
 /// use libcnb_test::{IntegrationTest, BuildpackReference};
@@ -79,15 +84,21 @@ pub enum BuildpackReference {
 }
 
 impl IntegrationTest {
+    /// Creates a new integration test.
+    ///
     /// # Panics
+    /// - When the connection to Docker failed
+    /// - When the internal Tokio runtime could not be created
     pub fn new(builder_name: impl Into<String>, app_dir: impl AsRef<Path>) -> Self {
         IntegrationTest {
             app_dir: PathBuf::from(app_dir.as_ref()),
             target_triple: String::from("x86_64-unknown-linux-musl"),
             builder_name: builder_name.into(),
             buildpacks: vec![BuildpackReference::Crate],
-            docker: Docker::connect_with_local_defaults().unwrap(),
-            tokio_runtime: tokio::runtime::Runtime::new().unwrap(),
+            docker: Docker::connect_with_local_defaults()
+                .expect("Could not connect to local Docker deamon"),
+            tokio_runtime: tokio::runtime::Runtime::new()
+                .expect("Could not create internal Tokio runtime"),
         }
     }
 
@@ -133,7 +144,7 @@ impl IntegrationTest {
     ///         assert!(context.pack_stdout.contains("---> Installing gems"));
     ///     })
     /// ```
-    pub fn run<F: FnOnce(IntegrationTestContext)>(&mut self, validate_fn: F) {
+    pub fn run<F: FnOnce(IntegrationTestContext)>(&mut self, f: F) {
         let temp_app_dir =
             app::prepare_app(&self.app_dir).expect("Could not copy app to temporary location");
 
@@ -161,7 +172,7 @@ impl IntegrationTest {
             .wait_with_output()
             .expect("Error while waiting on external 'pack' process");
 
-        validate_fn(IntegrationTestContext {
+        f(IntegrationTestContext {
             pack_stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
             pack_stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
             image_name,
@@ -171,11 +182,20 @@ impl IntegrationTest {
     }
 }
 
+/// Context for a currently executing integration test.
 pub struct IntegrationTestContext<'a> {
+    /// Standard output of `pack`, interpreted as an UTF-8 string.
     pub pack_stdout: String,
+    /// Standard error of `pack`, interpreted as an UTF-8 string.
     pub pack_stderr: String,
+    /// The name of the image this integration test created.
     pub image_name: String,
+    /// The directory of the app this integration test uses.
+    ///
+    /// This is a copy of the `app_dir` directory passed to [`IntegrationTest::new`] and unique to
+    /// this integration test run. It is safe to modify the directory contents inside the test.
     pub app_dir: PathBuf,
+
     integration_test: &'a IntegrationTest,
 }
 
@@ -183,6 +203,8 @@ impl<'a> IntegrationTestContext<'a> {
     /// Starts a new container with the image from the integration test.
     ///
     /// # Panics
+    /// - When the container could not be created
+    /// - When the container could not be started
     pub fn start_container<F: FnOnce(ContainerContext)>(&self, exposed_ports: &[u16], f: F) {
         let container_name = util::random_docker_identifier();
 
@@ -218,13 +240,13 @@ impl<'a> IntegrationTestContext<'a> {
                     },
                 )
                 .await
-                .unwrap();
+                .expect("Could not create container");
 
             self.integration_test
                 .docker
                 .start_container(&container_name, None::<StartContainerOptions<String>>)
                 .await
-                .unwrap();
+                .expect("Could not start container");
         });
 
         f(ContainerContext {
