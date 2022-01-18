@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - `cargo libcnb package` now allows multiple targets, as long as there is only one binary target. To support this change, the `BuildError` variants `NoTargetsFound` and `MultipleTargetsFound` have been replaced by `NoBinTargetsFound` and `MultipleBinTargetsFound` respectively. ([#282](https://github.com/Malax/libcnb.rs/pull/282))
+- `assemble_buildpack_directory()` no longer fails if then output directory already exists. ([#283](https://github.com/Malax/libcnb.rs/pull/283))
 
 ## [0.2.0] 2022-01-14
 
