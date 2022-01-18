@@ -9,7 +9,6 @@ use cargo_metadata::{MetadataCommand, Target};
 use libcnb_data::buildpack::SingleBuildpackDescriptor;
 use std::ffi::OsStr;
 use std::fs;
-use std::io;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus};
 
@@ -159,33 +158,26 @@ pub struct BuildpackData<BM> {
 ///
 /// # Errors
 ///
-/// Will return `Err` if the buildpack directory already exists or could not be assembled.
+/// Will return `Err` if the buildpack directory could not be assembled.
 pub fn assemble_buildpack_directory(
     destination_path: impl AsRef<Path>,
     buildpack_descriptor_path: impl AsRef<Path>,
     buildpack_binary_path: impl AsRef<Path>,
 ) -> std::io::Result<()> {
-    if destination_path.as_ref().exists() {
-        Err(io::Error::new(
-            io::ErrorKind::AlreadyExists,
-            "Destination path already exists!",
-        ))
-    } else {
-        fs::create_dir_all(destination_path.as_ref())?;
+    fs::create_dir_all(destination_path.as_ref())?;
 
-        fs::copy(
-            buildpack_descriptor_path.as_ref(),
-            destination_path.as_ref().join("buildpack.toml"),
-        )?;
+    fs::copy(
+        buildpack_descriptor_path.as_ref(),
+        destination_path.as_ref().join("buildpack.toml"),
+    )?;
 
-        let bin_path = destination_path.as_ref().join("bin");
-        fs::create_dir_all(&bin_path)?;
+    let bin_path = destination_path.as_ref().join("bin");
+    fs::create_dir_all(&bin_path)?;
 
-        fs::copy(buildpack_binary_path.as_ref(), bin_path.join("build"))?;
-        create_file_symlink("build", bin_path.join("detect"))?;
+    fs::copy(buildpack_binary_path.as_ref(), bin_path.join("build"))?;
+    create_file_symlink("build", bin_path.join("detect"))?;
 
-        Ok(())
-    }
+    Ok(())
 }
 
 #[cfg(target_family = "unix")]
