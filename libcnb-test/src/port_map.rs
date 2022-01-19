@@ -105,7 +105,7 @@ mod test {
         expected_result.insert(12345, "0.0.0.0:57233".parse().unwrap());
         expected_result.insert(80, "127.0.0.1:51039".parse().unwrap());
 
-        assert_eq!(parse_port_map(&port_map).unwrap(), expected_result)
+        assert_eq!(parse_port_map(&port_map).unwrap(), expected_result);
     }
 
     #[test]
@@ -128,7 +128,7 @@ mod test {
         let mut expected_result: HashMap<u16, SocketAddr> = HashMap::new();
         expected_result.insert(12345, "0.0.0.0:57233".parse().unwrap());
 
-        assert_eq!(parse_port_map(&port_map).unwrap(), expected_result)
+        assert_eq!(parse_port_map(&port_map).unwrap(), expected_result);
     }
 
     #[test]
@@ -145,6 +145,6 @@ mod test {
         assert_eq!(
             parse_port_map(&port_map),
             Err(PortMapParseError::UnexpectedOrMissingContainerPortSuffix)
-        )
+        );
     }
 }
