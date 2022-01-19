@@ -72,7 +72,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-libcnb = "0.4.0"
+libcnb = "0.5.0"
 ```
 
 Since we're writing a Cloud Native Buildpack, we also need a `buildpack.toml`. Use the template below and write it to a
