@@ -44,6 +44,8 @@ jobs:
         run: sudo apt-get install musl-tools --no-install-recommends
       - name: Install Rust linux-musl target
         run: rustup target add x86_64-unknown-linux-musl
+      - name: Install pack
+        uses: buildpacks/github-actions/setup-pack@v4.5.0
       - name: Rust Cache
         uses: Swatinem/rust-cache@v1.3.0
       - name: Run tests
