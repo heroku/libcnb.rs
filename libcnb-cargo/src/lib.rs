@@ -203,5 +203,5 @@ fn create_file_symlink<P: AsRef<Path>, Q: AsRef<Path>>(
 pub fn default_buildpack_directory_name<BM>(
     buildpack_descriptor: &SingleBuildpackDescriptor<BM>,
 ) -> String {
-    buildpack_descriptor.buildpack.id.replace("/", "_")
+    buildpack_descriptor.buildpack.id.replace('/', "_")
 }

@@ -45,11 +45,13 @@ impl BuildPlanBuilder {
         }
     }
 
+    #[must_use]
     pub fn provides(mut self, name: impl AsRef<str>) -> Self {
         self.current_provides.push(Provide::new(name.as_ref()));
         self
     }
 
+    #[must_use]
     pub fn requires(mut self, name: impl AsRef<str>) -> Self {
         self.current_requires.push(Require::new(name.as_ref()));
         self

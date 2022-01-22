@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Add `#[must_use]` to `BuildPlanBuilder::provides` and `BuildPlanBuilder::requires` ([#288](https://github.com/Malax/libcnb.rs/pull/288)).
+
 ## [0.4.0] 2022-01-14
 
 - Add `must_use` attributes to a number of pure public methods ([#232](https://github.com/Malax/libcnb.rs/pull/232)).
