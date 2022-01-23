@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Add `#[must_use]` to `DetectResult`, `DetectResultBuilder`, `PassDetectResultBuilder`, `FailDetectResultBuilder`, `BuildResult` and `BuildResultBuilder` ([#288](https://github.com/Malax/libcnb.rs/pull/288)).
+
 ## [0.5.0] 2022-01-14
 
 - Add `must_use` attributes to a number of pure public methods ([#232](https://github.com/Malax/libcnb.rs/pull/232)).

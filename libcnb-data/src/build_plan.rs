@@ -3,6 +3,7 @@ use std::collections::VecDeque;
 use toml::value::Table;
 
 #[derive(Serialize, Debug)]
+#[must_use]
 pub struct BuildPlan {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub provides: Vec<Provide>,
@@ -13,7 +14,6 @@ pub struct BuildPlan {
 }
 
 impl BuildPlan {
-    #[must_use]
     pub fn new() -> Self {
         Self {
             provides: vec![],
@@ -29,6 +29,7 @@ impl Default for BuildPlan {
     }
 }
 
+#[must_use]
 pub struct BuildPlanBuilder {
     acc: VecDeque<(Vec<Provide>, Vec<Require>)>,
     current_provides: Vec<Provide>,
@@ -36,7 +37,6 @@ pub struct BuildPlanBuilder {
 }
 
 impl BuildPlanBuilder {
-    #[must_use]
     pub fn new() -> Self {
         Self {
             acc: VecDeque::new(),
@@ -45,19 +45,16 @@ impl BuildPlanBuilder {
         }
     }
 
-    #[must_use]
     pub fn provides(mut self, name: impl AsRef<str>) -> Self {
         self.current_provides.push(Provide::new(name.as_ref()));
         self
     }
 
-    #[must_use]
     pub fn requires(mut self, name: impl AsRef<str>) -> Self {
         self.current_requires.push(Require::new(name.as_ref()));
         self
     }
 
-    #[must_use]
     pub fn or(mut self) -> Self {
         self.acc
             .push_back((self.current_provides, self.current_requires));
@@ -67,7 +64,6 @@ impl BuildPlanBuilder {
         self
     }
 
-    #[must_use]
     pub fn build(self) -> BuildPlan {
         let mut xyz = self.or();
 

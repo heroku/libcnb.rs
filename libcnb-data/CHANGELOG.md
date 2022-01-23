@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Add `#[must_use]` to `BuildPlanBuilder::provides` and `BuildPlanBuilder::requires` ([#288](https://github.com/Malax/libcnb.rs/pull/288)).
+- Add `#[must_use]` to `BuildPlan` and `BuildPlanBuilder` ([#288](https://github.com/Malax/libcnb.rs/pull/288)).
 
 ## [0.4.0] 2022-01-14
 
