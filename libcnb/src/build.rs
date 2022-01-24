@@ -118,6 +118,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
 ///
 /// To construct values of this type, use a [`BuildResultBuilder`].
 #[derive(Debug)]
+#[must_use]
 pub struct BuildResult(pub(crate) InnerBuildResult);
 
 #[derive(Debug)]
@@ -143,13 +144,13 @@ pub(crate) enum InnerBuildResult {
 ///    .launch(Launch::new().process(ProcessBuilder::new(process_type!("type"), "command").arg("-v").build()))
 ///    .build();
 /// ```
+#[must_use]
 pub struct BuildResultBuilder {
     launch: Option<Launch>,
     store: Option<Store>,
 }
 
 impl BuildResultBuilder {
-    #[must_use]
     pub fn new() -> Self {
         Self {
             launch: None,
@@ -168,7 +169,6 @@ impl BuildResultBuilder {
         Ok(self.build_unwrapped())
     }
 
-    #[must_use]
     pub fn build_unwrapped(self) -> BuildResult {
         BuildResult(InnerBuildResult::Pass {
             launch: self.launch,
@@ -176,13 +176,11 @@ impl BuildResultBuilder {
         })
     }
 
-    #[must_use]
     pub fn launch(mut self, launch: Launch) -> Self {
         self.launch = Some(launch);
         self
     }
 
-    #[must_use]
     pub fn store(mut self, store: Store) -> Self {
         self.store = Some(store);
         self

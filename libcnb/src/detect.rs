@@ -21,6 +21,7 @@ pub struct DetectContext<B: Buildpack + ?Sized> {
 /// Besides indicating passing or failing detection, it also contains detect phase output such as
 /// the build plan. To construct values of this type, use a [`DetectResultBuilder`].
 #[derive(Debug)]
+#[must_use]
 pub struct DetectResult(pub(crate) InnerDetectResult);
 
 #[derive(Debug)]
@@ -43,15 +44,14 @@ pub(crate) enum InnerDetectResult {
 ///    .build_plan(BuildPlanBuilder::new().provides("something").build())
 ///    .build();
 /// ```
+#[must_use]
 pub struct DetectResultBuilder;
 
 impl DetectResultBuilder {
-    #[must_use]
     pub fn pass() -> PassDetectResultBuilder {
         PassDetectResultBuilder { build_plan: None }
     }
 
-    #[must_use]
     pub fn fail() -> FailDetectResultBuilder {
         FailDetectResultBuilder {}
     }
@@ -59,6 +59,7 @@ impl DetectResultBuilder {
 
 /// Constructs [`DetectResult`] values for a passed detection. Can't be used directly, use
 /// a [`DetectResultBuilder`] to create an instance.
+#[must_use]
 pub struct PassDetectResultBuilder {
     build_plan: Option<BuildPlan>,
 }
@@ -75,14 +76,12 @@ impl PassDetectResultBuilder {
         Ok(self.build_unwrapped())
     }
 
-    #[must_use]
     pub fn build_unwrapped(self) -> DetectResult {
         DetectResult(InnerDetectResult::Pass {
             build_plan: self.build_plan,
         })
     }
 
-    #[must_use]
     pub fn build_plan(mut self, build_plan: BuildPlan) -> Self {
         self.build_plan = Some(build_plan);
         self
@@ -91,6 +90,7 @@ impl PassDetectResultBuilder {
 
 /// Constructs [`DetectResult`] values for a failed detection. Can't be used directly, use
 /// a [`DetectResultBuilder`] to create an instance.
+#[must_use]
 pub struct FailDetectResultBuilder;
 
 impl FailDetectResultBuilder {
@@ -106,7 +106,6 @@ impl FailDetectResultBuilder {
     }
 
     #[allow(clippy::unused_self)]
-    #[must_use]
     pub fn build_unwrapped(self) -> DetectResult {
         DetectResult(InnerDetectResult::Fail)
     }
