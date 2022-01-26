@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::process::Command;
 use tempfile::TempDir;
 
+/// Represents a `pack build` command.
 pub(crate) struct PackBuildCommand {
     builder: String,
     path: PathBuf,
@@ -10,7 +11,7 @@ pub(crate) struct PackBuildCommand {
     verbose: bool,
 }
 
-pub enum BuildpackReference {
+pub(crate) enum BuildpackReference {
     Id(String),
     Path(PathBuf),
 }
