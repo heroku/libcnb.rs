@@ -1,18 +1,22 @@
 use fs_extra::dir::CopyOptions;
 use libcnb_cargo::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
-use libcnb_cargo::{assemble_buildpack_directory, build_buildpack_binary, CargoProfile};
+use libcnb_cargo::{
+    assemble_buildpack_directory, build_buildpack_binary, BuildError, CargoProfile,
+};
 use std::path::{Path, PathBuf};
 use tempfile::{tempdir, TempDir};
 
+/// Packages the current crate as a buildpack into a temporary directory.
 pub(crate) fn package_crate_buildpack(
     target_triple: impl AsRef<str>,
     app_dir: impl AsRef<Path>,
-) -> std::io::Result<TempDir> {
+) -> Result<TempDir, PackageCrateBuildpackError> {
     let cargo_manifest_dir = std::env::var("CARGO_MANIFEST_DIR")
         .map(PathBuf::from)
-        .unwrap();
+        .map_err(PackageCrateBuildpackError::CannotDetermineCrateDirectory)?;
 
-    let temp_app_dir = tempdir()?;
+    let temp_app_dir =
+        tempdir().map_err(PackageCrateBuildpackError::CannotCreateAppTempDirectory)?;
 
     let mut copy_options = CopyOptions::new();
     copy_options.content_only = true;
@@ -22,32 +26,40 @@ pub(crate) fn package_crate_buildpack(
         temp_app_dir.path(),
         &copy_options,
     )
-    .unwrap();
+    .map_err(PackageCrateBuildpackError::CannotCopyAppToTempDirectory)?;
 
     let cargo_env = match cross_compile_assistance(target_triple.as_ref()) {
         CrossCompileAssistance::Configuration { cargo_env } => cargo_env,
         _ => Default::default(),
     };
 
-    // Package the buildpack
-    let buildpack_dir = tempdir()?;
+    let buildpack_dir =
+        tempdir().map_err(PackageCrateBuildpackError::CannotCreateBuildpackTempDirectory)?;
+
     let buildpack_binary_path = build_buildpack_binary(
-        std::env::var("CARGO_MANIFEST_DIR").unwrap(),
+        &cargo_manifest_dir,
         CargoProfile::Dev,
         target_triple.as_ref(),
         cargo_env,
     )
-    .unwrap();
+    .map_err(PackageCrateBuildpackError::BuildError)?;
 
     assemble_buildpack_directory(
         buildpack_dir.path(),
-        std::env::var("CARGO_MANIFEST_DIR")
-            .map(PathBuf::from)
-            .unwrap()
-            .join("buildpack.toml"),
+        &cargo_manifest_dir.join("buildpack.toml"),
         &buildpack_binary_path,
     )
-    .unwrap();
+    .map_err(PackageCrateBuildpackError::CannotAssembleBuildpackDirectory)?;
 
     Ok(buildpack_dir)
+}
+
+#[derive(Debug)]
+pub(crate) enum PackageCrateBuildpackError {
+    CannotCreateAppTempDirectory(std::io::Error),
+    CannotCreateBuildpackTempDirectory(std::io::Error),
+    BuildError(BuildError),
+    CannotCopyAppToTempDirectory(fs_extra::error::Error),
+    CannotAssembleBuildpackDirectory(std::io::Error),
+    CannotDetermineCrateDirectory(std::env::VarError),
 }
