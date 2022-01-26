@@ -14,8 +14,8 @@
 mod app;
 mod build;
 mod container_context;
+mod container_port_mapping;
 mod pack;
-mod port_map;
 mod util;
 
 pub use crate::container_context::{ContainerContext, ContainerExecResult};
@@ -23,10 +23,8 @@ pub use crate::container_context::{ContainerContext, ContainerExecResult};
 use crate::pack::PackBuildCommand;
 use bollard::container::{Config, CreateContainerOptions, StartContainerOptions};
 use bollard::image::RemoveImageOptions;
-use bollard::models::HostConfig;
 use bollard::Docker;
 
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
@@ -217,26 +215,7 @@ impl<'a> IntegrationTestContext<'a> {
                     }),
                     Config {
                         image: Some(self.image_name.clone()),
-                        host_config: Some(HostConfig {
-                            port_bindings: Some(port_map::simple_tcp_port_map(exposed_ports)),
-                            ..Default::default()
-                        }),
-
-                        exposed_ports: Some(
-                            exposed_ports
-                                .iter()
-                                .map(|port| {
-                                    (
-                                        format!("{}/tcp", port),
-                                        // The Bollard API requires this type with
-                                        // zero sized map values.
-                                        #[allow(clippy::zero_sized_map_values)]
-                                        HashMap::new(),
-                                    )
-                                })
-                                .collect(),
-                        ),
-                        ..Default::default()
+                        ..container_port_mapping::port_mapped_container_config(exposed_ports)
                     },
                 )
                 .await

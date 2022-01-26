@@ -1,12 +1,25 @@
-use bollard::models::{PortBinding, PortMap};
+use bollard::container::Config;
+use bollard::models::{HostConfig, PortBinding, PortMap};
 use std::collections::HashMap;
 use std::net::{AddrParseError, SocketAddr};
 use std::num::ParseIntError;
 
+/// Parse a Bollard [`PortMap`](bollard::models::PortMap) into a simpler, better typed, form.
 pub(crate) fn parse_port_map(
     port_map: &bollard::models::PortMap,
 ) -> Result<HashMap<u16, SocketAddr>, PortMapParseError> {
     port_map.iter().map(parse_port_map_entry).collect()
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub(crate) enum PortMapParseError {
+    UnexpectedOrMissingContainerPortSuffix,
+    ContainerPortParseError(ParseIntError),
+    NoBindingForPort(u16),
+    MissingHostIpAddress,
+    MissingHostPort,
+    HostIpAddressParseError(AddrParseError),
+    HostPortParseError(ParseIntError),
 }
 
 fn parse_port_map_entry(
@@ -51,30 +64,42 @@ fn parse_port_map_entry(
     Ok((container_port, SocketAddr::new(host_address, host_port)))
 }
 
-#[derive(Debug, Eq, PartialEq)]
-pub enum PortMapParseError {
-    UnexpectedOrMissingContainerPortSuffix,
-    ContainerPortParseError(ParseIntError),
-    NoBindingForPort(u16),
-    MissingHostIpAddress,
-    MissingHostPort,
-    HostIpAddressParseError(AddrParseError),
-    HostPortParseError(ParseIntError),
-}
-
-pub(crate) fn simple_tcp_port_map(ports: &[u16]) -> PortMap {
-    ports
-        .iter()
-        .map(|port| {
-            (
-                format!("{}/tcp", port),
-                Some(vec![PortBinding {
-                    host_ip: None,
-                    host_port: None,
-                }]),
-            )
-        })
-        .collect::<PortMap>()
+/// Create a new Bollard container config with the given exposed ports.
+///
+/// The exposed ports will be forwarded to random ports on the host.
+pub(crate) fn port_mapped_container_config(ports: &[u16]) -> bollard::container::Config<String> {
+    Config {
+        host_config: Some(HostConfig {
+            port_bindings: Some(
+                ports
+                    .iter()
+                    .map(|port| {
+                        (
+                            format!("{}/tcp", port),
+                            Some(vec![PortBinding {
+                                host_ip: None,
+                                host_port: None,
+                            }]),
+                        )
+                    })
+                    .collect::<PortMap>(),
+            ),
+            ..Default::default()
+        }),
+        exposed_ports: Some(
+            ports
+                .iter()
+                .map(|port| {
+                    (
+                        format!("{}/tcp", port),
+                        #[allow(clippy::zero_sized_map_values)]
+                        HashMap::new(), // Bollard requires this zero sized value map,
+                    )
+                })
+                .collect(),
+        ),
+        ..Default::default()
+    }
 }
 
 #[cfg(test)]
@@ -83,7 +108,7 @@ mod test {
     use bollard::models::PortMap;
 
     #[test]
-    fn simple() {
+    fn parse_port_map_simple() {
         let mut port_map: PortMap = HashMap::new();
         port_map.insert(
             String::from("12345/tcp"),
@@ -109,7 +134,7 @@ mod test {
     }
 
     #[test]
-    fn multiple_bindings() {
+    fn parse_port_map_multiple_bindings() {
         let mut port_map: PortMap = HashMap::new();
         port_map.insert(
             String::from("12345/tcp"),
@@ -132,7 +157,7 @@ mod test {
     }
 
     #[test]
-    fn non_tcp_port_binding() {
+    fn parse_port_map_non_tcp_port_binding() {
         let mut port_map: PortMap = HashMap::new();
         port_map.insert(
             String::from("12345/udp"),
@@ -145,6 +170,59 @@ mod test {
         assert_eq!(
             parse_port_map(&port_map),
             Err(PortMapParseError::UnexpectedOrMissingContainerPortSuffix)
+        );
+    }
+
+    #[test]
+    fn port_mapped_container_config_simple() {
+        let config = port_mapped_container_config(&[80, 443, 22]);
+
+        assert_eq!(
+            config.exposed_ports,
+            Some(HashMap::from([
+                (
+                    String::from("80/tcp"),
+                    #[allow(clippy::zero_sized_map_values)]
+                    HashMap::new()
+                ),
+                (
+                    String::from("443/tcp"),
+                    #[allow(clippy::zero_sized_map_values)]
+                    HashMap::new()
+                ),
+                (
+                    String::from("22/tcp"),
+                    #[allow(clippy::zero_sized_map_values)]
+                    HashMap::new()
+                )
+            ]))
+        );
+
+        assert_eq!(
+            config.host_config.unwrap().port_bindings,
+            Some(HashMap::from([
+                (
+                    String::from("80/tcp"),
+                    Some(vec![PortBinding {
+                        host_ip: None,
+                        host_port: None,
+                    }]),
+                ),
+                (
+                    String::from("443/tcp"),
+                    Some(vec![PortBinding {
+                        host_ip: None,
+                        host_port: None,
+                    }]),
+                ),
+                (
+                    String::from("22/tcp"),
+                    Some(vec![PortBinding {
+                        host_ip: None,
+                        host_port: None,
+                    }]),
+                )
+            ]))
         );
     }
 }

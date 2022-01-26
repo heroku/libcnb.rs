@@ -1,4 +1,4 @@
-use crate::port_map;
+use crate::container_port_mapping;
 use crate::IntegrationTestContext;
 use bollard::container::{LogOutput, RemoveContainerOptions};
 use bollard::exec::{CreateExecOptions, StartExecResults};
@@ -27,7 +27,7 @@ impl<'a> ContainerContext<'a> {
                     .network_settings
                     .and_then(|network_settings| network_settings.ports)
                     .and_then(|ports| {
-                        port_map::parse_port_map(&ports)
+                        container_port_mapping::parse_port_map(&ports)
                             .unwrap()
                             .get(&port)
                             .copied()
