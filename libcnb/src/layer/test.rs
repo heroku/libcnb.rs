@@ -25,10 +25,10 @@ use libcnb_data::buildpack::{BuildpackVersion, SingleBuildpackDescriptor, Stack}
 use libcnb_data::buildpack_plan::BuildpackPlan;
 use libcnb_data::layer::LayerName;
 use libcnb_data::layer_content_metadata::LayerContentMetadata;
-use rand::Rng;
 use serde::Deserialize;
 use serde::Serialize;
 use std::fs;
+use std::iter::repeat_with;
 use std::path::{Path, PathBuf};
 use tempfile::{tempdir, TempDir};
 
@@ -922,10 +922,8 @@ fn build_context(temp_dir: &TempDir) -> BuildContext<TestBuildpack> {
 }
 
 fn random_layer_name() -> LayerName {
-    rand::thread_rng()
-        .sample_iter(rand::distributions::Alphanumeric)
+    repeat_with(fastrand::alphanumeric)
         .take(15)
-        .map(char::from)
         .collect::<String>()
         .parse()
         .unwrap()
