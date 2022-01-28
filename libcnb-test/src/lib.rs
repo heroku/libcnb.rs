@@ -195,6 +195,9 @@ pub struct IntegrationTestContext<'a> {
 impl<'a> IntegrationTestContext<'a> {
     /// Starts a new container with the image from the integration test.
     ///
+    /// The given `exposed_ports` are mapped to random ports on the host machine. Use
+    /// [`ContainerContext::address_for_port`] to obtain the local port for a mapped port.
+    ///
     /// # Panics
     /// - When the container could not be created
     /// - When the container could not be started
