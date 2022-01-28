@@ -922,7 +922,7 @@ fn build_context(temp_dir: &TempDir) -> BuildContext<TestBuildpack> {
 }
 
 fn random_layer_name() -> LayerName {
-    repeat_with(fastrand::lowercase)
+    repeat_with(fastrand::alphanumeric)
         .take(15)
         .collect::<String>()
         .parse()
