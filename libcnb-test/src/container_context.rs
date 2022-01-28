@@ -120,11 +120,11 @@ async fn container_exec_result_from_bollard(
 }
 
 impl<'a> Drop for ContainerContext<'a> {
-    #[allow(unused_must_use)]
     fn drop(&mut self) {
         // We do not care if container removal succeeded or not. Panicking here would result in
         // SIGILL since this function might be called in a Tokio runtime.
-        self.integration_test_context
+        let _remove_container_result = self
+            .integration_test_context
             .integration_test
             .tokio_runtime
             .block_on(

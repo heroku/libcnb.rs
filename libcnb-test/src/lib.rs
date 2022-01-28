@@ -231,20 +231,19 @@ impl<'a> IntegrationTestContext<'a> {
 }
 
 impl<'a> Drop for IntegrationTestContext<'a> {
-    #[allow(unused_must_use)]
     fn drop(&mut self) {
         // We do not care if image removal succeeded or not. Panicking here would result in
         // SIGILL since this function might be called in a Tokio runtime.
-        self.integration_test
-            .tokio_runtime
-            .block_on(self.integration_test.docker.remove_image(
+        let _image_delete_result = self.integration_test.tokio_runtime.block_on(
+            self.integration_test.docker.remove_image(
                 &self.image_name,
                 Some(RemoveImageOptions {
                     force: true,
                     ..Default::default()
                 }),
                 None,
-            ));
+            ),
+        );
     }
 }
 
