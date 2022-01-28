@@ -1,4 +1,4 @@
-use rand::{thread_rng, Rng};
+use std::iter::repeat_with;
 
 /// Generate a random Docker identifier.
 ///
@@ -8,11 +8,8 @@ use rand::{thread_rng, Rng};
 pub(crate) fn random_docker_identifier() -> String {
     format!(
         "libcnbtest_{}",
-        thread_rng()
-            .sample_iter(&rand::distributions::Alphanumeric)
+        repeat_with(fastrand::lowercase)
             .take(30)
-            .map(char::from)
             .collect::<String>()
-            .to_lowercase()
     )
 }
