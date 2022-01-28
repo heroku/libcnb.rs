@@ -109,34 +109,34 @@ mod test {
 
     #[test]
     fn parse_port_map_simple() {
-        let mut port_map: PortMap = HashMap::new();
-        port_map.insert(
-            String::from("12345/tcp"),
-            Some(vec![PortBinding {
-                host_ip: Some(String::from("0.0.0.0")),
-                host_port: Some(String::from("57233")),
-            }]),
-        );
+        let port_map: PortMap = HashMap::from([
+            (
+                String::from("12345/tcp"),
+                Some(vec![PortBinding {
+                    host_ip: Some(String::from("0.0.0.0")),
+                    host_port: Some(String::from("57233")),
+                }]),
+            ),
+            (
+                String::from("80/tcp"),
+                Some(vec![PortBinding {
+                    host_ip: Some(String::from("127.0.0.1")),
+                    host_port: Some(String::from("51039")),
+                }]),
+            ),
+        ]);
 
-        port_map.insert(
-            String::from("80/tcp"),
-            Some(vec![PortBinding {
-                host_ip: Some(String::from("127.0.0.1")),
-                host_port: Some(String::from("51039")),
-            }]),
-        );
-
-        let mut expected_result: HashMap<u16, SocketAddr> = HashMap::new();
-        expected_result.insert(12345, "0.0.0.0:57233".parse().unwrap());
-        expected_result.insert(80, "127.0.0.1:51039".parse().unwrap());
+        let expected_result: HashMap<u16, SocketAddr> = HashMap::from([
+            (12345, "0.0.0.0:57233".parse().unwrap()),
+            (80, "127.0.0.1:51039".parse().unwrap()),
+        ]);
 
         assert_eq!(parse_port_map(&port_map).unwrap(), expected_result);
     }
 
     #[test]
     fn parse_port_map_multiple_bindings() {
-        let mut port_map: PortMap = HashMap::new();
-        port_map.insert(
+        let port_map: PortMap = HashMap::from([(
             String::from("12345/tcp"),
             Some(vec![
                 PortBinding {
@@ -148,24 +148,23 @@ mod test {
                     host_port: Some(String::from("57234")),
                 },
             ]),
-        );
+        )]);
 
-        let mut expected_result: HashMap<u16, SocketAddr> = HashMap::new();
-        expected_result.insert(12345, "0.0.0.0:57233".parse().unwrap());
+        let expected_result: HashMap<u16, SocketAddr> =
+            HashMap::from([(12345, "0.0.0.0:57233".parse().unwrap())]);
 
         assert_eq!(parse_port_map(&port_map).unwrap(), expected_result);
     }
 
     #[test]
     fn parse_port_map_non_tcp_port_binding() {
-        let mut port_map: PortMap = HashMap::new();
-        port_map.insert(
+        let port_map: PortMap = HashMap::from([(
             String::from("12345/udp"),
             Some(vec![PortBinding {
                 host_ip: Some(String::from("0.0.0.0")),
                 host_port: Some(String::from("57233")),
             }]),
-        );
+        )]);
 
         assert_eq!(
             parse_port_map(&port_map),
