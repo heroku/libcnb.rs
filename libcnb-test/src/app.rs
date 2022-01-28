@@ -1,26 +1,14 @@
 use fs_extra::dir::CopyOptions;
-use std::env;
-use std::env::VarError;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use tempfile::{tempdir, TempDir};
 
 /// Copies an application directory to a temporary location.
-///
-/// Relative paths are treated relative to the Crate's root.
 pub(crate) fn copy_app(app_dir: impl AsRef<Path>) -> Result<TempDir, PrepareAppError> {
-    let absolute_app_dir = if app_dir.as_ref().is_absolute() {
-        PathBuf::from(app_dir.as_ref())
-    } else {
-        env::var("CARGO_MANIFEST_DIR")
-            .map_err(PrepareAppError::CannotDetermineManifestDir)
-            .map(|cargo_manifest_dir| PathBuf::from(cargo_manifest_dir).join(app_dir.as_ref()))?
-    };
-
     tempdir()
         .map_err(PrepareAppError::CreateTempDirError)
         .and_then(|temp_app_dir| {
             fs_extra::dir::copy(
-                absolute_app_dir,
+                app_dir.as_ref(),
                 temp_app_dir.path(),
                 &CopyOptions {
                     content_only: true,
@@ -34,19 +22,18 @@ pub(crate) fn copy_app(app_dir: impl AsRef<Path>) -> Result<TempDir, PrepareAppE
 
 #[derive(Debug)]
 pub enum PrepareAppError {
-    CannotDetermineManifestDir(VarError),
     CreateTempDirError(std::io::Error),
     CopyAppError(fs_extra::error::Error),
 }
 
 #[cfg(test)]
 mod test {
-    use super::*;
     use std::collections::HashMap;
+    use std::path::PathBuf;
     use tempfile::tempdir;
 
     #[test]
-    fn absolute_app_path() {
+    fn copy_app() {
         let source_app_dir = tempdir().unwrap();
 
         let files = HashMap::from([
@@ -69,7 +56,7 @@ mod test {
             std::fs::write(absolute_path, &contents).unwrap();
         }
 
-        let temp_app_dir = copy_app(&source_app_dir.path()).unwrap();
+        let temp_app_dir = super::copy_app(source_app_dir.path()).unwrap();
 
         for (path, contents) in files {
             let absolute_path = temp_app_dir.path().join(path);

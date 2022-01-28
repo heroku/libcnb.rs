@@ -21,6 +21,7 @@ use bollard::container::{Config, CreateContainerOptions, StartContainerOptions};
 use bollard::image::RemoveImageOptions;
 use bollard::Docker;
 
+use std::env;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
@@ -139,8 +140,17 @@ impl IntegrationTest {
     ///     })
     /// ```
     pub fn run<F: FnOnce(IntegrationTestContext)>(&mut self, f: F) {
+        let app_dir = if self.app_dir.is_relative() {
+            env::var("CARGO_MANIFEST_DIR")
+                .map(PathBuf::from)
+                .expect("Could not determine Cargo manifest directory")
+                .join(&self.app_dir)
+        } else {
+            self.app_dir.clone()
+        };
+
         let temp_app_dir =
-            app::copy_app(&self.app_dir).expect("Could not copy app to temporary location");
+            app::copy_app(&app_dir).expect("Could not copy app to temporary location");
 
         let temp_crate_buildpack_dir = build::package_crate_buildpack(&self.target_triple)
             .expect("Could not package current crate as buildpack");
