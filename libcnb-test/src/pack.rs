@@ -3,6 +3,7 @@ use std::process::Command;
 use tempfile::TempDir;
 
 /// Represents a `pack build` command.
+#[derive(Clone, Debug)]
 pub(crate) struct PackBuildCommand {
     builder: String,
     path: PathBuf,
@@ -11,6 +12,7 @@ pub(crate) struct PackBuildCommand {
     verbose: bool,
 }
 
+#[derive(Clone, Debug)]
 pub(crate) enum BuildpackReference {
     Id(String),
     Path(PathBuf),
@@ -88,5 +90,53 @@ impl From<PackBuildCommand> for Command {
         command.args(args);
 
         command
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::ffi::OsStr;
+
+    #[test]
+    fn from_pack_build_command_to_command() {
+        let mut input = PackBuildCommand {
+            builder: String::from("builder:20"),
+            path: PathBuf::from("/tmp/foo/bar"),
+            image_name: String::from("my-image"),
+            buildpacks: vec![
+                BuildpackReference::Id(String::from("libcnb/buildpack1")),
+                BuildpackReference::Path(PathBuf::from("/tmp/buildpack2")),
+            ],
+            verbose: true,
+        };
+
+        let command: Command = input.clone().into();
+
+        assert_eq!(command.get_program(), "pack");
+
+        assert_eq!(
+            command.get_args().collect::<Vec<&OsStr>>(),
+            vec![
+                "build",
+                "my-image",
+                "--builder",
+                "builder:20",
+                "--path",
+                "/tmp/foo/bar",
+                "--buildpack",
+                "libcnb/buildpack1",
+                "--buildpack",
+                "/tmp/buildpack2",
+                "-v"
+            ]
+        );
+
+        assert_eq!(command.get_envs().collect::<Vec<_>>(), vec![]);
+
+        // Assert conditional '-v' flag works as expected:
+        input.verbose = false;
+        let command: Command = input.into();
+        assert!(!command.get_args().any(|arg| arg == OsStr::new("-v")));
     }
 }
