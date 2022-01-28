@@ -71,7 +71,7 @@ pub struct IntegrationTest {
 
 /// References a Cloud Native Buildpack
 pub enum BuildpackReference {
-    /// References this buildpack in the Rust Crate under test
+    /// References the buildpack in the Rust Crate currently being tested
     Crate,
     /// References another buildpack by id, local directory or tarball
     Other(String),
