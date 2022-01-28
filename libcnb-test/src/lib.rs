@@ -3,12 +3,8 @@
 #![warn(unused_crate_dependencies)]
 // https://rust-lang.github.io/rust-clippy/stable/index.html
 #![warn(clippy::pedantic)]
-// Most of libcnb's public API returns user-provided errors, making error docs redundant.
-#![allow(clippy::missing_errors_doc)]
 // This lint is too noisy and enforces a style that reduces readability in many cases.
 #![allow(clippy::module_name_repetitions)]
-// This lint triggers when both layer_dir and layers_dir are present which are quite common.
-#![allow(clippy::similar_names)]
 #![allow(clippy::default_trait_access)]
 
 mod app;
