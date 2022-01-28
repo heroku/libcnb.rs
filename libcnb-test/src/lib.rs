@@ -142,9 +142,8 @@ impl IntegrationTest {
         let temp_app_dir =
             app::copy_app(&self.app_dir).expect("Could not copy app to temporary location");
 
-        let temp_crate_buildpack_dir =
-            build::package_crate_buildpack(&self.target_triple, temp_app_dir.path())
-                .expect("Could not package current crate as buildpack");
+        let temp_crate_buildpack_dir = build::package_crate_buildpack(&self.target_triple)
+            .expect("Could not package current crate as buildpack");
 
         let image_name = util::random_docker_identifier();
 
