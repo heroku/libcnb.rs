@@ -175,13 +175,27 @@ impl IntegrationTest {
             .wait_with_output()
             .expect("Error while waiting on external 'pack' process");
 
-        f(IntegrationTestContext {
+        let integration_test_context = IntegrationTestContext {
             pack_stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
             pack_stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
             image_name,
             app_dir: PathBuf::from(temp_app_dir.path()),
             integration_test: self,
-        });
+        };
+
+        if output.status.success() {
+            f(integration_test_context);
+        } else {
+            panic!(
+                "pack command failed with exit-code {}!\n\npack stdout:\n{}\n\npack stderr:\n{}",
+                output
+                    .status
+                    .code()
+                    .map_or(String::from("<unknown>"), |exit_code| exit_code.to_string()),
+                integration_test_context.pack_stdout,
+                integration_test_context.pack_stderr
+            )
+        }
     }
 }
 
