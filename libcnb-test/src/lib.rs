@@ -70,6 +70,7 @@ pub struct IntegrationTest {
 }
 
 /// References a Cloud Native Buildpack
+#[derive(Eq, PartialEq, Debug)]
 pub enum BuildpackReference {
     /// References the buildpack in the Rust Crate currently being tested
     Crate,
@@ -151,8 +152,14 @@ impl IntegrationTest {
         let temp_app_dir =
             app::copy_app(&app_dir).expect("Could not copy app to temporary location");
 
-        let temp_crate_buildpack_dir = build::package_crate_buildpack(&self.target_triple)
-            .expect("Could not package current crate as buildpack");
+        let temp_crate_buildpack_dir = if self.buildpacks.contains(&BuildpackReference::Crate) {
+            Some(
+                build::package_crate_buildpack(&self.target_triple)
+                    .expect("Could not package current crate as buildpack"),
+            )
+        } else {
+            None
+        };
 
         let image_name = util::random_docker_identifier();
 
@@ -161,7 +168,10 @@ impl IntegrationTest {
 
         for buildpack in &self.buildpacks {
             match buildpack {
-                BuildpackReference::Crate => pack_command.buildpack(&temp_crate_buildpack_dir),
+                BuildpackReference::Crate => {
+                    pack_command.buildpack(temp_crate_buildpack_dir.as_ref()
+                        .expect("Test references crate buildpack, but crate wasn't packaged as a buildpack. This is an internal libcnb-test error, please report any occurrences."))
+                }
                 BuildpackReference::Other(id) => pack_command.buildpack(id.clone()),
             };
         }
