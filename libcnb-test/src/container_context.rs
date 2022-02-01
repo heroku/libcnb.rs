@@ -55,7 +55,7 @@ impl<'a> ContainerContext<'a> {
                                 command.as_ref(),
                             ]),
                             attach_stdout: Some(true),
-                            ..Default::default()
+                            ..CreateExecOptions::default()
                         },
                     )
                     .await
@@ -135,7 +135,7 @@ impl<'a> Drop for ContainerContext<'a> {
                         &self.container_name,
                         Some(RemoveContainerOptions {
                             force: true,
-                            ..Default::default()
+                            ..RemoveContainerOptions::default()
                         }),
                     ),
             );

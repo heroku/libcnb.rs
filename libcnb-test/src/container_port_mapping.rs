@@ -84,7 +84,7 @@ pub(crate) fn port_mapped_container_config(ports: &[u16]) -> bollard::container:
                     })
                     .collect::<PortMap>(),
             ),
-            ..Default::default()
+            ..HostConfig::default()
         }),
         exposed_ports: Some(
             ports
@@ -98,7 +98,7 @@ pub(crate) fn port_mapped_container_config(ports: &[u16]) -> bollard::container:
                 })
                 .collect(),
         ),
-        ..Default::default()
+        ..Config::default()
     }
 }
 

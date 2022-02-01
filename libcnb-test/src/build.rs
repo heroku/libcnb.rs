@@ -15,7 +15,7 @@ pub(crate) fn package_crate_buildpack(
 
     let cargo_env = match cross_compile_assistance(target_triple.as_ref()) {
         CrossCompileAssistance::Configuration { cargo_env } => cargo_env,
-        _ => Default::default(),
+        _ => vec![],
     };
 
     let buildpack_dir =

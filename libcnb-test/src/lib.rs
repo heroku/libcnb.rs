@@ -5,7 +5,6 @@
 #![warn(clippy::pedantic)]
 // This lint is too noisy and enforces a style that reduces readability in many cases.
 #![allow(clippy::module_name_repetitions)]
-#![allow(clippy::default_trait_access)]
 
 mod app;
 mod build;
@@ -266,7 +265,7 @@ impl<'a> Drop for IntegrationTestContext<'a> {
                 &self.image_name,
                 Some(RemoveImageOptions {
                     force: true,
-                    ..Default::default()
+                    ..RemoveImageOptions::default()
                 }),
                 None,
             ),

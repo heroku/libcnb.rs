@@ -12,7 +12,7 @@ pub(crate) fn copy_app(app_dir: impl AsRef<Path>) -> Result<TempDir, PrepareAppE
                 temp_app_dir.path(),
                 &CopyOptions {
                     content_only: true,
-                    ..Default::default()
+                    ..CopyOptions::default()
                 },
             )
             .map_err(PrepareAppError::CopyAppError)
