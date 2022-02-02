@@ -43,7 +43,7 @@ use std::process::{Command, Stdio};
 ///         BuildpackReference::Other(String::from("heroku/openjdk")),
 ///         BuildpackReference::Crate,
 ///     ])
-///     .run(|context| {
+///     .run_test(|context| {
 ///         assert!(context.pack_stdout.contains("---> Maven Buildpack"));
 ///         assert!(context.pack_stdout.contains("---> Installing Maven"));
 ///         assert!(context.pack_stdout.contains("---> Running mvn package"));
@@ -133,13 +133,13 @@ impl IntegrationTest {
     /// use libcnb_test::IntegrationTest;
     ///
     /// IntegrationTest::new("heroku/buildpacks:20", "test-fixtures/app")
-    ///     .run(|context| {
+    ///     .run_test(|context| {
     ///         assert!(context.pack_stdout.contains("---> Ruby Buildpack"));
     ///         assert!(context.pack_stdout.contains("---> Installing bundler"));
     ///         assert!(context.pack_stdout.contains("---> Installing gems"));
     ///     })
     /// ```
-    pub fn run<F: FnOnce(IntegrationTestContext)>(&mut self, f: F) {
+    pub fn run_test<F: FnOnce(IntegrationTestContext)>(&mut self, f: F) {
         let app_dir = if self.app_dir.is_relative() {
             env::var("CARGO_MANIFEST_DIR")
                 .map(PathBuf::from)

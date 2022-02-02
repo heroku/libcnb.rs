@@ -24,7 +24,7 @@ fn test() {
             BuildpackReference::Other(String::from("heroku/openjdk")),
             BuildpackReference::Crate,
         ])
-        .run(|context| {
+        .run_test(|context| {
             assert!(context.pack_stdout.contains("---> Maven Buildpack"));
             assert!(context.pack_stdout.contains("---> Installing Maven"));
             assert!(context.pack_stdout.contains("---> Running mvn package"));

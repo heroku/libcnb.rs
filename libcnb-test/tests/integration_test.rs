@@ -14,5 +14,5 @@ fn panic_on_unsuccessful_pack_run() {
     let temp_app_dir = tempdir().unwrap();
     IntegrationTest::new("libcnb/void-builder:doesntexist", temp_app_dir.path())
         .buildpacks(vec![BuildpackReference::Other(String::from("libcnb/void"))])
-        .run(|_| {});
+        .run_test(|_| {});
 }
