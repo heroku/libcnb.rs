@@ -1,0 +1,19 @@
+[package]
+name = "libcnb-test"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.56"
+license = "BSD-3-Clause"
+description = "An integration testing framework for buildpacks written with libcnb.rs"
+repository = "https://github.com/Malax/libcnb.rs"
+readme = "README.md"
+include = ["src/**/*", "../LICENSE", "README.md"]
+
+[dependencies]
+bollard = "0.11.1"
+fastrand = "1.7.0"
+fs_extra = "1.2.0"
+libcnb-cargo = { path = "../libcnb-cargo", version = "0.2.1" }
+tempfile = "3.3.0"
+tokio = "1.15.0"
+tokio-stream = "0.1.8"
