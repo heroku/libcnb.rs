@@ -38,14 +38,12 @@ fn call_test_fixture_service<A>(a: A, payload: impl AsRef<str>) -> io::Result<St
 where
     A: ToSocketAddrs,
 {
-    let mut stream = net::TcpStream::connect(a).unwrap();
+    let mut stream = net::TcpStream::connect(a)?;
 
-    stream
-        .write_all(format!("{}\n", payload.as_ref()).as_bytes())
-        .unwrap();
+    stream.write_all(format!("{}\n", payload.as_ref()).as_bytes())?;
 
     let mut buffer = vec![];
-    stream.read_to_end(&mut buffer).unwrap();
+    stream.read_to_end(&mut buffer)?;
 
     Ok(format!("{}", String::from_utf8_lossy(&buffer)))
 }
