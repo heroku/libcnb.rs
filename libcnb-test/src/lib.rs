@@ -108,7 +108,7 @@ impl IntegrationTest {
                 panic!("DOCKER_HOST environment variable is not unicode encoded!")
             }
         }
-        .expect("Could not connect to local Docker deamon");
+        .expect("Could not connect to local Docker daemon");
 
         IntegrationTest {
             app_dir: PathBuf::from(app_dir.as_ref()),
