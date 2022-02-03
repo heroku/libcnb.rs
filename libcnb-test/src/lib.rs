@@ -21,6 +21,7 @@ use bollard::image::RemoveImageOptions;
 use bollard::Docker;
 
 use std::env;
+use std::env::VarError;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
@@ -85,15 +86,37 @@ impl IntegrationTest {
     /// - When the connection to Docker failed
     /// - When the internal Tokio runtime could not be created
     pub fn new(builder_name: impl Into<String>, app_dir: impl AsRef<Path>) -> Self {
+        let tokio_runtime =
+            tokio::runtime::Runtime::new().expect("Could not create internal Tokio runtime");
+
+        let docker = match env::var("DOCKER_HOST") {
+            #[cfg(target_family = "unix")]
+            Ok(docker_host) if docker_host.starts_with("unix://") => {
+                Docker::connect_with_unix_defaults()
+            }
+            Ok(docker_host)
+                if docker_host.starts_with("tcp://") || docker_host.starts_with("https://") =>
+            {
+                Docker::connect_with_ssl_defaults()
+            }
+            Ok(docker_host) => panic!(
+                "Cannot connect to unsupported DOCKER_HOST '{}'",
+                docker_host
+            ),
+            Err(VarError::NotPresent) => Docker::connect_with_local_defaults(),
+            Err(VarError::NotUnicode(_)) => {
+                panic!("DOCKER_HOST environment variable is not unicode encoded!")
+            }
+        }
+        .expect("Could not connect to local Docker daemon");
+
         IntegrationTest {
             app_dir: PathBuf::from(app_dir.as_ref()),
             target_triple: String::from("x86_64-unknown-linux-musl"),
             builder_name: builder_name.into(),
             buildpacks: vec![BuildpackReference::Crate],
-            docker: Docker::connect_with_local_defaults()
-                .expect("Could not connect to local Docker deamon"),
-            tokio_runtime: tokio::runtime::Runtime::new()
-                .expect("Could not create internal Tokio runtime"),
+            docker,
+            tokio_runtime,
         }
     }
 
