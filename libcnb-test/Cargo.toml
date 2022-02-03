@@ -10,7 +10,7 @@ readme = "README.md"
 include = ["src/**/*", "../LICENSE", "README.md"]
 
 [dependencies]
-bollard = "0.11.1"
+bollard = { version = "0.11.1", features = ["ssl"] }
 fastrand = "1.7.0"
 fs_extra = "1.2.0"
 libcnb-cargo = { path = "../libcnb-cargo", version = "0.2.1" }

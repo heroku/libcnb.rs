@@ -89,13 +89,13 @@ impl IntegrationTest {
         let tokio_runtime =
             tokio::runtime::Runtime::new().expect("Could not create internal Tokio runtime");
 
-        let docker = Docker::connect_with_http_defaults()
+        let docker = Docker::connect_with_ssl_defaults()
             .and_then(|docker| {
                 // Bollard will not attempt to connect to Docker before an actual request. Because
                 // we want to ensure a connection can be established (see later comment) we need to
                 // ping Docker here.
                 match tokio_runtime.block_on(docker.ping()) {
-                    // If the connection via HTTP failed and no explicit DOCKER_HOST has been
+                    // If the connection via HTTPS failed and no explicit DOCKER_HOST has been
                     // set, try to connect via a local socket or named pipe. This is a fallback
                     // for local Docker Desktop configurations which currently do not expose
                     // the HTTP API by default.
