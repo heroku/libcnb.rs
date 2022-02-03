@@ -89,28 +89,26 @@ impl IntegrationTest {
         let tokio_runtime =
             tokio::runtime::Runtime::new().expect("Could not create internal Tokio runtime");
 
-        let docker = Docker::connect_with_ssl_defaults()
-            .and_then(|docker| {
-                // Bollard will not attempt to connect to Docker before an actual request. Because
-                // we want to ensure a connection can be established (see later comment) we need to
-                // ping Docker here.
-                match tokio_runtime.block_on(docker.ping()) {
-                    // If the connection via HTTPS failed and no explicit DOCKER_HOST has been
-                    // set, try to connect via a local socket or named pipe. This is a fallback
-                    // for local Docker Desktop configurations which currently do not expose
-                    // the HTTP API by default.
-                    Err(bollard::errors::Error::HyperResponseError { err })
-                        if err.is_connect()
-                            && env::var("DOCKER_HOST") == Err(VarError::NotPresent) =>
-                    {
-                        Docker::connect_with_local_defaults()
-                    }
-                    Ok(_) => Ok(docker), // Ping successful, use connection.
-                    Err(err) => Err(err), // Ping failed for other reasons than connection errors,
-                                          // keep error as-is for later display to user.
-                }
-            })
-            .expect("Could not connect to local Docker deamon");
+        let docker = match env::var("DOCKER_HOST") {
+            #[cfg(target_family = "unix")]
+            Ok(docker_host) if docker_host.starts_with("unix://") => {
+                Docker::connect_with_unix_defaults()
+            }
+            Ok(docker_host)
+                if docker_host.starts_with("tcp://") || docker_host.starts_with("https://") =>
+            {
+                Docker::connect_with_ssl_defaults()
+            }
+            Ok(docker_host) => panic!(
+                "Cannot connect to unsupported DOCKER_HOST '{}'",
+                docker_host
+            ),
+            Err(VarError::NotPresent) => Docker::connect_with_local_defaults(),
+            Err(VarError::NotUnicode(_)) => {
+                panic!("DOCKER_HOST environment variable is not unicode encoded!")
+            }
+        }
+        .expect("Could not connect to local Docker deamon");
 
         IntegrationTest {
             app_dir: PathBuf::from(app_dir.as_ref()),
