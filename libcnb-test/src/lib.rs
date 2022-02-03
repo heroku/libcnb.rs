@@ -21,6 +21,7 @@ use bollard::image::RemoveImageOptions;
 use bollard::Docker;
 
 use std::env;
+use std::env::VarError;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
@@ -85,15 +86,39 @@ impl IntegrationTest {
     /// - When the connection to Docker failed
     /// - When the internal Tokio runtime could not be created
     pub fn new(builder_name: impl Into<String>, app_dir: impl AsRef<Path>) -> Self {
+        let tokio_runtime =
+            tokio::runtime::Runtime::new().expect("Could not create internal Tokio runtime");
+
+        let docker = Docker::connect_with_http_defaults()
+            .and_then(|docker| {
+                // Bollard will not attempt to connect to Docker before an actual request. Because
+                // we want to ensure a connection can be established (see later comment) we need to
+                // ping Docker here.
+                match tokio_runtime.block_on(docker.ping()) {
+                    // If the connection via HTTP failed and no explicit DOCKER_HOST has been
+                    // set, try to connect via a local socket or named pipe. This is a fallback
+                    // for local Docker Desktop configurations which currently do not expose
+                    // the HTTP API by default.
+                    Err(bollard::errors::Error::HyperResponseError { err })
+                        if err.is_connect()
+                            && env::var("DOCKER_HOST") == Err(VarError::NotPresent) =>
+                    {
+                        Docker::connect_with_local_defaults()
+                    }
+                    Ok(_) => Ok(docker), // Ping successful, use connection.
+                    Err(err) => Err(err), // Ping failed for other reasons than connection errors,
+                                          // keep error as-is for later display to user.
+                }
+            })
+            .expect("Could not connect to local Docker deamon");
+
         IntegrationTest {
             app_dir: PathBuf::from(app_dir.as_ref()),
             target_triple: String::from("x86_64-unknown-linux-musl"),
             builder_name: builder_name.into(),
             buildpacks: vec![BuildpackReference::Crate],
-            docker: Docker::connect_with_local_defaults()
-                .expect("Could not connect to local Docker deamon"),
-            tokio_runtime: tokio::runtime::Runtime::new()
-                .expect("Could not create internal Tokio runtime"),
+            docker,
+            tokio_runtime,
         }
     }
 
