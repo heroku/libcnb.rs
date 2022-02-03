@@ -47,7 +47,7 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@v1.3.0
       - name: Install Pack CLI
-        uses: buildpacks/github-actions/setup-pack@v4.5.0
+        uses: buildpacks/github-actions/setup-pack@v4.5.1
       - name: Configure Pack CLI
         # Default to a small non-libc image for faster CI + to validate the static musl cross-compilation.
         # Adjust pull-policy to prevent redundant image-pulling, which slows CI and risks hitting registry rate limits.
