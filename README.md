@@ -241,5 +241,5 @@ Hello World!
 
 ### Next Steps
 While the buildpack we've written in this quick start guide is not very useful, it can serve as a starting point for a 
-more useful buildpack. To discover more of the libcnb API, browse the [examples directory](example) and the 
+more useful buildpack. To discover more of the libcnb API, browse the [examples directory](examples) and the 
 [documentation on docs.rs][docs.rs].
