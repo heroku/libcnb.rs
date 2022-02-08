@@ -1,7 +1,5 @@
 use libcnb_cargo::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
-use libcnb_cargo::{
-    assemble_buildpack_directory, build_buildpack_binary, BuildError, CargoProfile,
-};
+use libcnb_cargo::{assemble_buildpack_directory, build_binary, BuildError, CargoProfile};
 use std::path::PathBuf;
 use tempfile::{tempdir, TempDir};
 
@@ -21,7 +19,7 @@ pub(crate) fn package_crate_buildpack(
     let buildpack_dir =
         tempdir().map_err(PackageCrateBuildpackError::CannotCreateBuildpackTempDirectory)?;
 
-    let buildpack_binary_path = build_buildpack_binary(
+    let buildpack_binary_path = build_binary(
         &cargo_manifest_dir,
         CargoProfile::Dev,
         target_triple.as_ref(),

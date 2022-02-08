@@ -14,6 +14,7 @@
 
 pub mod build;
 pub mod detect;
+pub mod execd;
 pub mod generic;
 pub mod layer;
 pub mod layer_env;
@@ -36,6 +37,22 @@ pub use toml_file::*;
 
 pub use buildpack::Buildpack;
 pub use runtime::libcnb_runtime;
+
+/// Expands to the path of the given binary target at buildpack runtime.
+///
+/// This macro assumes the buildpack is packaged with libcnb-cargo (or libcnb-test). It will not
+/// work when the buildpack is packaged by other means.
+///
+/// # Example
+/// ```no_run
+/// use libcnb::generic::GenericMetadata;
+/// use libcnb::layer::LayerResultBuilder;
+///
+/// LayerResultBuilder::new(GenericMetadata::default())
+///     .execd("env_vars", path_to_packaged_crate_binary!("env_vars"))
+///     .build();
+/// ```
+pub use libcnb_proc_macros::path_to_packaged_crate_binary;
 
 const LIBCNB_SUPPORTED_BUILDPACK_API: data::buildpack::BuildpackApi =
     data::buildpack::BuildpackApi { major: 0, minor: 6 };

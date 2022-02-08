@@ -3,16 +3,19 @@
 // This lint is too noisy and enforces a style that reduces readability in many cases.
 #![allow(clippy::module_name_repetitions)]
 
+pub mod config;
 pub mod cross_compile;
 
-use cargo_metadata::{MetadataCommand, Target};
+use cargo_metadata::MetadataCommand;
 use libcnb_data::buildpack::SingleBuildpackDescriptor;
+use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs;
+use std::hash::BuildHasher;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus};
 
-/// Builds a buildpack binary using Cargo.
+/// Builds a binary using Cargo.
 ///
 /// It is designed to handle cross-compilation without requiring custom configuration in the Cargo
 /// manifest of the user's buildpack. The triple for the target platform is a mandatory
@@ -28,17 +31,15 @@ use std::process::{Command, ExitStatus};
 /// returned which provides additional information. Use the `cross_compile::cross_compile_help`
 /// function to obtain human-readable instructions on how to setup the required tools.
 ///
-/// This function currently only supports projects with a single binary target. If the project
-/// does not contain exactly one target, the appropriate `BuildError` is returned.
-///
 /// This function will write Cargo's output to stdout and stderr.
 ///
 /// # Errors
 ///
 /// Will return `Err` if the build did not finish successfully.
-pub fn build_buildpack_binary<I, K, V>(
+pub fn build_binary<I, K, V>(
     project_path: impl AsRef<Path>,
     cargo_profile: CargoProfile,
+    target_name: impl AsRef<str>,
     target_triple: impl AsRef<str>,
     cargo_env: I,
 ) -> Result<PathBuf, BuildError>
@@ -51,22 +52,6 @@ where
         .manifest_path(project_path.as_ref().join("Cargo.toml"))
         .exec()
         .map_err(BuildError::MetadataError)?;
-
-    let buildpack_cargo_package = cargo_metadata
-        .root_package()
-        .ok_or(BuildError::CouldNotFindRootPackage)?;
-
-    let buildpack_bin_targets: Vec<&Target> = buildpack_cargo_package
-        .targets
-        .iter()
-        .filter(|target| target.kind == vec!["bin"])
-        .collect();
-
-    let target = match buildpack_bin_targets.as_slice() {
-        [] => Err(BuildError::NoBinTargetsFound),
-        [single_target] => Ok(single_target),
-        _ => Err(BuildError::MultipleBinTargetsFound),
-    }?;
 
     let mut cargo_args = vec!["build", "--target", target_triple.as_ref()];
     match cargo_profile {
@@ -90,7 +75,7 @@ where
                 CargoProfile::Dev => "debug",
                 CargoProfile::Release => "release",
             })
-            .join(&target.name)
+            .join(target_name.as_ref())
             .into_std_path_buf();
 
         Ok(binary_path)
@@ -103,8 +88,6 @@ where
 pub enum BuildError {
     IoError(std::io::Error),
     UnexpectedExitStatus(ExitStatus),
-    NoBinTargetsFound,
-    MultipleBinTargetsFound,
     MetadataError(cargo_metadata::Error),
     CouldNotFindRootPackage,
 }
@@ -163,6 +146,7 @@ pub fn assemble_buildpack_directory(
     destination_path: impl AsRef<Path>,
     buildpack_descriptor_path: impl AsRef<Path>,
     buildpack_binary_path: impl AsRef<Path>,
+    additional_files: HashMap<PathBuf, PathBuf>,
 ) -> std::io::Result<()> {
     fs::create_dir_all(destination_path.as_ref())?;
 
@@ -176,6 +160,16 @@ pub fn assemble_buildpack_directory(
 
     fs::copy(buildpack_binary_path.as_ref(), bin_path.join("build"))?;
     create_file_symlink("build", bin_path.join("detect"))?;
+
+    for (from, to) in additional_files {
+        let d = destination_path.as_ref().join(to);
+
+        if let Some(parent) = d.parent() {
+            fs::create_dir_all(parent)?;
+        }
+
+        fs::copy(from, d)?;
+    }
 
     Ok(())
 }

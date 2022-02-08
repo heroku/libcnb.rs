@@ -6,6 +6,7 @@ use crate::layer_env::LayerEnv;
 use crate::Buildpack;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 /// Represents a buildpack layer written with the libcnb framework.
@@ -166,12 +167,14 @@ pub struct LayerData<M> {
 pub struct LayerResult<M> {
     pub metadata: M,
     pub env: Option<LayerEnv>,
+    pub execd: HashMap<String, ExecDBinary>,
 }
 
 /// A builder that simplifies the creation of [`LayerResult`] values.
 pub struct LayerResultBuilder<M> {
     metadata: M,
     env: Option<LayerEnv>,
+    execd: HashMap<String, ExecDBinary>,
 }
 
 impl<M> LayerResultBuilder<M> {
@@ -180,12 +183,19 @@ impl<M> LayerResultBuilder<M> {
         Self {
             metadata,
             env: None,
+            execd: HashMap::default(),
         }
     }
 
     #[must_use]
     pub fn env(mut self, layer_env: LayerEnv) -> Self {
         self.env = Some(layer_env);
+        self
+    }
+
+    #[must_use]
+    pub fn execd<S: Into<String>, B: Into<ExecDBinary>>(mut self, name: S, binary: B) -> Self {
+        self.execd.insert(name.into(), binary.into());
         self
     }
 
@@ -206,6 +216,32 @@ impl<M> LayerResultBuilder<M> {
         LayerResult {
             metadata: self.metadata,
             env: self.env,
+            execd: self.execd,
         }
+    }
+}
+
+// TODO: direct linking of a binary via macro?
+pub enum ExecDBinary {
+    Path(PathBuf),
+    Bytes(Vec<u8>),
+    StaticBytes(&'static [u8]),
+}
+
+impl<const S: usize> From<&'static [u8; S]> for ExecDBinary {
+    fn from(bytes: &'static [u8; S]) -> Self {
+        ExecDBinary::StaticBytes(bytes)
+    }
+}
+
+impl From<Vec<u8>> for ExecDBinary {
+    fn from(bytes: Vec<u8>) -> Self {
+        ExecDBinary::Bytes(bytes)
+    }
+}
+
+impl From<PathBuf> for ExecDBinary {
+    fn from(path: PathBuf) -> Self {
+        ExecDBinary::Path(path)
     }
 }

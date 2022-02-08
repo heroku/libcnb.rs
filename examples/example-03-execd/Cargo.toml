@@ -1,0 +1,20 @@
+[package]
+name = "example-03-execd"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.56"
+
+# You can configure the target name for the buildpack if your crate has multiple
+# binary targets and you don't want to use the target with the same name as
+# the crate as the main buildpack binary:
+#
+#[package.metadata.libcnb]
+#buildpack-target = "example-03-execd"
+
+[dependencies]
+libcnb = { path = "../../libcnb" }
+toml = "0.5.8"
+
+[dev-dependencies]
+libcnb-test = { path = "../../libcnb-test" }
+tempfile = "3.3.0"

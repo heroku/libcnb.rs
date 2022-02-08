@@ -4,8 +4,10 @@
 // https://rust-lang.github.io/rust-clippy/stable/index.html
 #![warn(clippy::pedantic)]
 
+use cargo_metadata::{Metadata, MetadataCommand};
 use proc_macro::TokenStream;
 use quote::quote;
+use std::path::PathBuf;
 use syn::parse::{Parse, ParseStream};
 use syn::parse_macro_input;
 use syn::Token;
@@ -70,4 +72,53 @@ impl Parse for VerifyRegexInput {
             expression_when_unmatched,
         })
     }
+}
+
+#[proc_macro]
+pub fn path_to_packaged_crate_binary(input: TokenStream) -> TokenStream {
+    let bin_target_name = parse_macro_input!(input as syn::LitStr).value();
+
+    let cargo_metadata = std::env::var("CARGO_MANIFEST_DIR")
+        .map(PathBuf::from)
+        .ok()
+        .map(|cargo_manifest_dir| {
+            MetadataCommand::new()
+                .manifest_path(cargo_manifest_dir.join("Cargo.toml"))
+                .exec()
+        })
+        .transpose();
+
+    let token_stream = if let Ok(Some(cargo_metadata)) = cargo_metadata {
+        if let Some(root_package) = cargo_metadata.root_package() {
+            let valid_target = root_package
+                .targets
+                .iter()
+                .any(|target| target.name == bin_target_name);
+
+            if valid_target {
+                quote! {{
+                    ::std::env::var("CNB_BUILDPACK_DIR")
+                        .map(::std::path::PathBuf::from)
+                        .expect("Could not read CNB_BUILDPACK_DIR environment variable")
+                        .join(".libcnb-cargo")
+                        .join("additional-bin")
+                        .join(#bin_target_name)
+                }}
+            } else {
+                quote! {
+                    compile_error!(concat!("Given target name '", #bin_target_name ,"' is not a valid crate binary target!"))
+                }
+            }
+        } else {
+            quote! {
+                compile_error!("Cannot read root package for this crate!")
+            }
+        }
+    } else {
+        quote! {
+            compile_error!("Cannot read Cargo metadata!")
+        }
+    };
+
+    token_stream.into()
 }

@@ -1,9 +1,10 @@
 use crate::build::BuildContext;
 use crate::data::layer::LayerName;
 use crate::data::layer_content_metadata::LayerContentMetadata;
+use std::collections::HashMap;
 
 use crate::generic::GenericMetadata;
-use crate::layer::{ExistingLayerStrategy, Layer, LayerData, MetadataMigration};
+use crate::layer::{ExecDBinary, ExistingLayerStrategy, Layer, LayerData, MetadataMigration};
 use crate::layer_env::LayerEnv;
 use crate::util::default_on_not_found;
 use crate::Buildpack;
@@ -45,6 +46,8 @@ pub(crate) fn handle_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
                             types: Some(layer.types()),
                             metadata: layer_data.content_metadata.metadata,
                         },
+                        // TODO: probably wrong!
+                        &HashMap::default(),
                     )?;
 
                     // Reread the layer from disk to ensure the returned layer data accurately reflects
@@ -78,6 +81,8 @@ pub(crate) fn handle_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
                                     types: generic_layer_data.content_metadata.types,
                                     metadata: migrated_metadata,
                                 },
+                                // TODO: Probably wrong!
+                                &HashMap::default(),
                             )?;
                         }
                     }
@@ -117,6 +122,7 @@ fn handle_create_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
             types: Some(layer.types()),
             metadata: layer_result.metadata,
         },
+        &layer_result.execd,
     )?;
 
     read_layer(&context.layers_dir, layer_name)?
@@ -141,6 +147,7 @@ fn handle_update_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
             types: Some(layer.types()),
             metadata: layer_result.metadata,
         },
+        &layer_result.execd,
     )?;
 
     read_layer(&context.layers_dir, &layer_data.name)?
@@ -228,11 +235,15 @@ fn delete_layer<P: AsRef<Path>>(
 }
 
 /// Updates layer metadata on disk
+///
+/// This function will overwrite existing layer metadata such as the layer TOML file, layer
+/// environment variable directories and exec.d directories.
 fn write_layer<M: Serialize, P: AsRef<Path>>(
     layers_dir: P,
     layer_name: &LayerName,
     layer_env: &LayerEnv,
     layer_content_metadata: &LayerContentMetadata<M>,
+    layer_execd_binaries: &HashMap<String, ExecDBinary>,
 ) -> Result<(), WriteLayerError> {
     let layer_dir = layers_dir.as_ref().join(layer_name.as_str());
     let layer_content_metadata_path = layers_dir
@@ -240,7 +251,29 @@ fn write_layer<M: Serialize, P: AsRef<Path>>(
         .join(format!("{}.toml", layer_name.as_ref()));
 
     fs::create_dir_all(&layer_dir)?;
+
     layer_env.write_to_layer_dir(&layer_dir)?;
+
+    let execd_dir = layer_dir.join("exec.d");
+
+    if execd_dir.exists() {
+        fs::remove_dir_all(&execd_dir)?;
+    }
+
+    if !layer_execd_binaries.is_empty() {
+        fs::create_dir_all(&execd_dir)?;
+
+        for (name, binary) in layer_execd_binaries {
+            match binary {
+                ExecDBinary::Path(path) => {
+                    fs::copy(path, execd_dir.join(name))?;
+                }
+                ExecDBinary::Bytes(_) => {}
+                ExecDBinary::StaticBytes(_) => {}
+            }
+        }
+    }
+
     write_toml_file(&layer_content_metadata, layer_content_metadata_path)?;
 
     Ok(())
@@ -388,6 +421,7 @@ mod tests {
                 }),
                 metadata: GenericMetadata::default(),
             },
+            &HashMap::default(),
         )
         .unwrap();
 
@@ -442,6 +476,7 @@ mod tests {
                 }),
                 metadata: GenericMetadata::default(),
             },
+            &HashMap::default(),
         )
         .unwrap();
 
@@ -464,6 +499,7 @@ mod tests {
                 }),
                 metadata: GenericMetadata::default(),
             },
+            &HashMap::default(),
         )
         .unwrap();
 
