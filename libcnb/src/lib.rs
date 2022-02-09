@@ -35,7 +35,9 @@ pub use platform::*;
 pub use toml_file::*;
 
 pub use buildpack::Buildpack;
-pub use runtime::libcnb_runtime;
+pub use runtime::{
+    libcnb_runtime, libcnb_runtime_build, libcnb_runtime_detect, BuildArgs, DetectArgs,
+};
 
 const LIBCNB_SUPPORTED_BUILDPACK_API: data::buildpack::BuildpackApi =
     data::buildpack::BuildpackApi { major: 0, minor: 6 };

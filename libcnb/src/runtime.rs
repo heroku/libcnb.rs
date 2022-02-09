@@ -62,8 +62,8 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
 
     #[cfg(any(target_family = "unix"))]
     let result = match current_exe_file_name {
-        Some("detect") => libcnb_runtime_detect(buildpack),
-        Some("build") => libcnb_runtime_build(buildpack),
+        Some("detect") => libcnb_runtime_detect(buildpack, parse_detect_args_or_exit()),
+        Some("build") => libcnb_runtime_build(buildpack, parse_build_args_or_exit()),
         other => {
             eprintln!(
                 "Error: Expected the name of this executable to be 'detect' or 'build', but it was '{}'",
@@ -76,14 +76,16 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
         }
     };
 
-    if let Err(lib_cnb_error) = result {
-        exit(buildpack.on_error(lib_cnb_error));
+    match result {
+        Ok(code) => process::exit(code),
+        Err(lib_cnb_error) => exit(buildpack.on_error(lib_cnb_error)),
     }
 }
 
-fn libcnb_runtime_detect<B: Buildpack>(buildpack: &B) -> crate::Result<(), B::Error> {
-    let args = parse_detect_args_or_exit();
-
+pub fn libcnb_runtime_detect<B: Buildpack>(
+    buildpack: &B,
+    args: DetectArgs,
+) -> crate::Result<i32, B::Error> {
     let app_dir = env::current_dir().map_err(Error::CannotDetermineAppDirectory)?;
 
     let stack_id: StackId = env::var("CNB_STACK_ID")
@@ -104,21 +106,22 @@ fn libcnb_runtime_detect<B: Buildpack>(buildpack: &B) -> crate::Result<(), B::Er
     };
 
     match buildpack.detect(detect_context)?.0 {
-        InnerDetectResult::Fail => process::exit(100),
+        InnerDetectResult::Fail => Ok(100),
         InnerDetectResult::Pass { build_plan } => {
             if let Some(build_plan) = build_plan {
                 write_toml_file(&build_plan, build_plan_path)
                     .map_err(Error::CannotWriteBuildPlan)?;
             }
 
-            process::exit(0)
+            Ok(0)
         }
     }
 }
 
-fn libcnb_runtime_build<B: Buildpack>(buildpack: &B) -> crate::Result<(), B::Error> {
-    let args = parse_build_args_or_exit();
-
+pub fn libcnb_runtime_build<B: Buildpack>(
+    buildpack: &B,
+    args: BuildArgs,
+) -> crate::Result<i32, B::Error> {
     let layers_dir = args.layers_dir_path;
 
     let app_dir = env::current_dir().map_err(Error::CannotDetermineAppDirectory)?;
@@ -155,17 +158,17 @@ fn libcnb_runtime_build<B: Buildpack>(buildpack: &B) -> crate::Result<(), B::Err
                     .map_err(Error::CannotWriteStore)?;
             };
 
-            process::exit(0)
+            Ok(0)
         }
     }
 }
 
-struct DetectArgs {
+pub struct DetectArgs {
     pub platform_dir_path: PathBuf,
     pub build_plan_path: PathBuf,
 }
 
-struct BuildArgs {
+pub struct BuildArgs {
     pub layers_dir_path: PathBuf,
     pub platform_dir_path: PathBuf,
     pub buildpack_plan_path: PathBuf,
