@@ -22,7 +22,7 @@ pub fn cross_compile_assistance(target_triple: impl AsRef<str>) -> CrossCompileA
                 r#"For cross-compilation from macOS to x86_64-unknown-linux-musl, a C compiler and
 linker for the target platform must be installed on your computer.
 
-The easiest way to install 'x86_64-unknown-linux-gnu-gcc' is to follow the instructions in the linked
+The easiest way to install 'x86_64-unknown-linux-musl-gcc' is to follow the instructions in the linked
 GitHub repository:
 
 https://github.com/messense/homebrew-macos-cross-toolchains"#,
