@@ -4,7 +4,6 @@
 // https://rust-lang.github.io/rust-clippy/stable/index.html
 #![warn(clippy::pedantic)]
 
-use cargo_metadata::{Metadata, MetadataCommand};
 use proc_macro::TokenStream;
 use quote::quote;
 use std::path::PathBuf;
@@ -82,7 +81,7 @@ pub fn path_to_packaged_crate_binary(input: TokenStream) -> TokenStream {
         .map(PathBuf::from)
         .ok()
         .map(|cargo_manifest_dir| {
-            MetadataCommand::new()
+            cargo_metadata::MetadataCommand::new()
                 .manifest_path(cargo_manifest_dir.join("Cargo.toml"))
                 .exec()
         })

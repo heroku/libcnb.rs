@@ -1,5 +1,7 @@
+use cargo_metadata::MetadataCommand;
+use libcnb_cargo::build::{build_binaries, build_binary, BuildError};
 use libcnb_cargo::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
-use libcnb_cargo::{assemble_buildpack_directory, build_binary, BuildError, CargoProfile};
+use libcnb_cargo::{assemble_buildpack_directory, CargoProfile};
 use std::path::PathBuf;
 use tempfile::{tempdir, TempDir};
 
@@ -19,18 +21,29 @@ pub(crate) fn package_crate_buildpack(
     let buildpack_dir =
         tempdir().map_err(PackageCrateBuildpackError::CannotCreateBuildpackTempDirectory)?;
 
-    let buildpack_binary_path = build_binary(
+    let cargo_metadata = match MetadataCommand::new()
+        .manifest_path(&cargo_manifest_dir.join("Cargo.toml"))
+        .exec()
+    {
+        Ok(cargo_metadata) => cargo_metadata,
+        Err(error) => {
+            std::process::exit(1);
+        }
+    };
+
+    let buildpack_binaries = build_binaries(
         &cargo_manifest_dir,
+        &cargo_metadata,
         CargoProfile::Dev,
-        target_triple.as_ref(),
         cargo_env,
+        target_triple.as_ref(),
     )
     .map_err(PackageCrateBuildpackError::BuildError)?;
 
     assemble_buildpack_directory(
         buildpack_dir.path(),
         &cargo_manifest_dir.join("buildpack.toml"),
-        &buildpack_binary_path,
+        &buildpack_binaries,
     )
     .map_err(PackageCrateBuildpackError::CannotAssembleBuildpackDirectory)?;
 

@@ -1,8 +1,6 @@
 use cargo_metadata::{Metadata, Target};
 use serde;
 use serde::Deserialize;
-use std::collections::HashMap;
-use std::path::PathBuf;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
