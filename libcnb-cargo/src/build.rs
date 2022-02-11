@@ -15,7 +15,7 @@ use std::process::{Command, ExitStatus};
 ///
 /// # Errors
 ///
-/// Will return `Err` if the any build did not finish successfully, the configuration cannot be
+/// Will return `Err` if any build did not finish successfully, the configuration cannot be
 /// read or the configured main buildpack binary does not exist.
 pub fn build_buildpack_binaries<
     I: IntoIterator<Item = (K, V)>,
