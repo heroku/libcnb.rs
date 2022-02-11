@@ -510,9 +510,15 @@ impl LayerEnvDelta {
             // explicitly written in the spec, we read through the the reference implementation and
             // determined that it also treats the file contents as raw bytes.
             // See: https://github.com/buildpacks/lifecycle/blob/a7428a55c2a14d8a37e84285b95dc63192e3264e/env/env.go#L73-L106
-            use std::os::unix::ffi::OsStringExt;
             let path = dir_entry?.path();
-            let file_contents = OsString::from_vec(fs::read(&path)?);
+
+            #[cfg(target_family = "unix")]
+            let file_contents = {
+                use std::os::unix::ffi::OsStringExt;
+                OsString::from_vec(fs::read(&path)?)
+            };
+            #[cfg(not(target_family = "unix"))]
+            let file_contents = OsString::from(&fs::read_to_string(&path)?);
 
             // Rely on the Rust standard library for splitting stem and extension. Since paths
             // are not necessarily UTF-8 encoded, this is not as trivial as it might look like.
@@ -549,8 +555,6 @@ impl LayerEnvDelta {
     }
 
     fn write_to_env_dir(&self, path: impl AsRef<Path>) -> Result<(), std::io::Error> {
-        use std::os::unix::ffi::OsStrExt;
-
         if path.as_ref().exists() {
             // This is a possible race condition if the path is deleted between the check and
             // removal by this code. We accept this for now to keep it simple.
@@ -573,7 +577,14 @@ impl LayerEnvDelta {
 
             let file_path = path.as_ref().join(file_name);
 
-            fs::write(file_path, &value.as_bytes())?;
+            #[cfg(target_family = "unix")]
+            {
+                use std::os::unix::ffi::OsStrExt;
+                fs::write(file_path, &value.as_bytes())?;
+            }
+
+            #[cfg(not(target_family = "unix"))]
+            fs::write(file_path, &value.to_string_lossy().as_bytes())?;
         }
 
         Ok(())
