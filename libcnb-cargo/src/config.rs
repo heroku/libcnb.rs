@@ -3,13 +3,12 @@ use serde;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
-pub struct Config {
+pub(crate) struct Config {
     #[serde(rename = "buildpack-target")]
     pub buildpack_target: String,
 }
 
-/// # Errors
-pub fn config_from_metadata(cargo_metadata: &Metadata) -> Result<Config, ConfigError> {
+pub(crate) fn config_from_metadata(cargo_metadata: &Metadata) -> Result<Config, ConfigError> {
     let root_package = cargo_metadata
         .root_package()
         .ok_or(ConfigError::MissingRootPackage)?;

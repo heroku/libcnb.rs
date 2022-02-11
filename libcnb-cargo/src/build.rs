@@ -9,7 +9,7 @@ use std::process::{Command, ExitStatus};
 /// Builds all buildpack binary targets using Cargo.
 ///
 /// It uses libcnb configuration metadata in the Crates `Cargo.toml` to determine which binary is
-/// the main buildpack binary and which are additional ones. See [`Config`](crate::config::Config).
+/// the main buildpack binary and which are additional ones.
 ///
 /// See [`build_binary`] for details around the build process.
 ///
