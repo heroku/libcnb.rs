@@ -1,7 +1,13 @@
+//! Integration tests using libcnb-test.
+//!
+//! All integration tests are skipped by default (using the `ignore` attribute),
+//! since performing builds is slow. To run the tests use: `cargo test -- --ignored`
+
 use libcnb_test::{BuildpackReference, IntegrationTest};
 use tempfile::tempdir;
 
 #[test]
+#[ignore]
 #[should_panic(expected = "pack command failed with exit-code 1!
 
 pack stdout:
