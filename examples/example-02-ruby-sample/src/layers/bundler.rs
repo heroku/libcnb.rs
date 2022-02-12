@@ -78,10 +78,10 @@ impl Layer for BundlerLayer {
         util::sha256_checksum(context.app_dir.join("Gemfile.lock"))
             .map_err(RubyBuildpackError::CouldNotGenerateChecksum)
             .map(|checksum| {
-                if checksum != layer.content_metadata.metadata.gemfile_lock_checksum {
-                    ExistingLayerStrategy::Update
-                } else {
+                if checksum == layer.content_metadata.metadata.gemfile_lock_checksum {
                     ExistingLayerStrategy::Keep
+                } else {
+                    ExistingLayerStrategy::Update
                 }
             })
     }
