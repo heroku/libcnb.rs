@@ -1,4 +1,4 @@
-# libcnb.rs [![Build Status]][ci] [![Docs]][docs.rs] [![Latest Version]][crates.io] [![Rustc Version 1.56+]][rustc]
+# libcnb.rs [![Build Status]][ci] [![Docs]][docs.rs] [![Latest Version]][crates.io] [![Rustc Version 1.58+]][rustc]
 
 [Build Status]: https://img.shields.io/github/workflow/status/Malax/libcnb/CI/main
 [ci]: https://github.com/Malax/libcnb.rs/actions/workflows/ci.yml?query=branch%3Amain
@@ -6,8 +6,8 @@
 [docs.rs]: https://docs.rs/libcnb/*/libcnb/
 [Latest Version]: https://img.shields.io/crates/v/libcnb.svg
 [crates.io]: https://crates.io/crates/libcnb
-[Rustc Version 1.56+]: https://img.shields.io/badge/rustc-1.56+-lightgray.svg
-[rustc]: https://blog.rust-lang.org/2021/10/21/Rust-1.56.0.html
+[Rustc Version 1.58+]: https://img.shields.io/badge/rustc-1.58+-lightgray.svg
+[rustc]: https://blog.rust-lang.org/2022/01/13/Rust-1.58.0.html
 
 `libcnb.rs` is a framework for writing [Cloud Native Buildpacks](https://buildpacks.io) in Rust. It is an opinionated implementation adding language constructs and convenience methods for working with the spec. It values strong adherence to the spec and data formats.
 

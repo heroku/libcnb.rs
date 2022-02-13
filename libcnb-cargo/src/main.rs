@@ -50,7 +50,7 @@ fn handle_libcnb_package(matches: &ArgMatches) {
     let current_dir = match std::env::current_dir() {
         Ok(current_dir) => current_dir,
         Err(io_error) => {
-            error!("Could not determine current directory: {}", io_error);
+            error!("Could not determine current directory: {io_error}");
             std::process::exit(1);
         }
     };
@@ -61,14 +61,11 @@ fn handle_libcnb_package(matches: &ArgMatches) {
         Err(error) => {
             match error {
                 BuildpackDataError::IoError(io_error) => {
-                    error!("Unable to read buildpack metadata: {}", io_error);
+                    error!("Unable to read buildpack metadata: {io_error}");
                     error!("Hint: Verify that a readable file named \"buildpack.toml\" exists at the root of your project.");
                 }
                 BuildpackDataError::DeserializationError(deserialization_error) => {
-                    error!(
-                        "Unable to deserialize buildpack metadata: {}",
-                        deserialization_error
-                    );
+                    error!("Unable to deserialize buildpack metadata: {deserialization_error}");
                     error!("Hint: Verify that your \"buildpack.toml\" is valid.");
                 }
             }
@@ -89,7 +86,7 @@ fn handle_libcnb_package(matches: &ArgMatches) {
     {
         Ok(cargo_metadata) => cargo_metadata,
         Err(error) => {
-            error!("Could not obtain metadata from Cargo: {}", error);
+            error!("Could not obtain metadata from Cargo: {error}");
             std::process::exit(1);
         }
     };
@@ -115,15 +112,12 @@ fn handle_libcnb_package(matches: &ArgMatches) {
         info!("Determining automatic cross-compile settings...");
         match cross_compile_assistance(target_triple) {
             CrossCompileAssistance::HelpText(help_text) => {
-                error!("{}", help_text);
+                error!("{help_text}");
                 info!("To disable cross-compile assistance, pass --no-cross-compile-assistance.");
                 std::process::exit(1);
             }
             CrossCompileAssistance::NoAssistance => {
-                warn!(
-                    "Could not determine automatic cross-compile settings for target triple {}.",
-                    &target_triple
-                );
+                warn!("Could not determine automatic cross-compile settings for target triple {target_triple}.");
                 warn!("This is not an error, but without proper cross-compile settings in your Cargo manifest and locally installed toolchains, compilation might fail.");
                 warn!("To disable this warning, pass --no-cross-compile-assistance.");
                 vec![]
@@ -132,7 +126,7 @@ fn handle_libcnb_package(matches: &ArgMatches) {
         }
     };
 
-    info!("Building binaries ({})...", &target_triple);
+    info!("Building binaries ({target_triple})...");
 
     let buildpack_binaries = match build_buildpack_binaries(
         &current_dir,
@@ -148,18 +142,14 @@ fn handle_libcnb_package(matches: &ArgMatches) {
             match build_error {
                 BuildBinariesError::ConfigError(_) => {}
                 BuildBinariesError::BuildError(target_name, BuildError::IoError(io_error)) => {
-                    error!(
-                        "IO error while executing Cargo for target {}: {}",
-                        target_name, io_error
-                    );
+                    error!("IO error while executing Cargo for target {target_name}: {io_error}");
                 }
                 BuildBinariesError::BuildError(
                     target_name,
                     BuildError::UnexpectedCargoExitStatus(exit_status),
                 ) => {
                     error!(
-                        "Unexpected Cargo exit status for target {}: {}",
-                        target_name,
+                        "Unexpected Cargo exit status for target {target_name}: {}",
                         exit_status
                             .code()
                             .map_or_else(|| String::from("<unknown>"), |code| code.to_string())
@@ -167,10 +157,7 @@ fn handle_libcnb_package(matches: &ArgMatches) {
                     error!("Examine Cargo output for details and potential compilation errors.");
                 }
                 BuildBinariesError::MissingBuildpackTarget(target_name) => {
-                    error!(
-                        "Configured buildpack target name {} could not be found!",
-                        target_name
-                    );
+                    error!("Configured buildpack target name {target_name} could not be found!");
                 }
             }
 
@@ -181,7 +168,7 @@ fn handle_libcnb_package(matches: &ArgMatches) {
     info!("Writing buildpack directory...");
     if output_path.exists() {
         if let Err(error) = fs::remove_dir_all(&output_path) {
-            error!("Could not remove buildpack directory: {}", &error);
+            error!("Could not remove buildpack directory: {error}");
             std::process::exit(1);
         };
     }
@@ -191,7 +178,7 @@ fn handle_libcnb_package(matches: &ArgMatches) {
         &buildpack_data.buildpack_descriptor_path,
         &buildpack_binaries,
     ) {
-        error!("IO error while writing buildpack directory: {}", io_error);
+        error!("IO error while writing buildpack directory: {io_error}");
         std::process::exit(1);
     };
 
@@ -213,7 +200,7 @@ fn setup_logging() {
         .verbosity(2) // LevelFilter::Info
         .init()
     {
-        eprintln!("Unable to initialize logger: {}", error);
+        eprintln!("Unable to initialize logger: {error}");
         std::process::exit(1);
     }
 }

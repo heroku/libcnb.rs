@@ -217,9 +217,7 @@ fn delete_layer<P: AsRef<Path>>(
     layer_name: &LayerName,
 ) -> Result<(), std::io::Error> {
     let layer_dir = layers_dir.as_ref().join(layer_name.as_str());
-    let layer_toml = layers_dir
-        .as_ref()
-        .join(format!("{}.toml", layer_name.as_ref()));
+    let layer_toml = layers_dir.as_ref().join(format!("{layer_name}.toml"));
 
     default_on_not_found(fs::remove_dir_all(&layer_dir))?;
     default_on_not_found(fs::remove_file(&layer_toml))?;
@@ -235,9 +233,7 @@ fn write_layer<M: Serialize, P: AsRef<Path>>(
     layer_content_metadata: &LayerContentMetadata<M>,
 ) -> Result<(), WriteLayerError> {
     let layer_dir = layers_dir.as_ref().join(layer_name.as_str());
-    let layer_content_metadata_path = layers_dir
-        .as_ref()
-        .join(format!("{}.toml", layer_name.as_ref()));
+    let layer_content_metadata_path = layers_dir.as_ref().join(format!("{layer_name}.toml"));
 
     fs::create_dir_all(&layer_dir)?;
     layer_env.write_to_layer_dir(&layer_dir)?;
@@ -251,7 +247,7 @@ fn read_layer<M: DeserializeOwned, P: AsRef<Path>>(
     layer_name: &LayerName,
 ) -> Result<Option<LayerData<M>>, ReadLayerError> {
     let layer_dir_path = layers_dir.as_ref().join(layer_name.as_str());
-    let layer_toml_path = layers_dir.as_ref().join(format!("{}.toml", layer_name));
+    let layer_toml_path = layers_dir.as_ref().join(format!("{layer_name}.toml"));
 
     if !layer_dir_path.exists() && !layer_toml_path.exists() {
         return Ok(None);
@@ -315,7 +311,7 @@ mod tests {
 
         fs::create_dir_all(&layer_dir).unwrap();
         fs::write(
-            layers_dir.join(format!("{}.toml", &layer_name)),
+            layers_dir.join(format!("{layer_name}.toml")),
             r#"
             [types]
             launch = true
@@ -328,7 +324,7 @@ mod tests {
         super::delete_layer(&layers_dir, &layer_name).unwrap();
 
         assert!(!layer_dir.exists());
-        assert!(!layers_dir.join(format!("{}.toml", &layer_name)).exists());
+        assert!(!layers_dir.join(format!("{layer_name}.toml")).exists());
     }
 
     #[test]
@@ -339,7 +335,7 @@ mod tests {
         let layer_dir = layers_dir.join(layer_name.as_str());
 
         fs::write(
-            layers_dir.join(format!("{}.toml", &layer_name)),
+            layers_dir.join(format!("{layer_name}.toml")),
             r#"
             [types]
             launch = true
@@ -352,7 +348,7 @@ mod tests {
         super::delete_layer(&layers_dir, &layer_name).unwrap();
 
         assert!(!layer_dir.exists());
-        assert!(!layers_dir.join(format!("{}.toml", &layer_name)).exists());
+        assert!(!layers_dir.join(format!("{layer_name}.toml")).exists());
     }
 
     #[test]
@@ -399,7 +395,7 @@ mod tests {
         );
 
         let layer_content_metadata: LayerContentMetadata<GenericMetadata> =
-            read_toml_file(layers_dir.join(format!("{}.toml", layer_name))).unwrap();
+            read_toml_file(layers_dir.join(format!("{layer_name}.toml"))).unwrap();
 
         assert_eq!(
             layer_content_metadata.types,
@@ -482,7 +478,7 @@ mod tests {
         assert!(!layer_dir.join("env/SOME_OTHER_ENV_VAR.default").exists());
 
         let layer_content_metadata: LayerContentMetadata<GenericMetadata> =
-            read_toml_file(layers_dir.join(format!("{}.toml", layer_name))).unwrap();
+            read_toml_file(layers_dir.join(format!("{layer_name}.toml"))).unwrap();
 
         assert_eq!(
             layer_content_metadata.types,
@@ -509,7 +505,7 @@ mod tests {
 
         fs::create_dir_all(&layer_dir).unwrap();
         fs::write(
-            layers_dir.join(format!("{}.toml", &layer_name)),
+            layers_dir.join(format!("{layer_name}.toml")),
             r#"
             [types]
             launch = true
@@ -578,7 +574,7 @@ mod tests {
 
         fs::create_dir_all(&layer_dir).unwrap();
         fs::write(
-            layers_dir.join(format!("{}.toml", &layer_name)),
+            layers_dir.join(format!("{layer_name}.toml")),
             r#"
             [types
             build = true
@@ -611,7 +607,7 @@ mod tests {
 
         fs::create_dir_all(&layer_dir).unwrap();
         fs::write(
-            layers_dir.join(format!("{}.toml", &layer_name)),
+            layers_dir.join(format!("{layer_name}.toml")),
             r#"
             [types]
             build = true
@@ -661,7 +657,7 @@ mod tests {
         let temp_dir = tempdir().unwrap();
         let layers_dir = temp_dir.path();
 
-        fs::write(layers_dir.join(format!("{}.toml", &layer_name)), "").unwrap();
+        fs::write(layers_dir.join(format!("{layer_name}.toml")), "").unwrap();
 
         match super::read_layer::<GenericMetadata, _>(&layers_dir, &layer_name) {
             Ok(None) => {}

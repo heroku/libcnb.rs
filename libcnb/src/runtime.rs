@@ -37,11 +37,7 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
                     "This buildpack ({}) uses Cloud Native Buildpacks API version {}.",
                     &buildpack_descriptor.buildpack.id, &buildpack_descriptor.api,
                 );
-
-                eprintln!(
-                    "But the underlying libcnb.rs library requires CNB API {}.",
-                    LIBCNB_SUPPORTED_BUILDPACK_API
-                );
+                eprintln!("But the underlying libcnb.rs library requires CNB API {LIBCNB_SUPPORTED_BUILDPACK_API}.");
 
                 exit(254)
             }

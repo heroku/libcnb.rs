@@ -4,6 +4,7 @@
 
 - Add `#[must_use]` to `DetectResult`, `DetectResultBuilder`, `PassDetectResultBuilder`, `FailDetectResultBuilder`, `BuildResult` and `BuildResultBuilder` ([#288](https://github.com/Malax/libcnb.rs/pull/288)).
 - Add `additional_buildpack_binary_path!` macro to resolve paths to additional buildpack binaries. Only works when the buildpack is packaged with `libcnb-cargo`/`libcnb-test`. ([#320](https://github.com/Malax/libcnb.rs/pull/320))
+- Increase minimum supported Rust version from 1.56 to 1.58 ([#318](https://github.com/Malax/libcnb.rs/pull/318)).
 
 ## [0.5.0] 2022-01-14
 

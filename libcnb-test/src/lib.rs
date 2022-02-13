@@ -99,10 +99,7 @@ impl IntegrationTest {
             {
                 Docker::connect_with_ssl_defaults()
             }
-            Ok(docker_host) => panic!(
-                "Cannot connect to unsupported DOCKER_HOST '{}'",
-                docker_host
-            ),
+            Ok(docker_host) => panic!("Cannot connect to unsupported DOCKER_HOST '{docker_host}'"),
             Err(VarError::NotPresent) => Docker::connect_with_local_defaults(),
             Err(VarError::NotUnicode(_)) => {
                 panic!("DOCKER_HOST environment variable is not unicode encoded!")
