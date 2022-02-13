@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Update cross-compile assistance on macOS to use https://github.com/messense/homebrew-macos-cross-toolchains instead of https://github.com/FiloSottile/homebrew-musl-cross. Support for the latter has not been removed, existing setups continue to work as before. ([#312](https://github.com/Malax/libcnb.rs/pull/312))
+
 ## [0.2.1] 2022-01-19
 
 - `cargo libcnb package` now allows multiple targets, as long as there is only one binary target. To support this change, the `BuildError` variants `NoTargetsFound` and `MultipleTargetsFound` have been replaced by `NoBinTargetsFound` and `MultipleBinTargetsFound` respectively. ([#282](https://github.com/Malax/libcnb.rs/pull/282))
