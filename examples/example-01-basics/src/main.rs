@@ -1,3 +1,7 @@
+// Enable Clippy lints that are disabled by default.
+// https://rust-lang.github.io/rust-clippy/stable/index.html
+#![warn(clippy::pedantic)]
+
 use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};

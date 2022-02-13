@@ -1,3 +1,9 @@
+// Enable Clippy lints that are disabled by default.
+// https://rust-lang.github.io/rust-clippy/stable/index.html
+#![warn(clippy::pedantic)]
+// This lint is too noisy and enforces a style that reduces readability in many cases.
+#![allow(clippy::module_name_repetitions)]
+
 use crate::layers::{BundlerLayer, RubyLayer};
 use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
 use libcnb::data::launch::{Launch, ProcessBuilder};
