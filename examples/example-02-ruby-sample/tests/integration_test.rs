@@ -1,3 +1,8 @@
+//! Integration tests using libcnb-test.
+//!
+//! All integration tests are skipped by default (using the `ignore` attribute),
+//! since performing builds is slow. To run the tests use: `cargo test -- --ignored`
+
 use libcnb_test::IntegrationTest;
 use std::io;
 use std::io::{Read, Write};
@@ -6,6 +11,7 @@ use std::net::ToSocketAddrs;
 use std::time::Duration;
 
 #[test]
+#[ignore]
 fn basic() {
     IntegrationTest::new("heroku/buildpacks:20", "test-fixtures/simple-ruby-app").run_test(
         |context| {
