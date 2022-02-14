@@ -27,27 +27,3 @@ INFO - Successfully wrote buildpack directory: target/debug/libcnb-examples_my-b
 INFO - Packaging successfully finished!
 INFO - Hint: To test your buildpack locally with pack, run: pack build my-image --buildpack target/debug/libcnb-examples_my-buildpack_0.1.0 --path /path/to/application
 ```
-
-## Configuration
-
-### Main buildpack binary
-
-A buildpack crate can contain multiple binaries. To determine which binary is the main buildpack binary, the convention is:
-1. If there is only one binary, use that.
-2. If there are multiple, use the one that has the same name as the crate.
-
-If this convention does not work for your buildpack, you can explicitly configure the main buildpack binary in `Cargo.toml`:
-
-```toml
-[package]
-name = "my-buildpack"
-version = "1.0.0"
-edition = "2021"
-rust-version = "1.56"
-
-[package.metadata.libcnb]
-buildpack-target = "buildpack-bin-target-name"
-
-[dependencies]
-# ...
-```

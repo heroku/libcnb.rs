@@ -46,9 +46,3 @@ fn call_test_fixture_service(addr: std::net::SocketAddr, payload: &str) -> Resul
    unimplemented!()
 }
 ```
-
-## Configuration
-
-### Packaging
-
-See [`libcnb-cargo`](https://crates.io/crates/libcnb-cargo) README for packaging configuration options.
