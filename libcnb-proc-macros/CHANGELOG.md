@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Add a `verify_bin_target_exists!` macro for verifying existence of binary targets in the current crate. ([#320](https://github.com/Malax/libcnb.rs/pull/320))
+
 ## [0.1.1] 2022-01-14
 
 - Bump external dependency versions ([#233](https://github.com/Malax/libcnb.rs/pull/233) and [#275](https://github.com/Malax/libcnb.rs/pull/275)).
