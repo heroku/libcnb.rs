@@ -82,8 +82,7 @@ macro_rules! buildpack_main {
     };
 }
 
-/// Resolves the path to an additional buildpack binary by Cargo target name when the buildpack is
-/// packaged with `libcnb-cargo` or `libcnb-test`.
+/// Resolves the path to an additional buildpack binary by Cargo target name.
 ///
 /// This can be used to copy additional binaries to layers or use them for exec.d.
 ///
@@ -91,7 +90,7 @@ macro_rules! buildpack_main {
 /// Cargo will [automatically configure it as a binary target](https://doc.rust-lang.org/cargo/reference/cargo-targets.html#target-auto-discovery)
 /// with the name of file.
 ///
-/// Note: This only works properly if the buildpack is packaged with `libcnb-cargo`/`libcnb-test`.
+/// **Note**: This only works properly if the buildpack is packaged with `libcnb-cargo`/`libcnb-test`.
 ///
 /// ```no_run,compile_fail
 /// use libcnb::additional_buildpack_binary_path;
