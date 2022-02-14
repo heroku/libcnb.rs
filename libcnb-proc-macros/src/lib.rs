@@ -6,6 +6,7 @@
 
 use proc_macro::TokenStream;
 use quote::quote;
+use std::path::PathBuf;
 use syn::parse::{Parse, ParseStream};
 use syn::parse_macro_input;
 use syn::Token;
@@ -66,6 +67,72 @@ impl Parse for VerifyRegexInput {
         Ok(Self {
             regex,
             value,
+            expression_when_matched,
+            expression_when_unmatched,
+        })
+    }
+}
+
+#[proc_macro]
+pub fn verify_bin_target_exists(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as VerifyBinTargetExistsInput);
+
+    let cargo_metadata = std::env::var("CARGO_MANIFEST_DIR")
+        .map(PathBuf::from)
+        .ok()
+        .map(|cargo_manifest_dir| {
+            cargo_metadata::MetadataCommand::new()
+                .manifest_path(cargo_manifest_dir.join("Cargo.toml"))
+                .exec()
+        })
+        .transpose();
+
+    let token_stream = if let Ok(Some(cargo_metadata)) = cargo_metadata {
+        if let Some(root_package) = cargo_metadata.root_package() {
+            let valid_target = root_package
+                .targets
+                .iter()
+                .any(|target| target.name == input.target_name.value());
+
+            let expression = if valid_target {
+                input.expression_when_matched
+            } else {
+                input.expression_when_unmatched
+            };
+
+            quote! {
+                #expression
+            }
+        } else {
+            quote! {
+                compile_error!("Cannot read root package for this crate!")
+            }
+        }
+    } else {
+        quote! {
+            compile_error!("Cannot read Cargo metadata!")
+        }
+    };
+
+    token_stream.into()
+}
+
+struct VerifyBinTargetExistsInput {
+    target_name: syn::LitStr,
+    expression_when_matched: syn::Expr,
+    expression_when_unmatched: syn::Expr,
+}
+
+impl Parse for VerifyBinTargetExistsInput {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let target_name: syn::LitStr = input.parse()?;
+        input.parse::<Token![,]>()?;
+        let expression_when_matched: syn::Expr = input.parse()?;
+        input.parse::<Token![,]>()?;
+        let expression_when_unmatched: syn::Expr = input.parse()?;
+
+        Ok(Self {
+            target_name,
             expression_when_matched,
             expression_when_unmatched,
         })
