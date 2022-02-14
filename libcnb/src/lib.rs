@@ -18,6 +18,10 @@ pub mod generic;
 pub mod layer;
 pub mod layer_env;
 
+// Internals that need to be public for macros
+#[doc(hidden)]
+pub mod internals;
+
 mod buildpack;
 mod env;
 mod error;
@@ -75,6 +79,39 @@ macro_rules! buildpack_main {
         fn main() {
             ::libcnb::libcnb_runtime(&$buildpack);
         }
+    };
+}
+
+/// Resolves the path to an additional buildpack binary by Cargo target name when the buildpack is
+/// packaged with `libcnb-cargo` or `libcnb-test`.
+///
+/// This can be used to copy additional binaries to layers or use them for exec.d.
+///
+/// To add an additional binary to a buildpack, add a new file with a main function to `bin/`.
+/// Cargo will [automatically configure it as a binary target](https://doc.rust-lang.org/cargo/reference/cargo-targets.html#target-auto-discovery)
+/// with the name of file.
+///
+/// Note: This only works properly if the buildpack is packaged with `libcnb-cargo`/`libcnb-test`.
+#[macro_export]
+macro_rules! additional_buildpack_binary_path {
+    ($target_name:expr) => {
+        ::libcnb::internals::verify_bin_target_exists!(
+            $target_name,
+            {
+                ::std::env::var("CNB_BUILDPACK_DIR")
+                    .map(::std::path::PathBuf::from)
+                    .expect("Could not read CNB_BUILDPACK_DIR environment variable")
+                    .join(".libcnb-cargo")
+                    .join("additional-bin")
+                    .join($target_name)
+            },
+            {
+                compile_error!(concat!(
+                    $target_name,
+                    " is not a valid binary target in this buildpack crate!"
+                ))
+            }
+        )
     };
 }
 
