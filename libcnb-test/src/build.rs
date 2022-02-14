@@ -1,7 +1,7 @@
+use cargo_metadata::MetadataCommand;
+use libcnb_cargo::build::{build_buildpack_binaries, BuildBinariesError};
 use libcnb_cargo::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
-use libcnb_cargo::{
-    assemble_buildpack_directory, build_buildpack_binary, BuildError, CargoProfile,
-};
+use libcnb_cargo::{assemble_buildpack_directory, CargoProfile};
 use std::path::PathBuf;
 use tempfile::{tempdir, TempDir};
 
@@ -13,6 +13,11 @@ pub(crate) fn package_crate_buildpack(
         .map(PathBuf::from)
         .map_err(PackageCrateBuildpackError::CannotDetermineCrateDirectory)?;
 
+    let cargo_metadata = MetadataCommand::new()
+        .manifest_path(&cargo_manifest_dir.join("Cargo.toml"))
+        .exec()
+        .map_err(PackageCrateBuildpackError::CargoMetadataError)?;
+
     let cargo_env = match cross_compile_assistance(target_triple.as_ref()) {
         CrossCompileAssistance::Configuration { cargo_env } => cargo_env,
         _ => vec![],
@@ -21,18 +26,19 @@ pub(crate) fn package_crate_buildpack(
     let buildpack_dir =
         tempdir().map_err(PackageCrateBuildpackError::CannotCreateBuildpackTempDirectory)?;
 
-    let buildpack_binary_path = build_buildpack_binary(
+    let buildpack_binaries = build_buildpack_binaries(
         &cargo_manifest_dir,
+        &cargo_metadata,
         CargoProfile::Dev,
-        target_triple.as_ref(),
         cargo_env,
+        target_triple.as_ref(),
     )
-    .map_err(PackageCrateBuildpackError::BuildError)?;
+    .map_err(PackageCrateBuildpackError::BuildBinariesError)?;
 
     assemble_buildpack_directory(
         buildpack_dir.path(),
         &cargo_manifest_dir.join("buildpack.toml"),
-        &buildpack_binary_path,
+        &buildpack_binaries,
     )
     .map_err(PackageCrateBuildpackError::CannotAssembleBuildpackDirectory)?;
 
@@ -42,7 +48,8 @@ pub(crate) fn package_crate_buildpack(
 #[derive(Debug)]
 pub(crate) enum PackageCrateBuildpackError {
     CannotCreateBuildpackTempDirectory(std::io::Error),
-    BuildError(BuildError),
+    BuildBinariesError(BuildBinariesError),
     CannotAssembleBuildpackDirectory(std::io::Error),
     CannotDetermineCrateDirectory(std::env::VarError),
+    CargoMetadataError(cargo_metadata::Error),
 }

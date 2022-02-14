@@ -4,15 +4,16 @@
 #![allow(clippy::module_name_repetitions)]
 
 mod cli;
+
 use cargo_metadata::MetadataCommand;
 use clap::ArgMatches;
+use libcnb_cargo::build::{build_buildpack_binaries, BuildBinariesError, BuildError};
 use libcnb_cargo::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
 use libcnb_cargo::{
-    assemble_buildpack_directory, build_buildpack_binary, default_buildpack_directory_name,
-    read_buildpack_data, BuildError, BuildpackDataError, CargoProfile,
+    assemble_buildpack_directory, default_buildpack_directory_name, read_buildpack_data,
+    BuildpackDataError, CargoProfile,
 };
-use log::info;
-use log::{error, warn};
+use log::{error, info, warn};
 use size_format::SizeFormatterSI;
 use std::fs;
 
@@ -131,41 +132,45 @@ fn handle_libcnb_package(matches: &ArgMatches) {
         }
     };
 
-    info!("Building buildpack binary ({})...", &target_triple);
-    let binary_path = match build_buildpack_binary(
+    info!("Building binaries ({})...", &target_triple);
+
+    let buildpack_binaries = match build_buildpack_binaries(
         &current_dir,
+        &cargo_metadata,
         cargo_profile,
-        &target_triple,
         cargo_build_env,
+        &target_triple,
     ) {
-        Ok(binary_path) => binary_path,
-        Err(error) => {
+        Ok(binaries) => binaries,
+        Err(build_error) => {
             error!("Packaging buildpack failed due to a build related error!");
 
-            match error {
-                BuildError::IoError(io_error) => {
-                    error!("IO error while executing Cargo: {}", io_error);
-                }
-                BuildError::UnexpectedExitStatus(exit_status) => {
+            match build_error {
+                BuildBinariesError::ConfigError(_) => {}
+                BuildBinariesError::BuildError(target_name, BuildError::IoError(io_error)) => {
                     error!(
-                        "Unexpected Cargo exit status: {}",
+                        "IO error while executing Cargo for target {}: {}",
+                        target_name, io_error
+                    );
+                }
+                BuildBinariesError::BuildError(
+                    target_name,
+                    BuildError::UnexpectedCargoExitStatus(exit_status),
+                ) => {
+                    error!(
+                        "Unexpected Cargo exit status for target {}: {}",
+                        target_name,
                         exit_status
                             .code()
                             .map_or_else(|| String::from("<unknown>"), |code| code.to_string())
                     );
                     error!("Examine Cargo output for details and potential compilation errors.");
                 }
-                BuildError::NoBinTargetsFound => {
-                    error!("No binary targets were found in the Cargo manifest. Ensure that there is exactly one binary target and try again.");
-                }
-                BuildError::MultipleBinTargetsFound => {
-                    error!("Multiple binary targets were found in the Cargo manifest. Ensure that there is exactly one binary target and try again.");
-                }
-                BuildError::MetadataError(metadata_error) => {
-                    error!("Unable to obtain metadata from Cargo: {}", metadata_error);
-                }
-                BuildError::CouldNotFindRootPackage => {
-                    error!("Root package could not be determined from the Cargo manifest.");
+                BuildBinariesError::MissingBuildpackTarget(target_name) => {
+                    error!(
+                        "Configured buildpack target name {} could not be found!",
+                        target_name
+                    );
                 }
             }
 
@@ -184,7 +189,7 @@ fn handle_libcnb_package(matches: &ArgMatches) {
     if let Err(io_error) = assemble_buildpack_directory(
         &output_path,
         &buildpack_data.buildpack_descriptor_path,
-        &binary_path,
+        &buildpack_binaries,
     ) {
         error!("IO error while writing buildpack directory: {}", io_error);
         std::process::exit(1);

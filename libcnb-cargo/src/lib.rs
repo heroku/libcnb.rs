@@ -3,111 +3,14 @@
 // This lint is too noisy and enforces a style that reduces readability in many cases.
 #![allow(clippy::module_name_repetitions)]
 
+pub mod build;
+pub mod config;
 pub mod cross_compile;
 
-use cargo_metadata::{MetadataCommand, Target};
+use crate::build::BuildpackBinaries;
 use libcnb_data::buildpack::SingleBuildpackDescriptor;
-use std::ffi::OsStr;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::{Command, ExitStatus};
-
-/// Builds a buildpack binary using Cargo.
-///
-/// It is designed to handle cross-compilation without requiring custom configuration in the Cargo
-/// manifest of the user's buildpack. The triple for the target platform is a mandatory
-/// argument of this function.
-///
-/// Depending on the host platform, this function will try to set the required cross compilation
-/// settings automatically. Please note that only selected host platforms and targets are supported.
-/// For other combinations, compilation might fail, surfacing cross-compile related errors to the
-/// user.
-///
-/// In many cases, cross-compilation requires external tools such as compilers and linkers to be
-/// installed on the user's machine. When a tool is missing, a `BuildError::CrossCompileError` is
-/// returned which provides additional information. Use the `cross_compile::cross_compile_help`
-/// function to obtain human-readable instructions on how to setup the required tools.
-///
-/// This function currently only supports projects with a single binary target. If the project
-/// does not contain exactly one target, the appropriate `BuildError` is returned.
-///
-/// This function will write Cargo's output to stdout and stderr.
-///
-/// # Errors
-///
-/// Will return `Err` if the build did not finish successfully.
-pub fn build_buildpack_binary<I, K, V>(
-    project_path: impl AsRef<Path>,
-    cargo_profile: CargoProfile,
-    target_triple: impl AsRef<str>,
-    cargo_env: I,
-) -> Result<PathBuf, BuildError>
-where
-    I: IntoIterator<Item = (K, V)>,
-    K: AsRef<OsStr>,
-    V: AsRef<OsStr>,
-{
-    let cargo_metadata = MetadataCommand::new()
-        .manifest_path(project_path.as_ref().join("Cargo.toml"))
-        .exec()
-        .map_err(BuildError::MetadataError)?;
-
-    let buildpack_cargo_package = cargo_metadata
-        .root_package()
-        .ok_or(BuildError::CouldNotFindRootPackage)?;
-
-    let buildpack_bin_targets: Vec<&Target> = buildpack_cargo_package
-        .targets
-        .iter()
-        .filter(|target| target.kind == vec!["bin"])
-        .collect();
-
-    let target = match buildpack_bin_targets.as_slice() {
-        [] => Err(BuildError::NoBinTargetsFound),
-        [single_target] => Ok(single_target),
-        _ => Err(BuildError::MultipleBinTargetsFound),
-    }?;
-
-    let mut cargo_args = vec!["build", "--target", target_triple.as_ref()];
-    match cargo_profile {
-        CargoProfile::Dev => {}
-        CargoProfile::Release => cargo_args.push("--release"),
-    }
-
-    let exit_status = Command::new("cargo")
-        .args(cargo_args)
-        .envs(cargo_env)
-        .current_dir(&project_path)
-        .spawn()
-        .and_then(|mut child| child.wait())
-        .map_err(BuildError::IoError)?;
-
-    if exit_status.success() {
-        let binary_path = cargo_metadata
-            .target_directory
-            .join(target_triple.as_ref())
-            .join(match cargo_profile {
-                CargoProfile::Dev => "debug",
-                CargoProfile::Release => "release",
-            })
-            .join(&target.name)
-            .into_std_path_buf();
-
-        Ok(binary_path)
-    } else {
-        Err(BuildError::UnexpectedExitStatus(exit_status))
-    }
-}
-
-#[derive(Debug)]
-pub enum BuildError {
-    IoError(std::io::Error),
-    UnexpectedExitStatus(ExitStatus),
-    NoBinTargetsFound,
-    MultipleBinTargetsFound,
-    MetadataError(cargo_metadata::Error),
-    CouldNotFindRootPackage,
-}
 
 #[derive(Copy, Clone)]
 pub enum CargoProfile {
@@ -162,7 +65,7 @@ pub struct BuildpackData<BM> {
 pub fn assemble_buildpack_directory(
     destination_path: impl AsRef<Path>,
     buildpack_descriptor_path: impl AsRef<Path>,
-    buildpack_binary_path: impl AsRef<Path>,
+    buildpack_binaries: &BuildpackBinaries,
 ) -> std::io::Result<()> {
     fs::create_dir_all(destination_path.as_ref())?;
 
@@ -174,8 +77,26 @@ pub fn assemble_buildpack_directory(
     let bin_path = destination_path.as_ref().join("bin");
     fs::create_dir_all(&bin_path)?;
 
-    fs::copy(buildpack_binary_path.as_ref(), bin_path.join("build"))?;
+    fs::copy(
+        &buildpack_binaries.buildpack_target_binary_path,
+        bin_path.join("build"),
+    )?;
+
     create_file_symlink("build", bin_path.join("detect"))?;
+
+    let additional_binaries_dir = destination_path
+        .as_ref()
+        .join(".libcnb-cargo")
+        .join("additional-bin");
+
+    fs::create_dir_all(&additional_binaries_dir)?;
+
+    for (binary_target_name, binary_path) in &buildpack_binaries.additional_target_binary_paths {
+        fs::copy(
+            binary_path,
+            additional_binaries_dir.join(binary_target_name),
+        )?;
+    }
 
     Ok(())
 }
