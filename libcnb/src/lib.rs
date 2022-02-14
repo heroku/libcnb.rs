@@ -92,6 +92,18 @@ macro_rules! buildpack_main {
 /// with the name of file.
 ///
 /// Note: This only works properly if the buildpack is packaged with `libcnb-cargo`/`libcnb-test`.
+///
+/// ```no_run,compile_fail
+/// use libcnb::additional_buildpack_binary_path;
+/// # let layer_dir = std::path::PathBuf::from(".");
+///
+/// std::fs::copy(
+///     // This would not compile in this doctest since there is no `runtime_tool` binary target.
+///     additional_buildpack_binary_path!("runtime_tool"),
+///     layer_dir.join("runtime_tool"),
+/// )
+/// .unwrap();
+/// ```
 #[macro_export]
 macro_rules! additional_buildpack_binary_path {
     ($target_name:expr) => {
