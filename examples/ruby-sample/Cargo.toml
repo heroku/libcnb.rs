@@ -1,5 +1,5 @@
 [package]
-name = "example-02-ruby-sample"
+name = "examples-ruby-sample"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.56"
