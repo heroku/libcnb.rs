@@ -69,8 +69,8 @@ jobs:
       - name: Run integration tests
         # Runs any tests annotated with the `#[ignore]` attribute (which in this repo, are all of the integration tests).
         run: cargo test -- --ignored
-      - name: Compile and package example-01-basics
+      - name: Compile and package examples/basics
         run: cargo run --package libcnb-cargo -- libcnb package
-        working-directory: ./examples/example-01-basics
-      - name: Pack build using example-01-basics
-        run: pack build example-01-basics --buildpack target/buildpack/debug/libcnb-examples_basics --path examples/
+        working-directory: ./examples/basics
+      - name: Pack build using examples/basics
+        run: pack build example-basics --buildpack target/buildpack/debug/libcnb-examples_basics --path examples/
