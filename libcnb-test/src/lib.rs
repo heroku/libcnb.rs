@@ -10,6 +10,7 @@ mod app;
 mod build;
 mod container_context;
 mod container_port_mapping;
+mod macros;
 mod pack;
 mod util;
 

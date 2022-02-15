@@ -7,6 +7,7 @@
 // https://rust-lang.github.io/rust-clippy/stable/index.html
 #![warn(clippy::pedantic)]
 
+use libcnb_test::assert_contains;
 use libcnb_test::IntegrationTest;
 use std::io;
 use std::io::{Read, Write};
@@ -19,9 +20,9 @@ use std::time::Duration;
 fn basic() {
     IntegrationTest::new("heroku/buildpacks:20", "test-fixtures/simple-ruby-app").run_test(
         |context| {
-            assert!(context.pack_stdout.contains("---> Ruby Buildpack"));
-            assert!(context.pack_stdout.contains("---> Installing bundler"));
-            assert!(context.pack_stdout.contains("---> Installing gems"));
+            assert_contains!(context.pack_stdout, "---> Ruby Buildpack");
+            assert_contains!(context.pack_stdout, "---> Installing bundler");
+            assert_contains!(context.pack_stdout, "---> Installing gems");
 
             context.start_container(&[12345], |container| {
                 std::thread::sleep(Duration::from_secs(1));
