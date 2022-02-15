@@ -46,3 +46,71 @@ right: `{:?}`: {}"#,
         }
     }};
 }
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn simple() {
+        assert_contains!("Hello World!", "World");
+    }
+
+    #[test]
+    fn simple_with_args() {
+        assert_contains!("Hello World!", "World", "World must be greeted!");
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed: `(left contains right)`
+left (unescaped):
+foo
+
+left (escaped): `\"foo\"`
+right: `\"bar\"`")]
+    fn simple_failure() {
+        assert_contains!("foo", "bar");
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed: `(left contains right)`
+left (unescaped):
+Hello Germany!
+
+left (escaped): `\"Hello Germany!\"`
+right: `\"World\"`: World must be greeted!")]
+    fn simple_failure_with_args() {
+        assert_contains!("Hello Germany!", "World", "World must be greeted!");
+    }
+
+    #[test]
+    fn multiline() {
+        assert_contains!("Hello World!\nFoo\nBar\nBaz", "Bar");
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed: `(left contains right)`
+left (unescaped):
+Hello World!
+Foo
+Bar
+Baz
+
+left (escaped): `\"Hello World!\\nFoo\\nBar\\nBaz\"`
+right: `\"Eggs\"`")]
+    fn multiline_failure() {
+        assert_contains!("Hello World!\nFoo\nBar\nBaz", "Eggs");
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed: `(left contains right)`
+left (unescaped):
+Hello World!
+Foo
+Bar
+Baz
+
+left (escaped): `\"Hello World!\\nFoo\\nBar\\nBaz\"`
+right: `\"Eggs\"`: We need eggs!")]
+    fn multiline_failure_with_args() {
+        assert_contains!("Hello World!\nFoo\nBar\nBaz", "Eggs", "We need eggs!");
+    }
+}
