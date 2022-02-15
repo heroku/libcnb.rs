@@ -35,7 +35,7 @@ use std::process::{Command, Stdio};
 ///
 /// # Example
 /// ```no_run
-/// use libcnb_test::{IntegrationTest, BuildpackReference};
+/// use libcnb_test::{IntegrationTest, BuildpackReference, assert_contains};
 ///
 /// # fn call_test_fixture_service(addr: std::net::SocketAddr, payload: &str) -> Result<String, ()> {
 /// #    unimplemented!()
@@ -46,9 +46,9 @@ use std::process::{Command, Stdio};
 ///         BuildpackReference::Crate,
 ///     ])
 ///     .run_test(|context| {
-///         assert!(context.pack_stdout.contains("---> Maven Buildpack"));
-///         assert!(context.pack_stdout.contains("---> Installing Maven"));
-///         assert!(context.pack_stdout.contains("---> Running mvn package"));
+///         assert_contains!(context.pack_stdout, "---> Maven Buildpack");
+///         assert_contains!(context.pack_stdout, "---> Installing Maven");
+///         assert_contains!(context.pack_stdout, "---> Running mvn package");
 ///
 ///         context.start_container(&[12345], |container| {
 ///             assert_eq!(
@@ -151,13 +151,13 @@ impl IntegrationTest {
     ///
     /// # Example
     /// ```no_run
-    /// use libcnb_test::IntegrationTest;
+    /// use libcnb_test::{IntegrationTest, assert_contains};
     ///
     /// IntegrationTest::new("heroku/buildpacks:20", "test-fixtures/app")
     ///     .run_test(|context| {
-    ///         assert!(context.pack_stdout.contains("---> Ruby Buildpack"));
-    ///         assert!(context.pack_stdout.contains("---> Installing bundler"));
-    ///         assert!(context.pack_stdout.contains("---> Installing gems"));
+    ///         assert_contains!(context.pack_stdout, "---> Ruby Buildpack");
+    ///         assert_contains!(context.pack_stdout, "---> Installing bundler");
+    ///         assert_contains!(context.pack_stdout, "---> Installing gems");
     ///     })
     /// ```
     pub fn run_test<F: FnOnce(IntegrationTestContext)>(&mut self, f: F) {
