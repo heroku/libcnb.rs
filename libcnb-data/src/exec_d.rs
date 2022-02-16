@@ -39,7 +39,7 @@ libcnb_newtype!(
     /// let key: ExecDProgramOutputKey = exec_d_program_output_key!("PATH");
     /// ```
     exec_d_program_output_key,
-    /// A key of from exec.d program output
+    /// A key of exec.d program output
     ///
     /// It MUST only contain numbers, letters, and the characters `_` and `-`.
     ///
