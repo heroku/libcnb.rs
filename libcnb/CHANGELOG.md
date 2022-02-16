@@ -5,6 +5,9 @@
 - Add `#[must_use]` to `DetectResult`, `DetectResultBuilder`, `PassDetectResultBuilder`, `FailDetectResultBuilder`, `BuildResult` and `BuildResultBuilder` ([#288](https://github.com/Malax/libcnb.rs/pull/288)).
 - Add `additional_buildpack_binary_path!` macro to resolve paths to additional buildpack binaries. Only works when the buildpack is packaged with `libcnb-cargo`/`libcnb-test`. ([#320](https://github.com/Malax/libcnb.rs/pull/320))
 - Increase minimum supported Rust version from 1.56 to 1.58 ([#318](https://github.com/Malax/libcnb.rs/pull/318)).
+- Add support for exec.d programs in layers. Use `LayerResultBuilder::exec_d_program` to add exec.d programs to a layer. ([#326](https://github.com/Malax/libcnb.rs/pull/326))
+- Add `libcnb::exec_d::write_exec_d_program_output` which writes `libcnb::data::exec_d::ExecDProgramOutput` in a spec conforming way. Use this to implement custom exec.d programs for your buildpack with libcnb.rs. ([#326](https://github.com/Malax/libcnb.rs/pull/326))
+- Add end-to-end example of a buildpacks that uses an exec.d program. ([#326](https://github.com/Malax/libcnb.rs/pull/326))
 
 ## [0.5.0] 2022-01-14
 
