@@ -4,8 +4,6 @@ use libcnb::exec_d::write_exec_d_program_output;
 use std::collections::HashMap;
 use std::iter;
 
-pub struct Env;
-
 pub fn main() {
     write_exec_d_program_output(env_vars());
 }
