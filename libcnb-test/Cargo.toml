@@ -5,7 +5,9 @@ edition = "2021"
 rust-version = "1.56"
 license = "BSD-3-Clause"
 description = "An integration testing framework for buildpacks written with libcnb.rs"
-repository = "https://github.com/Malax/libcnb.rs"
+keywords = ["buildpacks", "CNB"]
+repository = "https://github.com/Malax/libcnb.rs/tree/main/libcnb-test"
+documentation = "https://docs.rs/libcnb-test"
 readme = "README.md"
 include = ["src/**/*", "../LICENSE", "README.md"]
 
