@@ -2,6 +2,9 @@ use crate::newtypes::libcnb_newtype;
 use serde::Serialize;
 use std::collections::HashMap;
 
+/// Output of a CNB exec.d program.
+///
+/// See [Cloud Native Buildpack specification](https://github.com/buildpacks/spec/blob/main/buildpack.md#execd)
 #[derive(Serialize, Clone)]
 pub struct ExecDProgramOutput(HashMap<ExecDProgramOutputKey, String>);
 
