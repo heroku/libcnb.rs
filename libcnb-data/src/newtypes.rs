@@ -54,7 +54,7 @@ macro_rules! libcnb_newtype {
         $error_name:ident,
         $regex:expr
     ) => {
-        #[derive(Debug, Eq, PartialEq, ::serde::Serialize, Clone)]
+        #[derive(Debug, Eq, PartialEq, ::serde::Serialize, Clone, Hash)]
         $(#[$type_attributes])*
         pub struct $name(String);
 
