@@ -9,7 +9,7 @@
 [Rustc Version 1.56+]: https://img.shields.io/badge/rustc-1.56+-lightgray.svg
 [rustc]: https://blog.rust-lang.org/2021/10/21/Rust-1.56.0.html
 
-`libcnb.rs` is a Rust framework for writing [Cloud Native Buildpacks](https://buildpacks.io) in Rust. It is an opinionated implementation adding language constructs and convenience methods for working with the spec. It values strong adherence to the spec and data formats.
+`libcnb.rs` is a framework for writing [Cloud Native Buildpacks](https://buildpacks.io) in Rust. It is an opinionated implementation adding language constructs and convenience methods for working with the spec. It values strong adherence to the spec and data formats.
 
 It currently targets version `0.6` of the CNB spec.
 
