@@ -6,6 +6,7 @@ use crate::layer_env::LayerEnv;
 use crate::Buildpack;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 /// Represents a buildpack layer written with the libcnb framework.
@@ -166,12 +167,14 @@ pub struct LayerData<M> {
 pub struct LayerResult<M> {
     pub metadata: M,
     pub env: Option<LayerEnv>,
+    pub exec_d_programs: HashMap<String, PathBuf>,
 }
 
 /// A builder that simplifies the creation of [`LayerResult`] values.
 pub struct LayerResultBuilder<M> {
     metadata: M,
     env: Option<LayerEnv>,
+    exec_d_programs: HashMap<String, PathBuf>,
 }
 
 impl<M> LayerResultBuilder<M> {
@@ -180,12 +183,24 @@ impl<M> LayerResultBuilder<M> {
         Self {
             metadata,
             env: None,
+            exec_d_programs: HashMap::new(),
         }
     }
 
     #[must_use]
     pub fn env(mut self, layer_env: LayerEnv) -> Self {
         self.env = Some(layer_env);
+        self
+    }
+
+    #[must_use]
+    pub fn exec_d_program(
+        mut self,
+        name: impl Into<String>,
+        exec_d_program: impl Into<PathBuf>,
+    ) -> Self {
+        self.exec_d_programs
+            .insert(name.into(), exec_d_program.into());
         self
     }
 
@@ -206,6 +221,7 @@ impl<M> LayerResultBuilder<M> {
         LayerResult {
             metadata: self.metadata,
             env: self.env,
+            exec_d_programs: self.exec_d_programs,
         }
     }
 }

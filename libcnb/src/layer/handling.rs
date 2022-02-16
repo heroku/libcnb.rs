@@ -9,8 +9,9 @@ use crate::Buildpack;
 use crate::{write_toml_file, TomlFileError};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use std::collections::HashMap;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 pub(crate) fn handle_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
     context: &BuildContext<B>,
@@ -44,6 +45,7 @@ pub(crate) fn handle_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
                             types: Some(layer.types()),
                             metadata: layer_data.content_metadata.metadata,
                         },
+                        ExecDPrograms::Keep,
                     )?;
 
                     // Reread the layer from disk to ensure the returned layer data accurately reflects
@@ -77,6 +79,7 @@ pub(crate) fn handle_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
                                     types: generic_layer_data.content_metadata.types,
                                     metadata: migrated_metadata,
                                 },
+                                ExecDPrograms::Keep,
                             )?;
                         }
                     }
@@ -116,6 +119,7 @@ fn handle_create_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
             types: Some(layer.types()),
             metadata: layer_result.metadata,
         },
+        ExecDPrograms::Overwrite(layer_result.exec_d_programs),
     )?;
 
     read_layer(&context.layers_dir, layer_name)?
@@ -140,6 +144,7 @@ fn handle_update_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
             types: Some(layer.types()),
             metadata: layer_result.metadata,
         },
+        ExecDPrograms::Overwrite(layer_result.exec_d_programs),
     )?;
 
     read_layer(&context.layers_dir, &layer_data.name)?
@@ -210,6 +215,12 @@ pub enum WriteLayerError {
     TomlFileError(#[from] TomlFileError),
 }
 
+#[derive(Debug)]
+enum ExecDPrograms {
+    Keep,
+    Overwrite(HashMap<String, PathBuf>),
+}
+
 /// Does not error if the layer doesn't exist.
 fn delete_layer<P: AsRef<Path>>(
     layers_dir: P,
@@ -230,6 +241,7 @@ fn write_layer<M: Serialize, P: AsRef<Path>>(
     layer_name: &LayerName,
     layer_env: &LayerEnv,
     layer_content_metadata: &LayerContentMetadata<M>,
+    layer_exec_d_programs: ExecDPrograms,
 ) -> Result<(), WriteLayerError> {
     let layer_dir = layers_dir.as_ref().join(layer_name.as_str());
     let layer_content_metadata_path = layers_dir.as_ref().join(format!("{layer_name}.toml"));
@@ -237,6 +249,23 @@ fn write_layer<M: Serialize, P: AsRef<Path>>(
     fs::create_dir_all(&layer_dir)?;
     layer_env.write_to_layer_dir(&layer_dir)?;
     write_toml_file(&layer_content_metadata, layer_content_metadata_path)?;
+
+    match layer_exec_d_programs {
+        ExecDPrograms::Overwrite(exec_d_programs) => {
+            let exec_d_dir = layer_dir.join("exec.d");
+
+            if exec_d_dir.is_dir() {
+                fs::remove_dir_all(&exec_d_dir)?;
+            }
+
+            fs::create_dir_all(&exec_d_dir)?;
+
+            for (name, path) in exec_d_programs {
+                fs::copy(path, exec_d_dir.join(name))?;
+            }
+        }
+        ExecDPrograms::Keep => {}
+    }
 
     Ok(())
 }
@@ -383,6 +412,7 @@ mod tests {
                 }),
                 metadata: GenericMetadata::default(),
             },
+            ExecDPrograms::Keep,
         )
         .unwrap();
 
@@ -437,6 +467,7 @@ mod tests {
                 }),
                 metadata: GenericMetadata::default(),
             },
+            ExecDPrograms::Keep,
         )
         .unwrap();
 
@@ -459,6 +490,7 @@ mod tests {
                 }),
                 metadata: GenericMetadata::default(),
             },
+            ExecDPrograms::Keep,
         )
         .unwrap();
 
