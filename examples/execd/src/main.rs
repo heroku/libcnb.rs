@@ -8,7 +8,9 @@ mod layer;
 
 use crate::layer::ExecDLayer;
 use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
+use libcnb::data::launch::{Launch, ProcessBuilder};
 use libcnb::data::layer_name;
+use libcnb::data::process_type;
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};
 use libcnb::{buildpack_main, Buildpack};
@@ -27,7 +29,15 @@ impl Buildpack for ExecDBuildpack {
     fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildResult, Self::Error> {
         context.handle_layer(layer_name!("layer_name"), ExecDLayer)?;
 
-        BuildResultBuilder::new().build()
+        BuildResultBuilder::new()
+            .launch(
+                Launch::new().process(
+                    ProcessBuilder::new(process_type!("web"), "sleep 3600")
+                        .default(true)
+                        .build(),
+                ),
+            )
+            .build()
     }
 }
 

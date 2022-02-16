@@ -1,0 +1,24 @@
+//! Integration tests using libcnb-test.
+//!
+//! All integration tests are skipped by default (using the `ignore` attribute),
+//! since performing builds is slow. To run the tests use: `cargo test -- --ignored`
+
+// Enable Clippy lints that are disabled by default.
+// https://rust-lang.github.io/rust-clippy/stable/index.html
+#![warn(clippy::pedantic)]
+
+use libcnb_test::IntegrationTest;
+
+#[test]
+#[ignore]
+fn basic() {
+    IntegrationTest::new("heroku/buildpacks:20", "test-fixtures/empty-app").run_test(|context| {
+        context.start_container(&[], |container| {
+            let env_stdout = container.shell_exec("env").stdout;
+
+            assert!(env_stdout.contains("ROLL_1D6="));
+            assert!(env_stdout.contains("ROLL_4D6="));
+            assert!(env_stdout.contains("ROLL_1D20="));
+        });
+    });
+}

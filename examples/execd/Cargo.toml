@@ -7,3 +7,6 @@ rust-version = "1.56"
 [dependencies]
 libcnb = { path = "../../libcnb" }
 fastrand = "1.7.0"
+
+[dev-dependencies]
+libcnb-test = { path = "../../libcnb-test" }
