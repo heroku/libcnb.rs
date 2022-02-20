@@ -5,8 +5,9 @@
 
 mod cli;
 
+use crate::cli::{Cli, LibcnbSubcommand, PackageArgs};
 use cargo_metadata::MetadataCommand;
-use clap::ArgMatches;
+use clap::Parser;
 use libcnb_cargo::build::{build_buildpack_binaries, BuildBinariesError, BuildError};
 use libcnb_cargo::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
 use libcnb_cargo::{
@@ -20,32 +21,20 @@ use std::fs;
 fn main() {
     setup_logging();
 
-    match cli::setup_cli_parsing().get_matches().subcommand() {
-        ("libcnb", Some(matches)) => match matches.subcommand() {
-            ("package", Some(matches)) => handle_libcnb_package(matches),
-            // This should never be reached since clap will catch unknown subcommands for us
-            _ => unimplemented!("Only the \"package\" subcommand is currently implemented!"),
-        },
-        // This should never be reached since clap will catch unknown subcommands for us
-        _ => unimplemented!("Only the \"libcnb\" subcommand is currently implemented!"),
+    match Cli::parse() {
+        Cli::Libcnb(LibcnbSubcommand::Package(args)) => handle_libcnb_package(args),
     }
 }
 
 #[allow(clippy::too_many_lines)]
-fn handle_libcnb_package(matches: &ArgMatches) {
-    let cargo_profile = if matches.is_present("release") {
+fn handle_libcnb_package(args: PackageArgs) {
+    let cargo_profile = if args.release {
         CargoProfile::Release
     } else {
         CargoProfile::Dev
     };
 
-    let target_triple = match matches.value_of("target") {
-        None => {
-            error!("Could not determine target triple!");
-            std::process::exit(1);
-        }
-        Some(target_triple) => target_triple,
-    };
+    let target_triple = args.target;
 
     let current_dir = match std::env::current_dir() {
         Ok(current_dir) => current_dir,
@@ -106,11 +95,11 @@ fn handle_libcnb_package(matches: &ArgMatches) {
     let relative_output_path =
         pathdiff::diff_paths(&output_path, &current_dir).unwrap_or_else(|| output_path.clone());
 
-    let cargo_build_env = if matches.is_present("no-cross-compile-assistance") {
+    let cargo_build_env = if args.no_cross_compile_assistance {
         vec![]
     } else {
         info!("Determining automatic cross-compile settings...");
-        match cross_compile_assistance(target_triple) {
+        match cross_compile_assistance(&target_triple) {
             CrossCompileAssistance::HelpText(help_text) => {
                 error!("{help_text}");
                 info!("To disable cross-compile assistance, pass --no-cross-compile-assistance.");

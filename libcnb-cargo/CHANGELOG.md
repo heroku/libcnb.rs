@@ -5,6 +5,7 @@
 - Update cross-compile assistance on macOS to use https://github.com/messense/homebrew-macos-cross-toolchains instead of https://github.com/FiloSottile/homebrew-musl-cross. Support for the latter has not been removed, existing setups continue to work as before. ([#312](https://github.com/Malax/libcnb.rs/pull/312))
 - `libcnb-cargo` now cross-compiles and packages all binary targets of the buildpack. The main buildpack binary is either the only binary target or the target with the same name as the crate. This feature allows the usage of additional binaries for i.e. execd. ([#314](https://github.com/Malax/libcnb.rs/pull/314))
 - Increase minimum supported Rust version from 1.56 to 1.58 ([#318](https://github.com/Malax/libcnb.rs/pull/318)).
+- Upgrade CLI to Clap v3 ([#329](https://github.com/Malax/libcnb.rs/pull/329)).
 
 ## [0.2.1] 2022-01-19
 
