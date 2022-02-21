@@ -5,6 +5,7 @@
 - Add `#[must_use]` to `BuildPlan` and `BuildPlanBuilder` ([#288](https://github.com/Malax/libcnb.rs/pull/288)).
 - Add `exec_d` module with types representing the output of an `exec.d` program ([#324](https://github.com/Malax/libcnb.rs/pull/324)).
 - Increase minimum supported Rust version from 1.56 to 1.58 ([#318](https://github.com/Malax/libcnb.rs/pull/318)).
+- Adjust newtype generated compile-time validation macros so that they don't also perform redundant validation at runtime. In cases where only compile-time validation is being performed (for example `exec.d` scripts), this results in a significant reduction in binary size. ([#331](https://github.com/Malax/libcnb.rs/pull/331))
 
 ## [0.4.0] 2022-01-14
 

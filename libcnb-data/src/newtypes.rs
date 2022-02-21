@@ -5,6 +5,7 @@
 /// - [`Debug`]
 /// - [`Display`](std::fmt::Display)
 /// - [`Eq`]
+/// - [`Hash`]
 /// - [`PartialEq`]
 /// - [`serde::Deserialize`]
 /// - [`serde::Serialize`]
@@ -130,6 +131,18 @@ macro_rules! libcnb_newtype {
             }
         }
 
+        impl $name {
+            /// Construct an instance of this type without performing validation.
+            ///
+            /// This should not be used directly, and is only public so that it
+            /// can be used by the compile-time validation macro.
+            #[must_use]
+            #[doc(hidden)]
+            pub fn new_unchecked(value: &str) -> Self {
+                Self(String::from(value))
+            }
+        }
+
         #[macro_export]
         $(#[$macro_attributes])*
         macro_rules! $macro_name {
@@ -139,7 +152,7 @@ macro_rules! libcnb_newtype {
                     $value,
                     {
                         use $crate::$path as base;
-                        $value.parse::<base::$name>().unwrap()
+                        base::$name::new_unchecked($value)
                     },
                     compile_error!(concat!(
                         stringify!($value),
