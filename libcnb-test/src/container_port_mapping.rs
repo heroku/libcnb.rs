@@ -75,7 +75,7 @@ pub(crate) fn port_mapped_container_config(ports: &[u16]) -> bollard::container:
                     .iter()
                     .map(|port| {
                         (
-                            format!("{}/tcp", port),
+                            format!("{port}/tcp"),
                             Some(vec![PortBinding {
                                 host_ip: None,
                                 host_port: None,
@@ -91,7 +91,7 @@ pub(crate) fn port_mapped_container_config(ports: &[u16]) -> bollard::container:
                 .iter()
                 .map(|port| {
                     (
-                        format!("{}/tcp", port),
+                        format!("{port}/tcp"),
                         #[allow(clippy::zero_sized_map_values)]
                         HashMap::new(), // Bollard requires this zero sized value map,
                     )

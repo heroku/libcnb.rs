@@ -165,7 +165,7 @@ fn create() {
         temp_dir
             .path()
             .join("layers")
-            .join(format!("{}.toml", &layer_name)),
+            .join(format!("{layer_name}.toml")),
     )
     .unwrap();
 
@@ -234,7 +234,7 @@ fn create_then_update() {
         temp_dir
             .path()
             .join("layers")
-            .join(format!("{}.toml", &layer_name)),
+            .join(format!("{layer_name}.toml")),
     )
     .unwrap();
 
@@ -326,7 +326,7 @@ fn create_then_recreate() {
         temp_dir
             .path()
             .join("layers")
-            .join(format!("{}.toml", &layer_name)),
+            .join(format!("{layer_name}.toml")),
     )
     .unwrap();
 
@@ -420,7 +420,7 @@ fn create_then_keep() {
         temp_dir
             .path()
             .join("layers")
-            .join(format!("{}.toml", &layer_name)),
+            .join(format!("{layer_name}.toml")),
     )
     .unwrap();
 
@@ -476,7 +476,7 @@ fn update_with_incompatible_metadata_replace() {
     let test_layer_toml = temp_dir
         .path()
         .join("layers")
-        .join(format!("{}.toml", layer_name.as_str()));
+        .join(format!("{layer_name}.toml"));
 
     fs::write(
         &test_layer_toml,
@@ -512,7 +512,7 @@ v = "3.2.1"
         temp_dir
             .path()
             .join("layers")
-            .join(format!("{}.toml", &layer_name)),
+            .join(format!("{layer_name}.toml")),
     )
     .unwrap();
 
@@ -566,7 +566,7 @@ fn update_with_incompatible_metadata_recreate() {
     let test_layer_toml = temp_dir
         .path()
         .join("layers")
-        .join(format!("{}.toml", layer_name.as_str()));
+        .join(format!("{layer_name}.toml"));
 
     fs::write(
         &test_layer_toml,
@@ -600,7 +600,7 @@ versi_on = "3.2.1"
         temp_dir
             .path()
             .join("layers")
-            .join(format!("{}.toml", &layer_name)),
+            .join(format!("{layer_name}.toml")),
     )
     .unwrap();
 
@@ -667,7 +667,7 @@ fn error_handling_no_directory() {
     let layer_toml_path = temp_dir
         .path()
         .join("layers")
-        .join(format!("{}.toml", layer_name.as_str()));
+        .join(format!("{layer_name}.toml"));
 
     fs::write(
         &layer_toml_path,

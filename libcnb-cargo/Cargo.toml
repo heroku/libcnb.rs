@@ -2,7 +2,7 @@
 name = "libcnb-cargo"
 version = "0.2.1"
 edition = "2021"
-rust-version = "1.56"
+rust-version = "1.58"
 license = "BSD-3-Clause"
 description = "Cargo command for managing buildpacks written with libcnb.rs"
 keywords = ["buildpacks", "CNB"]

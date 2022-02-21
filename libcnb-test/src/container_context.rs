@@ -103,7 +103,7 @@ async fn container_exec_result_from_bollard(
                         .stdout_raw
                         .append(&mut message.to_vec()),
 
-                    x => unimplemented!("message unimplemented: {}", x),
+                    x => unimplemented!("message unimplemented: {x}"),
                 }
             }
         }

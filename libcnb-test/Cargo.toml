@@ -2,7 +2,7 @@
 name = "libcnb-test"
 version = "0.1.1"
 edition = "2021"
-rust-version = "1.56"
+rust-version = "1.58"
 license = "BSD-3-Clause"
 description = "An integration testing framework for buildpacks written with libcnb.rs"
 keywords = ["buildpacks", "CNB"]
