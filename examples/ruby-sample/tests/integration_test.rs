@@ -36,10 +36,10 @@ fn basic() {
                     "!dlroW olleH"
                 );
 
-                assert!(container
-                    .shell_exec("ruby --version")
-                    .stdout
-                    .contains("ruby 2.7.0p0"));
+                assert_contains!(
+                    container.shell_exec("ruby --version").stdout,
+                    "ruby 2.7.0p0"
+                );
             });
         },
     );
