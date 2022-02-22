@@ -17,7 +17,10 @@ path = "src/main.rs"
 
 [dependencies]
 cargo_metadata = "0.14.1"
-clap = "2.34.0"
+clap = { version = "3.1.1", default-features = false, features = [
+  "std",
+  "derive",
+] }
 fs_extra = "1.2.0"
 libcnb-data = { version = "0.4.0", path = "../libcnb-data" }
 log = "0.4.14"
