@@ -13,7 +13,13 @@ pub fn write_exec_d_program_output<O: Into<ExecDProgramOutput>>(o: O) {
     {
         use std::os::unix::io::FromRawFd;
 
+        // The spec requires writing the TOML to fd3:
         // https://github.com/buildpacks/spec/blob/main/buildpack.md#execd
+        //
+        // Using a file descriptor by id is an unsafe operation since Rust cannot guarantee it's
+        // actually mapped to something. Since we're implementing the CNB spec and it explicitly
+        // tells us to write to that file descriptor, this is safe to do without additional
+        // validation in this context.
         let output_file = unsafe { File::from_raw_fd(3) };
 
         let serialized_output =
