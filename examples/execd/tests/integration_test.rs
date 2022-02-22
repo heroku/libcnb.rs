@@ -7,7 +7,7 @@
 // https://rust-lang.github.io/rust-clippy/stable/index.html
 #![warn(clippy::pedantic)]
 
-use libcnb_test::IntegrationTest;
+use libcnb_test::{assert_contains, IntegrationTest};
 
 #[test]
 #[ignore]
@@ -16,9 +16,9 @@ fn basic() {
         context.start_container(&[], |container| {
             let env_stdout = container.shell_exec("env").stdout;
 
-            assert!(env_stdout.contains("ROLL_1D6="));
-            assert!(env_stdout.contains("ROLL_4D6="));
-            assert!(env_stdout.contains("ROLL_1D20="));
+            assert_contains!(env_stdout, "ROLL_1D6=");
+            assert_contains!(env_stdout, "ROLL_4D6=");
+            assert_contains!(env_stdout, "ROLL_1D20=");
         });
     });
 }
