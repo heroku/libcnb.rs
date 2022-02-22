@@ -1,0 +1,9 @@
+api = "0.6"
+
+[buildpack]
+id = "libcnb-examples/execd"
+version = "0.1.0"
+name = "Example libcnb buildpack: execd"
+
+[[stacks]]
+id = "*"

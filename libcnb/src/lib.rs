@@ -14,6 +14,7 @@
 
 pub mod build;
 pub mod detect;
+pub mod exec_d;
 pub mod generic;
 pub mod layer;
 pub mod layer_env;

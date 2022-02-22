@@ -1,0 +1,12 @@
+[package]
+name = "examples-execd"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.58"
+
+[dependencies]
+libcnb = { path = "../../libcnb" }
+fastrand = "1.7.0"
+
+[dev-dependencies]
+libcnb-test = { path = "../../libcnb-test" }
