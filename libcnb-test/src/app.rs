@@ -27,7 +27,7 @@ pub enum PrepareAppError {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use std::collections::HashMap;
     use std::path::PathBuf;
     use tempfile::tempdir;

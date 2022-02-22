@@ -48,7 +48,7 @@ right: `{:?}`: {}"#,
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     #[test]
     fn simple() {
         assert_contains!("Hello World!", "World");
