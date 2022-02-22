@@ -6,6 +6,6 @@ members = [
     "libcnb-proc-macros",
     "libcnb-test",
     "examples/basics",
-    "examples/ruby-sample",
-    "examples/execd"
+    "examples/execd",
+    "examples/ruby-sample"
 ]
