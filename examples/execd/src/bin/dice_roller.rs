@@ -1,3 +1,7 @@
+// Enable Clippy lints that are disabled by default.
+// https://rust-lang.github.io/rust-clippy/stable/index.html
+#![warn(clippy::pedantic)]
+
 use libcnb::data::exec_d::ExecDProgramOutputKey;
 use libcnb::data::exec_d_program_output_key;
 use libcnb::exec_d::write_exec_d_program_output;
