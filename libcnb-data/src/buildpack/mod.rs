@@ -6,11 +6,10 @@ mod version;
 
 pub use api::*;
 pub use id::*;
+use serde::Deserialize;
 pub use stack::*;
 pub use stack_id::*;
 pub use version::*;
-
-use serde::Deserialize;
 
 /// Data structures for the Buildpack descriptor (buildpack.toml).
 ///

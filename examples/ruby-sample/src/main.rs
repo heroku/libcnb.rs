@@ -5,6 +5,7 @@
 #![allow(clippy::module_name_repetitions)]
 
 use crate::layers::{BundlerLayer, RubyLayer};
+use crate::util::{DownloadError, UntarError};
 use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
 use libcnb::data::launch::{Launch, ProcessBuilder};
 use libcnb::data::{layer_name, process_type};
@@ -12,8 +13,6 @@ use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::generic::GenericPlatform;
 use libcnb::layer_env::Scope;
 use libcnb::{buildpack_main, Buildpack};
-
-use crate::util::{DownloadError, UntarError};
 use serde::Deserialize;
 use std::process::ExitStatus;
 

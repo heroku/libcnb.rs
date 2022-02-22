@@ -14,12 +14,10 @@ mod pack;
 mod util;
 
 pub use crate::container_context::{ContainerContext, ContainerExecResult};
-
 use crate::pack::PackBuildCommand;
 use bollard::container::{Config, CreateContainerOptions, StartContainerOptions};
 use bollard::image::RemoveImageOptions;
 use bollard::Docker;
-
 use std::env;
 use std::env::VarError;
 use std::path::{Path, PathBuf};

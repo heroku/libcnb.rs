@@ -1,6 +1,5 @@
-use serde::Deserialize;
-
 use super::{StackId, StackIdError};
+use serde::Deserialize;
 
 // Used as a "shadow" struct to store
 // potentially invalid `Stack` data when deserializing

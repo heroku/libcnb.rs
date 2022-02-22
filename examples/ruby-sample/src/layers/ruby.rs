@@ -1,15 +1,12 @@
-use std::path::Path;
-
 use crate::util;
-
-use tempfile::NamedTempFile;
-
 use crate::{RubyBuildpack, RubyBuildpackError};
 use libcnb::build::BuildContext;
 use libcnb::data::layer_content_metadata::LayerTypes;
 use libcnb::generic::GenericMetadata;
 use libcnb::layer::{Layer, LayerResult, LayerResultBuilder};
 use libcnb::layer_env::{LayerEnv, ModificationBehavior, Scope};
+use std::path::Path;
+use tempfile::NamedTempFile;
 
 pub struct RubyLayer;
 

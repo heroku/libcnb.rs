@@ -30,16 +30,14 @@ mod runtime;
 mod toml_file;
 mod util;
 
-#[doc(inline)]
-pub use libcnb_data as data;
-
+pub use buildpack::Buildpack;
 pub use env::*;
 pub use error::*;
+#[doc(inline)]
+pub use libcnb_data as data;
 pub use platform::*;
-pub use toml_file::*;
-
-pub use buildpack::Buildpack;
 pub use runtime::libcnb_runtime;
+pub use toml_file::*;
 
 const LIBCNB_SUPPORTED_BUILDPACK_API: data::buildpack::BuildpackApi =
     data::buildpack::BuildpackApi { major: 0, minor: 6 };
