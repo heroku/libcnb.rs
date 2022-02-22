@@ -15,7 +15,7 @@ Please use the same tag for feature requests.
 
 ```rust,no_run
 // In $CRATE_ROOT/test/integration_test.rs
-use libcnb_test::{IntegrationTest, BuildpackReference};
+use libcnb_test::{IntegrationTest, BuildpackReference, assert_contains};
 
 #[test]
 fn test() {
@@ -25,9 +25,9 @@ fn test() {
             BuildpackReference::Crate,
         ])
         .run_test(|context| {
-            assert!(context.pack_stdout.contains("---> Maven Buildpack"));
-            assert!(context.pack_stdout.contains("---> Installing Maven"));
-            assert!(context.pack_stdout.contains("---> Running mvn package"));
+            assert_contains!(context.pack_stdout, "---> Maven Buildpack");
+            assert_contains!(context.pack_stdout, "---> Installing Maven");
+            assert_contains!(context.pack_stdout, "---> Running mvn package");
 
             context.start_container(&[12345], |container| {
                 assert_eq!(
