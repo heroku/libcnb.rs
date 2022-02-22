@@ -1,15 +1,13 @@
-use crate::{util, RubyBuildpackError};
-use libcnb::data::layer_content_metadata::LayerTypes;
-use serde::Deserialize;
-use serde::Serialize;
-
-use std::path::Path;
-use std::process::Command;
-
 use crate::RubyBuildpack;
+use crate::{util, RubyBuildpackError};
 use libcnb::build::BuildContext;
+use libcnb::data::layer_content_metadata::LayerTypes;
 use libcnb::layer::{ExistingLayerStrategy, Layer, LayerData, LayerResult, LayerResultBuilder};
 use libcnb::Env;
+use serde::Deserialize;
+use serde::Serialize;
+use std::path::Path;
+use std::process::Command;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct BundlerLayerMetadata {

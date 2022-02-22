@@ -1,9 +1,8 @@
+use fancy_regex::Regex;
+use serde::Deserialize;
 use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::{Display, Formatter};
-
-use fancy_regex::Regex;
-use serde::Deserialize;
 
 /// The Buildpack version.
 ///

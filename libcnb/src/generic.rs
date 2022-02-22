@@ -1,10 +1,9 @@
 //! Generic implementations for some libcnb types.
 
-use std::path::Path;
-
 use crate::platform::Platform;
 use crate::{read_platform_env, Env};
 use std::fmt::{Debug, Display, Formatter};
+use std::path::Path;
 
 /// Generic TOML metadata.
 pub type GenericMetadata = Option<toml::value::Table>;

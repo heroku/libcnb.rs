@@ -1,11 +1,10 @@
 //! Provides detect phase specific types and helpers.
 
-use std::fmt::Debug;
-use std::path::PathBuf;
-
 use crate::buildpack::Buildpack;
 use crate::data::buildpack::StackId;
 use crate::{data::build_plan::BuildPlan, data::buildpack::SingleBuildpackDescriptor};
+use std::fmt::Debug;
+use std::path::PathBuf;
 
 /// Context for the detect phase execution.
 pub struct DetectContext<B: Buildpack + ?Sized> {

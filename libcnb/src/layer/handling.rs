@@ -1,7 +1,6 @@
 use crate::build::BuildContext;
 use crate::data::layer::LayerName;
 use crate::data::layer_content_metadata::LayerContentMetadata;
-
 use crate::generic::GenericMetadata;
 use crate::layer::{ExistingLayerStrategy, Layer, LayerData, MetadataMigration};
 use crate::layer_env::LayerEnv;

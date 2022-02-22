@@ -1,13 +1,12 @@
 //! Type-safe, in-memory, layer environment variables.
 
+use crate::Env;
 use std::cmp::Ordering;
 use std::collections::hash_map::Entry;
 use std::collections::{BTreeMap, HashMap};
 use std::ffi::OsString;
 use std::fs;
 use std::path::Path;
-
-use crate::Env;
 
 /// Represents environment variable modifications of a Cloud Native Buildpack layer.
 ///
