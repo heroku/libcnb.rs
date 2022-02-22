@@ -34,6 +34,7 @@ mod tests {
 
     #[test]
     fn verify_command() {
+        // Trigger Clap's internal assertions that validate the command configuration.
         Cli::command().debug_assert();
     }
 }
