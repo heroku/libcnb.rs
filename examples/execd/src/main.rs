@@ -31,6 +31,9 @@ impl Buildpack for ExecDBuildpack {
 
         BuildResultBuilder::new()
             .launch(
+                // Once https://github.com/Malax/libcnb.rs/issues/309 lands, this can be removed
+                // since we no longer need to have the default container process running for the
+                // duration of the test.
                 Launch::new().process(
                     ProcessBuilder::new(process_type!("web"), "sleep 3600")
                         .default(true)
