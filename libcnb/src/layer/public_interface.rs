@@ -193,6 +193,23 @@ impl<M> LayerResultBuilder<M> {
         self
     }
 
+    /// Adds an exec.d program to the layer.
+    ///
+    /// # Example
+    ///
+    /// ```compile_fail
+    /// use libcnb::generic::GenericMetadata;
+    /// use libcnb::layer::LayerResultBuilder;
+    /// use libcnb::additional_buildpack_binary_path;
+    ///
+    /// LayerResultBuilder::new(GenericMetadata::default())
+    ///        .exec_d_program(
+    ///            "program_name_in_layer",
+    ///            // This does not compile in this doctest since there is no binary target with this name.
+    ///            additional_buildpack_binary_path!("binary_target_name"),
+    ///        )
+    ///        .build();
+    /// ```
     #[must_use]
     pub fn exec_d_program(
         mut self,
