@@ -19,8 +19,13 @@ pub(crate) fn package_crate_buildpack(
         .map_err(PackageCrateBuildpackError::CargoMetadataError)?;
 
     let cargo_env = match cross_compile_assistance(target_triple.as_ref()) {
+        CrossCompileAssistance::HelpText(help_text) => {
+            return Err(PackageCrateBuildpackError::CrossCompileConfigurationError(
+                help_text,
+            ));
+        }
+        CrossCompileAssistance::NoAssistance => Vec::new(),
         CrossCompileAssistance::Configuration { cargo_env } => cargo_env,
-        _ => vec![],
     };
 
     let buildpack_dir =
@@ -47,9 +52,10 @@ pub(crate) fn package_crate_buildpack(
 
 #[derive(Debug)]
 pub(crate) enum PackageCrateBuildpackError {
-    CannotCreateBuildpackTempDirectory(std::io::Error),
     BuildBinariesError(BuildBinariesError),
     CannotAssembleBuildpackDirectory(std::io::Error),
+    CannotCreateBuildpackTempDirectory(std::io::Error),
     CannotDetermineCrateDirectory(std::env::VarError),
     CargoMetadataError(cargo_metadata::Error),
+    CrossCompileConfigurationError(String),
 }
