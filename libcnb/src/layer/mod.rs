@@ -4,7 +4,7 @@ mod handling;
 mod public_interface;
 
 #[cfg(test)]
-mod test;
+mod tests;
 
 pub(crate) use handling::*;
 pub use public_interface::*;

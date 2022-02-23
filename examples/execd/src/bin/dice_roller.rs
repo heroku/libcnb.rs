@@ -36,7 +36,7 @@ fn roll_dice(amount: usize, sides: u32) -> u32 {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     #[test]

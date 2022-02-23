@@ -94,7 +94,7 @@ impl From<PackBuildCommand> for Command {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
     use std::ffi::OsStr;
 

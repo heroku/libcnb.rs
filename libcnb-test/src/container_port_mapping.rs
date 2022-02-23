@@ -103,7 +103,7 @@ pub(crate) fn port_mapped_container_config(ports: &[u16]) -> bollard::container:
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
     use bollard::models::PortMap;
 
