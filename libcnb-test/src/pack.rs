@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::Command;
 use tempfile::TempDir;
@@ -9,6 +10,7 @@ pub(crate) struct PackBuildCommand {
     path: PathBuf,
     image_name: String,
     buildpacks: Vec<BuildpackReference>,
+    env: HashMap<String, String>,
     verbose: bool,
 }
 
@@ -47,12 +49,18 @@ impl PackBuildCommand {
             path: path.into(),
             image_name: image_name.into(),
             buildpacks: vec![],
+            env: HashMap::new(),
             verbose: false,
         }
     }
 
     pub fn buildpack(&mut self, b: impl Into<BuildpackReference>) -> &mut Self {
         self.buildpacks.push(b.into());
+        self
+    }
+
+    pub fn env(&mut self, k: impl Into<String>, v: impl Into<String>) -> &mut Self {
+        self.env.insert(k.into(), v.into());
         self
     }
 }
@@ -62,29 +70,34 @@ impl From<PackBuildCommand> for Command {
         let mut command = Command::new("pack");
 
         let mut args = vec![
-            "build",
-            &pack_build_command.image_name,
-            "--builder",
-            &pack_build_command.builder,
-            "--path",
-            pack_build_command.path.to_str().unwrap(),
+            String::from("build"),
+            pack_build_command.image_name,
+            String::from("--builder"),
+            pack_build_command.builder,
+            String::from("--path"),
+            pack_build_command.path.to_string_lossy().to_string(),
         ];
 
-        for buildpack in &pack_build_command.buildpacks {
-            args.push("--buildpack");
+        for buildpack in pack_build_command.buildpacks {
+            args.push(String::from("--buildpack"));
 
             match buildpack {
                 BuildpackReference::Id(id) => {
                     args.push(id);
                 }
                 BuildpackReference::Path(path_buf) => {
-                    args.push(path_buf.to_str().unwrap());
+                    args.push(path_buf.to_string_lossy().to_string());
                 }
             }
         }
 
+        for (env_key, env_value) in &pack_build_command.env {
+            args.push(String::from("--env"));
+            args.push(format!("{env_key}={env_value}"));
+        }
+
         if pack_build_command.verbose {
-            args.push("-v");
+            args.push(String::from("-v"));
         }
 
         command.args(args);
@@ -108,6 +121,10 @@ mod tests {
                 BuildpackReference::Id(String::from("libcnb/buildpack1")),
                 BuildpackReference::Path(PathBuf::from("/tmp/buildpack2")),
             ],
+            env: HashMap::from([
+                (String::from("ENV_FOO"), String::from("FOO_VALUE")),
+                (String::from("ENV_BAR"), String::from("WHITESPACE VALUE")),
+            ]),
             verbose: true,
         };
 
@@ -128,6 +145,10 @@ mod tests {
                 "libcnb/buildpack1",
                 "--buildpack",
                 "/tmp/buildpack2",
+                "--env",
+                "ENV_FOO=FOO_VALUE",
+                "--env",
+                "ENV_BAR=WHITESPACE VALUE",
                 "-v"
             ]
         );

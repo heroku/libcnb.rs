@@ -19,6 +19,7 @@ use crate::pack::PackBuildCommand;
 use bollard::container::{Config, CreateContainerOptions, StartContainerOptions};
 use bollard::image::RemoveImageOptions;
 use bollard::Docker;
+use std::collections::HashMap;
 use std::env;
 use std::env::VarError;
 use std::path::{Path, PathBuf};
@@ -65,6 +66,7 @@ pub struct IntegrationTest {
     target_triple: String,
     builder_name: String,
     buildpacks: Vec<BuildpackReference>,
+    env: HashMap<String, String>,
     docker: Docker,
     tokio_runtime: tokio::runtime::Runtime,
 }
@@ -111,6 +113,7 @@ impl IntegrationTest {
             target_triple: String::from("x86_64-unknown-linux-musl"),
             builder_name: builder_name.into(),
             buildpacks: vec![BuildpackReference::Crate],
+            env: HashMap::new(),
             docker,
             tokio_runtime,
         }
@@ -129,6 +132,27 @@ impl IntegrationTest {
     /// Defaults to `x86_64-unknown-linux-musl`.
     pub fn target_triple(&mut self, target_triple: impl Into<String>) -> &mut Self {
         self.target_triple = target_triple.into();
+        self
+    }
+
+    /// Adds an environment variable for the build process.
+    ///
+    /// Note: This does not set this environment variable for running containers, it's only
+    /// available during the build.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use libcnb_test::{IntegrationTest, assert_contains};
+    ///
+    /// IntegrationTest::new("heroku/buildpacks:20", "test-fixtures/app")
+    ///     .env("ENV_VAR_ONE", "VALUE ONE")
+    ///     .env("ENV_VAR_TWO", "SOME OTHER VALUE")
+    ///     .run_test(|context| {
+    ///         // ...
+    ///     })
+    /// ```
+    pub fn env(&mut self, k: impl Into<String>, v: impl Into<String>) -> &mut Self {
+        self.env.insert(k.into(), v.into());
         self
     }
 
@@ -184,6 +208,10 @@ impl IntegrationTest {
 
         let mut pack_command =
             PackBuildCommand::new(&self.builder_name, temp_app_dir.path(), &image_name);
+
+        self.env.iter().for_each(|(key, value)| {
+            pack_command.env(key, value);
+        });
 
         for buildpack in &self.buildpacks {
             match buildpack {
