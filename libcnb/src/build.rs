@@ -143,6 +143,7 @@ pub(crate) enum InnerBuildResult {
 ///    .launch(Launch::new().process(ProcessBuilder::new(process_type!("type"), "command").arg("-v").build()))
 ///    .build();
 /// ```
+#[derive(Default)]
 #[must_use]
 pub struct BuildResultBuilder {
     launch: Option<Launch>,
@@ -151,10 +152,7 @@ pub struct BuildResultBuilder {
 
 impl BuildResultBuilder {
     pub fn new() -> Self {
-        Self {
-            launch: None,
-            store: None,
-        }
+        Self::default()
     }
 
     /// Builds the final [`BuildResult`].
@@ -183,11 +181,5 @@ impl BuildResultBuilder {
     pub fn store(mut self, store: Store) -> Self {
         self.store = Some(store);
         self
-    }
-}
-
-impl Default for BuildResultBuilder {
-    fn default() -> Self {
-        Self::new()
     }
 }
