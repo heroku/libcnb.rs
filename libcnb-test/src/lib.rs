@@ -14,8 +14,9 @@ mod macros;
 mod pack;
 mod util;
 
-use crate::container_context::PrepareContainerContext;
-pub use crate::container_context::{ContainerContext, ContainerExecResult};
+pub use crate::container_context::{
+    ContainerContext, ContainerExecResult, PrepareContainerContext,
+};
 use crate::pack::PackBuildCommand;
 use bollard::image::RemoveImageOptions;
 use bollard::Docker;
