@@ -7,7 +7,7 @@ license = "BSD-3-Clause"
 description = "Cargo command for managing buildpacks written with libcnb.rs"
 keywords = ["buildpacks", "CNB"]
 repository = "https://github.com/Malax/libcnb.rs/tree/main/libcnb-cargo"
-documentation = "https://docs.rs/libcnb-cargo"
+documentation = "https://github.com/Malax/libcnb.rs/blob/main/libcnb-cargo/README.md"
 readme = "README.md"
 include = ["src/**/*", "../LICENSE", "README.md"]
 
@@ -22,10 +22,8 @@ clap = { version = "3.1.1", default-features = false, features = [
   "derive",
 ] }
 fs_extra = "1.2.0"
-libcnb-data = { version = "0.5.0", path = "../libcnb-data" }
+libcnb-package = { version = "0.1.0", path = "../libcnb-package" }
 log = "0.4.14"
 pathdiff = "0.2.1"
 size_format = "1.0.2"
 stderrlog = "0.5.1"
-toml = "0.5.8"
-which = "4.2.4"

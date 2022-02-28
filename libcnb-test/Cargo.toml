@@ -16,7 +16,7 @@ bollard = { version = "0.11.1", features = ["ssl"] }
 cargo_metadata = "0.14.2"
 fastrand = "1.7.0"
 fs_extra = "1.2.0"
-libcnb-cargo = { path = "../libcnb-cargo", version = "0.3.0" }
+libcnb-package = { version = "0.1.0", path = "../libcnb-package" }
 tempfile = "3.3.0"
 tokio = "1.17.0"
 tokio-stream = "0.1.8"
