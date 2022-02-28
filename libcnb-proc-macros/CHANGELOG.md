@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.2.0] 2022-02-28
+
 - Add a `verify_bin_target_exists!` macro for verifying existence of binary targets in the current crate. ([#320](https://github.com/Malax/libcnb.rs/pull/320))
 - Increase minimum supported Rust version from 1.56 to 1.58 ([#318](https://github.com/Malax/libcnb.rs/pull/318)).
 
