@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::process::Command;
 use tempfile::TempDir;
@@ -10,7 +10,7 @@ pub(crate) struct PackBuildCommand {
     path: PathBuf,
     image_name: String,
     buildpacks: Vec<BuildpackReference>,
-    env: HashMap<String, String>,
+    env: BTreeMap<String, String>,
     verbose: bool,
 }
 
@@ -49,7 +49,7 @@ impl PackBuildCommand {
             path: path.into(),
             image_name: image_name.into(),
             buildpacks: vec![],
-            env: HashMap::new(),
+            env: BTreeMap::new(),
             verbose: false,
         }
     }
@@ -121,7 +121,7 @@ mod tests {
                 BuildpackReference::Id(String::from("libcnb/buildpack1")),
                 BuildpackReference::Path(PathBuf::from("/tmp/buildpack2")),
             ],
-            env: HashMap::from([
+            env: BTreeMap::from([
                 (String::from("ENV_FOO"), String::from("FOO_VALUE")),
                 (String::from("ENV_BAR"), String::from("WHITESPACE VALUE")),
             ]),
@@ -146,9 +146,9 @@ mod tests {
                 "--buildpack",
                 "/tmp/buildpack2",
                 "--env",
-                "ENV_FOO=FOO_VALUE",
-                "--env",
                 "ENV_BAR=WHITESPACE VALUE",
+                "--env",
+                "ENV_FOO=FOO_VALUE",
                 "-v"
             ]
         );
