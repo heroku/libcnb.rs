@@ -135,14 +135,14 @@ impl IntegrationTest {
         self
     }
 
-    /// Adds an environment variable for the build process.
+    /// Inserts or updates an environment variable mapping for the build process.
     ///
     /// Note: This does not set this environment variable for running containers, it's only
     /// available during the build.
     ///
     /// # Example
     /// ```no_run
-    /// use libcnb_test::{IntegrationTest, assert_contains};
+    /// use libcnb_test::IntegrationTest;
     ///
     /// IntegrationTest::new("heroku/buildpacks:20", "test-fixtures/app")
     ///     .env("ENV_VAR_ONE", "VALUE ONE")
@@ -153,6 +153,32 @@ impl IntegrationTest {
     /// ```
     pub fn env(&mut self, k: impl Into<String>, v: impl Into<String>) -> &mut Self {
         self.env.insert(k.into(), v.into());
+        self
+    }
+
+    /// Adds or updates multiple environment variable mappings for the build process.
+    ///
+    /// Note: This does not set environment variables for running containers, they're only
+    /// available during the build.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use libcnb_test::IntegrationTest;
+    ///
+    /// IntegrationTest::new("heroku/buildpacks:20", "test-fixtures/app")
+    ///     .envs(vec![("ENV_VAR_ONE", "VALUE ONE"), ("ENV_VAR_TWO", "SOME OTHER VALUE")])
+    ///     .run_test(|context| {
+    ///         // ...
+    ///     })
+    /// ```
+    pub fn envs<K: Into<String>, V: Into<String>, I: IntoIterator<Item = (K, V)>>(
+        &mut self,
+        envs: I,
+    ) -> &mut Self {
+        envs.into_iter().for_each(|(key, value)| {
+            self.env(key.into(), value.into());
+        });
+
         self
     }
 

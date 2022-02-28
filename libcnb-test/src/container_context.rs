@@ -33,12 +33,40 @@ impl<'a> PrepareContainerContext<'a> {
     }
 
     /// Inserts or updates an environment variable mapping for the container.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use libcnb_test::IntegrationTest;
+    ///
+    /// IntegrationTest::new("heroku/buildpacks:20", "test-fixtures/app").run_test(|context| {
+    ///     context
+    ///         .prepare_container()
+    ///         .env("FOO", "FOO_VALUE")
+    ///         .start(|container| {
+    ///             // ...
+    ///         })
+    /// });
+    /// ```
     pub fn env(&mut self, key: impl Into<String>, value: impl Into<String>) -> &mut Self {
         self.env.insert(key.into(), value.into());
         self
     }
 
     /// Adds or updates multiple environment variable mappings for the container.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use libcnb_test::IntegrationTest;
+    ///
+    /// IntegrationTest::new("heroku/buildpacks:20", "test-fixtures/app").run_test(|context| {
+    ///     context
+    ///         .prepare_container()
+    ///         .envs(vec![("FOO", "FOO_VALUE"), ("BAR", "BAR_VALUE")])
+    ///         .start(|container| {
+    ///             // ...
+    ///         })
+    /// });
+    /// ```
     pub fn envs<K: Into<String>, V: Into<String>, I: IntoIterator<Item = (K, V)>>(
         &mut self,
         envs: I,
