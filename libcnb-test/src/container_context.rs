@@ -1,9 +1,77 @@
-use crate::container_port_mapping;
 use crate::IntegrationTestContext;
-use bollard::container::{LogOutput, RemoveContainerOptions};
+use crate::{container_port_mapping, util};
+use bollard::container::{
+    Config, CreateContainerOptions, LogOutput, RemoveContainerOptions, StartContainerOptions,
+};
 use bollard::exec::{CreateExecOptions, StartExecResults};
 use std::net::SocketAddr;
 use tokio_stream::StreamExt;
+
+pub struct PrepareContainerContext<'a> {
+    integration_test_context: &'a IntegrationTestContext<'a>,
+    exposed_ports: Vec<u16>,
+}
+
+impl<'a> PrepareContainerContext<'a> {
+    pub(crate) fn new(integration_test_context: &'a IntegrationTestContext) -> Self {
+        Self {
+            integration_test_context,
+            exposed_ports: Vec::new(),
+        }
+    }
+
+    /// Exposes a given port of the container to the host machine.
+    ///
+    /// The given `exposed_port` is mapped to random ports on the host machine. Use
+    /// [`ContainerContext::address_for_port`] to obtain the local port for a mapped port.
+    pub fn expose_port(&mut self, port: u16) -> &mut Self {
+        self.exposed_ports.push(port);
+        self
+    }
+
+    /// Creates and starts the container configured by this context.
+    ///
+    /// # Panics
+    /// - When the container could not be created
+    /// - When the container could not be started
+    pub fn start<F: FnOnce(ContainerContext)>(&self, f: F) {
+        let container_name = util::random_docker_identifier();
+
+        self.integration_test_context
+            .integration_test
+            .tokio_runtime
+            .block_on(async {
+                self.integration_test_context
+                    .integration_test
+                    .docker
+                    .create_container(
+                        Some(CreateContainerOptions {
+                            name: container_name.clone(),
+                        }),
+                        Config {
+                            image: Some(self.integration_test_context.image_name.clone()),
+                            ..container_port_mapping::port_mapped_container_config(
+                                &self.exposed_ports,
+                            )
+                        },
+                    )
+                    .await
+                    .expect("Could not create container");
+
+                self.integration_test_context
+                    .integration_test
+                    .docker
+                    .start_container(&container_name, None::<StartContainerOptions<String>>)
+                    .await
+                    .expect("Could not start container");
+            });
+
+        f(ContainerContext {
+            container_name,
+            integration_test_context: self.integration_test_context,
+        });
+    }
+}
 
 pub struct ContainerContext<'a> {
     pub container_name: String,

@@ -24,23 +24,26 @@ fn basic() {
             assert_contains!(context.pack_stdout, "---> Installing bundler");
             assert_contains!(context.pack_stdout, "---> Installing gems");
 
-            context.start_container(&[12345], |container| {
-                std::thread::sleep(Duration::from_secs(1));
+            context
+                .prepare_container()
+                .expose_port(12345)
+                .start(|container| {
+                    std::thread::sleep(Duration::from_secs(1));
 
-                assert_eq!(
-                    call_test_fixture_service(
-                        container.address_for_port(12345).unwrap(),
-                        "Hello World!"
-                    )
-                    .unwrap(),
-                    "!dlroW olleH"
-                );
+                    assert_eq!(
+                        call_test_fixture_service(
+                            container.address_for_port(12345).unwrap(),
+                            "Hello World!"
+                        )
+                        .unwrap(),
+                        "!dlroW olleH"
+                    );
 
-                assert_contains!(
-                    container.shell_exec("ruby --version").stdout,
-                    "ruby 2.7.0p0"
-                );
-            });
+                    assert_contains!(
+                        container.shell_exec("ruby --version").stdout,
+                        "ruby 2.7.0p0"
+                    );
+                });
         },
     );
 }

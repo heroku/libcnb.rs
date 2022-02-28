@@ -14,9 +14,9 @@ mod macros;
 mod pack;
 mod util;
 
+use crate::container_context::PrepareContainerContext;
 pub use crate::container_context::{ContainerContext, ContainerExecResult};
 use crate::pack::PackBuildCommand;
-use bollard::container::{Config, CreateContainerOptions, StartContainerOptions};
 use bollard::image::RemoveImageOptions;
 use bollard::Docker;
 use std::collections::HashMap;
@@ -49,7 +49,7 @@ use std::process::{Command, Stdio};
 ///         assert_contains!(context.pack_stdout, "---> Installing Maven");
 ///         assert_contains!(context.pack_stdout, "---> Running mvn package");
 ///
-///         context.start_container(&[12345], |container| {
+///         context.prepare_container().expose_port(12345).start(|container| {
 ///             assert_eq!(
 ///                 call_test_fixture_service(
 ///                     container.address_for_port(12345).unwrap(),
@@ -273,43 +273,26 @@ pub struct IntegrationTestContext<'a> {
 }
 
 impl<'a> IntegrationTestContext<'a> {
-    /// Starts a new container with the image from the integration test.
+    /// Prepares a new container with the image from the integration test.
     ///
-    /// The given `exposed_ports` are mapped to random ports on the host machine. Use
-    /// [`ContainerContext::address_for_port`] to obtain the local port for a mapped port.
+    /// This will not create nor run the container immediately. Use the returned
+    /// `PrepareContainerContext` to configure the container, then call
+    /// [`start`](PrepareContainerContext::start) on it to actually create and start the container.
     ///
-    /// # Panics
-    /// - When the container could not be created
-    /// - When the container could not be started
-    pub fn start_container<F: FnOnce(ContainerContext)>(&self, exposed_ports: &[u16], f: F) {
-        let container_name = util::random_docker_identifier();
-
-        self.integration_test.tokio_runtime.block_on(async {
-            self.integration_test
-                .docker
-                .create_container(
-                    Some(CreateContainerOptions {
-                        name: container_name.clone(),
-                    }),
-                    Config {
-                        image: Some(self.image_name.clone()),
-                        ..container_port_mapping::port_mapped_container_config(exposed_ports)
-                    },
-                )
-                .await
-                .expect("Could not create container");
-
-            self.integration_test
-                .docker
-                .start_container(&container_name, None::<StartContainerOptions<String>>)
-                .await
-                .expect("Could not start container");
-        });
-
-        f(ContainerContext {
-            container_name,
-            integration_test_context: self,
-        });
+    /// # Example:
+    ///
+    /// ```no_run
+    /// use libcnb_test::IntegrationTest;
+    ///
+    /// IntegrationTest::new("heroku/buildpacks:20", "test-fixtures/empty-app").run_test(|context| {
+    ///     context.prepare_container().start(|container| {
+    ///         // ...
+    ///     });
+    /// });
+    /// ```
+    #[must_use]
+    pub fn prepare_container(&self) -> PrepareContainerContext {
+        PrepareContainerContext::new(self)
     }
 }
 
