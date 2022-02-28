@@ -4,12 +4,14 @@ use bollard::container::{
     Config, CreateContainerOptions, LogOutput, RemoveContainerOptions, StartContainerOptions,
 };
 use bollard::exec::{CreateExecOptions, StartExecResults};
+use std::collections::HashMap;
 use std::net::SocketAddr;
 use tokio_stream::StreamExt;
 
 pub struct PrepareContainerContext<'a> {
     integration_test_context: &'a IntegrationTestContext<'a>,
     exposed_ports: Vec<u16>,
+    env: HashMap<String, String>,
 }
 
 impl<'a> PrepareContainerContext<'a> {
@@ -17,6 +19,7 @@ impl<'a> PrepareContainerContext<'a> {
         Self {
             integration_test_context,
             exposed_ports: Vec::new(),
+            env: HashMap::new(),
         }
     }
 
@@ -26,6 +29,24 @@ impl<'a> PrepareContainerContext<'a> {
     /// [`ContainerContext::address_for_port`] to obtain the local port for a mapped port.
     pub fn expose_port(&mut self, port: u16) -> &mut Self {
         self.exposed_ports.push(port);
+        self
+    }
+
+    /// Inserts or updates an environment variable mapping for the container.
+    pub fn env(&mut self, key: impl Into<String>, value: impl Into<String>) -> &mut Self {
+        self.env.insert(key.into(), value.into());
+        self
+    }
+
+    /// Adds or updates multiple environment variable mappings for the container.
+    pub fn envs<K: Into<String>, V: Into<String>, I: IntoIterator<Item = (K, V)>>(
+        &mut self,
+        envs: I,
+    ) -> &mut Self {
+        envs.into_iter().for_each(|(key, value)| {
+            self.env(key.into(), value.into());
+        });
+
         self
     }
 
@@ -50,6 +71,7 @@ impl<'a> PrepareContainerContext<'a> {
                         }),
                         Config {
                             image: Some(self.integration_test_context.image_name.clone()),
+                            env: Some(self.env.iter().map(|(k, v)| format!("{k}={v}")).collect()),
                             ..container_port_mapping::port_mapped_container_config(
                                 &self.exposed_ports,
                             )

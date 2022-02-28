@@ -26,13 +26,14 @@ fn basic() {
 
             context
                 .prepare_container()
-                .expose_port(12345)
+                .env("PORT", TEST_PORT.to_string())
+                .expose_port(TEST_PORT)
                 .start(|container| {
                     std::thread::sleep(Duration::from_secs(1));
 
                     assert_eq!(
                         call_test_fixture_service(
-                            container.address_for_port(12345).unwrap(),
+                            container.address_for_port(TEST_PORT).unwrap(),
                             "Hello World!"
                         )
                         .unwrap(),
@@ -61,3 +62,5 @@ where
 
     Ok(format!("{}", String::from_utf8_lossy(&buffer)))
 }
+
+const TEST_PORT: u16 = 12346;
