@@ -2,7 +2,7 @@ use crate::bom;
 use crate::newtypes::libcnb_newtype;
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Default)]
 #[serde(deny_unknown_fields)]
 pub struct Launch {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -33,24 +33,13 @@ pub struct Launch {
 impl Launch {
     #[must_use]
     pub fn new() -> Self {
-        Self {
-            bom: bom::Bom::new(),
-            labels: Vec::new(),
-            processes: Vec::new(),
-            slices: Vec::new(),
-        }
+        Self::default()
     }
 
     #[must_use]
     pub fn process(mut self, process: Process) -> Self {
         self.processes.push(process);
         self
-    }
-}
-
-impl Default for Launch {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

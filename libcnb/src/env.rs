@@ -25,7 +25,7 @@ use std::ffi::{OsStr, OsString};
 ///     String::from_utf8_lossy(&output.stdout)
 /// );
 /// ```
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Env {
     inner: HashMap<OsString, OsString>,
 }
@@ -46,9 +46,7 @@ impl Env {
     /// Creates an empty `Env` struct.
     #[must_use]
     pub fn new() -> Self {
-        Self {
-            inner: HashMap::new(),
-        }
+        Self::default()
     }
 
     /// Inserts a key-value pair into the environment, overriding the value if `key` was already
@@ -73,12 +71,6 @@ impl Env {
     #[must_use]
     pub fn iter(&self) -> std::collections::hash_map::Iter<'_, OsString, OsString> {
         self.inner.iter()
-    }
-}
-
-impl Default for Env {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

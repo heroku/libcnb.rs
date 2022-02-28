@@ -2,7 +2,7 @@ use serde::Serialize;
 use std::collections::VecDeque;
 use toml::value::Table;
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Default)]
 #[must_use]
 pub struct BuildPlan {
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -15,20 +15,11 @@ pub struct BuildPlan {
 
 impl BuildPlan {
     pub fn new() -> Self {
-        Self {
-            provides: vec![],
-            requires: vec![],
-            or: vec![],
-        }
+        Self::default()
     }
 }
 
-impl Default for BuildPlan {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
+#[derive(Default)]
 #[must_use]
 pub struct BuildPlanBuilder {
     acc: VecDeque<(Vec<Provide>, Vec<Require>)>,
@@ -38,11 +29,7 @@ pub struct BuildPlanBuilder {
 
 impl BuildPlanBuilder {
     pub fn new() -> Self {
-        Self {
-            acc: VecDeque::new(),
-            current_provides: vec![],
-            current_requires: vec![],
-        }
+        Self::default()
     }
 
     pub fn provides(mut self, name: impl AsRef<str>) -> Self {
@@ -83,12 +70,6 @@ impl BuildPlanBuilder {
         } else {
             BuildPlan::new()
         }
-    }
-}
-
-impl Default for BuildPlanBuilder {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

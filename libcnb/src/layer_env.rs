@@ -79,7 +79,7 @@ use std::path::Path;
 /// assert_eq!(env.get("PATH").unwrap(), layer_dir.join("bin"));
 /// assert_eq!(env.get("CPATH"), None); // None, because CPATH is only added during build
 /// ```
-#[derive(Eq, PartialEq, Debug, Clone)]
+#[derive(Eq, PartialEq, Debug, Default, Clone)]
 pub struct LayerEnv {
     all: LayerEnvDelta,
     build: LayerEnvDelta,
@@ -112,14 +112,7 @@ impl LayerEnv {
     /// ```
     #[must_use]
     pub fn new() -> Self {
-        Self {
-            all: LayerEnvDelta::new(),
-            build: LayerEnvDelta::new(),
-            launch: LayerEnvDelta::new(),
-            process: HashMap::new(),
-            layer_paths_build: LayerEnvDelta::new(),
-            layer_paths_launch: LayerEnvDelta::new(),
-        }
+        Self::default()
     }
 
     /// Applies this [`LayerEnv`] to the given [`Env`] for the given [`Scope`].
@@ -381,12 +374,6 @@ impl LayerEnv {
     }
 }
 
-impl Default for LayerEnv {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 /// Environment variable modification behavior.
 /// ([CNB spec: Environment Variable Modification Rules](https://github.com/buildpacks/spec/blob/main/buildpack.md#environment-variable-modification-rules))
 #[derive(Eq, PartialEq, Debug, Clone)]
@@ -431,16 +418,14 @@ pub enum Scope {
     Process(String),
 }
 
-#[derive(Eq, PartialEq, Debug, Clone)]
+#[derive(Eq, PartialEq, Debug, Default, Clone)]
 struct LayerEnvDelta {
     entries: BTreeMap<(ModificationBehavior, OsString), OsString>,
 }
 
 impl LayerEnvDelta {
     fn new() -> Self {
-        Self {
-            entries: BTreeMap::new(),
-        }
+        Self::default()
     }
 
     fn apply(&self, env: &Env) -> Env {
