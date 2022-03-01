@@ -25,7 +25,7 @@ impl<'a> PrepareContainerContext<'a> {
 
     /// Exposes a given port of the container to the host machine.
     ///
-    /// The given `exposed_port` is mapped to random ports on the host machine. Use
+    /// The given port is mapped to a random port on the host machine. Use
     /// [`ContainerContext::address_for_port`] to obtain the local port for a mapped port.
     pub fn expose_port(&mut self, port: u16) -> &mut Self {
         self.exposed_ports.push(port);
