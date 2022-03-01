@@ -1,6 +1,9 @@
 require 'socket'
 
-server = TCPServer.new(12345)
+port = ENV["PORT"]
+port = 12345 if port.nil?
+
+server = TCPServer.new(port)
 
 loop do
   socket = server.accept

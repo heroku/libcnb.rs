@@ -13,7 +13,7 @@ use libcnb_test::{assert_contains, IntegrationTest};
 #[ignore]
 fn basic() {
     IntegrationTest::new("heroku/buildpacks:20", "test-fixtures/empty-app").run_test(|context| {
-        context.start_container(&[], |container| {
+        context.prepare_container().start(|container| {
             let env_stdout = container.shell_exec("env").stdout;
 
             assert_contains!(env_stdout, "ROLL_1D6=");

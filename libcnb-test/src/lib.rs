@@ -14,11 +14,13 @@ mod macros;
 mod pack;
 mod util;
 
-pub use crate::container_context::{ContainerContext, ContainerExecResult};
+pub use crate::container_context::{
+    ContainerContext, ContainerExecResult, PrepareContainerContext,
+};
 use crate::pack::PackBuildCommand;
-use bollard::container::{Config, CreateContainerOptions, StartContainerOptions};
 use bollard::image::RemoveImageOptions;
 use bollard::Docker;
+use std::collections::HashMap;
 use std::env;
 use std::env::VarError;
 use std::path::{Path, PathBuf};
@@ -48,7 +50,7 @@ use std::process::{Command, Stdio};
 ///         assert_contains!(context.pack_stdout, "---> Installing Maven");
 ///         assert_contains!(context.pack_stdout, "---> Running mvn package");
 ///
-///         context.start_container(&[12345], |container| {
+///         context.prepare_container().expose_port(12345).start(|container| {
 ///             assert_eq!(
 ///                 call_test_fixture_service(
 ///                     container.address_for_port(12345).unwrap(),
@@ -65,6 +67,7 @@ pub struct IntegrationTest {
     target_triple: String,
     builder_name: String,
     buildpacks: Vec<BuildpackReference>,
+    env: HashMap<String, String>,
     docker: Docker,
     tokio_runtime: tokio::runtime::Runtime,
 }
@@ -111,6 +114,7 @@ impl IntegrationTest {
             target_triple: String::from("x86_64-unknown-linux-musl"),
             builder_name: builder_name.into(),
             buildpacks: vec![BuildpackReference::Crate],
+            env: HashMap::new(),
             docker,
             tokio_runtime,
         }
@@ -129,6 +133,53 @@ impl IntegrationTest {
     /// Defaults to `x86_64-unknown-linux-musl`.
     pub fn target_triple(&mut self, target_triple: impl Into<String>) -> &mut Self {
         self.target_triple = target_triple.into();
+        self
+    }
+
+    /// Inserts or updates an environment variable mapping for the build process.
+    ///
+    /// Note: This does not set this environment variable for running containers, it's only
+    /// available during the build.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use libcnb_test::IntegrationTest;
+    ///
+    /// IntegrationTest::new("heroku/buildpacks:20", "test-fixtures/app")
+    ///     .env("ENV_VAR_ONE", "VALUE ONE")
+    ///     .env("ENV_VAR_TWO", "SOME OTHER VALUE")
+    ///     .run_test(|context| {
+    ///         // ...
+    ///     })
+    /// ```
+    pub fn env(&mut self, k: impl Into<String>, v: impl Into<String>) -> &mut Self {
+        self.env.insert(k.into(), v.into());
+        self
+    }
+
+    /// Adds or updates multiple environment variable mappings for the build process.
+    ///
+    /// Note: This does not set environment variables for running containers, they're only
+    /// available during the build.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use libcnb_test::IntegrationTest;
+    ///
+    /// IntegrationTest::new("heroku/buildpacks:20", "test-fixtures/app")
+    ///     .envs(vec![("ENV_VAR_ONE", "VALUE ONE"), ("ENV_VAR_TWO", "SOME OTHER VALUE")])
+    ///     .run_test(|context| {
+    ///         // ...
+    ///     })
+    /// ```
+    pub fn envs<K: Into<String>, V: Into<String>, I: IntoIterator<Item = (K, V)>>(
+        &mut self,
+        envs: I,
+    ) -> &mut Self {
+        envs.into_iter().for_each(|(key, value)| {
+            self.env(key.into(), value.into());
+        });
+
         self
     }
 
@@ -184,6 +235,10 @@ impl IntegrationTest {
 
         let mut pack_command =
             PackBuildCommand::new(&self.builder_name, temp_app_dir.path(), &image_name);
+
+        self.env.iter().for_each(|(key, value)| {
+            pack_command.env(key, value);
+        });
 
         for buildpack in &self.buildpacks {
             match buildpack {
@@ -245,43 +300,26 @@ pub struct IntegrationTestContext<'a> {
 }
 
 impl<'a> IntegrationTestContext<'a> {
-    /// Starts a new container with the image from the integration test.
+    /// Prepares a new container with the image from the integration test.
     ///
-    /// The given `exposed_ports` are mapped to random ports on the host machine. Use
-    /// [`ContainerContext::address_for_port`] to obtain the local port for a mapped port.
+    /// This will not create nor run the container immediately. Use the returned
+    /// `PrepareContainerContext` to configure the container, then call
+    /// [`start`](PrepareContainerContext::start) on it to actually create and start the container.
     ///
-    /// # Panics
-    /// - When the container could not be created
-    /// - When the container could not be started
-    pub fn start_container<F: FnOnce(ContainerContext)>(&self, exposed_ports: &[u16], f: F) {
-        let container_name = util::random_docker_identifier();
-
-        self.integration_test.tokio_runtime.block_on(async {
-            self.integration_test
-                .docker
-                .create_container(
-                    Some(CreateContainerOptions {
-                        name: container_name.clone(),
-                    }),
-                    Config {
-                        image: Some(self.image_name.clone()),
-                        ..container_port_mapping::port_mapped_container_config(exposed_ports)
-                    },
-                )
-                .await
-                .expect("Could not create container");
-
-            self.integration_test
-                .docker
-                .start_container(&container_name, None::<StartContainerOptions<String>>)
-                .await
-                .expect("Could not start container");
-        });
-
-        f(ContainerContext {
-            container_name,
-            integration_test_context: self,
-        });
+    /// # Example:
+    ///
+    /// ```no_run
+    /// use libcnb_test::IntegrationTest;
+    ///
+    /// IntegrationTest::new("heroku/buildpacks:20", "test-fixtures/empty-app").run_test(|context| {
+    ///     context.prepare_container().start(|container| {
+    ///         // ...
+    ///     });
+    /// });
+    /// ```
+    #[must_use]
+    pub fn prepare_container(&self) -> PrepareContainerContext {
+        PrepareContainerContext::new(self)
     }
 }
 

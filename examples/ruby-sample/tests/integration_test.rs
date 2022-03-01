@@ -24,23 +24,27 @@ fn basic() {
             assert_contains!(context.pack_stdout, "---> Installing bundler");
             assert_contains!(context.pack_stdout, "---> Installing gems");
 
-            context.start_container(&[12345], |container| {
-                std::thread::sleep(Duration::from_secs(1));
+            context
+                .prepare_container()
+                .env("PORT", TEST_PORT.to_string())
+                .expose_port(TEST_PORT)
+                .start(|container| {
+                    std::thread::sleep(Duration::from_secs(1));
 
-                assert_eq!(
-                    call_test_fixture_service(
-                        container.address_for_port(12345).unwrap(),
-                        "Hello World!"
-                    )
-                    .unwrap(),
-                    "!dlroW olleH"
-                );
+                    assert_eq!(
+                        call_test_fixture_service(
+                            container.address_for_port(TEST_PORT).unwrap(),
+                            "Hello World!"
+                        )
+                        .unwrap(),
+                        "!dlroW olleH"
+                    );
 
-                assert_contains!(
-                    container.shell_exec("ruby --version").stdout,
-                    "ruby 2.7.0p0"
-                );
-            });
+                    assert_contains!(
+                        container.shell_exec("ruby --version").stdout,
+                        "ruby 2.7.0p0"
+                    );
+                });
         },
     );
 }
@@ -58,3 +62,5 @@ where
 
     Ok(format!("{}", String::from_utf8_lossy(&buffer)))
 }
+
+const TEST_PORT: u16 = 12346;

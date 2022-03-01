@@ -29,7 +29,7 @@ fn test() {
             assert_contains!(context.pack_stdout, "---> Installing Maven");
             assert_contains!(context.pack_stdout, "---> Running mvn package");
 
-            context.start_container(&[12345], |container| {
+            context.prepare_container().expose_port(12345).start(|container| {
                 assert_eq!(
                     call_test_fixture_service(
                         container.address_for_port(12345).unwrap(),
