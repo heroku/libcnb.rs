@@ -14,7 +14,7 @@ Please use the same tag for feature requests.
 ## Example
 
 ```rust,no_run
-// In $CRATE_ROOT/test/integration_test.rs
+// In $CRATE_ROOT/tests/integration_test.rs
 use libcnb_test::{IntegrationTest, BuildpackReference, assert_contains};
 
 #[test]
