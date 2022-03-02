@@ -8,9 +8,7 @@ mod layer;
 
 use crate::layer::ExecDLayer;
 use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
-use libcnb::data::launch::{Launch, ProcessBuilder};
 use libcnb::data::layer_name;
-use libcnb::data::process_type;
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};
 use libcnb::{buildpack_main, Buildpack};
@@ -28,19 +26,7 @@ impl Buildpack for ExecDBuildpack {
 
     fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildResult, Self::Error> {
         context.handle_layer(layer_name!("layer_name"), ExecDLayer)?;
-
-        BuildResultBuilder::new()
-            .launch(
-                // Once https://github.com/Malax/libcnb.rs/issues/309 lands, this can be removed
-                // since we no longer need to have the default container process running for the
-                // duration of the test.
-                Launch::new().process(
-                    ProcessBuilder::new(process_type!("web"), "sleep 3600")
-                        .default(true)
-                        .build(),
-                ),
-            )
-            .build()
+        BuildResultBuilder::new().build()
     }
 }
 

@@ -1,12 +1,14 @@
-use crate::IntegrationTestContext;
+use crate::log::LogOutput;
 use crate::{container_port_mapping, util};
+use crate::{log, IntegrationTestContext};
 use bollard::container::{
-    Config, CreateContainerOptions, LogOutput, RemoveContainerOptions, StartContainerOptions,
+    Config, CreateContainerOptions, RemoveContainerOptions, StartContainerOptions,
 };
 use bollard::exec::{CreateExecOptions, StartExecResults};
+use serde::Serialize;
 use std::collections::HashMap;
 use std::net::SocketAddr;
-use tokio_stream::StreamExt;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 pub struct PrepareContainerContext<'a> {
     integration_test_context: &'a IntegrationTestContext<'a>,
@@ -42,7 +44,7 @@ impl<'a> PrepareContainerContext<'a> {
     ///     context
     ///         .prepare_container()
     ///         .env("FOO", "FOO_VALUE")
-    ///         .start(|container| {
+    ///         .start_with_default_process(|container| {
     ///             // ...
     ///         })
     /// });
@@ -62,7 +64,7 @@ impl<'a> PrepareContainerContext<'a> {
     ///     context
     ///         .prepare_container()
     ///         .envs(vec![("FOO", "FOO_VALUE"), ("BAR", "BAR_VALUE")])
-    ///         .start(|container| {
+    ///         .start_with_default_process(|container| {
     ///             // ...
     ///         })
     /// });
@@ -78,12 +80,101 @@ impl<'a> PrepareContainerContext<'a> {
         self
     }
 
-    /// Creates and starts the container configured by this context.
+    /// Creates and starts the container configured by this context with the image's default
+    /// CNB process.
+    ///
+    /// See: [CNB App Developer Guide: Run a multi-process app - Default process type](https://buildpacks.io/docs/app-developer-guide/run-an-app/#default-process-type)
     ///
     /// # Panics
     /// - When the container could not be created
     /// - When the container could not be started
-    pub fn start<F: FnOnce(ContainerContext)>(&self, f: F) {
+    pub fn start_with_default_process<F: FnOnce(ContainerContext)>(&self, f: F) {
+        self.start_internal(None, None, f);
+    }
+
+    /// Creates and starts the container configured by this context with the image's default
+    /// CNB process.
+    ///
+    /// See: [CNB App Developer Guide: Run a multi-process app - Default process type with additional arguments](https://buildpacks.io/docs/app-developer-guide/run-an-app/#default-process-type-with-additional-arguments)
+    ///
+    /// # Panics
+    /// - When the container could not be created
+    /// - When the container could not be started
+    pub fn start_with_default_process_args<
+        F: FnOnce(ContainerContext),
+        A: IntoIterator<Item = I>,
+        I: Into<String>,
+    >(
+        &self,
+        args: A,
+        f: F,
+    ) {
+        self.start_internal(None, Some(args.into_iter().map(I::into).collect()), f);
+    }
+
+    /// Creates and starts the container configured by this context with a given CNB process.
+    ///
+    /// See: [CNB App Developer Guide: Run a multi-process app - Non-default process-type](https://buildpacks.io/docs/app-developer-guide/run-an-app/#non-default-process-type)
+    ///
+    /// # Panics
+    /// - When the container could not be created
+    /// - When the container could not be started
+    pub fn start_with_process<F: FnOnce(ContainerContext)>(&self, process: String, f: F) {
+        self.start_internal(Some(vec![process]), None, f);
+    }
+
+    /// Creates and starts the container configured by this context with a given CNB process.
+    ///
+    /// See: [CNB App Developer Guide: Run a multi-process app - Non-default process-type with additional arguments](https://buildpacks.io/docs/app-developer-guide/run-an-app/#non-default-process-type-with-additional-arguments)
+    ///
+    /// # Panics
+    /// - When the container could not be created
+    /// - When the container could not be started
+    pub fn start_with_process_args<
+        F: FnOnce(ContainerContext),
+        A: IntoIterator<Item = I>,
+        I: Into<String>,
+    >(
+        &self,
+        process: String,
+        args: A,
+        f: F,
+    ) {
+        self.start_internal(
+            Some(vec![process]),
+            Some(args.into_iter().map(I::into).collect()),
+            f,
+        );
+    }
+
+    /// Creates and starts the container configured by this context with given shell command.
+    ///
+    /// The CNB lifecycle launcher will be implicitly used. Environment variables will be set. Uses
+    /// `/bin/sh` as the shell.
+    ///
+    /// See: [CNB App Developer Guide: Run a multi-process app - User-provided shell process](https://buildpacks.io/docs/app-developer-guide/run-an-app/#user-provided-shell-process)
+    ///
+    /// # Panics
+    /// - When the container could not be created
+    /// - When the container could not be started
+    pub fn start_with_shell_command<F: FnOnce(ContainerContext)>(&self, command: &str, f: F) {
+        self.start_internal(
+            Some(vec![String::from(CNB_LAUNCHER_PATH)]),
+            Some(vec![
+                String::from(SHELL_PATH),
+                String::from("-c"),
+                String::from(command),
+            ]),
+            f,
+        );
+    }
+
+    fn start_internal<F: FnOnce(ContainerContext)>(
+        &self,
+        entrypoint: Option<Vec<String>>,
+        cmd: Option<Vec<String>>,
+        f: F,
+    ) {
         let container_name = util::random_docker_identifier();
 
         self.integration_test_context
@@ -100,6 +191,8 @@ impl<'a> PrepareContainerContext<'a> {
                         Config {
                             image: Some(self.integration_test_context.image_name.clone()),
                             env: Some(self.env.iter().map(|(k, v)| format!("{k}={v}")).collect()),
+                            entrypoint,
+                            cmd,
                             ..container_port_mapping::port_mapped_container_config(
                                 &self.exposed_ports,
                             )
@@ -129,6 +222,71 @@ pub struct ContainerContext<'a> {
 }
 
 impl<'a> ContainerContext<'a> {
+    /// Gets the container's log output until the current point in time.
+    ///
+    /// Note: This method will only return logs until the current point in time. It will not
+    /// block until the container stops. Since the output of this method depends on timing, directly
+    /// asserting on it's contents might result in flaky tests.
+    ///
+    /// See: [`logs_follow`](Self::logs_follow) for a blocking alternative.
+    ///
+    /// # Panics
+    /// - When the log output could not be consumed/read.
+    #[must_use]
+    pub fn logs(&self) -> LogOutput {
+        // Bollard forces us to cast to i64
+        #[allow(clippy::cast_possible_wrap)]
+        self.logs_internal(bollard::container::LogsOptions {
+            stdout: true,
+            stderr: true,
+            since: 0,
+            until: SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("System time is before UNIX epoch")
+                .as_secs() as i64,
+            tail: "all",
+            ..bollard::container::LogsOptions::default()
+        })
+    }
+
+    /// Gets the container's log output until the container stops.
+    ///
+    /// Note: This method will block until the container stops. If the container never stops by
+    /// itself, your test will hang indefinitely. This is common when the container hosts an HTTP
+    /// service.
+    ///
+    /// See: [`logs`](Self::logs) for a non-blocking alternative.
+    ///
+    /// # Panics
+    /// - When the log output could not be consumed/read.
+    #[must_use]
+    pub fn logs_follow(&self) -> LogOutput {
+        self.logs_internal(bollard::container::LogsOptions {
+            follow: true,
+            stdout: true,
+            stderr: true,
+            tail: "all",
+            ..bollard::container::LogsOptions::default()
+        })
+    }
+
+    #[must_use]
+    fn logs_internal<T: Into<String> + Serialize>(
+        &self,
+        logs_options: bollard::container::LogsOptions<T>,
+    ) -> LogOutput {
+        self.integration_test_context
+            .integration_test
+            .tokio_runtime
+            .block_on(log::consume_container_log_output(
+                self.integration_test_context
+                    .integration_test
+                    .docker
+                    .logs(&self.container_name, Some(logs_options)),
+            ))
+            .expect("Could not consume container log output")
+    }
+
     /// # Panics
     #[must_use]
     pub fn address_for_port(&self, port: u16) -> Option<SocketAddr> {
@@ -154,7 +312,7 @@ impl<'a> ContainerContext<'a> {
     }
 
     /// # Panics
-    pub fn shell_exec(&self, command: impl AsRef<str>) -> ContainerExecResult {
+    pub fn shell_exec(&self, command: impl AsRef<str>) -> LogOutput {
         self.integration_test_context
             .integration_test
             .tokio_runtime
@@ -166,12 +324,7 @@ impl<'a> ContainerContext<'a> {
                     .create_exec(
                         &self.container_name,
                         CreateExecOptions {
-                            cmd: Some(vec![
-                                "/cnb/lifecycle/launcher",
-                                "/bin/sh",
-                                "-c",
-                                command.as_ref(),
-                            ]),
+                            cmd: Some(vec![CNB_LAUNCHER_PATH, SHELL_PATH, "-c", command.as_ref()]),
                             attach_stdout: Some(true),
                             ..CreateExecOptions::default()
                         },
@@ -187,54 +340,16 @@ impl<'a> ContainerContext<'a> {
                     .await
                     .unwrap();
 
-                container_exec_result_from_bollard(start_exec_result).await
+                match start_exec_result {
+                    StartExecResults::Attached { output, .. } => {
+                        log::consume_container_log_output(output)
+                            .await
+                            .expect("Could not consume container log output")
+                    }
+                    StartExecResults::Detached => LogOutput::default(),
+                }
             })
     }
-}
-
-pub struct ContainerExecResult {
-    pub stdout_raw: Vec<u8>,
-    pub stderr_raw: Vec<u8>,
-    pub stdout: String,
-    pub stderr: String,
-}
-
-async fn container_exec_result_from_bollard(
-    start_exec_result: StartExecResults,
-) -> ContainerExecResult {
-    let mut container_exec_result = ContainerExecResult {
-        stdout_raw: vec![],
-        stderr_raw: vec![],
-        stdout: "".to_string(),
-        stderr: "".to_string(),
-    };
-
-    match start_exec_result {
-        StartExecResults::Attached { mut output, .. } => {
-            while let Some(Ok(log_output)) = output.next().await {
-                match log_output {
-                    LogOutput::StdErr { message } => container_exec_result
-                        .stderr_raw
-                        .append(&mut message.to_vec()),
-
-                    LogOutput::StdOut { message } => container_exec_result
-                        .stdout_raw
-                        .append(&mut message.to_vec()),
-
-                    x => unimplemented!("message unimplemented: {x}"),
-                }
-            }
-        }
-        StartExecResults::Detached => {}
-    }
-
-    container_exec_result.stdout =
-        String::from_utf8_lossy(&container_exec_result.stdout_raw).to_string();
-
-    container_exec_result.stderr =
-        String::from_utf8_lossy(&container_exec_result.stderr_raw).to_string();
-
-    container_exec_result
 }
 
 impl<'a> Drop for ContainerContext<'a> {
@@ -259,3 +374,6 @@ impl<'a> Drop for ContainerContext<'a> {
             );
     }
 }
+
+const CNB_LAUNCHER_PATH: &str = "/cnb/lifecycle/launcher";
+const SHELL_PATH: &str = "/bin/sh";

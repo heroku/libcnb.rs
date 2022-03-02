@@ -20,3 +20,4 @@ libcnb-package = { version = "0.1.0", path = "../libcnb-package" }
 tempfile = "3.3.0"
 tokio = "1.17.0"
 tokio-stream = "0.1.8"
+serde = "1.0.136"
