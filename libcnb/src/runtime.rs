@@ -11,7 +11,6 @@ use std::env;
 use std::ffi::OsStr;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
-use std::process;
 use std::process::exit;
 
 /// Main entry point for this framework.
@@ -45,9 +44,11 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
         }
     }
 
+    let args: Vec<String> = env::args().collect();
+
     // Using `std::env::args()` instead of `std::env::current_exe()` since the latter resolves
     // symlinks to their target on some platforms, whereas we need the original filename.
-    let current_exe = env::args().next();
+    let current_exe = args.first();
     let current_exe_file_name = current_exe
         .as_ref()
         .map(Path::new)
@@ -56,8 +57,20 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
 
     #[cfg(any(target_family = "unix"))]
     let result = match current_exe_file_name {
-        Some("detect") => libcnb_runtime_detect(buildpack),
-        Some("build") => libcnb_runtime_build(buildpack),
+        Some("detect") => libcnb_runtime_detect(
+            buildpack,
+            DetectArgs::parse(&args).unwrap_or_else(|msg| {
+                eprintln!("{}", msg);
+                exit(1);
+            }),
+        ),
+        Some("build") => libcnb_runtime_build(
+            buildpack,
+            BuildArgs::parse(&args).unwrap_or_else(|msg| {
+                eprintln!("{}", msg);
+                exit(1);
+            }),
+        ),
         other => {
             eprintln!(
                 "Error: Expected the name of this executable to be 'detect' or 'build', but it was '{}'",
@@ -70,14 +83,16 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
         }
     };
 
-    if let Err(lib_cnb_error) = result {
-        exit(buildpack.on_error(lib_cnb_error));
+    match result {
+        Ok(code) => exit(code),
+        Err(lib_cnb_error) => exit(buildpack.on_error(lib_cnb_error)),
     }
 }
 
-fn libcnb_runtime_detect<B: Buildpack>(buildpack: &B) -> crate::Result<(), B::Error> {
-    let args = parse_detect_args_or_exit();
-
+fn libcnb_runtime_detect<B: Buildpack>(
+    buildpack: &B,
+    args: DetectArgs,
+) -> crate::Result<i32, B::Error> {
     let app_dir = env::current_dir().map_err(Error::CannotDetermineAppDirectory)?;
 
     let stack_id: StackId = env::var("CNB_STACK_ID")
@@ -98,21 +113,22 @@ fn libcnb_runtime_detect<B: Buildpack>(buildpack: &B) -> crate::Result<(), B::Er
     };
 
     match buildpack.detect(detect_context)?.0 {
-        InnerDetectResult::Fail => process::exit(100),
+        InnerDetectResult::Fail => Ok(100),
         InnerDetectResult::Pass { build_plan } => {
             if let Some(build_plan) = build_plan {
                 write_toml_file(&build_plan, build_plan_path)
                     .map_err(Error::CannotWriteBuildPlan)?;
             }
 
-            process::exit(0)
+            Ok(0)
         }
     }
 }
 
-fn libcnb_runtime_build<B: Buildpack>(buildpack: &B) -> crate::Result<(), B::Error> {
-    let args = parse_build_args_or_exit();
-
+fn libcnb_runtime_build<B: Buildpack>(
+    buildpack: &B,
+    args: BuildArgs,
+) -> crate::Result<i32, B::Error> {
     let layers_dir = args.layers_dir_path;
 
     let app_dir = env::current_dir().map_err(Error::CannotDetermineAppDirectory)?;
@@ -149,7 +165,7 @@ fn libcnb_runtime_build<B: Buildpack>(buildpack: &B) -> crate::Result<(), B::Err
                     .map_err(Error::CannotWriteStore)?;
             };
 
-            process::exit(0)
+            Ok(0)
         }
     }
 }
@@ -159,38 +175,36 @@ struct DetectArgs {
     pub build_plan_path: PathBuf,
 }
 
+impl DetectArgs {
+    fn parse(args: &[String]) -> Result<DetectArgs, &str> {
+        if let [_, platform_dir_path, build_plan_path] = args {
+            Ok(DetectArgs {
+                platform_dir_path: PathBuf::from(platform_dir_path),
+                build_plan_path: PathBuf::from(build_plan_path),
+            })
+        } else {
+            Err("Usage: detect <platform_dir> <buildplan>\nhttps://github.com/buildpacks/spec/blob/main/buildpack.md#detection")
+        }
+    }
+}
+
 struct BuildArgs {
     pub layers_dir_path: PathBuf,
     pub platform_dir_path: PathBuf,
     pub buildpack_plan_path: PathBuf,
 }
 
-fn parse_detect_args_or_exit() -> DetectArgs {
-    let args: Vec<String> = env::args().collect();
-    if let [_, platform_dir_path, build_plan_path] = args.as_slice() {
-        DetectArgs {
-            platform_dir_path: PathBuf::from(platform_dir_path),
-            build_plan_path: PathBuf::from(build_plan_path),
+impl BuildArgs {
+    fn parse(args: &[String]) -> Result<BuildArgs, &str> {
+        if let [_, layers_dir_path, platform_dir_path, buildpack_plan_path] = args {
+            Ok(BuildArgs {
+                layers_dir_path: PathBuf::from(layers_dir_path),
+                platform_dir_path: PathBuf::from(platform_dir_path),
+                buildpack_plan_path: PathBuf::from(buildpack_plan_path),
+            })
+        } else {
+            Err("Usage: build <layers> <platform> <plan>\nhttps://github.com/buildpacks/spec/blob/main/buildpack.md#build")
         }
-    } else {
-        eprintln!("Usage: detect <platform_dir> <buildplan>");
-        eprintln!("https://github.com/buildpacks/spec/blob/main/buildpack.md#detection");
-        process::exit(1);
-    }
-}
-
-fn parse_build_args_or_exit() -> BuildArgs {
-    let args: Vec<String> = env::args().collect();
-    if let [_, layers_dir_path, platform_dir_path, buildpack_plan_path] = args.as_slice() {
-        BuildArgs {
-            layers_dir_path: PathBuf::from(layers_dir_path),
-            platform_dir_path: PathBuf::from(platform_dir_path),
-            buildpack_plan_path: PathBuf::from(buildpack_plan_path),
-        }
-    } else {
-        eprintln!("Usage: build <layers> <platform> <plan>");
-        eprintln!("https://github.com/buildpacks/spec/blob/main/buildpack.md#build");
-        process::exit(1);
     }
 }
 
