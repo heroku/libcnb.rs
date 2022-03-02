@@ -96,7 +96,7 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
     }
 }
 
-fn libcnb_runtime_detect<B: Buildpack>(
+pub fn libcnb_runtime_detect<B: Buildpack>(
     buildpack: &B,
     args: DetectArgs,
 ) -> crate::Result<i32, B::Error> {
@@ -132,7 +132,7 @@ fn libcnb_runtime_detect<B: Buildpack>(
     }
 }
 
-fn libcnb_runtime_build<B: Buildpack>(
+pub fn libcnb_runtime_build<B: Buildpack>(
     buildpack: &B,
     args: BuildArgs,
 ) -> crate::Result<i32, B::Error> {
@@ -177,13 +177,13 @@ fn libcnb_runtime_build<B: Buildpack>(
     }
 }
 
-struct DetectArgs {
+pub struct DetectArgs {
     pub platform_dir_path: PathBuf,
     pub build_plan_path: PathBuf,
 }
 
 impl DetectArgs {
-    fn parse(args: &[String]) -> Result<DetectArgs, DetectArgsParseError> {
+    pub fn parse(args: &[String]) -> Result<DetectArgs, DetectArgsParseError> {
         if let [_, platform_dir_path, build_plan_path] = args {
             Ok(DetectArgs {
                 platform_dir_path: PathBuf::from(platform_dir_path),
@@ -196,18 +196,18 @@ impl DetectArgs {
 }
 
 #[derive(Debug)]
-enum DetectArgsParseError {
+pub enum DetectArgsParseError {
     InvalidArguments,
 }
 
-struct BuildArgs {
+pub struct BuildArgs {
     pub layers_dir_path: PathBuf,
     pub platform_dir_path: PathBuf,
     pub buildpack_plan_path: PathBuf,
 }
 
 impl BuildArgs {
-    fn parse(args: &[String]) -> Result<BuildArgs, BuildArgsParseError> {
+    pub fn parse(args: &[String]) -> Result<BuildArgs, BuildArgsParseError> {
         if let [_, layers_dir_path, platform_dir_path, buildpack_plan_path] = args {
             Ok(BuildArgs {
                 layers_dir_path: PathBuf::from(layers_dir_path),
@@ -221,7 +221,7 @@ impl BuildArgs {
 }
 
 #[derive(Debug)]
-enum BuildArgsParseError {
+pub enum BuildArgsParseError {
     InvalidArguments,
 }
 
