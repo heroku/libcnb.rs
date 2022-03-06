@@ -60,12 +60,6 @@ jobs:
         uses: Swatinem/rust-cache@v1.3.0
       - name: Install Pack CLI
         uses: buildpacks/github-actions/setup-pack@v4.6.0
-      - name: Configure Pack CLI
-        # Default to a small non-libc image for faster CI + to validate the static musl cross-compilation.
-        # Adjust pull-policy to prevent redundant image-pulling, which slows CI and risks hitting registry rate limits.
-        run: |
-          pack config default-builder cnbs/sample-builder:alpine
-          pack config pull-policy if-not-present
       - name: Run integration tests
         # Runs any tests annotated with the `#[ignore]` attribute (which in this repo, are all of the integration tests).
         run: cargo test -- --ignored
@@ -73,4 +67,5 @@ jobs:
         run: cargo run --package libcnb-cargo -- libcnb package
         working-directory: ./examples/basics
       - name: Pack build using examples/basics
-        run: pack build example-basics --buildpack target/buildpack/debug/libcnb-examples_basics --path examples/
+        # Uses a non-libc image to validate the static musl cross-compilation.
+        run: pack build example-basics --builder cnbs/sample-builder:alpine --buildpack target/buildpack/debug/libcnb-examples_basics --path examples/

@@ -76,6 +76,9 @@ impl From<PackBuildCommand> for Command {
             pack_build_command.builder,
             String::from("--path"),
             pack_build_command.path.to_string_lossy().to_string(),
+            // Adjust pull-policy to prevent redundant image-pulling, which slows CI and risks hitting registry rate limits.
+            String::from("--pull-policy"),
+            String::from("if-not-present"),
         ];
 
         for buildpack in pack_build_command.buildpacks {
@@ -141,6 +144,8 @@ mod tests {
                 "builder:20",
                 "--path",
                 "/tmp/foo/bar",
+                "--pull-policy",
+                "if-not-present",
                 "--buildpack",
                 "libcnb/buildpack1",
                 "--buildpack",
