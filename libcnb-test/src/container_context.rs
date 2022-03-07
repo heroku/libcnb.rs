@@ -226,7 +226,7 @@ impl<'a> ContainerContext<'a> {
     ///
     /// Note: This method will only return logs until the current point in time. It will not
     /// block until the container stops. Since the output of this method depends on timing, directly
-    /// asserting on it's contents might result in flaky tests.
+    /// asserting on its contents might result in flaky tests.
     ///
     /// See: [`logs_follow`](Self::logs_follow) for a blocking alternative.
     ///
