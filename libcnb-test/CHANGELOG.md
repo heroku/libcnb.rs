@@ -7,6 +7,9 @@
 - Added the ability to set environment variables for the container via `PrepareContainerContext::env` and `PrepareContainerContext::envs`. ([#346](https://github.com/Malax/libcnb.rs/pull/346))
 - Switch from `libcnb-cargo` to the new `libcnb-package` crate for buildpack packaging, which improves compile times due to it not including CLI-related dependencies ([#362](https://github.com/Malax/libcnb.rs/pull/362)).
 - Use `--pull-policy if-not-present` when running `pack build` ([#373](https://github.com/Malax/libcnb.rs/pull/373)).
+- Allow starting a container without using the default process type. Removed `PrepareContainerContext::start`, added `PrepareContainerContext::start_with_default_process`, `PrepareContainerContext::start_with_default_process_args`, `PrepareContainerContext::start_with_process`, `PrepareContainerContext::start_with_process_args`, `PrepareContainerContext::start_with_shell_command` ([#366](https://github.com/Malax/libcnb.rs/pull/366))
+- Add `ContainerContext::logs` and `ContainerContext::logs_follow` to access the logs of the container. Useful when used in conjunction with the new `PrepareContainerContext::start_with_shell_command` method to get the shell command output. ([#366](https://github.com/Malax/libcnb.rs/pull/366))
+- Replaced `container_context::ContainerExecResult` with `log::LogOutput` which is now also returned by `ContainerContext::logs` and `ContainerContext::logs_follow`. ([#366](https://github.com/Malax/libcnb.rs/pull/366))
 
 ## [0.2.0] 2022-02-28
 

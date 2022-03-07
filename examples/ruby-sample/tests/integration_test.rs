@@ -28,7 +28,7 @@ fn basic() {
                 .prepare_container()
                 .env("PORT", TEST_PORT.to_string())
                 .expose_port(TEST_PORT)
-                .start(|container| {
+                .start_with_default_process(|container| {
                     std::thread::sleep(Duration::from_secs(1));
 
                     assert_eq!(

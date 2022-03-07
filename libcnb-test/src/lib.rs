@@ -10,13 +10,12 @@ mod app;
 mod build;
 mod container_context;
 mod container_port_mapping;
+mod log;
 mod macros;
 mod pack;
 mod util;
 
-pub use crate::container_context::{
-    ContainerContext, ContainerExecResult, PrepareContainerContext,
-};
+pub use crate::container_context::{ContainerContext, PrepareContainerContext};
 use crate::pack::{PackBuildCommand, PullPolicy};
 use bollard::image::RemoveImageOptions;
 use bollard::Docker;
@@ -50,7 +49,7 @@ use std::process::{Command, Stdio};
 ///         assert_contains!(context.pack_stdout, "---> Installing Maven");
 ///         assert_contains!(context.pack_stdout, "---> Running mvn package");
 ///
-///         context.prepare_container().expose_port(12345).start(|container| {
+///         context.prepare_container().expose_port(12345).start_with_default_process(|container| {
 ///             assert_eq!(
 ///                 call_test_fixture_service(
 ///                     container.address_for_port(12345).unwrap(),
@@ -309,7 +308,8 @@ impl<'a> IntegrationTestContext<'a> {
     ///
     /// This will not create nor run the container immediately. Use the returned
     /// `PrepareContainerContext` to configure the container, then call
-    /// [`start`](PrepareContainerContext::start) on it to actually create and start the container.
+    /// [`start_with_default_process`](PrepareContainerContext::start_with_default_process) on it
+    /// to actually create and start the container.
     ///
     /// # Example:
     ///
@@ -317,7 +317,7 @@ impl<'a> IntegrationTestContext<'a> {
     /// use libcnb_test::IntegrationTest;
     ///
     /// IntegrationTest::new("heroku/buildpacks:20", "test-fixtures/empty-app").run_test(|context| {
-    ///     context.prepare_container().start(|container| {
+    ///     context.prepare_container().start_with_default_process(|container| {
     ///         // ...
     ///     });
     /// });
