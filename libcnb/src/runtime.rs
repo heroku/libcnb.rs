@@ -96,6 +96,10 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
     }
 }
 
+/// Detect entry point for this framework.
+///
+/// Exposed only to allow for advanced use-cases where detect is programmatically invoked.
+#[doc(hidden)]
 pub fn libcnb_runtime_detect<B: Buildpack>(
     buildpack: &B,
     args: DetectArgs,
@@ -132,6 +136,10 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
     }
 }
 
+/// Build entry point for this framework.
+///
+/// Exposed only to allow for advanced use-cases where detect is programmatically invoked.
+#[doc(hidden)]
 pub fn libcnb_runtime_build<B: Buildpack>(
     buildpack: &B,
     args: BuildArgs,
@@ -177,6 +185,7 @@ pub fn libcnb_runtime_build<B: Buildpack>(
     }
 }
 
+#[doc(hidden)]
 pub struct DetectArgs {
     pub platform_dir_path: PathBuf,
     pub build_plan_path: PathBuf,
@@ -196,10 +205,12 @@ impl DetectArgs {
 }
 
 #[derive(Debug)]
+#[doc(hidden)]
 pub enum DetectArgsParseError {
     InvalidArguments,
 }
 
+#[doc(hidden)]
 pub struct BuildArgs {
     pub layers_dir_path: PathBuf,
     pub platform_dir_path: PathBuf,
@@ -221,6 +232,7 @@ impl BuildArgs {
 }
 
 #[derive(Debug)]
+#[doc(hidden)]
 pub enum BuildArgsParseError {
     InvalidArguments,
 }
