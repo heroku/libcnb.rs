@@ -59,16 +59,24 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
     let result = match current_exe_file_name {
         Some("detect") => libcnb_runtime_detect(
             buildpack,
-            DetectArgs::parse(&args).unwrap_or_else(|msg| {
-                eprintln!("{}", msg);
-                exit(1);
+            DetectArgs::parse(&args).unwrap_or_else(|parse_error| match parse_error {
+                DetectArgsParseError::InvalidArguments => {
+                    eprintln!("Usage: detect <platform_dir> <buildplan>");
+                    eprintln!(
+                        "https://github.com/buildpacks/spec/blob/main/buildpack.md#detection"
+                    );
+                    exit(1);
+                }
             }),
         ),
         Some("build") => libcnb_runtime_build(
             buildpack,
-            BuildArgs::parse(&args).unwrap_or_else(|msg| {
-                eprintln!("{}", msg);
-                exit(1);
+            BuildArgs::parse(&args).unwrap_or_else(|parse_error| match parse_error {
+                BuildArgsParseError::InvalidArguments => {
+                    eprintln!("Usage: build <layers> <platform> <plan>");
+                    eprintln!("https://github.com/buildpacks/spec/blob/main/buildpack.md#build");
+                    exit(1);
+                }
             }),
         ),
         other => {
@@ -176,16 +184,21 @@ struct DetectArgs {
 }
 
 impl DetectArgs {
-    fn parse(args: &[String]) -> Result<DetectArgs, &str> {
+    fn parse(args: &[String]) -> Result<DetectArgs, DetectArgsParseError> {
         if let [_, platform_dir_path, build_plan_path] = args {
             Ok(DetectArgs {
                 platform_dir_path: PathBuf::from(platform_dir_path),
                 build_plan_path: PathBuf::from(build_plan_path),
             })
         } else {
-            Err("Usage: detect <platform_dir> <buildplan>\nhttps://github.com/buildpacks/spec/blob/main/buildpack.md#detection")
+            Err(DetectArgsParseError::InvalidArguments)
         }
     }
+}
+
+#[derive(Debug)]
+enum DetectArgsParseError {
+    InvalidArguments,
 }
 
 struct BuildArgs {
@@ -195,7 +208,7 @@ struct BuildArgs {
 }
 
 impl BuildArgs {
-    fn parse(args: &[String]) -> Result<BuildArgs, &str> {
+    fn parse(args: &[String]) -> Result<BuildArgs, BuildArgsParseError> {
         if let [_, layers_dir_path, platform_dir_path, buildpack_plan_path] = args {
             Ok(BuildArgs {
                 layers_dir_path: PathBuf::from(layers_dir_path),
@@ -203,9 +216,14 @@ impl BuildArgs {
                 buildpack_plan_path: PathBuf::from(buildpack_plan_path),
             })
         } else {
-            Err("Usage: build <layers> <platform> <plan>\nhttps://github.com/buildpacks/spec/blob/main/buildpack.md#build")
+            Err(BuildArgsParseError::InvalidArguments)
         }
     }
+}
+
+#[derive(Debug)]
+enum BuildArgsParseError {
+    InvalidArguments,
 }
 
 fn read_buildpack_dir<E: Debug>() -> crate::Result<PathBuf, E> {
