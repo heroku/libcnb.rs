@@ -98,6 +98,9 @@ impl IntegrationTest {
             Ok(docker_host)
                 if docker_host.starts_with("tcp://") || docker_host.starts_with("https://") =>
             {
+                #[cfg(not(feature = "remote-docker"))]
+                panic!("Cannot connect to DOCKER_HOST '{docker_host}' since it requires TLS. Please use a local Docker daemon instead (recommended), or else enable the experimental `remote-docker` feature.");
+                #[cfg(feature = "remote-docker")]
                 Docker::connect_with_ssl_defaults()
             }
             Ok(docker_host) => panic!("Cannot connect to unsupported DOCKER_HOST '{docker_host}'"),

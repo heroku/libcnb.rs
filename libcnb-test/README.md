@@ -46,3 +46,9 @@ fn call_test_fixture_service(addr: std::net::SocketAddr, payload: &str) -> Resul
    unimplemented!()
 }
 ```
+
+## Known issues
+
+- Only local Docker daemons are fully supported. If using Circle CI you must use the
+  [`machine` executor](https://circleci.com/docs/2.0/executor-types/#using-machine) rather
+  than the [remote docker](https://circleci.com/docs/2.0/building-docker-images/) feature.
