@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Move the packaging library parts of `libcnb-cargo` to a new `libcnb-package` crate. Consumers of the library should substitute all `libcnb-cargo` references with `libcnb-package` for equivalent functionality. ([#362](https://github.com/Malax/libcnb.rs/pull/362))
+
 ## [0.3.0] 2022-02-28
 
 - Update cross-compile assistance on macOS to use https://github.com/messense/homebrew-macos-cross-toolchains instead of https://github.com/FiloSottile/homebrew-musl-cross. Support for the latter has not been removed, existing setups continue to work as before. ([#312](https://github.com/Malax/libcnb.rs/pull/312))

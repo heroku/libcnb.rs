@@ -3,9 +3,10 @@ members = [
     "libcnb",
     "libcnb-cargo",
     "libcnb-data",
+    "libcnb-package",
     "libcnb-proc-macros",
     "libcnb-test",
     "examples/basics",
     "examples/execd",
-    "examples/ruby-sample"
+    "examples/ruby-sample",
 ]

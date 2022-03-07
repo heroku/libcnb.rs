@@ -1,5 +1,6 @@
 // https://rust-lang.github.io/rust-clippy/stable/index.html
 #![warn(clippy::pedantic)]
+#![warn(unused_crate_dependencies)]
 // This lint is too noisy and enforces a style that reduces readability in many cases.
 #![allow(clippy::module_name_repetitions)]
 
@@ -8,9 +9,9 @@ mod cli;
 use crate::cli::{Cli, LibcnbSubcommand, PackageArgs};
 use cargo_metadata::MetadataCommand;
 use clap::Parser;
-use libcnb_cargo::build::{build_buildpack_binaries, BuildBinariesError, BuildError};
-use libcnb_cargo::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
-use libcnb_cargo::{
+use libcnb_package::build::{build_buildpack_binaries, BuildBinariesError, BuildError};
+use libcnb_package::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
+use libcnb_package::{
     assemble_buildpack_directory, default_buildpack_directory_name, read_buildpack_data,
     BuildpackDataError, CargoProfile,
 };

@@ -1,0 +1,18 @@
+[package]
+name = "libcnb-package"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.58"
+license = "BSD-3-Clause"
+description = "Library for cross-compiling and packaging buildpacks written with libcnb.rs"
+keywords = ["buildpacks", "CNB"]
+repository = "https://github.com/Malax/libcnb.rs/tree/main/libcnb-package"
+documentation = "https://docs.rs/libcnb-package"
+readme = "README.md"
+include = ["src/**/*", "../LICENSE", "README.md"]
+
+[dependencies]
+cargo_metadata = "0.14.2"
+libcnb-data = { version = "0.5.0", path = "../libcnb-data" }
+toml = "0.5.8"
+which = "4.2.4"
