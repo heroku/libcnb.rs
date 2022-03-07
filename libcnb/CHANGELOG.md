@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Allow compilation of libcnb.rs buildpacks on Windows. Please note that this does not imply Windows container support, it's meant to allow running unit tests without cross-compiling. ([#368](https://github.com/Malax/libcnb.rs/pull/368))
+
 ## [0.6.0] 2022-02-28
 
 - Add `#[must_use]` to `DetectResult`, `DetectResultBuilder`, `PassDetectResultBuilder`, `FailDetectResultBuilder`, `BuildResult` and `BuildResultBuilder` ([#288](https://github.com/Malax/libcnb.rs/pull/288)).
