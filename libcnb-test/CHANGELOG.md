@@ -6,6 +6,7 @@
 - Replaced `IntegrationTestContext::start_container` with `IntegrationTestContext::prepare_container`, allowing users to configure the container before starting it. Ports can now be exposed via `PrepareContainerContext::expose_port`. ([#346](https://github.com/Malax/libcnb.rs/pull/346))
 - Added the ability to set environment variables for the container via `PrepareContainerContext::env` and `PrepareContainerContext::envs`. ([#346](https://github.com/Malax/libcnb.rs/pull/346))
 - Switch from `libcnb-cargo` to the new `libcnb-package` crate for buildpack packaging, which improves compile times due to it not including CLI-related dependencies ([#362](https://github.com/Malax/libcnb.rs/pull/362)).
+- Use `--pull-policy if-not-present` when running `pack build` ([#373](https://github.com/Malax/libcnb.rs/pull/373)).
 
 ## [0.2.0] 2022-02-28
 

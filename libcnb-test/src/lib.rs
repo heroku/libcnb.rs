@@ -17,7 +17,7 @@ mod util;
 pub use crate::container_context::{
     ContainerContext, ContainerExecResult, PrepareContainerContext,
 };
-use crate::pack::PackBuildCommand;
+use crate::pack::{PackBuildCommand, PullPolicy};
 use bollard::image::RemoveImageOptions;
 use bollard::Docker;
 use std::collections::HashMap;
@@ -233,8 +233,13 @@ impl IntegrationTest {
 
         let image_name = util::random_docker_identifier();
 
-        let mut pack_command =
-            PackBuildCommand::new(&self.builder_name, temp_app_dir.path(), &image_name);
+        let mut pack_command = PackBuildCommand::new(
+            &self.builder_name,
+            temp_app_dir.path(),
+            &image_name,
+            // Prevent redundant image-pulling, which slows tests and risks hitting registry rate limits.
+            PullPolicy::IfNotPresent,
+        );
 
         self.env.iter().for_each(|(key, value)| {
             pack_command.env(key, value);
