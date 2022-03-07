@@ -312,6 +312,8 @@ impl<'a> ContainerContext<'a> {
             })
     }
 
+    /// Executes a shell command inside an already running container.
+    ///
     /// # Panics
     pub fn shell_exec(&self, command: impl AsRef<str>) -> LogOutput {
         self.integration_test_context
