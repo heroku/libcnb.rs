@@ -12,7 +12,7 @@ readme = "README.md"
 include = ["src/**/*", "../LICENSE", "README.md"]
 
 [dependencies]
-bollard = { version = "0.11.1", features = ["ssl"] }
+bollard = "0.11.1"
 cargo_metadata = "0.14.2"
 fastrand = "1.7.0"
 fs_extra = "1.2.0"
@@ -21,3 +21,9 @@ serde = "1.0.136"
 tempfile = "3.3.0"
 tokio = "1.17.0"
 tokio-stream = "0.1.8"
+
+[features]
+# Enables experimental support for connecting to a remote Docker daemon.
+# Disabled by default since support is only partly implemented, and also
+# results in many more dependencies due to requiring TLS.
+remote-docker = ["bollard/ssl"]

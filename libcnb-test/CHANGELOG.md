@@ -10,6 +10,7 @@
 - Allow starting a container without using the default process type. Removed `PrepareContainerContext::start`, added `PrepareContainerContext::start_with_default_process`, `PrepareContainerContext::start_with_default_process_args`, `PrepareContainerContext::start_with_process`, `PrepareContainerContext::start_with_process_args`, `PrepareContainerContext::start_with_shell_command` ([#366](https://github.com/Malax/libcnb.rs/pull/366))
 - Add `ContainerContext::logs_now` and `ContainerContext::logs_wait` to access the logs of the container. Useful when used in conjunction with the new `PrepareContainerContext::start_with_shell_command` method to get the shell command output. ([#366](https://github.com/Malax/libcnb.rs/pull/366))
 - Replaced `container_context::ContainerExecResult` with `log::LogOutput` which is now also returned by `ContainerContext::logs` and `ContainerContext::logs_follow`. ([#366](https://github.com/Malax/libcnb.rs/pull/366))
+- Move support for connecting to the Docker daemon over TLS behind a new `remote-docker` feature flag, since remote Docker support is not fully implemented and pulls in many additional dependencies ([#376](https://github.com/Malax/libcnb.rs/pull/376)).
 
 ## [0.2.0] 2022-02-28
 
