@@ -93,7 +93,7 @@ impl<'a> PrepareContainerContext<'a> {
     }
 
     /// Creates and starts the container configured by this context using the image's default
-    /// CNB process.
+    /// CNB process and given arguments.
     ///
     /// See: [CNB App Developer Guide: Run a multi-process app - Default process type with additional arguments](https://buildpacks.io/docs/app-developer-guide/run-an-app/#default-process-type-with-additional-arguments)
     ///
@@ -123,7 +123,8 @@ impl<'a> PrepareContainerContext<'a> {
         self.start_internal(Some(vec![process]), None, f);
     }
 
-    /// Creates and starts the container configured by this context using the given CNB process.
+    /// Creates and starts the container configured by this context using the given CNB process
+    /// and arguments.
     ///
     /// See: [CNB App Developer Guide: Run a multi-process app - Non-default process-type with additional arguments](https://buildpacks.io/docs/app-developer-guide/run-an-app/#non-default-process-type-with-additional-arguments)
     ///
