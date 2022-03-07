@@ -229,12 +229,12 @@ impl<'a> ContainerContext<'a> {
     /// block until the container stops. Since the output of this method depends on timing, directly
     /// asserting on its contents might result in flaky tests.
     ///
-    /// See: [`logs_follow`](Self::logs_follow) for a blocking alternative.
+    /// See: [`logs_wait`](Self::logs_wait) for a blocking alternative.
     ///
     /// # Panics
     /// - When the log output could not be consumed/read.
     #[must_use]
-    pub fn logs(&self) -> LogOutput {
+    pub fn logs_now(&self) -> LogOutput {
         // Bollard forces us to cast to i64
         #[allow(clippy::cast_possible_wrap)]
         self.logs_internal(bollard::container::LogsOptions {
@@ -256,12 +256,12 @@ impl<'a> ContainerContext<'a> {
     /// itself, your test will hang indefinitely. This is common when the container hosts an HTTP
     /// service.
     ///
-    /// See: [`logs`](Self::logs) for a non-blocking alternative.
+    /// See: [`logs_now`](Self::logs_now) for a non-blocking alternative.
     ///
     /// # Panics
     /// - When the log output could not be consumed/read.
     #[must_use]
-    pub fn logs_follow(&self) -> LogOutput {
+    pub fn logs_wait(&self) -> LogOutput {
         self.logs_internal(bollard::container::LogsOptions {
             follow: true,
             stdout: true,

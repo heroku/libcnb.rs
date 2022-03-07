@@ -16,7 +16,7 @@ fn basic() {
         context
             .prepare_container()
             .start_with_shell_command("env", |container| {
-                let env_stdout = container.logs_follow().stdout;
+                let env_stdout = container.logs_wait().stdout;
 
                 assert_contains!(env_stdout, "ROLL_1D6=");
                 assert_contains!(env_stdout, "ROLL_4D6=");
