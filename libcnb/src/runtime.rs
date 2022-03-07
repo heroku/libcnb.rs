@@ -54,7 +54,6 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
         .and_then(Path::file_name)
         .and_then(OsStr::to_str);
 
-    #[cfg(any(target_family = "unix"))]
     let result = match current_exe_file_name {
         Some("detect") => libcnb_runtime_detect(buildpack),
         Some("build") => libcnb_runtime_build(buildpack),
