@@ -37,7 +37,7 @@ pub use error::*;
 #[doc(inline)]
 pub use libcnb_data as data;
 pub use platform::*;
-pub use runtime::libcnb_runtime;
+pub use runtime::*;
 pub use toml_file::*;
 
 const LIBCNB_SUPPORTED_BUILDPACK_API: data::buildpack::BuildpackApi =
