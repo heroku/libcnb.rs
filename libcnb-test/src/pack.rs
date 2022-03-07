@@ -7,10 +7,11 @@ use tempfile::TempDir;
 #[derive(Clone, Debug)]
 pub(crate) struct PackBuildCommand {
     builder: String,
-    path: PathBuf,
-    image_name: String,
     buildpacks: Vec<BuildpackReference>,
     env: BTreeMap<String, String>,
+    image_name: String,
+    path: PathBuf,
+    pull_policy: PullPolicy,
     verbose: bool,
 }
 
@@ -38,18 +39,32 @@ impl From<String> for BuildpackReference {
     }
 }
 
+#[derive(Clone, Debug)]
+/// Controls whether Pack should pull images.
+#[allow(dead_code)]
+pub(crate) enum PullPolicy {
+    /// Always pull images.
+    Always,
+    /// Use local images if they are already present, rather than pulling updated images.
+    IfNotPresent,
+    /// Never pull images. If the required images are not already available locally the pack command will fail.
+    Never,
+}
+
 impl PackBuildCommand {
     pub fn new(
         builder: impl Into<String>,
         path: impl Into<PathBuf>,
         image_name: impl Into<String>,
+        pull_policy: PullPolicy,
     ) -> PackBuildCommand {
         PackBuildCommand {
             builder: builder.into(),
-            path: path.into(),
-            image_name: image_name.into(),
-            buildpacks: vec![],
+            buildpacks: Vec::new(),
             env: BTreeMap::new(),
+            image_name: image_name.into(),
+            path: path.into(),
+            pull_policy,
             verbose: false,
         }
     }
@@ -76,9 +91,12 @@ impl From<PackBuildCommand> for Command {
             pack_build_command.builder,
             String::from("--path"),
             pack_build_command.path.to_string_lossy().to_string(),
-            // Adjust pull-policy to prevent redundant image-pulling, which slows CI and risks hitting registry rate limits.
             String::from("--pull-policy"),
-            String::from("if-not-present"),
+            match pack_build_command.pull_policy {
+                PullPolicy::Always => "always".to_string(),
+                PullPolicy::IfNotPresent => "if-not-present".to_string(),
+                PullPolicy::Never => "never".to_string(),
+            },
         ];
 
         for buildpack in pack_build_command.buildpacks {
@@ -118,8 +136,6 @@ mod tests {
     fn from_pack_build_command_to_command() {
         let mut input = PackBuildCommand {
             builder: String::from("builder:20"),
-            path: PathBuf::from("/tmp/foo/bar"),
-            image_name: String::from("my-image"),
             buildpacks: vec![
                 BuildpackReference::Id(String::from("libcnb/buildpack1")),
                 BuildpackReference::Path(PathBuf::from("/tmp/buildpack2")),
@@ -128,6 +144,9 @@ mod tests {
                 (String::from("ENV_FOO"), String::from("FOO_VALUE")),
                 (String::from("ENV_BAR"), String::from("WHITESPACE VALUE")),
             ]),
+            image_name: String::from("my-image"),
+            path: PathBuf::from("/tmp/foo/bar"),
+            pull_policy: PullPolicy::IfNotPresent,
             verbose: true,
         };
 
