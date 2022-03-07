@@ -80,7 +80,7 @@ impl<'a> PrepareContainerContext<'a> {
         self
     }
 
-    /// Creates and starts the container configured by this context with the image's default
+    /// Creates and starts the container configured by this context using the image's default
     /// CNB process.
     ///
     /// See: [CNB App Developer Guide: Run a multi-process app - Default process type](https://buildpacks.io/docs/app-developer-guide/run-an-app/#default-process-type)
@@ -92,7 +92,7 @@ impl<'a> PrepareContainerContext<'a> {
         self.start_internal(None, None, f);
     }
 
-    /// Creates and starts the container configured by this context with the image's default
+    /// Creates and starts the container configured by this context using the image's default
     /// CNB process.
     ///
     /// See: [CNB App Developer Guide: Run a multi-process app - Default process type with additional arguments](https://buildpacks.io/docs/app-developer-guide/run-an-app/#default-process-type-with-additional-arguments)
@@ -112,7 +112,7 @@ impl<'a> PrepareContainerContext<'a> {
         self.start_internal(None, Some(args.into_iter().map(I::into).collect()), f);
     }
 
-    /// Creates and starts the container configured by this context with a given CNB process.
+    /// Creates and starts the container configured by this context using the given CNB process.
     ///
     /// See: [CNB App Developer Guide: Run a multi-process app - Non-default process-type](https://buildpacks.io/docs/app-developer-guide/run-an-app/#non-default-process-type)
     ///
@@ -123,7 +123,7 @@ impl<'a> PrepareContainerContext<'a> {
         self.start_internal(Some(vec![process]), None, f);
     }
 
-    /// Creates and starts the container configured by this context with a given CNB process.
+    /// Creates and starts the container configured by this context using the given CNB process.
     ///
     /// See: [CNB App Developer Guide: Run a multi-process app - Non-default process-type with additional arguments](https://buildpacks.io/docs/app-developer-guide/run-an-app/#non-default-process-type-with-additional-arguments)
     ///
@@ -147,7 +147,7 @@ impl<'a> PrepareContainerContext<'a> {
         );
     }
 
-    /// Creates and starts the container configured by this context with given shell command.
+    /// Creates and starts the container configured by this context using the given shell command.
     ///
     /// The CNB lifecycle launcher will be implicitly used. Environment variables will be set. Uses
     /// `/bin/sh` as the shell.
