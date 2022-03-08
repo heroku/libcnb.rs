@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.3.0] 2022-03-08
+
 - Add `IntegrationTest::env` and `IntegrationTest::envs`, allowing users to set environment variables for the build process. ([#346](https://github.com/Malax/libcnb.rs/pull/346))
 - Replaced `IntegrationTestContext::start_container` with `IntegrationTestContext::prepare_container`, allowing users to configure the container before starting it. Ports can now be exposed via `PrepareContainerContext::expose_port`. ([#346](https://github.com/Malax/libcnb.rs/pull/346))
 - Added the ability to set environment variables for the container via `PrepareContainerContext::env` and `PrepareContainerContext::envs`. ([#346](https://github.com/Malax/libcnb.rs/pull/346))
