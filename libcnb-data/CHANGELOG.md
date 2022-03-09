@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+- Make `BuildPlan`'s `or` field public. ([#381](https://github.com/Malax/libcnb.rs/pull/381))
 
 ## [0.5.0] 2022-02-28
 
