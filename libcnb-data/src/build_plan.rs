@@ -10,7 +10,7 @@ pub struct BuildPlan {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub requires: Vec<Require>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    or: Vec<Or>,
+    pub or: Vec<Or>,
 }
 
 impl BuildPlan {
