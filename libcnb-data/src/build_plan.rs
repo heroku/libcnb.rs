@@ -105,6 +105,19 @@ impl Require {
             metadata: Table::new(),
         }
     }
+
+    /// Convert a Serializable struct and store it as a toml Table for metadata
+    pub fn metadata<T: Serialize>(&mut self, metadata: T) -> Result<(), toml::ser::Error> {
+        if let toml::Value::Table(table) = toml::Value::try_from(metadata)? {
+            self.metadata = table;
+
+            Ok(())
+        } else {
+            Err(toml::ser::Error::Custom(
+                "Could not be serialized as a map.".to_string(),
+            ))
+        }
+    }
 }
 
 #[cfg(test)]
@@ -118,5 +131,24 @@ mod tests {
         build_plan.requires.push(Require::new("rust"));
 
         assert!(toml::to_string(&build_plan).is_ok());
+    }
+
+    #[test]
+    fn it_serializes_metadata() {
+        #[derive(Serialize)]
+        struct Metadata {
+            foo: String,
+        }
+
+        let mut require = Require::new("foo");
+        let metadata = Metadata {
+            foo: "bar".to_string(),
+        };
+        let result = require.metadata(metadata);
+        assert!(result.is_ok());
+        assert_eq!(
+            require.metadata.get("foo"),
+            Some(&toml::Value::String("bar".to_string()))
+        )
     }
 }
