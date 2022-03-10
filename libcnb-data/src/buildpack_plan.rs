@@ -67,21 +67,26 @@ name = "rust"
 
     #[test]
     fn it_deserializes_metadata() {
-        #[derive(Deserialize)]
+        #[derive(Deserialize, Eq, PartialEq, Debug)]
         struct Metadata {
             foo: String,
         }
 
         let mut metadata = Table::new();
-        metadata.insert("foo".to_string(), toml::Value::String("bar".to_string()));
+        metadata.insert(
+            String::from("foo"),
+            toml::Value::String(String::from("bar")),
+        );
         let entry = Entry {
-            name: "foo".to_string(),
+            name: String::from("foo"),
             metadata,
         };
 
-        let result = entry.metadata::<Metadata>();
-        assert!(result.is_ok());
-        let metadata = result.unwrap();
-        assert_eq!(metadata.foo, "bar".to_string());
+        assert_eq!(
+            entry.metadata(),
+            Ok(Metadata {
+                foo: String::from("bar"),
+            })
+        );
     }
 }

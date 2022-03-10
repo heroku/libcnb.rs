@@ -37,8 +37,8 @@ impl BuildPlanBuilder {
         self
     }
 
-    pub fn requires(mut self, name: impl AsRef<str>) -> Self {
-        self.current_requires.push(Require::new(name.as_ref()));
+    pub fn requires(mut self, require: impl Into<Require>) -> Self {
+        self.current_requires.push(require.into());
         self
     }
 
@@ -123,10 +123,22 @@ impl Require {
 
             Ok(())
         } else {
-            Err(toml::ser::Error::Custom(
-                "Could not be serialized as a TOML Table.".to_string(),
-            ))
+            Err(toml::ser::Error::Custom(String::from(
+                "Could not be serialized as a TOML Table.",
+            )))
         }
+    }
+}
+
+impl From<String> for Require {
+    fn from(s: String) -> Require {
+        Require::new(s)
+    }
+}
+
+impl From<&str> for Require {
+    fn from(s: &str) -> Require {
+        Require::new(s)
     }
 }
 
@@ -152,13 +164,13 @@ mod tests {
 
         let mut require = Require::new("foo");
         let metadata = Metadata {
-            foo: "bar".to_string(),
+            foo: String::from("bar"),
         };
         let result = require.metadata(metadata);
         assert!(result.is_ok());
         assert_eq!(
             require.metadata.get("foo"),
-            Some(&toml::Value::String("bar".to_string()))
+            Some(&toml::Value::String(String::from("bar")))
         );
     }
 }
