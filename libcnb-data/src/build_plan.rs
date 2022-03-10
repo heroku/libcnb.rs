@@ -130,16 +130,14 @@ impl Require {
     }
 }
 
-impl From<String> for Require {
-    fn from(s: String) -> Require {
-        Require::new(s)
+impl<S: Into<String>> From<S> for Require {
+    fn from(s: S) -> Self {
+        Require {
+            name: s.into(),
+            metadata: Default::default(),
+        }
     }
 }
-
-impl From<&str> for Require {
-    fn from(s: &str) -> Require {
-        Require::new(s)
-    }
 }
 
 #[cfg(test)]
