@@ -42,12 +42,6 @@ impl BuildPlanBuilder {
         self
     }
 
-    /// Add Require to the `BuildPlan`
-    pub fn requires_with_struct(mut self, require: Require) -> Self {
-        self.current_requires.push(require);
-        self
-    }
-
     pub fn or(mut self) -> Self {
         self.acc
             .push_back((self.current_provides, self.current_requires));
@@ -132,12 +126,8 @@ impl Require {
 
 impl<S: Into<String>> From<S> for Require {
     fn from(s: S) -> Self {
-        Require {
-            name: s.into(),
-            metadata: Default::default(),
-        }
+        Require::new(s)
     }
-}
 }
 
 #[cfg(test)]
