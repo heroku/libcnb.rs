@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 - Make `BuildPlan`'s `or` field public. ([#381](https://github.com/Malax/libcnb.rs/pull/381))
+- Add way to construct `Require` with metadata field and integrate with `BuildPlanBuilder`. ([#382](https://github.com/Malax/libcnb.rs/pull/382))
+- Add way to deserialize `Entry` metadata into a custom type. ([#382](https://github.com/Malax/libcnb.rs/pull/382))
 
 ## [0.5.0] 2022-02-28
 

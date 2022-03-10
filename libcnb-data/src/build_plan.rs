@@ -37,8 +37,8 @@ impl BuildPlanBuilder {
         self
     }
 
-    pub fn requires(mut self, name: impl AsRef<str>) -> Self {
-        self.current_requires.push(Require::new(name.as_ref()));
+    pub fn requires(mut self, require: impl Into<Require>) -> Self {
+        self.current_requires.push(require.into());
         self
     }
 
@@ -105,6 +105,29 @@ impl Require {
             metadata: Table::new(),
         }
     }
+
+    /// Convert a Serializable struct and store it as a toml Table for metadata
+    ///
+    /// # Errors
+    /// This will return error for any normal TOML serialization error as well if it's not
+    /// possible to serialize as a TOML Table.
+    pub fn metadata<T: Serialize>(&mut self, metadata: T) -> Result<(), toml::ser::Error> {
+        if let toml::Value::Table(table) = toml::Value::try_from(metadata)? {
+            self.metadata = table;
+
+            Ok(())
+        } else {
+            Err(toml::ser::Error::Custom(String::from(
+                "Could not be serialized as a TOML Table.",
+            )))
+        }
+    }
+}
+
+impl<S: Into<String>> From<S> for Require {
+    fn from(s: S) -> Self {
+        Require::new(s)
+    }
 }
 
 #[cfg(test)]
@@ -118,5 +141,24 @@ mod tests {
         build_plan.requires.push(Require::new("rust"));
 
         assert!(toml::to_string(&build_plan).is_ok());
+    }
+
+    #[test]
+    fn it_serializes_metadata() {
+        #[derive(Serialize)]
+        struct Metadata {
+            foo: String,
+        }
+
+        let mut require = Require::new("foo");
+        let metadata = Metadata {
+            foo: String::from("bar"),
+        };
+        let result = require.metadata(metadata);
+        assert!(result.is_ok());
+        assert_eq!(
+            require.metadata.get("foo"),
+            Some(&toml::Value::String(String::from("bar")))
+        );
     }
 }
