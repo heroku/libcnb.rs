@@ -42,7 +42,7 @@ impl BuildPlanBuilder {
         self
     }
 
-    /// Add Require to the BuildPlan
+    /// Add Require to the `BuildPlan`
     pub fn requires_with_struct(mut self, require: Require) -> Self {
         self.current_requires.push(require);
         self
@@ -113,6 +113,10 @@ impl Require {
     }
 
     /// Convert a Serializable struct and store it as a toml Table for metadata
+    ///
+    /// # Errors
+    /// This will return error for any normal TOML serialization error as well if it's not
+    /// possible to serialize as a TOML Table.
     pub fn metadata<T: Serialize>(&mut self, metadata: T) -> Result<(), toml::ser::Error> {
         if let toml::Value::Table(table) = toml::Value::try_from(metadata)? {
             self.metadata = table;
@@ -120,7 +124,7 @@ impl Require {
             Ok(())
         } else {
             Err(toml::ser::Error::Custom(
-                "Could not be serialized as a map.".to_string(),
+                "Could not be serialized as a TOML Table.".to_string(),
             ))
         }
     }
@@ -155,6 +159,6 @@ mod tests {
         assert_eq!(
             require.metadata.get("foo"),
             Some(&toml::Value::String("bar".to_string()))
-        )
+        );
     }
 }

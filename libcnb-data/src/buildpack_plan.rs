@@ -18,6 +18,9 @@ pub struct Entry {
 
 impl Entry {
     /// Deserializes Metadata to a type T that implements Deserialize
+    ///
+    /// # Errors
+    /// This will return an error if it's not possible to serialize from a TOML Table into a T
     pub fn metadata<'de, T>(&self) -> Result<T, toml::de::Error>
     where
         T: Deserialize<'de>,
