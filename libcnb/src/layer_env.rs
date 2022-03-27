@@ -545,30 +545,33 @@ impl LayerEnvDelta {
             fs::remove_dir_all(path.as_ref())?;
         }
 
-        fs::create_dir_all(path.as_ref())?;
+        // Avoid creating empty env directories.
+        if !self.entries.is_empty() {
+            fs::create_dir_all(path.as_ref())?;
 
-        for ((modification_behavior, name), value) in &self.entries {
-            let file_extension = match modification_behavior {
-                ModificationBehavior::Append => ".append",
-                ModificationBehavior::Default => ".default",
-                ModificationBehavior::Delimiter => ".delim",
-                ModificationBehavior::Override => ".override",
-                ModificationBehavior::Prepend => ".prepend",
-            };
+            for ((modification_behavior, name), value) in &self.entries {
+                let file_extension = match modification_behavior {
+                    ModificationBehavior::Append => ".append",
+                    ModificationBehavior::Default => ".default",
+                    ModificationBehavior::Delimiter => ".delim",
+                    ModificationBehavior::Override => ".override",
+                    ModificationBehavior::Prepend => ".prepend",
+                };
 
-            let mut file_name = name.clone();
-            file_name.push(file_extension);
+                let mut file_name = name.clone();
+                file_name.push(file_extension);
 
-            let file_path = path.as_ref().join(file_name);
+                let file_path = path.as_ref().join(file_name);
 
-            #[cfg(target_family = "unix")]
-            {
-                use std::os::unix::ffi::OsStrExt;
-                fs::write(file_path, &value.as_bytes())?;
+                #[cfg(target_family = "unix")]
+                {
+                    use std::os::unix::ffi::OsStrExt;
+                    fs::write(file_path, &value.as_bytes())?;
+                }
+
+                #[cfg(not(target_family = "unix"))]
+                fs::write(file_path, &value.to_string_lossy().as_bytes())?;
             }
-
-            #[cfg(not(target_family = "unix"))]
-            fs::write(file_path, &value.to_string_lossy().as_bytes())?;
         }
 
         Ok(())
