@@ -213,6 +213,9 @@ pub enum WriteLayerError {
 
     #[error("Error while writing layer content metadata TOML: {0}")]
     TomlFileError(#[from] TomlFileError),
+
+    #[error("Cannot find exec.d file for copying: {0}")]
+    MissingExecDFile(PathBuf),
 }
 
 #[derive(Debug)]
@@ -262,7 +265,17 @@ fn write_layer<M: Serialize, P: AsRef<Path>>(
                 fs::create_dir_all(&exec_d_dir)?;
 
                 for (name, path) in exec_d_programs {
-                    fs::copy(path, exec_d_dir.join(name))?;
+                    // We could just try to copy the file here and let the call-site deal with the
+                    // IO errors when the path does not exist. We're using an explicit error variant
+                    // for a missing exec.d binary makes it easier to debug issues with packaging
+                    // since the usage of exec.d binaries often relies on implicit packaging the
+                    // buildpack author might not be aware of.
+                    Some(&path)
+                        .filter(|path| path.exists())
+                        .ok_or_else(|| WriteLayerError::MissingExecDFile(path.clone()))
+                        .and_then(|path| {
+                            fs::copy(path, exec_d_dir.join(name)).map_err(WriteLayerError::IoError)
+                        })?;
                 }
             }
         }
@@ -445,6 +458,42 @@ mod tests {
                 cache: false
             })
         );
+    }
+
+    #[test]
+    fn write_nonexisting_layer_with_nonexisting_exec_d_path() {
+        let layer_name = layer_name!("foo");
+        let temp_dir = tempdir().unwrap();
+        let layers_dir = temp_dir.path();
+
+        let execd_file = PathBuf::from("/this/path/should/not/exist/exec_d_binary");
+        let write_layer_error = super::write_layer(
+            &layers_dir,
+            &layer_name,
+            &LayerEnv::new(),
+            &LayerContentMetadata {
+                types: Some(LayerTypes {
+                    launch: true,
+                    build: true,
+                    cache: false,
+                }),
+                metadata: GenericMetadata::default(),
+            },
+            ExecDPrograms::Overwrite(HashMap::from([(String::from("foo"), execd_file.clone())])),
+        )
+        .unwrap_err();
+
+        match write_layer_error {
+            WriteLayerError::MissingExecDFile(path) => {
+                assert_eq!(path, execd_file);
+            }
+            other => {
+                panic!(
+                    "Expected WriteLayerError::MissingExecDFile, but got {:?}",
+                    other
+                );
+            }
+        };
     }
 
     #[test]
