@@ -5,6 +5,7 @@
 - Allow compilation of libcnb.rs buildpacks on Windows. Please note that this does not imply Windows container support, it's meant to allow running unit tests without cross-compiling. ([#368](https://github.com/Malax/libcnb.rs/pull/368))
 - Expose `runtime::libcnb_runtime_detect`, `runtime::libcnb_runtime_build` and their related types for advanced use-cases. Buildpack authors should not use these. ([#375](https://github.com/Malax/libcnb.rs/pull/375)).
 - Only create layer `env`, `env.build` and `env.launch` directories when environment variables are being set within them ([#385](https://github.com/Malax/libcnb.rs/pull/385)).
+- Add `WriteLayerError::MissingExecDFile` error to ease debugging when an exec.d path is missing ([#387](https://github.com/Malax/libcnb.rs/pull/387)).
 
 ## [0.6.0] 2022-02-28
 
