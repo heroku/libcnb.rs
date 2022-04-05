@@ -1,6 +1,6 @@
 # libcnb-cargo
 
-Cargo command for managing buildpacks written with [libcnb.rs](https://github.com/malax/libcnb.rs).
+Cargo command for managing buildpacks written with [libcnb.rs](https://github.com/heroku/libcnb.rs).
 
 ## Installation
 

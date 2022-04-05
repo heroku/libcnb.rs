@@ -6,8 +6,8 @@ rust-version = "1.58"
 license = "BSD-3-Clause"
 description = "Cargo command for managing buildpacks written with libcnb.rs"
 keywords = ["buildpacks", "CNB"]
-repository = "https://github.com/Malax/libcnb.rs/tree/main/libcnb-cargo"
-documentation = "https://github.com/Malax/libcnb.rs/blob/main/libcnb-cargo/README.md"
+repository = "https://github.com/heroku/libcnb.rs/tree/main/libcnb-cargo"
+documentation = "https://github.com/heroku/libcnb.rs/blob/main/libcnb-cargo/README.md"
 readme = "README.md"
 include = ["src/**/*", "../LICENSE", "README.md"]
 

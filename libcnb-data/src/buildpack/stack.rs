@@ -61,7 +61,7 @@ id = "heroku-20"
         assert_eq!(
             toml::from_str::<Stack>(toml_str),
             Ok(Stack::Specific {
-                // Cannot use the `stack_id!` macro due to: https://github.com/Malax/libcnb.rs/issues/179
+                // Cannot use the `stack_id!` macro due to: https://github.com/heroku/libcnb.rs/issues/179
                 id: "heroku-20".parse().unwrap(),
                 mixins: Vec::new()
             }),

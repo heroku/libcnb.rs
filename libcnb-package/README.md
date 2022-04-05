@@ -2,7 +2,7 @@
 
 [![Docs]][docs.rs] [![Latest Version]][crates.io] [![Rustc Version 1.58+]][rustc]
 
-A library for cross-compiling and packaging buildpacks written with [libcnb.rs](https://github.com/malax/libcnb.rs).
+A library for cross-compiling and packaging buildpacks written with [libcnb.rs](https://github.com/heroku/libcnb.rs).
 
 In most cases you should use [libcnb-cargo](https://crates.io/crates/libcnb-cargo) and/or
 [libcnb-test](https://crates.io/crates/libcnb-test), rather than depending on this crate
