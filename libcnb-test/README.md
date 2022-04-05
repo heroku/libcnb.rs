@@ -9,7 +9,7 @@ integration tests with libcnb.rs. Its feature set is deliberately cut down to ge
 which features are required. See [issues tagged with `libcnb-test`][libcnb-test-label] for possible future improvements.
 Please use the same tag for feature requests.
 
-[libcnb-test-label]: https://github.com/Malax/libcnb.rs/labels/libcnb-test
+[libcnb-test-label]: https://github.com/heroku/libcnb.rs/labels/libcnb-test
 
 ## Example
 

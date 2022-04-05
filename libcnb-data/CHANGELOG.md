@@ -1,32 +1,32 @@
 # Changelog
 
 ## [Unreleased]
-- Make `BuildPlan`'s `or` field public. ([#381](https://github.com/Malax/libcnb.rs/pull/381))
-- Add way to construct `Require` with metadata field and integrate with `BuildPlanBuilder`. ([#382](https://github.com/Malax/libcnb.rs/pull/382))
-- Add way to deserialize `Entry` metadata into a custom type. ([#382](https://github.com/Malax/libcnb.rs/pull/382))
+- Make `BuildPlan`'s `or` field public. ([#381](https://github.com/heroku/libcnb.rs/pull/381))
+- Add way to construct `Require` with metadata field and integrate with `BuildPlanBuilder`. ([#382](https://github.com/heroku/libcnb.rs/pull/382))
+- Add way to deserialize `Entry` metadata into a custom type. ([#382](https://github.com/heroku/libcnb.rs/pull/382))
 
 ## [0.5.0] 2022-02-28
 
-- Add `#[must_use]` to `BuildPlan` and `BuildPlanBuilder` ([#288](https://github.com/Malax/libcnb.rs/pull/288)).
-- Add `exec_d` module with types representing the output of an `exec.d` program ([#324](https://github.com/Malax/libcnb.rs/pull/324)).
-- Increase minimum supported Rust version from 1.56 to 1.58 ([#318](https://github.com/Malax/libcnb.rs/pull/318)).
-- Adjust newtype generated compile-time validation macros so that they don't also perform redundant validation at runtime. In cases where only compile-time validation is being performed (for example `exec.d` scripts), this results in a significant reduction in binary size. ([#331](https://github.com/Malax/libcnb.rs/pull/331))
-- Update `libcnb-proc-macros` from `0.1.1` to `0.2.0` - see the [libcnb-proc-macros changelog](../libcnb-proc-macros/CHANGELOG.md#020-2022-02-28). ([#361](https://github.com/Malax/libcnb.rs/pull/361))
+- Add `#[must_use]` to `BuildPlan` and `BuildPlanBuilder` ([#288](https://github.com/heroku/libcnb.rs/pull/288)).
+- Add `exec_d` module with types representing the output of an `exec.d` program ([#324](https://github.com/heroku/libcnb.rs/pull/324)).
+- Increase minimum supported Rust version from 1.56 to 1.58 ([#318](https://github.com/heroku/libcnb.rs/pull/318)).
+- Adjust newtype generated compile-time validation macros so that they don't also perform redundant validation at runtime. In cases where only compile-time validation is being performed (for example `exec.d` scripts), this results in a significant reduction in binary size. ([#331](https://github.com/heroku/libcnb.rs/pull/331))
+- Update `libcnb-proc-macros` from `0.1.1` to `0.2.0` - see the [libcnb-proc-macros changelog](../libcnb-proc-macros/CHANGELOG.md#020-2022-02-28). ([#361](https://github.com/heroku/libcnb.rs/pull/361))
 
 ## [0.4.0] 2022-01-14
 
-- Add `must_use` attributes to a number of pure public methods ([#232](https://github.com/Malax/libcnb.rs/pull/232)).
-- Remove builder-style methods from `LayerContentMetadata` ([#235](https://github.com/Malax/libcnb.rs/pull/235)).
-- Make `LayerContentMetadata`'s `types` field an `Option` ([#236](https://github.com/Malax/libcnb.rs/pull/236)).
-- Remove `LayerContentMetadata::Default()` ([#236](https://github.com/Malax/libcnb.rs/pull/236)).
-- Switch `Buildpack.version` from type `semver::Version` to `BuildpackVersion`, in order to validate versions more strictly against the CNB spec ([#241](https://github.com/Malax/libcnb.rs/pull/241)).
-- All libcnb-data struct types now reject unrecognised fields when deserializing ([#252](https://github.com/Malax/libcnb.rs/pull/252)).
-- `BuildpackToml` has been replaced by `BuildpackDescriptor`, which is an enum with `Single` and `Meta` variants that wrap new `SingleBuildpackDescriptor` and `MetaBuildpackDescriptor` types. The new types now reject `buildpack.toml` files where both `stacks` and `order` are present ([#248](https://github.com/Malax/libcnb.rs/pull/248)).
-- Implement `Borrow<str>` for types generated using the `libcnb_newtype!` macro (currently `BuildpackId`, `LayerName`, `ProcessType` and `StackId`), which allows them to be used with `.join()` ([#258](https://github.com/Malax/libcnb.rs/pull/258)).
-- `Launch` and `Process` can now be deserialized when optional fields are missing, and omit default values when serializing ([#243](https://github.com/Malax/libcnb.rs/pull/243) and [#265](https://github.com/Malax/libcnb.rs/pull/265)).
-- `Process::new` has been replaced by `ProcessBuilder` ([#265](https://github.com/Malax/libcnb.rs/pull/265)).
-- Bump external dependency versions ([#233](https://github.com/Malax/libcnb.rs/pull/233) and [#275](https://github.com/Malax/libcnb.rs/pull/275)).
-- Update `libcnb-proc-macros` from `0.1.0` to `0.1.1` - see the [libcnb-proc-macros changelog](../libcnb-proc-macros/CHANGELOG.md#011-2022-01-14) ([#276](https://github.com/Malax/libcnb.rs/pull/276)).
+- Add `must_use` attributes to a number of pure public methods ([#232](https://github.com/heroku/libcnb.rs/pull/232)).
+- Remove builder-style methods from `LayerContentMetadata` ([#235](https://github.com/heroku/libcnb.rs/pull/235)).
+- Make `LayerContentMetadata`'s `types` field an `Option` ([#236](https://github.com/heroku/libcnb.rs/pull/236)).
+- Remove `LayerContentMetadata::Default()` ([#236](https://github.com/heroku/libcnb.rs/pull/236)).
+- Switch `Buildpack.version` from type `semver::Version` to `BuildpackVersion`, in order to validate versions more strictly against the CNB spec ([#241](https://github.com/heroku/libcnb.rs/pull/241)).
+- All libcnb-data struct types now reject unrecognised fields when deserializing ([#252](https://github.com/heroku/libcnb.rs/pull/252)).
+- `BuildpackToml` has been replaced by `BuildpackDescriptor`, which is an enum with `Single` and `Meta` variants that wrap new `SingleBuildpackDescriptor` and `MetaBuildpackDescriptor` types. The new types now reject `buildpack.toml` files where both `stacks` and `order` are present ([#248](https://github.com/heroku/libcnb.rs/pull/248)).
+- Implement `Borrow<str>` for types generated using the `libcnb_newtype!` macro (currently `BuildpackId`, `LayerName`, `ProcessType` and `StackId`), which allows them to be used with `.join()` ([#258](https://github.com/heroku/libcnb.rs/pull/258)).
+- `Launch` and `Process` can now be deserialized when optional fields are missing, and omit default values when serializing ([#243](https://github.com/heroku/libcnb.rs/pull/243) and [#265](https://github.com/heroku/libcnb.rs/pull/265)).
+- `Process::new` has been replaced by `ProcessBuilder` ([#265](https://github.com/heroku/libcnb.rs/pull/265)).
+- Bump external dependency versions ([#233](https://github.com/heroku/libcnb.rs/pull/233) and [#275](https://github.com/heroku/libcnb.rs/pull/275)).
+- Update `libcnb-proc-macros` from `0.1.0` to `0.1.1` - see the [libcnb-proc-macros changelog](../libcnb-proc-macros/CHANGELOG.md#011-2022-01-14) ([#276](https://github.com/heroku/libcnb.rs/pull/276)).
 
 ## [0.3.0] 2021-12-08
 

@@ -1,7 +1,7 @@
 # libcnb.rs [![Build Status]][ci] [![Docs]][docs.rs] [![Latest Version]][crates.io] [![Rustc Version 1.58+]][rustc]
 
-[Build Status]: https://img.shields.io/github/workflow/status/Malax/libcnb/CI/main
-[ci]: https://github.com/Malax/libcnb.rs/actions/workflows/ci.yml?query=branch%3Amain
+[Build Status]: https://img.shields.io/github/workflow/status/heroku/libcnb.rs/CI/main
+[ci]: https://github.com/heroku/libcnb.rs/actions/workflows/ci.yml?query=branch%3Amain
 [Docs]: https://img.shields.io/docsrs/libcnb
 [docs.rs]: https://docs.rs/libcnb/*/libcnb/
 [Latest Version]: https://img.shields.io/crates/v/libcnb.svg
