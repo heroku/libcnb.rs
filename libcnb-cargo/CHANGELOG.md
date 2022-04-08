@@ -2,7 +2,10 @@
 
 ## [Unreleased]
 
+## [0.4.0] 2022-04-12
+
 - Move the packaging library parts of `libcnb-cargo` to a new `libcnb-package` crate. Consumers of the library should substitute all `libcnb-cargo` references with `libcnb-package` for equivalent functionality. ([#362](https://github.com/heroku/libcnb.rs/pull/362))
+- Update project URLs for the GitHub repository move to the `heroku` org ([#388](https://github.com/heroku/libcnb.rs/pull/388)).
 
 ## [0.3.0] 2022-02-28
 
