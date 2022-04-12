@@ -1,9 +1,13 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.6.0] 2022-04-12
+
 - Make `BuildPlan`'s `or` field public. ([#381](https://github.com/heroku/libcnb.rs/pull/381))
 - Add way to construct `Require` with metadata field and integrate with `BuildPlanBuilder`. ([#382](https://github.com/heroku/libcnb.rs/pull/382))
 - Add way to deserialize `Entry` metadata into a custom type. ([#382](https://github.com/heroku/libcnb.rs/pull/382))
+- Update project URLs for the GitHub repository move to the `heroku` org ([#388](https://github.com/heroku/libcnb.rs/pull/388)).
 
 ## [0.5.0] 2022-02-28
 

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.2.1] 2022-04-12
+
+- Update project URLs for the GitHub repository move to the `heroku` org ([#388](https://github.com/heroku/libcnb.rs/pull/388)).
+
 ## [0.2.0] 2022-02-28
 
 - Add a `verify_bin_target_exists!` macro for verifying existence of binary targets in the current crate. ([#320](https://github.com/heroku/libcnb.rs/pull/320))
