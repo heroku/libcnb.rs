@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Add `IntegrationTest::app_dir_preprocessor`, allowing users to modify the app directory before an integration test run ([#000](https://github.com/heroku/libcnb.rs/pull/000)).
+
 ## [0.3.1] 2022-04-12
 
 - Update project URLs for the GitHub repository move to the `heroku` org ([#388](https://github.com/heroku/libcnb.rs/pull/388)).
