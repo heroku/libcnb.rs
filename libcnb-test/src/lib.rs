@@ -67,6 +67,7 @@ pub struct IntegrationTest {
     builder_name: String,
     buildpacks: Vec<BuildpackReference>,
     env: HashMap<String, String>,
+    app_dir_preprocessor: Option<Box<dyn Fn(PathBuf)>>,
     docker: Docker,
     tokio_runtime: tokio::runtime::Runtime,
 }
@@ -82,6 +83,10 @@ pub enum BuildpackReference {
 
 impl IntegrationTest {
     /// Creates a new integration test.
+    ///
+    /// If the `app_dir` parameter is a relative path, it is treated as relative to the Cargo
+    /// manifest directory ([`CARGO_MANIFEST_DIR`](https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-crates)),
+    /// i.e. the package's root directory.
     ///
     /// # Panics
     /// - When the connection to Docker failed
@@ -117,6 +122,7 @@ impl IntegrationTest {
             builder_name: builder_name.into(),
             buildpacks: vec![BuildpackReference::Crate],
             env: HashMap::new(),
+            app_dir_preprocessor: None,
             docker,
             tokio_runtime,
         }
@@ -185,6 +191,31 @@ impl IntegrationTest {
         self
     }
 
+    /// Sets an app directory preprocessor function.
+    ///
+    /// It will be run after the app directory has been copied for the current integration test run,
+    /// the changes will not affect other integration test runs.
+    ///
+    /// Generally, we suggest using dedicated test fixtures. However, in some cases it is more
+    /// economical to slightly modify a fixture programmatically before a test instead.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use libcnb_test::IntegrationTest;
+    ///
+    /// IntegrationTest::new("heroku/buildpacks:20", "test-fixtures/app")
+    ///     .app_dir_preprocessor(|app_dir| {
+    ///         std::fs::remove_file(app_dir.join("Procfile")).unwrap()
+    ///     })
+    ///     .run_test(|context| {
+    ///         // ...
+    ///     })
+    /// ```
+    pub fn app_dir_preprocessor<F: 'static + Fn(PathBuf)>(&mut self, f: F) -> &mut Self {
+        self.app_dir_preprocessor = Some(Box::new(f));
+        self
+    }
+
     /// Starts a new integration test run.
     ///
     /// This function will copy the application to a temporary directory, cross-compiles this crate,
@@ -223,6 +254,10 @@ impl IntegrationTest {
 
         let temp_app_dir =
             app::copy_app(&app_dir).expect("Could not copy app to temporary location");
+
+        if let Some(app_dir_preprocessor) = &self.app_dir_preprocessor {
+            (app_dir_preprocessor)(PathBuf::from(temp_app_dir.path()));
+        }
 
         let temp_crate_buildpack_dir = if self.buildpacks.contains(&BuildpackReference::Crate) {
             Some(
