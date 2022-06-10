@@ -19,7 +19,7 @@ use libcnb_test::{IntegrationTest, BuildpackReference, assert_contains};
 
 #[test]
 fn test() {
-    IntegrationTest::new("heroku/buildpacks:20", "test-fixtures/app")
+    IntegrationTest::new("heroku/builder:22", "test-fixtures/app")
         .buildpacks(vec![
             BuildpackReference::Other(String::from("heroku/openjdk")),
             BuildpackReference::Crate,

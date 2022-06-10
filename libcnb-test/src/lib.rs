@@ -39,7 +39,7 @@ use std::process::{Command, Stdio};
 /// # fn call_test_fixture_service(addr: std::net::SocketAddr, payload: &str) -> Result<String, ()> {
 /// #    unimplemented!()
 /// # }
-/// IntegrationTest::new("heroku/buildpacks:20", "test-fixtures/app")
+/// IntegrationTest::new("heroku/builder:22", "test-fixtures/app")
 ///     .buildpacks(vec![
 ///         BuildpackReference::Other(String::from("heroku/openjdk")),
 ///         BuildpackReference::Crate,
@@ -153,7 +153,7 @@ impl IntegrationTest {
     /// ```no_run
     /// use libcnb_test::IntegrationTest;
     ///
-    /// IntegrationTest::new("heroku/buildpacks:20", "test-fixtures/app")
+    /// IntegrationTest::new("heroku/builder:22", "test-fixtures/app")
     ///     .env("ENV_VAR_ONE", "VALUE ONE")
     ///     .env("ENV_VAR_TWO", "SOME OTHER VALUE")
     ///     .run_test(|context| {
@@ -174,7 +174,7 @@ impl IntegrationTest {
     /// ```no_run
     /// use libcnb_test::IntegrationTest;
     ///
-    /// IntegrationTest::new("heroku/buildpacks:20", "test-fixtures/app")
+    /// IntegrationTest::new("heroku/builder:22", "test-fixtures/app")
     ///     .envs(vec![("ENV_VAR_ONE", "VALUE ONE"), ("ENV_VAR_TWO", "SOME OTHER VALUE")])
     ///     .run_test(|context| {
     ///         // ...
@@ -203,7 +203,7 @@ impl IntegrationTest {
     /// ```no_run
     /// use libcnb_test::IntegrationTest;
     ///
-    /// IntegrationTest::new("heroku/buildpacks:20", "test-fixtures/app")
+    /// IntegrationTest::new("heroku/builder:22", "test-fixtures/app")
     ///     .app_dir_preprocessor(|app_dir| {
     ///         std::fs::remove_file(app_dir.join("Procfile")).unwrap()
     ///     })
@@ -235,7 +235,7 @@ impl IntegrationTest {
     /// ```no_run
     /// use libcnb_test::{IntegrationTest, assert_contains};
     ///
-    /// IntegrationTest::new("heroku/buildpacks:20", "test-fixtures/app")
+    /// IntegrationTest::new("heroku/builder:22", "test-fixtures/app")
     ///     .run_test(|context| {
     ///         assert_contains!(context.pack_stdout, "---> Ruby Buildpack");
     ///         assert_contains!(context.pack_stdout, "---> Installing bundler");
@@ -354,7 +354,7 @@ impl<'a> IntegrationTestContext<'a> {
     /// ```no_run
     /// use libcnb_test::IntegrationTest;
     ///
-    /// IntegrationTest::new("heroku/buildpacks:20", "test-fixtures/empty-app").run_test(|context| {
+    /// IntegrationTest::new("heroku/builder:22", "test-fixtures/empty-app").run_test(|context| {
     ///     context.prepare_container().start_with_default_process(|container| {
     ///         // ...
     ///     });
