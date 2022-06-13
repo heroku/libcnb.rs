@@ -40,7 +40,7 @@ impl<'a> PrepareContainerContext<'a> {
     /// ```no_run
     /// use libcnb_test::IntegrationTest;
     ///
-    /// IntegrationTest::new("heroku/buildpacks:20", "test-fixtures/app").run_test(|context| {
+    /// IntegrationTest::new("heroku/builder:22", "test-fixtures/app").run_test(|context| {
     ///     context
     ///         .prepare_container()
     ///         .env("FOO", "FOO_VALUE")
@@ -60,7 +60,7 @@ impl<'a> PrepareContainerContext<'a> {
     /// ```no_run
     /// use libcnb_test::IntegrationTest;
     ///
-    /// IntegrationTest::new("heroku/buildpacks:20", "test-fixtures/app").run_test(|context| {
+    /// IntegrationTest::new("heroku/builder:22", "test-fixtures/app").run_test(|context| {
     ///     context
     ///         .prepare_container()
     ///         .envs(vec![("FOO", "FOO_VALUE"), ("BAR", "BAR_VALUE")])

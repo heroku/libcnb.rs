@@ -12,7 +12,7 @@ use libcnb_test::{assert_contains, IntegrationTest};
 #[test]
 #[ignore]
 fn basic() {
-    IntegrationTest::new("heroku/buildpacks:20", "test-fixtures/empty-app").run_test(|context| {
+    IntegrationTest::new("heroku/builder:22", "test-fixtures/empty-app").run_test(|context| {
         context
             .prepare_container()
             .start_with_shell_command("env", |container| {

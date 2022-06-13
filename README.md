@@ -87,7 +87,7 @@ version = "0.1.0"
 name = "My Buildpack"
 
 [[stacks]]
-id = "heroku-20"
+id = "*"
 ```
 
 That's all we need! We can now move on to finally write some buildpack code!
@@ -179,14 +179,14 @@ In your project directory, run `cargo libcnb package` to start packaging:
 $ cargo libcnb package
 INFO - Reading buildpack metadata...
 INFO - Found buildpack libcnb-examples/my-buildpack with version 0.1.0.
-INFO - Building buildpack binary (x86_64-unknown-linux-musl)...
-Compiling my-buildpack v0.1.0 (/Users/manuel.fuchs/projects/my-buildpack)
+INFO - Determining automatic cross-compile settings...
+INFO - Building binaries (x86_64-unknown-linux-musl)...
 # Omitting compilation output...
-Finished dev [unoptimized + debuginfo] target(s) in 2.67s
+    Finished dev [unoptimized + debuginfo] target(s) in 4.29s
 INFO - Writing buildpack directory...
-INFO - Successfully wrote buildpack directory: target/debug/libcnb-examples_my-buildpack_0.1.0 (53.1M)
+INFO - Successfully wrote buildpack directory: target/buildpack/debug/libcnb-examples_my-buildpack (55.5M)
 INFO - Packaging successfully finished!
-INFO - Hint: To test your buildpack locally with pack, run: pack build my-image --buildpack target/debug/libcnb-examples_my-buildpack_0.1.0 --path /path/to/application
+INFO - Hint: To test your buildpack locally with pack, run: pack build my-image --buildpack target/buildpack/debug/libcnb-examples_my-buildpack --path /path/to/application
 ```
 
 If you get errors with hints about how to install required tools to cross-compile from your host platform to the
@@ -201,31 +201,33 @@ application code at all, we just create an empty directory and use that as our a
 
 ```shell
 $ mkdir bogus-app
-$ pack build my-image --buildpack target/debug/libcnb-examples_my-buildpack_0.1.0 --path bogus-app --builder heroku/buildpacks:20
-20: Pulling from heroku/buildpacks
-Digest: sha256:04e8ea7a1f482f289d432d9518edcfaaf9f3a10432cd1b624e58225f22e7c416
-Status: Image is up to date for heroku/buildpacks:20
-20: Pulling from heroku/pack
-Digest: sha256:21ea4b85bc937b47e017bf43136a5295ec08e093e3c210b20e69e9c1b0f2bd57
-Status: Image is up to date for heroku/pack:20
+$ pack build my-image --buildpack target/buildpack/debug/libcnb-examples_my-buildpack --path bogus-app --builder heroku/builder:22
+22: Pulling from heroku/builder
+Digest: sha256:0e1db52b480805c63b793a1c0155ea30cabffbf7977f722c88dc42cef750a1d1
+Status: Image is up to date for heroku/builder:22
+22-cnb: Pulling from heroku/heroku
+Digest: sha256:3fd7866f22dcbcd3a72c7ab4b47728dcfbaacfa9730341d0fb10665f63d93788
+Status: Image is up to date for heroku/heroku:22-cnb
+===> ANALYZING
+Previous image with name "my-image" not found
 ===> DETECTING
 libcnb-examples/my-buildpack 0.1.0
-===> ANALYZING
-Skipping buildpack layer analysis
+===> RESTORING
 ===> BUILDING
 Hello World!
-Build runs on stack heroku-20!
+Build runs on stack heroku-22!
 ===> EXPORTING
-Reusing 1/1 app layer(s)
-Reusing layer 'launcher'
-Reusing layer 'config'
-Reusing layer 'process-types'
+Adding layer 'launch.sbom'
+Adding 1/1 app layer(s)
+Adding layer 'launcher'
+Adding layer 'config'
+Adding layer 'process-types'
 Adding label 'io.buildpacks.lifecycle.metadata'
 Adding label 'io.buildpacks.build.metadata'
 Adding label 'io.buildpacks.project.metadata'
 Setting default process type 'web'
 Saving my-image...
-*** Images (d4f67a828236):
+*** Images (24eed75bb2e6):
       my-image
 Successfully built image my-image
 ```
