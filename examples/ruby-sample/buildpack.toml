@@ -9,4 +9,4 @@ name = "Example libcnb buildpack: ruby"
 id = "heroku-20"
 
 [metadata]
-ruby_url = "https://heroku-buildpack-ruby.s3.amazonaws.com/heroku-20/ruby-2.7.4.tgz"
+ruby_url = "https://heroku-buildpack-ruby.s3.us-east-1.amazonaws.com/heroku-20/ruby-2.7.4.tgz"
