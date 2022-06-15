@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Introduce `impl FromIterator<Process> for Launch` to make it easier to build
+  dynamic `Launch` tables. ([#401](https://github.com/heroku/libcnb.rs/pull/401))
+
 ## [0.7.0] 2022-04-12
 
 - Allow compilation of libcnb.rs buildpacks on Windows. Please note that this does not imply Windows container support, it's meant to allow running unit tests without cross-compiling. ([#368](https://github.com/heroku/libcnb.rs/pull/368))
