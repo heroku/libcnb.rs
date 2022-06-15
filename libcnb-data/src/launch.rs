@@ -365,7 +365,7 @@ default = true
     fn launch_from_iterator() {
         let launch: Launch = ["web", "worker"]
             .iter()
-            .map(|name| ProcessBuilder::new(name.parse().unwrap(), name.to_string()).build())
+            .map(|&name| ProcessBuilder::new(name.parse().unwrap(), name).build())
             .collect();
 
         assert_eq!(launch.processes[0].command, "web");
