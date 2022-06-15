@@ -43,6 +43,18 @@ impl Launch {
     }
 }
 
+impl FromIterator<Process> for Launch {
+    fn from_iter<I: IntoIterator<Item = Process>>(process_iter: I) -> Self {
+        let mut launch = Launch::new();
+
+        for process in process_iter {
+            launch = launch.process(process);
+        }
+
+        launch
+    }
+}
+
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct Label {
@@ -347,5 +359,15 @@ default = true
                 default: false
             }
         );
+    }
+
+    #[test]
+    fn launch_from_iterator() {
+        let launch: Launch = ["web", "worker"]
+            .iter()
+            .map(|name| ProcessBuilder::new(name.parse().unwrap(), name.to_string()).build())
+            .collect();
+
+        assert_eq!(launch.processes[0].command, "web");
     }
 }
