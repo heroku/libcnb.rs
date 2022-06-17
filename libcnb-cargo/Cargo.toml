@@ -17,13 +17,13 @@ path = "src/main.rs"
 
 [dependencies]
 cargo_metadata = "0.14.2"
-clap = { version = "3.1.8", default-features = false, features = [
+clap = { version = "3.2.5", default-features = false, features = [
   "std",
   "derive",
 ] }
 fs_extra = "1.2.0"
 libcnb-package = { version = "0.1.1", path = "../libcnb-package" }
-log = "0.4.16"
+log = "0.4.17"
 pathdiff = "0.2.1"
 size_format = "1.0.2"
 stderrlog = "0.5.1"

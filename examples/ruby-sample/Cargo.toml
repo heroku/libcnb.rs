@@ -6,9 +6,9 @@ rust-version = "1.58"
 publish = false
 
 [dependencies]
-flate2 = "1.0.23"
+flate2 = "1.0.24"
 libcnb = { path = "../../libcnb" }
-serde = "1.0.136"
+serde = "1.0.137"
 sha2 = "0.10.2"
 tar = "0.4.38"
 tempfile = "3.3.0"
