@@ -21,12 +21,15 @@
 /// calls that might fail at runtime.
 ///
 /// # Usage:
-/// ```
+// This has to use compile_fail since `libcnb_newtype` is not public.
+/// ```compile_fail
+/// use crate::newtypes::libcnb_newtype;
+///
 /// libcnb_newtype!(
 ///     // The module of this crate that exports the newtype publicly. Since it might differ from
 ///     // the actual module structure, the macro needs a way to determine how to import the type
 ///     // from a user's buildpack crate.
-///     tests::doctest
+///     buildpack
 ///     /// RustDoc for the macro (optional)
 ///     buildpack_id,
 ///     /// RustDoc for the newtype itself (optional)
