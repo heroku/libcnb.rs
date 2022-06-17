@@ -12,6 +12,7 @@ pub(crate) struct PackBuildCommand {
     image_name: String,
     path: PathBuf,
     pull_policy: PullPolicy,
+    trust_builder: bool,
     verbose: bool,
 }
 
@@ -65,6 +66,7 @@ impl PackBuildCommand {
             image_name: image_name.into(),
             path: path.into(),
             pull_policy,
+            trust_builder: true,
             verbose: false,
         }
     }
@@ -117,8 +119,12 @@ impl From<PackBuildCommand> for Command {
             args.push(format!("{env_key}={env_value}"));
         }
 
+        if pack_build_command.trust_builder {
+            args.push(String::from("--trust-builder"));
+        }
+
         if pack_build_command.verbose {
-            args.push(String::from("-v"));
+            args.push(String::from("--verbose"));
         }
 
         command.args(args);
@@ -147,6 +153,7 @@ mod tests {
             image_name: String::from("my-image"),
             path: PathBuf::from("/tmp/foo/bar"),
             pull_policy: PullPolicy::IfNotPresent,
+            trust_builder: true,
             verbose: true,
         };
 
@@ -173,15 +180,23 @@ mod tests {
                 "ENV_BAR=WHITESPACE VALUE",
                 "--env",
                 "ENV_FOO=FOO_VALUE",
-                "-v"
+                "--trust-builder",
+                "--verbose"
             ]
         );
 
         assert_eq!(command.get_envs().collect::<Vec<_>>(), vec![]);
 
-        // Assert conditional '-v' flag works as expected:
+        // Assert conditional '--trust-builder' flag works as expected:
+        input.trust_builder = false;
+        let command: Command = input.clone().into();
+        assert!(!command
+            .get_args()
+            .any(|arg| arg == OsStr::new("--trust-builder")));
+
+        // Assert conditional '--verbose' flag works as expected:
         input.verbose = false;
         let command: Command = input.into();
-        assert!(!command.get_args().any(|arg| arg == OsStr::new("-v")));
+        assert!(!command.get_args().any(|arg| arg == OsStr::new("--verbose")));
     }
 }
