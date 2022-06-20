@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Add `Launch::processes` function to add multiple `Process`es to a `Launch` value at once. ([#418](https://github.com/heroku/libcnb.rs/pull/418)) 
+- `Launch::process`'s argument changed from `Process` to `Into<Process>`. ([#418](https://github.com/heroku/libcnb.rs/pull/418))
+
 ## [0.6.0] 2022-04-12
 
 - Make `BuildPlan`'s `or` field public. ([#381](https://github.com/heroku/libcnb.rs/pull/381))
