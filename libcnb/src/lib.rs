@@ -26,6 +26,7 @@ pub mod internals;
 mod buildpack;
 mod env;
 mod error;
+mod exit_code;
 mod platform;
 mod runtime;
 mod toml_file;

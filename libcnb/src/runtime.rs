@@ -5,7 +5,7 @@ use crate::detect::{DetectContext, InnerDetectResult};
 use crate::error::Error;
 use crate::platform::Platform;
 use crate::toml_file::{read_toml_file, write_toml_file};
-use crate::LIBCNB_SUPPORTED_BUILDPACK_API;
+use crate::{exit_code, LIBCNB_SUPPORTED_BUILDPACK_API};
 use serde::de::DeserializeOwned;
 use std::env;
 use std::ffi::OsStr;
@@ -36,12 +36,12 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
                 );
                 eprintln!("But the underlying libcnb.rs library requires CNB API {LIBCNB_SUPPORTED_BUILDPACK_API}.");
 
-                exit(254)
+                exit(exit_code::GENERIC_CNB_API_MISMATCH_ERROR)
             }
         }
         Err(lib_cnb_error) => {
             buildpack.on_error(lib_cnb_error);
-            exit(1);
+            exit(exit_code::GENERIC_UNSPECIFIED_ERROR);
         }
     }
 
@@ -65,7 +65,7 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
                     eprintln!(
                         "https://github.com/buildpacks/spec/blob/main/buildpack.md#detection"
                     );
-                    exit(1);
+                    exit(exit_code::GENERIC_UNSPECIFIED_ERROR);
                 }
             }),
         ),
@@ -75,7 +75,7 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
                 BuildArgsParseError::InvalidArguments => {
                     eprintln!("Usage: build <layers> <platform> <plan>");
                     eprintln!("https://github.com/buildpacks/spec/blob/main/buildpack.md#build");
-                    exit(1);
+                    exit(exit_code::GENERIC_UNSPECIFIED_ERROR);
                 }
             }),
         ),
@@ -87,7 +87,7 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
 
             eprintln!("The executable name is used to determine the current buildpack phase.");
             eprintln!("You might want to create 'detect' and 'build' links to this executable and run those instead.");
-            exit(255)
+            exit(exit_code::GENERIC_UNEXPECTED_EXECUTABLE_NAME_ERROR)
         }
     };
 
@@ -95,7 +95,7 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
         Ok(code) => exit(code),
         Err(lib_cnb_error) => {
             buildpack.on_error(lib_cnb_error);
-            exit(1);
+            exit(exit_code::GENERIC_UNSPECIFIED_ERROR);
         }
     }
 }
@@ -128,14 +128,14 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
     };
 
     match buildpack.detect(detect_context)?.0 {
-        InnerDetectResult::Fail => Ok(100),
+        InnerDetectResult::Fail => Ok(exit_code::DETECT_DETECTION_FAILED),
         InnerDetectResult::Pass { build_plan } => {
             if let Some(build_plan) = build_plan {
                 write_toml_file(&build_plan, build_plan_path)
                     .map_err(Error::CannotWriteBuildPlan)?;
             }
 
-            Ok(0)
+            Ok(exit_code::DETECT_DETECTION_PASSED)
         }
     }
 }
@@ -184,7 +184,7 @@ pub fn libcnb_runtime_build<B: Buildpack>(
                     .map_err(Error::CannotWriteStore)?;
             };
 
-            Ok(0)
+            Ok(exit_code::GENERIC_SUCCESS)
         }
     }
 }
