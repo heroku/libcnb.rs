@@ -119,8 +119,12 @@ impl<'a> PrepareContainerContext<'a> {
     /// # Panics
     /// - When the container could not be created
     /// - When the container could not be started
-    pub fn start_with_process<F: FnOnce(ContainerContext)>(&self, process: String, f: F) {
-        self.start_internal(Some(vec![process]), None, f);
+    pub fn start_with_process<F: FnOnce(ContainerContext), P: Into<String>>(
+        &self,
+        process: P,
+        f: F,
+    ) {
+        self.start_internal(Some(vec![process.into()]), None, f);
     }
 
     /// Creates and starts the container configured by this context using the given CNB process
@@ -135,14 +139,15 @@ impl<'a> PrepareContainerContext<'a> {
         F: FnOnce(ContainerContext),
         A: IntoIterator<Item = I>,
         I: Into<String>,
+        P: Into<String>,
     >(
         &self,
-        process: String,
+        process: P,
         args: A,
         f: F,
     ) {
         self.start_internal(
-            Some(vec![process]),
+            Some(vec![process.into()]),
             Some(args.into_iter().map(I::into).collect()),
             f,
         );
@@ -158,13 +163,17 @@ impl<'a> PrepareContainerContext<'a> {
     /// # Panics
     /// - When the container could not be created
     /// - When the container could not be started
-    pub fn start_with_shell_command<F: FnOnce(ContainerContext)>(&self, command: &str, f: F) {
+    pub fn start_with_shell_command<F: FnOnce(ContainerContext), C: Into<String>>(
+        &self,
+        command: C,
+        f: F,
+    ) {
         self.start_internal(
             Some(vec![String::from(CNB_LAUNCHER_PATH)]),
             Some(vec![
                 String::from(SHELL_PATH),
                 String::from("-c"),
-                String::from(command),
+                command.into(),
             ]),
             f,
         );
