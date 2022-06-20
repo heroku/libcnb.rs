@@ -12,12 +12,12 @@ readme = "../README.md"
 include = ["src/**/*", "../LICENSE", "../README.md"]
 
 [dependencies]
-anyhow = { version = "1.0.56", optional = true }
+anyhow = { version = "1.0.58", optional = true }
 libcnb-data = { path = "../libcnb-data", version = "0.6.0" }
 libcnb-proc-macros = { version = "0.2.1", path = "../libcnb-proc-macros" }
-serde = { version = "1.0.136", features = ["derive"] }
-thiserror = "1.0.30"
-toml = "0.5.8"
+serde = { version = "1.0.137", features = ["derive"] }
+thiserror = "1.0.31"
+toml = "0.5.9"
 
 [dev-dependencies]
 fastrand = "1.7.0"
