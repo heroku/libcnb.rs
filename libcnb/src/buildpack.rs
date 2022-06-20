@@ -42,7 +42,7 @@ pub trait Buildpack {
     /// collect and send metrics about occurring errors to a central system.
     ///
     /// The default implementation will simply print the error
-    /// (using its [`Display`](std::fmt::Display) implementation) to stderr.
+    /// (using its [`Display`](std::fmt::Display) implementation) to stderr and exits with code 1.
     fn on_error(
         &self,
         #[allow(unused_variables)] phase: BuildpackPhase,
@@ -51,6 +51,6 @@ pub trait Buildpack {
         eprintln!("Unhandled error:");
         eprintln!("> {:?}", error);
         eprintln!("Buildpack will exit!");
-        100
+        1
     }
 }
