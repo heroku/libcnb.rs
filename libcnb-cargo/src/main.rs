@@ -5,6 +5,7 @@
 #![allow(clippy::module_name_repetitions)]
 
 mod cli;
+mod exit_code;
 
 use crate::cli::{Cli, LibcnbSubcommand, PackageArgs};
 use cargo_metadata::MetadataCommand;
@@ -41,7 +42,7 @@ fn handle_libcnb_package(args: PackageArgs) {
         Ok(current_dir) => current_dir,
         Err(io_error) => {
             error!("Could not determine current directory: {io_error}");
-            std::process::exit(1);
+            std::process::exit(exit_code::UNSPECIFIED_ERROR);
         }
     };
 
@@ -60,7 +61,7 @@ fn handle_libcnb_package(args: PackageArgs) {
                 }
             }
 
-            std::process::exit(1);
+            std::process::exit(exit_code::UNSPECIFIED_ERROR);
         }
     };
 
@@ -77,7 +78,7 @@ fn handle_libcnb_package(args: PackageArgs) {
         Ok(cargo_metadata) => cargo_metadata,
         Err(error) => {
             error!("Could not obtain metadata from Cargo: {error}");
-            std::process::exit(1);
+            std::process::exit(exit_code::UNSPECIFIED_ERROR);
         }
     };
 
@@ -104,7 +105,7 @@ fn handle_libcnb_package(args: PackageArgs) {
             CrossCompileAssistance::HelpText(help_text) => {
                 error!("{help_text}");
                 info!("To disable cross-compile assistance, pass --no-cross-compile-assistance.");
-                std::process::exit(1);
+                std::process::exit(exit_code::UNSPECIFIED_ERROR);
             }
             CrossCompileAssistance::NoAssistance => {
                 warn!("Could not determine automatic cross-compile settings for target triple {target_triple}.");
@@ -151,7 +152,7 @@ fn handle_libcnb_package(args: PackageArgs) {
                 }
             }
 
-            std::process::exit(1);
+            std::process::exit(exit_code::UNSPECIFIED_ERROR);
         }
     };
 
@@ -159,7 +160,7 @@ fn handle_libcnb_package(args: PackageArgs) {
     if output_path.exists() {
         if let Err(error) = fs::remove_dir_all(&output_path) {
             error!("Could not remove buildpack directory: {error}");
-            std::process::exit(1);
+            std::process::exit(exit_code::UNSPECIFIED_ERROR);
         };
     }
 
@@ -169,7 +170,7 @@ fn handle_libcnb_package(args: PackageArgs) {
         &buildpack_binaries,
     ) {
         error!("IO error while writing buildpack directory: {io_error}");
-        std::process::exit(1);
+        std::process::exit(exit_code::UNSPECIFIED_ERROR);
     };
 
     info!(
@@ -191,6 +192,6 @@ fn setup_logging() {
         .init()
     {
         eprintln!("Unable to initialize logger: {error}");
-        std::process::exit(1);
+        std::process::exit(exit_code::UNSPECIFIED_ERROR);
     }
 }
