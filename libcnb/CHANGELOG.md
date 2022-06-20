@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- `Buildpack::on_error` now gets passed a `libcnb::BuildpackPhase` value. This allows error handling based on the currently executing phase. This is particularly useful since the CNB specification assigns different meanings for exit codes based on the current phase. ([#414](https://github.com/heroku/libcnb.rs/pull/414)).
+- The default `Buildpack::on_error` implementation now uses exit code `1` instead of `100`. The previously used exit code signalled a failed detect instead of an error during the detect phase. ([#414](https://github.com/heroku/libcnb.rs/pull/414)).
+
 ## [0.7.0] 2022-04-12
 
 - Allow compilation of libcnb.rs buildpacks on Windows. Please note that this does not imply Windows container support, it's meant to allow running unit tests without cross-compiling. ([#368](https://github.com/heroku/libcnb.rs/pull/368))
