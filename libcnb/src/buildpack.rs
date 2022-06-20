@@ -43,10 +43,9 @@ pub trait Buildpack {
     ///
     /// The default implementation will simply print the error
     /// (using its [`Display`](std::fmt::Display) implementation) to stderr.
-    fn on_error(&self, error: crate::Error<Self::Error>) -> i32 {
+    fn on_error(&self, error: crate::Error<Self::Error>) {
         eprintln!("Unhandled error:");
         eprintln!("> {:?}", error);
         eprintln!("Buildpack will exit!");
-        100
     }
 }
