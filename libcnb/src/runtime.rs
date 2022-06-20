@@ -5,7 +5,7 @@ use crate::detect::{DetectContext, InnerDetectResult};
 use crate::error::Error;
 use crate::platform::Platform;
 use crate::toml_file::{read_toml_file, write_toml_file};
-use crate::LIBCNB_SUPPORTED_BUILDPACK_API;
+use crate::{BuildpackPhase, LIBCNB_SUPPORTED_BUILDPACK_API};
 use serde::de::DeserializeOwned;
 use std::env;
 use std::ffi::OsStr;
@@ -26,6 +26,33 @@ use std::process::exit;
 /// Don't implement this directly and use the [`buildpack_main`] macro instead!
 #[doc(hidden)]
 pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
+    let args: Vec<String> = env::args().collect();
+
+    let phase = {
+        // Using `std::env::args()` instead of `std::env::current_exe()` since the latter resolves
+        // symlinks to their target on some platforms, whereas we need the original filename.
+        let current_exe_file_name = args
+            .first()
+            .map(Path::new)
+            .and_then(Path::file_name)
+            .and_then(OsStr::to_str);
+
+        match current_exe_file_name {
+            Some("detect") => BuildpackPhase::Detect,
+            Some("build") => BuildpackPhase::Build,
+            other => {
+                eprintln!(
+                    "Error: Expected the name of this executable to be 'detect' or 'build', but it was '{}'",
+                    other.unwrap_or("<unknown>")
+                );
+
+                eprintln!("The executable name is used to determine the current buildpack phase.");
+                eprintln!("You might want to create 'detect' and 'build' links to this executable and run those instead.");
+                exit(255)
+            }
+        }
+    };
+
     match read_buildpack_descriptor::<B::Metadata, B::Error>() {
         Ok(buildpack_descriptor) => {
             if buildpack_descriptor.api != LIBCNB_SUPPORTED_BUILDPACK_API {
@@ -40,23 +67,12 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
             }
         }
         Err(lib_cnb_error) => {
-            exit(buildpack.on_error(lib_cnb_error));
+            exit(buildpack.on_error(phase, lib_cnb_error));
         }
     }
 
-    let args: Vec<String> = env::args().collect();
-
-    // Using `std::env::args()` instead of `std::env::current_exe()` since the latter resolves
-    // symlinks to their target on some platforms, whereas we need the original filename.
-    let current_exe = args.first();
-    let current_exe_file_name = current_exe
-        .as_ref()
-        .map(Path::new)
-        .and_then(Path::file_name)
-        .and_then(OsStr::to_str);
-
-    let result = match current_exe_file_name {
-        Some("detect") => libcnb_runtime_detect(
+    let result = match phase {
+        BuildpackPhase::Detect => libcnb_runtime_detect(
             buildpack,
             DetectArgs::parse(&args).unwrap_or_else(|parse_error| match parse_error {
                 DetectArgsParseError::InvalidArguments => {
@@ -68,7 +84,7 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
                 }
             }),
         ),
-        Some("build") => libcnb_runtime_build(
+        BuildpackPhase::Build => libcnb_runtime_build(
             buildpack,
             BuildArgs::parse(&args).unwrap_or_else(|parse_error| match parse_error {
                 BuildArgsParseError::InvalidArguments => {
@@ -78,21 +94,11 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
                 }
             }),
         ),
-        other => {
-            eprintln!(
-                "Error: Expected the name of this executable to be 'detect' or 'build', but it was '{}'",
-                other.unwrap_or("<unknown>")
-            );
-
-            eprintln!("The executable name is used to determine the current buildpack phase.");
-            eprintln!("You might want to create 'detect' and 'build' links to this executable and run those instead.");
-            exit(255)
-        }
     };
 
     match result {
         Ok(code) => exit(code),
-        Err(lib_cnb_error) => exit(buildpack.on_error(lib_cnb_error)),
+        Err(lib_cnb_error) => exit(buildpack.on_error(phase, lib_cnb_error)),
     }
 }
 

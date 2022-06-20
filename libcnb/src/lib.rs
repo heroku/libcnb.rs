@@ -125,6 +125,14 @@ macro_rules! additional_buildpack_binary_path {
     };
 }
 
+/// Cloud Native Buildpacks phase
+pub enum BuildpackPhase {
+    /// See: <https://github.com/buildpacks/spec/blob/main/buildpack.md#phase-1-detection>
+    Detect,
+    /// See: <https://github.com/buildpacks/spec/blob/main/buildpack.md#phase-3-build>
+    Build,
+}
+
 // This runs the README.md as a doctest, ensuring the code examples in it are valid.
 // It will not be part of the final crate.
 #[cfg(doctest)]

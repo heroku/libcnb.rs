@@ -1,6 +1,6 @@
 use crate::build::{BuildContext, BuildResult};
 use crate::detect::{DetectContext, DetectResult};
-use crate::Platform;
+use crate::{BuildpackPhase, Platform};
 use serde::de::DeserializeOwned;
 use std::fmt::Debug;
 
@@ -43,7 +43,11 @@ pub trait Buildpack {
     ///
     /// The default implementation will simply print the error
     /// (using its [`Display`](std::fmt::Display) implementation) to stderr.
-    fn on_error(&self, error: crate::Error<Self::Error>) -> i32 {
+    fn on_error(
+        &self,
+        #[allow(unused_variables)] phase: BuildpackPhase,
+        error: crate::Error<Self::Error>,
+    ) -> i32 {
         eprintln!("Unhandled error:");
         eprintln!("> {:?}", error);
         eprintln!("Buildpack will exit!");
