@@ -85,18 +85,21 @@ pub fn assemble_buildpack_directory(
 
     create_file_symlink("build", bin_path.join("detect"))?;
 
-    let additional_binaries_dir = destination_path
-        .as_ref()
-        .join(".libcnb-cargo")
-        .join("additional-bin");
+    if !buildpack_binaries.additional_target_binary_paths.is_empty() {
+        let additional_binaries_dir = destination_path
+            .as_ref()
+            .join(".libcnb-cargo")
+            .join("additional-bin");
 
-    fs::create_dir_all(&additional_binaries_dir)?;
+        fs::create_dir_all(&additional_binaries_dir)?;
 
-    for (binary_target_name, binary_path) in &buildpack_binaries.additional_target_binary_paths {
-        fs::copy(
-            binary_path,
-            additional_binaries_dir.join(binary_target_name),
-        )?;
+        for (binary_target_name, binary_path) in &buildpack_binaries.additional_target_binary_paths
+        {
+            fs::copy(
+                binary_path,
+                additional_binaries_dir.join(binary_target_name),
+            )?;
+        }
     }
 
     Ok(())

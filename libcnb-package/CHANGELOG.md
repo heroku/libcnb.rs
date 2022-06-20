@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Only create `.libcnb-cargo/additional-bin` if there are additional binaries to bundle ([#413](https://github.com/heroku/libcnb.rs/pull/413)).
+
 ## [0.1.1] 2022-04-12
 
 - Update project URLs for the GitHub repository move to the `heroku` org ([#388](https://github.com/heroku/libcnb.rs/pull/388)).
