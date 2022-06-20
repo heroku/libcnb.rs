@@ -40,7 +40,8 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
             }
         }
         Err(lib_cnb_error) => {
-            exit(buildpack.on_error(lib_cnb_error));
+            buildpack.on_error(lib_cnb_error);
+            exit(1);
         }
     }
 
@@ -92,7 +93,10 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
 
     match result {
         Ok(code) => exit(code),
-        Err(lib_cnb_error) => exit(buildpack.on_error(lib_cnb_error)),
+        Err(lib_cnb_error) => {
+            buildpack.on_error(lib_cnb_error);
+            exit(1);
+        }
     }
 }
 
