@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Add `BuildpackDescriptorApiOnly` for representing only the API version of a `buildpack.toml` ([#421](https://github.com/heroku/libcnb.rs/pull/421)).
 - Add `Launch::processes` function to add multiple `Process`es to a `Launch` value at once. ([#418](https://github.com/heroku/libcnb.rs/pull/418)) 
 - `Launch::process`'s argument changed from `Process` to `Into<Process>`. ([#418](https://github.com/heroku/libcnb.rs/pull/418))
 - Update `fancy-regex` dependency from 0.8.0 to 0.10.0 ([#393](https://github.com/heroku/libcnb.rs/pull/393) and [#394](https://github.com/heroku/libcnb.rs/pull/394)).
