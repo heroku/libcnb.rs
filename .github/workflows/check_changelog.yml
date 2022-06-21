@@ -11,8 +11,7 @@ jobs:
       !contains(github.event.pull_request.body, '[skip changelog]') &&
       !contains(github.event.pull_request.body, '[changelog skip]') &&
       !contains(github.event.pull_request.body, '[skip ci]') &&
-      !contains(github.event.pull_request.labels.*.name, 'skip changelog') &&
-      !contains(github.event.pull_request.labels.*.name, 'dependencies')
+      !contains(github.event.pull_request.labels.*.name, 'skip changelog')
     steps:
       - uses: actions/checkout@v3
       - name: Check that CHANGELOG is touched

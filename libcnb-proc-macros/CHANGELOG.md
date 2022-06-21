@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Update `fancy-regex` dependency from 0.8.0 to 0.10.0 ([#393](https://github.com/heroku/libcnb.rs/pull/393) and [#394](https://github.com/heroku/libcnb.rs/pull/394)).
+
 ## [0.2.1] 2022-04-12
 
 - Update project URLs for the GitHub repository move to the `heroku` org ([#388](https://github.com/heroku/libcnb.rs/pull/388)).

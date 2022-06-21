@@ -5,6 +5,7 @@
 - Leverage `Into` trait for `String`/`&str` arguments in `ContainerContext` ([#412](https://github.com/heroku/libcnb.rs/pull/412)).
 - Pass `--trust-builder` to `pack build` to ensure the builders used in tests are always trusted ([#409](https://github.com/heroku/libcnb.rs/pull/409)).
 - Add `IntegrationTest::app_dir_preprocessor`, allowing users to modify the app directory before an integration test run ([#397](https://github.com/heroku/libcnb.rs/pull/397)).
+- Update `bollard` dependency from 0.12.0 to 0.13.0 ([#419](https://github.com/heroku/libcnb.rs/pull/419)).
 
 ## [0.3.1] 2022-04-12
 
