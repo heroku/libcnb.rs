@@ -36,9 +36,20 @@ impl Launch {
         Self::default()
     }
 
+    /// Adds a process to the launch configuration.
     #[must_use]
-    pub fn process(mut self, process: Process) -> Self {
-        self.processes.push(process);
+    pub fn process<P: Into<Process>>(mut self, process: P) -> Self {
+        self.processes.push(process.into());
+        self
+    }
+
+    /// Adds multiple processes to the launch configuration.
+    #[must_use]
+    pub fn processes<I: IntoIterator<Item = P>, P: Into<Process>>(mut self, processes: I) -> Self {
+        for process in processes {
+            self.processes.push(process.into());
+        }
+
         self
     }
 }
@@ -209,6 +220,34 @@ libcnb_newtype!(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn launch_add_processes() {
+        let mut launch = Launch::new();
+
+        assert_eq!(launch.processes, vec![]);
+
+        launch = launch.process(ProcessBuilder::new(process_type!("web"), "web_command").build());
+
+        assert_eq!(
+            launch.processes,
+            vec![ProcessBuilder::new(process_type!("web"), "web_command").build()]
+        );
+
+        launch = launch.processes(vec![
+            ProcessBuilder::new(process_type!("another"), "another_command").build(),
+            ProcessBuilder::new(process_type!("worker"), "worker_command").build(),
+        ]);
+
+        assert_eq!(
+            launch.processes,
+            vec![
+                ProcessBuilder::new(process_type!("web"), "web_command").build(),
+                ProcessBuilder::new(process_type!("another"), "another_command").build(),
+                ProcessBuilder::new(process_type!("worker"), "worker_command").build(),
+            ]
+        );
+    }
 
     #[test]
     fn process_type_validation_valid() {
