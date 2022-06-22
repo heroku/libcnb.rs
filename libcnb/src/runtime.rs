@@ -1,12 +1,13 @@
 use crate::build::{BuildContext, InnerBuildResult};
 use crate::buildpack::Buildpack;
-use crate::data::buildpack::{SingleBuildpackDescriptor, StackId};
+use crate::data::buildpack::{BuildpackApi, StackId};
 use crate::detect::{DetectContext, InnerDetectResult};
 use crate::error::Error;
 use crate::platform::Platform;
 use crate::toml_file::{read_toml_file, write_toml_file};
 use crate::{exit_code, LIBCNB_SUPPORTED_BUILDPACK_API};
 use serde::de::DeserializeOwned;
+use serde::Deserialize;
 use std::env;
 use std::ffi::OsStr;
 use std::fmt::Debug;
@@ -26,22 +27,31 @@ use std::process::exit;
 /// Don't implement this directly and use the [`buildpack_main`] macro instead!
 #[doc(hidden)]
 pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
-    match read_buildpack_descriptor::<B::Metadata, B::Error>() {
+    // Before we do anything else, we must validate that the Buildpack's API version
+    // matches that supported by libcnb, to improve the UX in cases where the lifecycle
+    // passes us arguments or env vars we don't expect, due to changes between API versions.
+    // We use a cut-down buildpack descriptor type, to ensure we can still read the API
+    // version even if the rest of buildpack.toml doesn't match the spec (or the buildpack's
+    // chosen custom `metadata` type).
+    match read_buildpack_descriptor::<BuildpackDescriptorApiOnly, B::Error>() {
         Ok(buildpack_descriptor) => {
             if buildpack_descriptor.api != LIBCNB_SUPPORTED_BUILDPACK_API {
                 eprintln!("Error: Cloud Native Buildpack API mismatch");
                 eprintln!(
-                    "This buildpack ({}) uses Cloud Native Buildpacks API version {}.",
-                    &buildpack_descriptor.buildpack.id, &buildpack_descriptor.api,
+                    "This buildpack uses Cloud Native Buildpacks API version {} (specified in buildpack.toml).",
+                    &buildpack_descriptor.api,
                 );
-                eprintln!("But the underlying libcnb.rs library requires CNB API {LIBCNB_SUPPORTED_BUILDPACK_API}.");
-
-                exit(exit_code::GENERIC_CNB_API_MISMATCH_ERROR)
+                eprintln!("However, the underlying libcnb.rs library only supports CNB API {LIBCNB_SUPPORTED_BUILDPACK_API}.");
+                exit(exit_code::GENERIC_CNB_API_VERSION_ERROR)
             }
         }
-        Err(lib_cnb_error) => {
-            buildpack.on_error(lib_cnb_error);
-            exit(exit_code::GENERIC_UNSPECIFIED_ERROR);
+        Err(libcnb_error) => {
+            // This case will likely never occur, since Pack/lifecycle validates each buildpack's
+            // `buildpack.toml` before the buildpack even runs, so the file being missing or the
+            // `api` key not being set will have already resulted in an error much earlier.
+            eprintln!("Error: Unable to determine Buildpack API version");
+            eprintln!("Cause: {libcnb_error}");
+            exit(exit_code::GENERIC_CNB_API_VERSION_ERROR);
         }
     }
 
@@ -51,7 +61,6 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
     // symlinks to their target on some platforms, whereas we need the original filename.
     let current_exe = args.first();
     let current_exe_file_name = current_exe
-        .as_ref()
         .map(Path::new)
         .and_then(Path::file_name)
         .and_then(OsStr::to_str);
@@ -84,7 +93,6 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
                 "Error: Expected the name of this executable to be 'detect' or 'build', but it was '{}'",
                 other.unwrap_or("<unknown>")
             );
-
             eprintln!("The executable name is used to determine the current buildpack phase.");
             eprintln!("You might want to create 'detect' and 'build' links to this executable and run those instead.");
             exit(exit_code::GENERIC_UNEXPECTED_EXECUTABLE_NAME_ERROR)
@@ -93,8 +101,8 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
 
     match result {
         Ok(code) => exit(code),
-        Err(lib_cnb_error) => {
-            buildpack.on_error(lib_cnb_error);
+        Err(libcnb_error) => {
+            buildpack.on_error(libcnb_error);
             exit(exit_code::GENERIC_UNSPECIFIED_ERROR);
         }
     }
@@ -189,6 +197,14 @@ pub fn libcnb_runtime_build<B: Buildpack>(
     }
 }
 
+// A partial representation of buildpack.toml that contains only the Buildpack API version,
+// so that the version can still be read when the buildpack descriptor doesn't match the
+// supported spec version.
+#[derive(Deserialize)]
+struct BuildpackDescriptorApiOnly {
+    pub api: BuildpackApi,
+}
+
 #[doc(hidden)]
 pub struct DetectArgs {
     pub platform_dir_path: PathBuf,
@@ -247,8 +263,7 @@ fn read_buildpack_dir<E: Debug>() -> crate::Result<PathBuf, E> {
         .map(PathBuf::from)
 }
 
-fn read_buildpack_descriptor<BM: DeserializeOwned, E: Debug>(
-) -> crate::Result<SingleBuildpackDescriptor<BM>, E> {
+fn read_buildpack_descriptor<BD: DeserializeOwned, E: Debug>() -> crate::Result<BD, E> {
     read_buildpack_dir().and_then(|buildpack_dir| {
         read_toml_file(buildpack_dir.join("buildpack.toml"))
             .map_err(Error::CannotReadBuildpackDescriptor)

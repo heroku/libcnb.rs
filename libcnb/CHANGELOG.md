@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Make the "Buildpack API version mismatch" check still work when `buildpack.toml` doesn't match the spec or custom buildpack type ([#421](https://github.com/heroku/libcnb.rs/pull/421)).
 - Remove support for custom exit codes from `Buildpack::on_error`. Exit codes are part of the CNB spec and there are cases where some exit codes have special meaning to the CNB lifecycle. This put the burden on the buildpack author to not pick exit codes with special meanings, dependent on the currently executing phase. This makes `Buildpack::on_error` more consistent with the rest of the framework where we don't expose the interface between the buildpack and the CNB lifecycle directly but use abstractions for easier forward-compatibility and to prevent accidental misuse. ([#415](https://github.com/heroku/libcnb.rs/pull/415)).
 
 ## [0.7.0] 2022-04-12
