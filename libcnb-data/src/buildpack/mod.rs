@@ -145,21 +145,6 @@ pub struct MetaBuildpackDescriptor<BM> {
     pub metadata: BM,
 }
 
-/// Partial data structure for the Buildpack descriptor (buildpack.toml) of a buildpack.
-///
-/// A representation of [buildpack.toml](https://github.com/buildpacks/spec/blob/main/buildpack.md#buildpacktoml-toml)
-/// that contains only the Buildpack API version from the `api` field.
-///
-/// For use when the Buildpack API version must be read from buildpack descriptors that might
-/// otherwise be invalid or not match the supported spec version.
-///
-/// For all other use-cases, use [`BuildpackDescriptor`], [`SingleBuildpackDescriptor`] or
-/// [`MetaBuildpackDescriptor`] instead.
-#[derive(Deserialize, Debug)]
-pub struct BuildpackDescriptorApiOnly {
-    pub api: BuildpackApi,
-}
-
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct Buildpack {

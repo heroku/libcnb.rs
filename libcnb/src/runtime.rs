@@ -1,12 +1,13 @@
 use crate::build::{BuildContext, InnerBuildResult};
 use crate::buildpack::Buildpack;
-use crate::data::buildpack::{BuildpackDescriptorApiOnly, StackId};
+use crate::data::buildpack::{BuildpackApi, StackId};
 use crate::detect::{DetectContext, InnerDetectResult};
 use crate::error::Error;
 use crate::platform::Platform;
 use crate::toml_file::{read_toml_file, write_toml_file};
 use crate::{exit_code, LIBCNB_SUPPORTED_BUILDPACK_API};
 use serde::de::DeserializeOwned;
+use serde::Deserialize;
 use std::env;
 use std::ffi::OsStr;
 use std::fmt::Debug;
@@ -194,6 +195,14 @@ pub fn libcnb_runtime_build<B: Buildpack>(
             Ok(exit_code::GENERIC_SUCCESS)
         }
     }
+}
+
+// A partial representation of buildpack.toml that contains only the Buildpack API version,
+// so that the version can still be read when the buildpack descriptor doesn't match the
+// supported spec version.
+#[derive(Deserialize)]
+struct BuildpackDescriptorApiOnly {
+    pub api: BuildpackApi,
 }
 
 #[doc(hidden)]
