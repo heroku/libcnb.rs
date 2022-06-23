@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Update `cargo_metadata` dependency from 0.14.2 to 0.15.0 ([#423](https://github.com/heroku/libcnb.rs/pull/423)).
 - Update `fancy-regex` dependency from 0.8.0 to 0.10.0 ([#393](https://github.com/heroku/libcnb.rs/pull/393) and [#394](https://github.com/heroku/libcnb.rs/pull/394)).
 
 ## [0.2.1] 2022-04-12

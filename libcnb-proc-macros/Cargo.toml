@@ -14,7 +14,7 @@ include = ["src/**/*", "../LICENSE", "../README.md"]
 proc-macro = true
 
 [dependencies]
-cargo_metadata = "0.14.2"
+cargo_metadata = "0.15.0"
 fancy-regex = "0.10.0"
 quote = "1.0.20"
 syn = { version = "1.0.98", features = ["full"] }

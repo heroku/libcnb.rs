@@ -13,7 +13,7 @@ include = ["src/**/*", "../LICENSE", "README.md"]
 
 [dependencies]
 bollard = "0.13.0"
-cargo_metadata = "0.14.2"
+cargo_metadata = "0.15.0"
 fastrand = "1.7.0"
 fs_extra = "1.2.0"
 libcnb-package = { version = "0.1.1", path = "../libcnb-package" }
