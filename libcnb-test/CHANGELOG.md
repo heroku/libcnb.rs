@@ -7,6 +7,7 @@
 - Add `IntegrationTest::app_dir_preprocessor`, allowing users to modify the app directory before an integration test run ([#397](https://github.com/heroku/libcnb.rs/pull/397)).
 - Update `bollard` dependency from 0.12.0 to 0.13.0 ([#419](https://github.com/heroku/libcnb.rs/pull/419)).
 - Update `cargo_metadata` dependency from 0.14.2 to 0.15.0 ([#423](https://github.com/heroku/libcnb.rs/pull/423)).
+- Add `assert_not_contains!` macro, an inverted version of `assert_contains!`. ([#424](https://github.com/heroku/libcnb.rs/pull/424))
 
 ## [0.3.1] 2022-04-12
 
