@@ -1,6 +1,5 @@
-use crate::{
-    app, build, util, BuildpackReference, PackBuildCommand, PullPolicy, TestConfig, TestContext,
-};
+use crate::pack::{PackBuildCommand, PullPolicy};
+use crate::{app, build, util, BuildpackReference, TestConfig, TestContext};
 use bollard::Docker;
 use std::borrow::Borrow;
 use std::env;
