@@ -58,7 +58,7 @@ right: `{:?}`: {}"#,
 /// use libcnb_test::assert_not_contains;
 ///
 /// let output = "Hello World!\nHello Integration Test!";
-/// assert_not_contains!(output, "Integration");
+/// assert_not_contains!(output, "Bahamas");
 /// ```
 #[macro_export]
 macro_rules! assert_not_contains {
