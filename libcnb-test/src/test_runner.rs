@@ -151,14 +151,14 @@ impl TestRunner {
             (app_dir_preprocessor)(PathBuf::from(temp_app_dir.path()));
         }
 
-        let temp_crate_buildpack_dir = if config.buildpacks.contains(&BuildpackReference::Crate) {
-            Some(
-                build::package_crate_buildpack(&config.target_triple)
-                    .expect("Could not package current crate as buildpack"),
-            )
-        } else {
-            None
-        };
+        let temp_crate_buildpack_dir =
+            config
+                .buildpacks
+                .contains(&BuildpackReference::Crate)
+                .then(|| {
+                    build::package_crate_buildpack(&config.target_triple)
+                        .expect("Could not package current crate as buildpack")
+                });
 
         let mut pack_command = PackBuildCommand::new(
             &config.builder_name,
