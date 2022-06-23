@@ -108,7 +108,7 @@ use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};
 use libcnb::{buildpack_main, Buildpack};
 
-struct HelloWorldBuildpack;
+pub(crate) struct HelloWorldBuildpack;
 
 impl Buildpack for HelloWorldBuildpack {
     // The CNB platform this buildpack targets, usually `GenericPlatform`. See the CNB spec for

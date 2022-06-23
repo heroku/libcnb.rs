@@ -13,7 +13,7 @@ use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};
 use libcnb::{buildpack_main, Buildpack};
 
-pub struct ExecDBuildpack;
+pub(crate) struct ExecDBuildpack;
 
 impl Buildpack for ExecDBuildpack {
     type Platform = GenericPlatform;

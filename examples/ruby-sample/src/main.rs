@@ -19,7 +19,7 @@ use std::process::ExitStatus;
 mod layers;
 mod util;
 
-pub struct RubyBuildpack;
+pub(crate) struct RubyBuildpack;
 
 impl Buildpack for RubyBuildpack {
     type Platform = GenericPlatform;
@@ -67,12 +67,12 @@ impl Buildpack for RubyBuildpack {
 
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct RubyBuildpackMetadata {
+pub(crate) struct RubyBuildpackMetadata {
     pub ruby_url: String,
 }
 
 #[derive(Debug)]
-pub enum RubyBuildpackError {
+pub(crate) enum RubyBuildpackError {
     RubyDownloadError(DownloadError),
     RubyUntarError(UntarError),
     CouldNotCreateTemporaryFile(std::io::Error),

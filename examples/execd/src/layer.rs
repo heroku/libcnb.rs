@@ -6,7 +6,7 @@ use libcnb::layer::{Layer, LayerResult, LayerResultBuilder};
 use libcnb::{additional_buildpack_binary_path, Buildpack};
 use std::path::Path;
 
-pub struct ExecDLayer;
+pub(crate) struct ExecDLayer;
 
 impl Layer for ExecDLayer {
     type Buildpack = ExecDBuildpack;

@@ -8,7 +8,7 @@ use libcnb::exec_d::write_exec_d_program_output;
 use std::collections::HashMap;
 use std::iter;
 
-pub fn main() {
+fn main() {
     write_exec_d_program_output(env_vars());
 }
 

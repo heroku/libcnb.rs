@@ -7,7 +7,8 @@ use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};
 use libcnb::{buildpack_main, Buildpack};
 
-struct BasicBuildpack;
+pub(crate) struct BasicBuildpack;
+
 impl Buildpack for BasicBuildpack {
     type Platform = GenericPlatform;
     type Metadata = GenericMetadata;

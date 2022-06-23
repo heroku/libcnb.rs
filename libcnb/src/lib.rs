@@ -55,7 +55,7 @@ const LIBCNB_SUPPORTED_BUILDPACK_API: data::buildpack::BuildpackApi =
 /// use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};
 /// use libcnb::{buildpack_main, data::build_plan::BuildPlan, Buildpack};
 ///
-/// struct MyBuildpack;
+/// pub(crate) struct MyBuildpack;
 ///
 /// impl Buildpack for MyBuildpack {
 ///     type Platform = GenericPlatform;
