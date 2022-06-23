@@ -38,7 +38,7 @@ impl TestConfig {
         self
     }
 
-    /// Sets the target triple.
+    /// Sets the target triple used when compiling the buildpack.
     ///
     /// Defaults to `x86_64-unknown-linux-musl`.
     pub fn target_triple(&mut self, target_triple: impl Into<String>) -> &mut Self {
