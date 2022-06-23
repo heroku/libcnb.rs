@@ -97,7 +97,7 @@ impl TestRunner {
 
     /// Starts a new integration test run.
     ///
-    /// This function will copy the application to a temporary directory, cross-compiles this crate,
+    /// This function copies the application to a temporary directory, cross-compiles this crate,
     /// packages it as a buildpack and then invokes [pack](https://buildpacks.io/docs/tools/pack/)
     /// to build a new Docker image with the buildpacks specified by the passed [`TestConfig`].
     ///
