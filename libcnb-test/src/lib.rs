@@ -75,7 +75,7 @@ impl<'a> TestContext<'a> {
     /// Starts a subsequent integration test run.
     ///
     /// This function behaves exactly like [`TestRunner::run_test`], but it will reuse the OCI image
-    /// from the previous test, causing the CNB lifecycle to restore cached layers. It will use the
+    /// from the previous test, causing the CNB lifecycle to restore any cached layers. It will use the
     /// same [`TestRunner`] as the previous test run.
     ///
     /// This function allows testing of subsequent builds, including caching logic and buildpack
