@@ -7,7 +7,12 @@
 - Add `IntegrationTest::app_dir_preprocessor`, allowing users to modify the app directory before an integration test run ([#397](https://github.com/heroku/libcnb.rs/pull/397)).
 - Update `bollard` dependency from 0.12.0 to 0.13.0 ([#419](https://github.com/heroku/libcnb.rs/pull/419)).
 - Update `cargo_metadata` dependency from 0.14.2 to 0.15.0 ([#423](https://github.com/heroku/libcnb.rs/pull/423)).
-- Add `assert_not_contains!` macro, an inverted version of `assert_contains!`. ([#424](https://github.com/heroku/libcnb.rs/pull/424))
+- Add `assert_not_contains!` macro, an inverted version of `assert_contains!`. ([#424](https://github.com/heroku/libcnb.rs/pull/424)).
+- Remove `IntegrationTest::run_test`, to run a test use the new `TestRunner::run_test` function. ([#422](https://github.com/heroku/libcnb.rs/pull/422)).
+- Rename `IntegrationTest` to `TestConfig`. ([#422](https://github.com/heroku/libcnb.rs/pull/422)).
+- Rename `IntegrationTestContext` to `TestContext`. ([#422](https://github.com/heroku/libcnb.rs/pull/422)).
+- Add `Clone` implementation for `TestConfig`, allowing it to be shared across tests. ([#422](https://github.com/heroku/libcnb.rs/pull/422)).
+- Add `TestContext::run_test`, allowing you to run subsequent integration tests with the image from a previous test. These functions allow testing of subsequent builds, including caching logic and buildpack behaviour when build environment variables change, stacks are upgraded and more. ([#422](https://github.com/heroku/libcnb.rs/pull/422)).
 
 ## [0.3.1] 2022-04-12
 
