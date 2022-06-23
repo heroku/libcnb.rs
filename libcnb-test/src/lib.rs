@@ -107,20 +107,6 @@ impl<'a> TestContext<'a> {
         self.runner
             .run_test_internal(self.image_name.clone(), config, f);
     }
-
-    /// Starts a subsequent integration test run with inherited configuration.
-    ///
-    /// This function is the same as [`TestContext::run_test`] but automatically inherits the
-    /// configuration from the previous test run. See [`TestContext::run_test`] for details.
-    ///
-    /// # Panics
-    /// - When the app could not be copied
-    /// - When this crate could not be packaged as a buildpack
-    /// - When the `pack` command unexpectedly fails
-    pub fn run_test_inherit_config<F: FnOnce(TestContext)>(self, f: F) {
-        self.runner
-            .run_test_internal(self.image_name.clone(), self.config.clone(), f);
-    }
 }
 
 impl<'a> Drop for TestContext<'a> {

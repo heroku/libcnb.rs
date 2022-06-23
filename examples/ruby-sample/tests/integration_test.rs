@@ -17,44 +17,40 @@ use std::time::Duration;
 #[test]
 #[ignore]
 fn basic() {
-    TestRunner::default().run_test(
-        TestConfig::new("heroku/buildpacks:20", "test-fixtures/simple-ruby-app"),
-        |context| {
-            assert_contains!(context.pack_stdout, "---> Ruby Buildpack");
-            assert_contains!(context.pack_stdout, "---> Installing bundler");
-            assert_contains!(context.pack_stdout, "---> Installing gems");
+    let config = TestConfig::new("heroku/buildpacks:20", "test-fixtures/simple-ruby-app");
 
-            context
-                .prepare_container()
-                .env("PORT", TEST_PORT.to_string())
-                .expose_port(TEST_PORT)
-                .start_with_default_process(|container| {
-                    std::thread::sleep(Duration::from_secs(1));
+    TestRunner::default().run_test(&config, |context| {
+        assert_contains!(context.pack_stdout, "---> Ruby Buildpack");
+        assert_contains!(context.pack_stdout, "---> Installing bundler");
+        assert_contains!(context.pack_stdout, "---> Installing gems");
 
-                    assert_eq!(
-                        call_test_fixture_service(
-                            container.address_for_port(TEST_PORT).unwrap(),
-                            "Hello World!"
-                        )
-                        .unwrap(),
-                        "!dlroW olleH"
-                    );
+        context
+            .prepare_container()
+            .env("PORT", TEST_PORT.to_string())
+            .expose_port(TEST_PORT)
+            .start_with_default_process(|container| {
+                std::thread::sleep(Duration::from_secs(1));
 
-                    assert_contains!(
-                        container.shell_exec("ruby --version").stdout,
-                        "ruby 2.7.0p0"
-                    );
-                });
+                assert_eq!(
+                    call_test_fixture_service(
+                        container.address_for_port(TEST_PORT).unwrap(),
+                        "Hello World!"
+                    )
+                    .unwrap(),
+                    "!dlroW olleH"
+                );
 
-            context.run_test(
-                TestConfig::new("heroku/buildpacks:20", "test-fixtures/simple-ruby-app"),
-                |context| {
-                    assert_not_contains!(context.pack_stdout, "---> Installing bundler");
-                    assert_not_contains!(context.pack_stdout, "---> Installing gems");
-                },
-            );
-        },
-    );
+                assert_contains!(
+                    container.shell_exec("ruby --version").stdout,
+                    "ruby 2.7.0p0"
+                );
+            });
+
+        context.run_test(&config, |context| {
+            assert_not_contains!(context.pack_stdout, "---> Installing bundler");
+            assert_not_contains!(context.pack_stdout, "---> Installing gems");
+        });
+    });
 }
 
 fn call_test_fixture_service<A>(a: A, payload: impl AsRef<str>) -> io::Result<String>

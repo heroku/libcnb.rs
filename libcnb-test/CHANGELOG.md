@@ -12,7 +12,7 @@
 - Rename `IntegrationTest` to `TestConfig`. ([#422](https://github.com/heroku/libcnb.rs/pull/422)).
 - Rename `IntegrationTestContext` to `TestContext`. ([#422](https://github.com/heroku/libcnb.rs/pull/422)).
 - Add `Clone` implementation for `TestConfig`, allowing it to be shared across tests. ([#422](https://github.com/heroku/libcnb.rs/pull/422)).
-- Add `TestContext::run_test` and `TestContext::run_test_inherit_config`, allowing you to run subsequent integration tests with the image from a previous test. These functions allow testing of subsequent builds, including caching logic and buildpack behaviour when build environment variables change, stacks are upgraded and more. ([#422](https://github.com/heroku/libcnb.rs/pull/422)).
+- Add `TestContext::run_test`, allowing you to run subsequent integration tests with the image from a previous test. These functions allow testing of subsequent builds, including caching logic and buildpack behaviour when build environment variables change, stacks are upgraded and more. ([#422](https://github.com/heroku/libcnb.rs/pull/422)).
 
 ## [0.3.1] 2022-04-12
 
