@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Update `cargo_metadata` dependency from 0.14.2 to 0.15.0 ([#423](https://github.com/heroku/libcnb.rs/pull/423)).
+
 ## [0.4.0] 2022-04-12
 
 - Move the packaging library parts of `libcnb-cargo` to a new `libcnb-package` crate. Consumers of the library should substitute all `libcnb-cargo` references with `libcnb-package` for equivalent functionality. ([#362](https://github.com/heroku/libcnb.rs/pull/362))
