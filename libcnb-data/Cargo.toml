@@ -1,6 +1,6 @@
 [package]
 name = "libcnb-data"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
 rust-version = "1.58"
 license = "BSD-3-Clause"
@@ -13,7 +13,7 @@ include = ["src/**/*", "../LICENSE", "../README.md"]
 
 [dependencies]
 fancy-regex = "0.10.0"
-libcnb-proc-macros = { path = "../libcnb-proc-macros", version = "0.2.1" }
+libcnb-proc-macros = { path = "../libcnb-proc-macros", version = "0.2.2" }
 serde = { version = "1.0.137", features = ["derive"] }
 thiserror = "1.0.31"
 toml = "0.5.9"
