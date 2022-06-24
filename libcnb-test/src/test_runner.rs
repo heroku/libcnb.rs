@@ -147,12 +147,12 @@ impl TestRunner {
             // Copy the app to a temporary directory if an app_dir_preprocessor is specified and run the
             // preprocessor. Skip app copying if no changes to the app will be made.
             if let Some(app_dir_preprocessor) = &config.app_dir_preprocessor {
-                let app_dir = app::copy_app(&normalized_app_dir_path)
+                let temporary_app_dir = app::copy_app(&normalized_app_dir_path)
                     .expect("Could not copy app to temporary location");
 
-                (app_dir_preprocessor)(app_dir.as_path().to_owned());
+                (app_dir_preprocessor)(temporary_app_dir.as_path().to_owned());
 
-                app_dir
+                temporary_app_dir
             } else {
                 normalized_app_dir_path.into()
             }
