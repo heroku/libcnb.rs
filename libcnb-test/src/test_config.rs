@@ -127,6 +127,16 @@ impl TestConfig {
         self
     }
 
+    /// Sets the app directory.
+    ///
+    /// The app directory is normally set in the [`TestConfig::new`] call, but when sharing test
+    /// configuration, it might be necessary to change the app directory but keep everything else
+    /// the same.
+    pub fn app_dir<P: Into<PathBuf>>(&mut self, path: P) -> &mut Self {
+        self.app_dir = path.into();
+        self
+    }
+
     /// Set the expected `pack` command result.
     ///
     /// In some cases, users might want to explicitly test that a build fails and asserting against

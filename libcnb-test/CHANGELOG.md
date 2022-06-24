@@ -14,6 +14,7 @@
 - Add `Clone` implementation for `TestConfig`, allowing it to be shared across tests. ([#422](https://github.com/heroku/libcnb.rs/pull/422)).
 - Add `TestContext::run_test`, allowing you to run subsequent integration tests with the image from a previous test. These functions allow testing of subsequent builds, including caching logic and buildpack behaviour when build environment variables change, stacks are upgraded and more. ([#422](https://github.com/heroku/libcnb.rs/pull/422)).
 - Add `TestConfig::expected_pack_result`. When set to `PackResult::Failure`, it allows testing of build failure scenarios. ([#429](https://github.com/heroku/libcnb.rs/pull/429)).
+- Add `TestConfig::app_dir` which is handy in cases where `TestConfig` values are shared and only the `app_dir` needs to be different. ([#430](https://github.com/heroku/libcnb.rs/pull/430)).
 
 ## [0.3.1] 2022-04-12
 
