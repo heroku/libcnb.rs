@@ -192,7 +192,6 @@ impl TestRunner {
         let test_context = TestContext {
             pack_stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
             pack_stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
-            app_dir: PathBuf::from(temp_app_dir.path()),
             image_name,
             config: config.clone(),
             runner: self,
