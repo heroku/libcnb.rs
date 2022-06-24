@@ -25,6 +25,6 @@ pub use crate::test_runner::*;
 
 // This runs the README.md as a doctest, ensuring the code examples in it are valid.
 // It will not be part of the final crate.
-#[cfg(doctest)]
 #[doc = include_str!("../README.md")]
+#[cfg(doctest)]
 pub struct ReadmeDoctests;
