@@ -1,7 +1,6 @@
 use crate::{PrepareContainerContext, TestConfig, TestRunner};
 use bollard::image::RemoveImageOptions;
 use std::borrow::Borrow;
-use std::path::PathBuf;
 
 /// Context for a currently executing test.
 pub struct TestContext<'a> {
@@ -9,11 +8,6 @@ pub struct TestContext<'a> {
     pub pack_stdout: String,
     /// Standard error of `pack`, interpreted as an UTF-8 string.
     pub pack_stderr: String,
-    /// The directory of the app this integration test uses.
-    ///
-    /// This is a copy of the `app_dir` directory passed to [`TestConfig::new`] and unique to
-    /// this integration test run. It is safe to modify the directory contents inside the test.
-    pub app_dir: PathBuf,
     /// The configuration used for this integration test.
     pub config: TestConfig,
 

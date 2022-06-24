@@ -134,21 +134,29 @@ impl TestRunner {
     ) {
         let config = config.borrow();
 
-        let app_dir = if config.app_dir.is_relative() {
-            env::var("CARGO_MANIFEST_DIR")
-                .map(PathBuf::from)
-                .expect("Could not determine Cargo manifest directory")
-                .join(&config.app_dir)
-        } else {
-            config.app_dir.clone()
+        let app_dir = {
+            let normalized_app_dir_path = if config.app_dir.is_relative() {
+                env::var("CARGO_MANIFEST_DIR")
+                    .map(PathBuf::from)
+                    .expect("Could not determine Cargo manifest directory")
+                    .join(&config.app_dir)
+            } else {
+                config.app_dir.clone()
+            };
+
+            // Copy the app to a temporary directory if an app_dir_preprocessor is specified and run the
+            // preprocessor. Skip app copying if no changes to the app will be made.
+            if let Some(app_dir_preprocessor) = &config.app_dir_preprocessor {
+                let temporary_app_dir = app::copy_app(&normalized_app_dir_path)
+                    .expect("Could not copy app to temporary location");
+
+                (app_dir_preprocessor)(temporary_app_dir.as_path().to_owned());
+
+                temporary_app_dir
+            } else {
+                normalized_app_dir_path.into()
+            }
         };
-
-        let temp_app_dir =
-            app::copy_app(&app_dir).expect("Could not copy app to temporary location");
-
-        if let Some(app_dir_preprocessor) = &config.app_dir_preprocessor {
-            (app_dir_preprocessor)(PathBuf::from(temp_app_dir.path()));
-        }
 
         let temp_crate_buildpack_dir =
             config
@@ -161,7 +169,7 @@ impl TestRunner {
 
         let mut pack_command = PackBuildCommand::new(
             &config.builder_name,
-            temp_app_dir.path(),
+            &app_dir,
             &image_name,
             // Prevent redundant image-pulling, which slows tests and risks hitting registry rate limits.
             PullPolicy::IfNotPresent,
@@ -192,7 +200,6 @@ impl TestRunner {
         let test_context = TestContext {
             pack_stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
             pack_stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
-            app_dir: PathBuf::from(temp_app_dir.path()),
             image_name,
             config: config.clone(),
             runner: self,
