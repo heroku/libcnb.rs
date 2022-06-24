@@ -7,12 +7,12 @@
 // https://rust-lang.github.io/rust-clippy/stable/index.html
 #![warn(clippy::pedantic)]
 
-use libcnb_test::{assert_contains, assert_not_contains, TestConfig, TestRunner};
-use std::io;
+use libcnb_test::{assert_contains, assert_not_contains, PackResult, TestConfig, TestRunner};
 use std::io::{Read, Write};
 use std::net;
 use std::net::ToSocketAddrs;
 use std::time::Duration;
+use std::{fs, io};
 
 #[test]
 #[ignore]
@@ -51,6 +51,22 @@ fn basic() {
             assert_not_contains!(context.pack_stdout, "---> Installing gems");
         });
     });
+}
+
+#[test]
+#[ignore]
+fn missing_gemfile_lock() {
+    TestRunner::default().run_test(
+        TestConfig::new("heroku/buildpacks:20", "test-fixtures/simple-ruby-app")
+            .app_dir_preprocessor(|path| fs::remove_file(path.join("Gemfile.lock")).unwrap())
+            .expected_pack_result(PackResult::Failure),
+        |context| {
+            assert_contains!(
+                context.pack_stdout,
+                "ERROR: No buildpack groups passed detection."
+            );
+        },
+    );
 }
 
 fn call_test_fixture_service<A>(a: A, payload: impl AsRef<str>) -> io::Result<String>

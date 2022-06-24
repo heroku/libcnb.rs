@@ -1,5 +1,5 @@
 use crate::pack::{PackBuildCommand, PullPolicy};
-use crate::{app, build, util, BuildpackReference, TestConfig, TestContext};
+use crate::{app, build, util, BuildpackReference, PackResult, TestConfig, TestContext};
 use bollard::Docker;
 use std::borrow::Borrow;
 use std::env;
@@ -198,18 +198,21 @@ impl TestRunner {
             runner: self,
         };
 
-        if output.status.success() {
-            f(test_context);
-        } else {
+        if (config.expected_pack_result == PackResult::Failure && output.status.success())
+            || (config.expected_pack_result == PackResult::Success && !output.status.success())
+        {
             panic!(
-                "pack command failed with exit-code {}!\n\npack stdout:\n{}\n\npack stderr:\n{}",
+                "pack command unexpectedly {} with exit-code {}!\n\npack stdout:\n{}\n\npack stderr:\n{}",
+                if output.status.success() { "succeeded" } else { "failed" },
                 output
                     .status
                     .code()
                     .map_or(String::from("<unknown>"), |exit_code| exit_code.to_string()),
                 test_context.pack_stdout,
                 test_context.pack_stderr
-            )
+            );
+        } else {
+            f(test_context);
         }
     }
 }

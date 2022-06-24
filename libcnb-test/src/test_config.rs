@@ -11,6 +11,7 @@ pub struct TestConfig {
     pub(crate) buildpacks: Vec<BuildpackReference>,
     pub(crate) env: HashMap<String, String>,
     pub(crate) app_dir_preprocessor: Option<Rc<dyn Fn(PathBuf)>>,
+    pub(crate) expected_pack_result: PackResult,
 }
 
 impl TestConfig {
@@ -27,6 +28,7 @@ impl TestConfig {
             buildpacks: vec![BuildpackReference::Crate],
             env: HashMap::new(),
             app_dir_preprocessor: None,
+            expected_pack_result: PackResult::Success,
         }
     }
 
@@ -124,6 +126,18 @@ impl TestConfig {
         self.app_dir_preprocessor = Some(Rc::new(f));
         self
     }
+
+    /// Set the expected `pack` command result.
+    ///
+    /// In some cases, users might want to explicitly test that a build fails and asserting against
+    /// error output. When passed [`PackResult::Failure`], the test will fail if the pack build
+    /// succeeds and vice-versa.
+    ///
+    /// Defaults to [`PackResult::Success`]
+    pub fn expected_pack_result(&mut self, pack_result: PackResult) -> &mut Self {
+        self.expected_pack_result = pack_result;
+        self
+    }
 }
 
 /// References a Cloud Native Buildpack
@@ -133,4 +147,13 @@ pub enum BuildpackReference {
     Crate,
     /// References another buildpack by id, local directory or tarball
     Other(String),
+}
+
+/// Result of a pack execution.
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum PackResult {
+    /// Pack executed successfully.
+    Success,
+    /// Pack execution failed.
+    Failure,
 }

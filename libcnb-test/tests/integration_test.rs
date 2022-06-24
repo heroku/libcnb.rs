@@ -12,7 +12,7 @@ use tempfile::tempdir;
 
 #[test]
 #[ignore]
-#[should_panic(expected = "pack command failed with exit-code 1!
+#[should_panic(expected = "pack command unexpectedly failed with exit-code 1!
 
 pack stdout:
 
