@@ -1,6 +1,6 @@
 [package]
 name = "libcnb-test"
-version = "0.3.1"
+version = "0.4.0"
 edition = "2021"
 rust-version = "1.58"
 license = "BSD-3-Clause"
@@ -16,7 +16,7 @@ bollard = "0.13.0"
 cargo_metadata = "0.15.0"
 fastrand = "1.7.0"
 fs_extra = "1.2.0"
-libcnb-package = { version = "0.1.1", path = "../libcnb-package" }
+libcnb-package = { version = "0.1.2", path = "../libcnb-package" }
 serde = "1.0.137"
 tempfile = "3.3.0"
 tokio = "1.19.2"
