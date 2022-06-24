@@ -17,7 +17,9 @@ Please use the same tag for feature requests.
 // In $CRATE_ROOT/tests/integration_test.rs
 use libcnb_test::{assert_contains, BuildpackReference, TestRunner, TestConfig};
 
-#[test]
+// In your code you'll want to mark your function as a test with `#[test]`.
+// It is removed here for compatability with doctest so this code in the readme
+// tests for compilation.
 fn test() {
     TestRunner::default().run_test(
         TestConfig::new("heroku/builder:22", "test-fixtures/app"),
