@@ -6,7 +6,10 @@ use std::path::Path;
 use std::process::{Command, ExitStatus};
 use tar::Archive;
 
-pub fn download(uri: impl AsRef<str>, destination: impl AsRef<Path>) -> Result<(), DownloadError> {
+pub(crate) fn download(
+    uri: impl AsRef<str>,
+    destination: impl AsRef<Path>,
+) -> Result<(), DownloadError> {
     let mut response_reader = ureq::get(uri.as_ref())
         .call()
         .map_err(|err| DownloadError::RequestError(Box::new(err)))?
@@ -22,14 +25,17 @@ pub fn download(uri: impl AsRef<str>, destination: impl AsRef<Path>) -> Result<(
 }
 
 #[derive(Debug)]
-pub enum DownloadError {
+pub(crate) enum DownloadError {
     // Boxed to prevent `large_enum_variant` errors since `ureq::Error` is massive.
     RequestError(Box<ureq::Error>),
     CouldNotCreateDestinationFile(std::io::Error),
     CouldNotWriteDestinationFile(std::io::Error),
 }
 
-pub fn untar(path: impl AsRef<Path>, destination: impl AsRef<Path>) -> Result<(), UntarError> {
+pub(crate) fn untar(
+    path: impl AsRef<Path>,
+    destination: impl AsRef<Path>,
+) -> Result<(), UntarError> {
     let file = fs::File::open(path.as_ref()).map_err(UntarError::CouldNotOpenFile)?;
 
     Archive::new(GzDecoder::new(file))
@@ -38,19 +44,19 @@ pub fn untar(path: impl AsRef<Path>, destination: impl AsRef<Path>) -> Result<()
 }
 
 #[derive(Debug)]
-pub enum UntarError {
+pub(crate) enum UntarError {
     CouldNotOpenFile(std::io::Error),
     CouldNotUnpack(std::io::Error),
 }
 
-pub fn sha256_checksum(path: impl AsRef<Path>) -> Result<String, std::io::Error> {
+pub(crate) fn sha256_checksum(path: impl AsRef<Path>) -> Result<String, std::io::Error> {
     fs::read(path).map(|bytes| format!("{:x}", sha2::Sha256::digest(bytes)))
 }
 
 /// Helper to run very simple commands where we just need to handle IO errors and non-zero exit
 /// codes. Not very useful in complex scenarios, but can cut down the amount of code in simple
 /// cases.
-pub fn run_simple_command<E, F: FnOnce(std::io::Error) -> E, F2: FnOnce(ExitStatus) -> E>(
+pub(crate) fn run_simple_command<E, F: FnOnce(std::io::Error) -> E, F2: FnOnce(ExitStatus) -> E>(
     command: &mut Command,
     io_error_fn: F,
     exit_status_fn: F2,

@@ -8,7 +8,7 @@ use libcnb::layer_env::{LayerEnv, ModificationBehavior, Scope};
 use std::path::Path;
 use tempfile::NamedTempFile;
 
-pub struct RubyLayer;
+pub(crate) struct RubyLayer;
 
 impl Layer for RubyLayer {
     type Buildpack = RubyBuildpack;

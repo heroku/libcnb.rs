@@ -10,11 +10,11 @@ use std::path::Path;
 use std::process::Command;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
-pub struct BundlerLayerMetadata {
+pub(crate) struct BundlerLayerMetadata {
     gemfile_lock_checksum: String,
 }
 
-pub struct BundlerLayer {
+pub(crate) struct BundlerLayer {
     pub ruby_env: Env,
 }
 
