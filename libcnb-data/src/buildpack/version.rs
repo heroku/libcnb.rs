@@ -1,4 +1,3 @@
-use fancy_regex::Regex;
 use serde::Deserialize;
 use std::convert::TryFrom;
 use std::fmt;
@@ -32,19 +31,24 @@ impl TryFrom<&str> for BuildpackVersion {
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         // We're not using the `semver` crate, since semver versions also permit pre-release and
-        // build metadata suffixes. We have to use regex (vs just `.split(".")`), since the spec
-        // forbids redundant leading zeros, and `std::parse()` otherwise silently ignores them.
-        let re = Regex::new(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$").unwrap();
-        re.captures(value)
-            .unwrap_or_default()
-            .and_then(|captures| {
-                Some(Self::new(
-                    captures.get(1)?.as_str().parse().ok()?,
-                    captures.get(2)?.as_str().parse().ok()?,
-                    captures.get(3)?.as_str().parse().ok()?,
-                ))
+        // build metadata suffixes, which are not valid in buildpack versions.
+        match value
+            .split('.')
+            .map(|s| {
+                // The spec forbids redundant leading zeros.
+                if s.starts_with('0') && s != "0" {
+                    None
+                } else {
+                    s.parse().ok()
+                }
             })
-            .ok_or_else(|| Self::Error::InvalidBuildpackVersion(String::from(value)))
+            .collect::<Option<Vec<_>>>()
+            .unwrap_or_default()
+            .as_slice()
+        {
+            &[major, minor, patch] => Ok(Self::new(major, minor, patch)),
+            _ => Err(Self::Error::InvalidBuildpackVersion(String::from(value))),
+        }
     }
 }
 
