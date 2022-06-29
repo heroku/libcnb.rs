@@ -95,6 +95,20 @@ mod tests {
         );
 
         assert_eq!(
+            "FOO.BAR".parse::<ExecDProgramOutputKey>(),
+            Err(ExecDProgramOutputKeyError::InvalidValue(String::from(
+                "FOO.BAR"
+            )))
+        );
+
+        assert_eq!(
+            "FOO/BAR".parse::<ExecDProgramOutputKey>(),
+            Err(ExecDProgramOutputKeyError::InvalidValue(String::from(
+                "FOO/BAR"
+            )))
+        );
+
+        assert_eq!(
             "FÜCHSCHEN".parse::<ExecDProgramOutputKey>(),
             Err(ExecDProgramOutputKeyError::InvalidValue(String::from(
                 "FÜCHSCHEN"
