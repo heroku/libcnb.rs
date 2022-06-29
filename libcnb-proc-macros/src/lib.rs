@@ -37,11 +37,11 @@ pub fn verify_regex(input: TokenStream) -> TokenStream {
 
             quote! { #expression }
         }
-        Err(_) => {
-            quote! {
-                compile_error!(concat!("Could not compile regular expression: ", #(verify_regex_input.regex)));
-            }
-        }
+        Err(err) => syn::Error::new(
+            input.regex.span(),
+            format!("Could not compile regular expression: {err}"),
+        )
+        .to_compile_error(),
     };
 
     token_stream.into()
