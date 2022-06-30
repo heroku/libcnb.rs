@@ -1,5 +1,6 @@
 use tokio_stream::{Stream, StreamExt};
 
+/// Container log output.
 #[derive(Debug, Default)]
 pub struct LogOutput {
     pub stdout_raw: Vec<u8>,

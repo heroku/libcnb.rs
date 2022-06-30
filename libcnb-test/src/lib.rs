@@ -19,6 +19,7 @@ mod test_runner;
 mod util;
 
 pub use crate::container_context::*;
+pub use crate::log::*;
 pub use crate::test_config::*;
 pub use crate::test_context::*;
 pub use crate::test_runner::*;
