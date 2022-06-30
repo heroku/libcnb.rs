@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Disable `fancy-regex` default features (such as unused unicode support) to reduce buildpack binary size. ([#439](https://github.com/heroku/libcnb.rs/pull/439))
 - Fix `verify_regex`'s error handling when the regex could not be compiled. ([#438](https://github.com/heroku/libcnb.rs/pull/438))
 
 ## [0.2.2] 2022-06-24
