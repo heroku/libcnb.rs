@@ -20,6 +20,18 @@ impl TestConfig {
     /// If the `app_dir` parameter is a relative path, it is treated as relative to the Cargo
     /// manifest directory ([`CARGO_MANIFEST_DIR`](https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-crates)),
     /// i.e. the package's root directory.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use libcnb_test::{TestConfig, TestRunner};
+    ///
+    /// TestRunner::default().run_test(
+    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
+    ///     |context| {
+    ///         // ...
+    ///     },
+    /// );
+    /// ```
     pub fn new(builder_name: impl Into<String>, app_dir: impl AsRef<Path>) -> Self {
         TestConfig {
             app_dir: PathBuf::from(app_dir.as_ref()),
@@ -35,6 +47,21 @@ impl TestConfig {
     /// Sets the buildpacks order.
     ///
     /// Defaults to [`BuildpackReference::Crate`].
+    ///
+    /// # Example
+    /// ```no_run
+    /// use libcnb_test::{BuildpackReference, TestConfig, TestRunner};
+    ///
+    /// TestRunner::default().run_test(
+    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app").buildpacks(vec![
+    ///         BuildpackReference::Other(String::from("heroku/another-buildpack")),
+    ///         BuildpackReference::Crate,
+    ///     ]),
+    ///     |context| {
+    ///         // ...
+    ///     },
+    /// );
+    /// ```
     pub fn buildpacks(&mut self, buildpacks: impl Into<Vec<BuildpackReference>>) -> &mut Self {
         self.buildpacks = buildpacks.into();
         self
@@ -43,6 +70,19 @@ impl TestConfig {
     /// Sets the target triple used when compiling the buildpack.
     ///
     /// Defaults to `x86_64-unknown-linux-musl`.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use libcnb_test::{TestConfig, TestRunner};
+    ///
+    /// TestRunner::default().run_test(
+    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app")
+    ///         .target_triple("x86_64-unknown-linux-musl"),
+    ///     |context| {
+    ///         // ...
+    ///     },
+    /// );
+    /// ```
     pub fn target_triple(&mut self, target_triple: impl Into<String>) -> &mut Self {
         self.target_triple = target_triple.into();
         self
@@ -64,7 +104,7 @@ impl TestConfig {
     ///     |context| {
     ///         // ...
     ///     },
-    /// )
+    /// );
     /// ```
     pub fn env(&mut self, k: impl Into<String>, v: impl Into<String>) -> &mut Self {
         self.env.insert(k.into(), v.into());
@@ -114,9 +154,9 @@ impl TestConfig {
     /// use libcnb_test::{TestConfig, TestRunner};
     ///
     /// TestRunner::default().run_test(
-    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app").app_dir_preprocessor(
-    ///         |app_dir| std::fs::remove_file(app_dir.join("Procfile")).unwrap(),
-    ///     ),
+    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app").app_dir_preprocessor(|app_dir| {
+    ///         std::fs::remove_file(app_dir.join("Procfile")).unwrap();
+    ///     }),
     ///     |context| {
     ///         // ...
     ///     },
@@ -132,6 +172,22 @@ impl TestConfig {
     /// The app directory is normally set in the [`TestConfig::new`] call, but when sharing test
     /// configuration, it might be necessary to change the app directory but keep everything else
     /// the same.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use libcnb_test::{TestConfig, TestRunner};
+    ///
+    /// fn default_config() -> TestConfig {
+    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app")
+    /// }
+    ///
+    /// TestRunner::default().run_test(
+    ///     default_config().app_dir("test-fixtures/a-different-app"),
+    ///     |context| {
+    ///         // ...
+    ///     },
+    /// );
+    /// ```
     pub fn app_dir<P: Into<PathBuf>>(&mut self, path: P) -> &mut Self {
         self.app_dir = path.into();
         self
@@ -143,19 +199,32 @@ impl TestConfig {
     /// error output. When passed [`PackResult::Failure`], the test will fail if the pack build
     /// succeeds and vice-versa.
     ///
-    /// Defaults to [`PackResult::Success`]
+    /// Defaults to [`PackResult::Success`].
+    ///
+    /// # Example
+    /// ```no_run
+    /// use libcnb_test::{PackResult, TestConfig, TestRunner};
+    ///
+    /// TestRunner::default().run_test(
+    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app")
+    ///         .expected_pack_result(PackResult::Failure),
+    ///     |context| {
+    ///         // ...
+    ///     },
+    /// );
+    /// ```
     pub fn expected_pack_result(&mut self, pack_result: PackResult) -> &mut Self {
         self.expected_pack_result = pack_result;
         self
     }
 }
 
-/// References a Cloud Native Buildpack
+/// References a Cloud Native Buildpack.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum BuildpackReference {
-    /// References the buildpack in the Rust Crate currently being tested
+    /// References the buildpack in the Rust Crate currently being tested.
     Crate,
-    /// References another buildpack by id, local directory or tarball
+    /// References another buildpack by id, local directory or tarball.
     Other(String),
 }
 
