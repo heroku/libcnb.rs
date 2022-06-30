@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Fix rustdocs for `LogOutput`. ([#440](https://github.com/heroku/libcnb.rs/pull/440)).
+
 ## [0.4.0] 2022-06-24
 
 - Leverage `Into` trait for `String`/`&str` arguments in `ContainerContext` ([#412](https://github.com/heroku/libcnb.rs/pull/412)).
