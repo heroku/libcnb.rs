@@ -12,7 +12,7 @@ readme = "../README.md"
 include = ["src/**/*", "../LICENSE", "../README.md"]
 
 [dependencies]
-fancy-regex = "0.10.0"
+fancy-regex = { version = "0.10.0", default-features = false }
 libcnb-proc-macros = { path = "../libcnb-proc-macros", version = "0.2.2" }
 serde = { version = "1.0.137", features = ["derive"] }
 thiserror = "1.0.31"

@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Disable `fancy-regex` default features (such as unused unicode support) to reduce buildpack binary size. ([#439](https://github.com/heroku/libcnb.rs/pull/439))
+
 # [0.7.0] 2022-06-24
 
 - Add `Launch::processes` function to add multiple `Process`es to a `Launch` value at once. ([#418](https://github.com/heroku/libcnb.rs/pull/418)) 
