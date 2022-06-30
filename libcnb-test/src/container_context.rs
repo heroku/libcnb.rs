@@ -10,6 +10,10 @@ use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+/// Context for preparing a container.
+///
+/// Created by [`TestContext::prepare_container`] and is used to configure the
+/// container before running it.
 pub struct PrepareContainerContext<'a> {
     test_context: &'a TestContext<'a>,
     exposed_ports: Vec<u16>,
@@ -45,10 +49,11 @@ impl<'a> PrepareContainerContext<'a> {
     ///     |context| {
     ///         context
     ///             .prepare_container()
-    ///             .envs(vec![("FOO", "FOO_VALUE"), ("BAR", "BAR_VALUE")])
+    ///             .env("FOO", "FOO_VALUE")
+    ///             .env("BAR", "BAR_VALUE")
     ///             .start_with_default_process(|container| {
     ///                 // ...
-    ///             })
+    ///             });
     ///     },
     /// );
     /// ```
@@ -71,7 +76,7 @@ impl<'a> PrepareContainerContext<'a> {
     ///             .envs(vec![("FOO", "FOO_VALUE"), ("BAR", "BAR_VALUE")])
     ///             .start_with_default_process(|container| {
     ///                 // ...
-    ///             })
+    ///             });
     ///     },
     /// );
     /// ```
@@ -91,9 +96,21 @@ impl<'a> PrepareContainerContext<'a> {
     ///
     /// See: [CNB App Developer Guide: Run a multi-process app - Default process type](https://buildpacks.io/docs/app-developer-guide/run-an-app/#default-process-type)
     ///
-    /// # Panics
-    /// - When the container could not be created
-    /// - When the container could not be started
+    /// # Example
+    /// ```no_run
+    /// use libcnb_test::{TestConfig, TestRunner};
+    ///
+    /// TestRunner::default().run_test(
+    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
+    ///     |context| {
+    ///         context
+    ///             .prepare_container()
+    ///             .start_with_default_process(|container| {
+    ///                 // ...
+    ///             });
+    ///     },
+    /// );
+    /// ```
     pub fn start_with_default_process<F: FnOnce(ContainerContext)>(&self, f: F) {
         self.start_internal(None, None, f);
     }
@@ -103,9 +120,22 @@ impl<'a> PrepareContainerContext<'a> {
     ///
     /// See: [CNB App Developer Guide: Run a multi-process app - Default process type with additional arguments](https://buildpacks.io/docs/app-developer-guide/run-an-app/#default-process-type-with-additional-arguments)
     ///
-    /// # Panics
-    /// - When the container could not be created
-    /// - When the container could not be started
+    /// # Example
+    /// ```no_run
+    /// use libcnb_test::{TestConfig, TestRunner};
+    ///
+    /// TestRunner::default().run_test(
+    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
+    ///     |context| {
+    ///         context.prepare_container().start_with_default_process_args(
+    ///             ["--version"],
+    ///             |container| {
+    ///                 // ...
+    ///             },
+    ///         );
+    ///     },
+    /// );
+    /// ```
     pub fn start_with_default_process_args<
         F: FnOnce(ContainerContext),
         A: IntoIterator<Item = I>,
@@ -122,9 +152,21 @@ impl<'a> PrepareContainerContext<'a> {
     ///
     /// See: [CNB App Developer Guide: Run a multi-process app - Non-default process-type](https://buildpacks.io/docs/app-developer-guide/run-an-app/#non-default-process-type)
     ///
-    /// # Panics
-    /// - When the container could not be created
-    /// - When the container could not be started
+    /// # Example
+    /// ```no_run
+    /// use libcnb_test::{TestConfig, TestRunner};
+    ///
+    /// TestRunner::default().run_test(
+    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
+    ///     |context| {
+    ///         context
+    ///             .prepare_container()
+    ///             .start_with_process("worker", |container| {
+    ///                 // ...
+    ///             });
+    ///     },
+    /// );
+    /// ```
     pub fn start_with_process<F: FnOnce(ContainerContext), P: Into<String>>(
         &self,
         process: P,
@@ -138,9 +180,23 @@ impl<'a> PrepareContainerContext<'a> {
     ///
     /// See: [CNB App Developer Guide: Run a multi-process app - Non-default process-type with additional arguments](https://buildpacks.io/docs/app-developer-guide/run-an-app/#non-default-process-type-with-additional-arguments)
     ///
-    /// # Panics
-    /// - When the container could not be created
-    /// - When the container could not be started
+    /// # Example
+    /// ```no_run
+    /// use libcnb_test::{TestConfig, TestRunner};
+    ///
+    /// TestRunner::default().run_test(
+    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
+    ///     |context| {
+    ///         context.prepare_container().start_with_process_args(
+    ///             "worker",
+    ///             ["--config", "foo.toml"],
+    ///             |container| {
+    ///                 // ...
+    ///             },
+    ///         );
+    ///     },
+    /// );
+    /// ```
     pub fn start_with_process_args<
         F: FnOnce(ContainerContext),
         A: IntoIterator<Item = I>,
@@ -166,9 +222,21 @@ impl<'a> PrepareContainerContext<'a> {
     ///
     /// See: [CNB App Developer Guide: Run a multi-process app - User-provided shell process](https://buildpacks.io/docs/app-developer-guide/run-an-app/#user-provided-shell-process)
     ///
-    /// # Panics
-    /// - When the container could not be created
-    /// - When the container could not be started
+    /// # Example
+    /// ```no_run
+    /// use libcnb_test::{TestConfig, TestRunner};
+    ///
+    /// TestRunner::default().run_test(
+    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
+    ///     |context| {
+    ///         context
+    ///             .prepare_container()
+    ///             .start_with_shell_command("env", |container| {
+    ///                 // ...
+    ///             });
+    ///     },
+    /// );
+    /// ```
     pub fn start_with_shell_command<F: FnOnce(ContainerContext), C: Into<String>>(
         &self,
         command: C,
@@ -227,7 +295,9 @@ impl<'a> PrepareContainerContext<'a> {
     }
 }
 
+/// Context of a launched container.
 pub struct ContainerContext<'a> {
+    /// The randomly generated name of this container.
     pub container_name: String,
     pub(crate) test_context: &'a TestContext<'a>,
 }
@@ -241,8 +311,22 @@ impl<'a> ContainerContext<'a> {
     ///
     /// See: [`logs_wait`](Self::logs_wait) for a blocking alternative.
     ///
-    /// # Panics
-    /// - When the log output could not be consumed/read.
+    /// # Example
+    /// ```no_run
+    /// use libcnb_test::{assert_contains, TestConfig, TestRunner};
+    ///
+    /// TestRunner::default().run_test(
+    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
+    ///     |context| {
+    ///         // ...
+    ///         context
+    ///             .prepare_container()
+    ///             .start_with_default_process(|container| {
+    ///                 assert_contains!(container.logs_now().stdout, "Expected output");
+    ///             });
+    ///     },
+    /// );
+    /// ```
     #[must_use]
     pub fn logs_now(&self) -> LogOutput {
         // Bollard forces us to cast to i64
@@ -268,8 +352,22 @@ impl<'a> ContainerContext<'a> {
     ///
     /// See: [`logs_now`](Self::logs_now) for a non-blocking alternative.
     ///
-    /// # Panics
-    /// - When the log output could not be consumed/read.
+    /// # Example
+    /// ```no_run
+    /// use libcnb_test::{assert_contains, TestConfig, TestRunner};
+    ///
+    /// TestRunner::default().run_test(
+    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
+    ///     |context| {
+    ///         // ...
+    ///         context
+    ///             .prepare_container()
+    ///             .start_with_default_process(|container| {
+    ///                 assert_contains!(container.logs_wait().stdout, "Expected output");
+    ///             });
+    ///     },
+    /// );
+    /// ```
     #[must_use]
     pub fn logs_wait(&self) -> LogOutput {
         self.logs_internal(bollard::container::LogsOptions {
@@ -298,7 +396,35 @@ impl<'a> ContainerContext<'a> {
             .expect("Could not consume container log output")
     }
 
-    /// # Panics
+    /// Returns the local address of an exposed container port.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use libcnb_test::{TestConfig, TestRunner};
+    ///
+    /// # fn call_test_fixture_service(addr: std::net::SocketAddr, payload: &str) -> Result<String, ()> {
+    /// #    unimplemented!()
+    /// # }
+    /// TestRunner::default().run_test(
+    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
+    ///     |context| {
+    ///         // ...
+    ///         context
+    ///             .prepare_container()
+    ///             .expose_port(12345)
+    ///             .start_with_default_process(|container| {
+    ///                 assert_eq!(
+    ///                     call_test_fixture_service(
+    ///                         container.address_for_port(12345).unwrap(),
+    ///                         "Hagbard Celine"
+    ///                     )
+    ///                     .unwrap(),
+    ///                     "enileC drabgaH"
+    ///                 );
+    ///             });
+    ///     },
+    /// );
+    /// ```
     #[must_use]
     pub fn address_for_port(&self, port: u16) -> Option<SocketAddr> {
         self.test_context.runner.tokio_runtime.block_on(async {
@@ -307,12 +433,12 @@ impl<'a> ContainerContext<'a> {
                 .docker
                 .inspect_container(&self.container_name, None)
                 .await
-                .unwrap()
+                .expect("Could not inspect container")
                 .network_settings
                 .and_then(|network_settings| network_settings.ports)
                 .and_then(|ports| {
                     container_port_mapping::parse_port_map(&ports)
-                        .unwrap()
+                        .expect("Could not parse container port mapping")
                         .get(&port)
                         .copied()
                 })
@@ -321,7 +447,22 @@ impl<'a> ContainerContext<'a> {
 
     /// Executes a shell command inside an already running container.
     ///
-    /// # Panics
+    /// # Example
+    /// ```no_run
+    /// use libcnb_test::{assert_contains, TestConfig, TestRunner};
+    ///
+    /// TestRunner::default().run_test(
+    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
+    ///     |context| {
+    ///         // ...
+    ///         context
+    ///             .prepare_container()
+    ///             .start_with_default_process(|container| {
+    ///                 assert_contains!(container.shell_exec("ps").stdout, "gunicorn");
+    ///             });
+    ///     },
+    /// );
+    /// ```
     pub fn shell_exec(&self, command: impl AsRef<str>) -> LogOutput {
         self.test_context.runner.tokio_runtime.block_on(async {
             let create_exec_result = self
@@ -337,7 +478,7 @@ impl<'a> ContainerContext<'a> {
                     },
                 )
                 .await
-                .unwrap();
+                .expect("Could not create container exec instance");
 
             let start_exec_result = self
                 .test_context
@@ -345,7 +486,7 @@ impl<'a> ContainerContext<'a> {
                 .docker
                 .start_exec(&create_exec_result.id, None)
                 .await
-                .unwrap();
+                .expect("Could not start container exec instance");
 
             match start_exec_result {
                 StartExecResults::Attached { output, .. } => {

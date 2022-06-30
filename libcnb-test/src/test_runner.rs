@@ -16,16 +16,13 @@ use std::process::{Command, Stdio};
 ///
 /// # Example
 /// ```no_run
-/// use libcnb_test::{TestConfig, BuildpackReference, assert_contains, TestRunner};
+/// use libcnb_test::{assert_contains, TestConfig, TestRunner};
 ///
 /// # fn call_test_fixture_service(addr: std::net::SocketAddr, payload: &str) -> Result<String, ()> {
 /// #    unimplemented!()
 /// # }
 /// TestRunner::default().run_test(
-///     TestConfig::new("heroku/builder:22", "test-fixtures/app").buildpacks(vec![
-///         BuildpackReference::Other(String::from("heroku/openjdk")),
-///         BuildpackReference::Crate,
-///     ]),
+///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
 ///     |context| {
 ///         assert_contains!(context.pack_stdout, "---> Maven Buildpack");
 ///         assert_contains!(context.pack_stdout, "---> Installing Maven");
@@ -96,18 +93,13 @@ impl TestRunner {
 
     /// Starts a new integration test run.
     ///
-    /// This function copies the application to a temporary directory, cross-compiles this crate,
-    /// packages it as a buildpack and then invokes [pack](https://buildpacks.io/docs/tools/pack/)
+    /// This function copies the application to a temporary directory (if necessary), cross-compiles the current
+    /// crate, packages it as a buildpack and then invokes [pack](https://buildpacks.io/docs/tools/pack/)
     /// to build a new Docker image with the buildpacks specified by the passed [`TestConfig`].
     ///
     /// Since this function is supposed to only be used in integration tests, failures are not
     /// signalled via [`Result`](Result) values. Instead, this function panics whenever an unexpected error
     /// occurred to simplify testing code.
-    ///
-    /// # Panics
-    /// - When the app could not be copied
-    /// - When this crate could not be packaged as a buildpack
-    /// - When the `pack` command unexpectedly fails
     ///
     /// # Example
     /// ```no_run

@@ -29,7 +29,7 @@ impl<'a> TestContext<'a> {
     /// use libcnb_test::{TestConfig, TestRunner};
     ///
     /// TestRunner::default().run_test(
-    ///     TestConfig::new("heroku/builder:22", "test-fixtures/empty-app"),
+    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
     ///     |context| {
     ///         context
     ///             .prepare_container()
@@ -56,11 +56,6 @@ impl<'a> TestContext<'a> {
     /// Note that this function will consume the current context. This is because the image will
     /// be changed by the subsequent test, invalidating the context. Running a subsequent test must
     /// therefore be the last operation. You can nest subsequent runs if required.
-    ///
-    /// # Panics
-    /// - When the app could not be copied
-    /// - When this crate could not be packaged as a buildpack
-    /// - When the `pack` command unexpectedly fails
     ///
     /// # Example
     /// ```no_run
