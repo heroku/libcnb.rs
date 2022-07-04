@@ -17,8 +17,8 @@ use libcnb_package::{
     BuildpackDataError, CargoProfile,
 };
 use log::{error, info, warn};
-use size_format::SizeFormatterSI;
-use std::fs;
+use std::path::Path;
+use std::{fs, io};
 
 fn main() {
     setup_logging();
@@ -173,15 +173,20 @@ fn handle_libcnb_package(args: PackageArgs) {
         std::process::exit(exit_code::UNSPECIFIED_ERROR);
     };
 
-    info!(
-        "Successfully wrote buildpack directory: {} ({})",
-        relative_output_path.to_string_lossy(),
-        fs_extra::dir::get_size(&output_path).map_or_else(
-            |_| String::from("unknown size"),
-            |size| SizeFormatterSI::new(size).to_string()
-        )
-    );
+    let size_in_bytes = calculate_dir_size(&output_path).unwrap_or_else(|io_error| {
+        error!("IO error while calculating buildpack directory size: {io_error}");
+        std::process::exit(exit_code::UNSPECIFIED_ERROR);
+    });
 
+    // Precision will only be lost for sizes bigger than 52 bits (~4 Petabytes), and even
+    // then will only result in a less precise figure, so is not an issue.
+    #[allow(clippy::cast_precision_loss)]
+    let size_in_mb = size_in_bytes as f64 / (1024.0 * 1024.0);
+
+    info!(
+        "Successfully wrote buildpack directory: {} ({size_in_mb:.2} MiB)",
+        relative_output_path.to_string_lossy(),
+    );
     info!("Packaging successfully finished!");
     info!("Hint: To test your buildpack locally with pack, run: pack build my-image --buildpack {} --path /path/to/application", relative_output_path.to_string_lossy());
 }
@@ -194,4 +199,27 @@ fn setup_logging() {
         eprintln!("Unable to initialize logger: {error}");
         std::process::exit(exit_code::UNSPECIFIED_ERROR);
     }
+}
+
+/// Recursively calculate the size of a directory and its contents in bytes.
+// Not using `fs_extra::dir::get_size` since it doesn't handle symlinks correctly:
+// https://github.com/webdesus/fs_extra/issues/59
+fn calculate_dir_size(path: impl AsRef<Path>) -> io::Result<u64> {
+    let mut size_in_bytes = 0;
+
+    // The size of the directory entry (ie: its metadata only, not the directory contents).
+    size_in_bytes += path.as_ref().metadata()?.len();
+
+    for entry in fs::read_dir(&path)? {
+        let entry = entry?;
+        let metadata = entry.metadata()?;
+
+        if metadata.is_dir() {
+            size_in_bytes += calculate_dir_size(entry.path())?;
+        } else {
+            size_in_bytes += metadata.len();
+        }
+    }
+
+    Ok(size_in_bytes)
 }

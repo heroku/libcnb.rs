@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Fix the packaged buildpack size reported by `cargo libcnb package` ([#442](https://github.com/heroku/libcnb.rs/pull/442)).
+
 ## [0.4.1] 2022-06-24
 
 - Update `cargo_metadata` dependency from 0.14.2 to 0.15.0 ([#423](https://github.com/heroku/libcnb.rs/pull/423)).
