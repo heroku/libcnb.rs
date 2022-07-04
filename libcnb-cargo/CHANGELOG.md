@@ -4,6 +4,7 @@
 
 - Fix the packaged buildpack size reported by `cargo libcnb package` ([#442](https://github.com/heroku/libcnb.rs/pull/442)).
 - Reduce number of dependencies to improve installation time. ([#442](https://github.com/heroku/libcnb.rs/pull/442) and [#443](https://github.com/heroku/libcnb.rs/pull/443))
+- Increase minimum supported Rust version from 1.58 to 1.59. ([#445](https://github.com/heroku/libcnb.rs/pull/445))
 
 ## [0.4.1] 2022-06-24
 

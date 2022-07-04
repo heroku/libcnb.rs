@@ -2,7 +2,7 @@
 name = "libcnb-data"
 version = "0.7.0"
 edition = "2021"
-rust-version = "1.58"
+rust-version = "1.59"
 license = "BSD-3-Clause"
 description = "Types for data formats specified in the Cloud Native Buildpack specification, used by libcnb.rs"
 keywords = ["buildpacks", "CNB"]

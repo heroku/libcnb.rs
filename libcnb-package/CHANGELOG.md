@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Strip buildpack binaries when packaging, to reduce buildpack size. This not only reduces the size of production builder images, but also speeds up workflows that involve non-release builds (such as integration tests). ([#445](https://github.com/heroku/libcnb.rs/pull/445))
+- The type of the `cargo_env` argument to `build::build_buildpack_binaries` and `build::build_binary` has changed. ([#445](https://github.com/heroku/libcnb.rs/pull/445))
+- Increase minimum supported Rust version from 1.58 to 1.59. ([#445](https://github.com/heroku/libcnb.rs/pull/445))
+
 ## [0.1.2] 2022-06-24
 
 - Only create `.libcnb-cargo/additional-bin` if there are additional binaries to bundle ([#413](https://github.com/heroku/libcnb.rs/pull/413)).
