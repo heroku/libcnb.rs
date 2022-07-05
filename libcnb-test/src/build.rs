@@ -35,7 +35,7 @@ pub(crate) fn package_crate_buildpack(
         &cargo_manifest_dir,
         &cargo_metadata,
         CargoProfile::Dev,
-        cargo_env,
+        &cargo_env,
         target_triple.as_ref(),
     )
     .map_err(PackageCrateBuildpackError::BuildBinariesError)?;

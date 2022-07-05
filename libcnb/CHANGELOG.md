@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Increase minimum supported Rust version from 1.58 to 1.59. ([#445](https://github.com/heroku/libcnb.rs/pull/445))
+
 ## [0.8.0] 2022-06-24
 
 - Make the "Buildpack API version mismatch" check still work when `buildpack.toml` doesn't match the spec or custom buildpack type ([#421](https://github.com/heroku/libcnb.rs/pull/421)).

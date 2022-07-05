@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Disable `fancy-regex` default features (such as unused unicode support) to reduce buildpack binary size. ([#439](https://github.com/heroku/libcnb.rs/pull/439))
+- Increase minimum supported Rust version from 1.58 to 1.59. ([#445](https://github.com/heroku/libcnb.rs/pull/445))
 
 # [0.7.0] 2022-06-24
 

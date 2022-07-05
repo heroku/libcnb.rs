@@ -2,7 +2,7 @@ use crate::config::{config_from_metadata, ConfigError};
 use crate::CargoProfile;
 use cargo_metadata::Metadata;
 use std::collections::HashMap;
-use std::ffi::OsStr;
+use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus};
 
@@ -17,28 +17,22 @@ use std::process::{Command, ExitStatus};
 ///
 /// Will return `Err` if any build did not finish successfully, the configuration cannot be
 /// read or the configured main buildpack binary does not exist.
-pub fn build_buildpack_binaries<
-    I: IntoIterator<Item = (K, V)>,
-    K: AsRef<OsStr> + Clone,
-    V: AsRef<OsStr> + Clone,
->(
+pub fn build_buildpack_binaries(
     project_path: impl AsRef<Path>,
     cargo_metadata: &Metadata,
     cargo_profile: CargoProfile,
-    cargo_env: I,
+    cargo_env: &[(OsString, OsString)],
     target_triple: impl AsRef<str>,
 ) -> Result<BuildpackBinaries, BuildBinariesError> {
     let binary_target_names = binary_target_names(cargo_metadata);
     let config = config_from_metadata(cargo_metadata).map_err(BuildBinariesError::ConfigError)?;
-
-    let cargo_env: Vec<(K, V)> = cargo_env.into_iter().collect();
 
     let buildpack_target_binary_path = if binary_target_names.contains(&config.buildpack_target) {
         build_binary(
             project_path.as_ref(),
             cargo_metadata,
             cargo_profile,
-            cargo_env.clone(),
+            cargo_env.to_owned(),
             target_triple.as_ref(),
             &config.buildpack_target,
         )
@@ -60,7 +54,7 @@ pub fn build_buildpack_binaries<
                 project_path.as_ref(),
                 cargo_metadata,
                 cargo_profile,
-                cargo_env.clone(),
+                cargo_env.to_owned(),
                 target_triple.as_ref(),
                 additional_binary_target_name,
             )
@@ -97,18 +91,41 @@ pub fn build_buildpack_binaries<
 /// # Errors
 ///
 /// Will return `Err` if the build did not finish successfully.
-pub fn build_binary<I: IntoIterator<Item = (K, V)>, K: AsRef<OsStr>, V: AsRef<OsStr>>(
+pub fn build_binary(
     project_path: impl AsRef<Path>,
     cargo_metadata: &Metadata,
     cargo_profile: CargoProfile,
-    cargo_env: I,
+    mut cargo_env: Vec<(OsString, OsString)>,
     target_triple: impl AsRef<str>,
     target_name: impl AsRef<str>,
 ) -> Result<PathBuf, BuildError> {
     let mut cargo_args = vec!["build", "--target", target_triple.as_ref()];
     match cargo_profile {
-        CargoProfile::Dev => {}
-        CargoProfile::Release => cargo_args.push("--release"),
+        CargoProfile::Dev => {
+            // We enable stripping for dev builds too, since debug builds are extremely
+            // large and can otherwise take a long time to be Docker copied into the
+            // ephemeral builder image created by `pack build` for local development
+            // and integration testing workflows. Since we are stripping the builds,
+            // we also disable debug symbols to improve performance slightly, since
+            // they will only be stripped out at the end of the build anyway.
+            cargo_env.append(&mut vec![
+                (
+                    OsString::from("CARGO_PROFILE_DEV_DEBUG"),
+                    OsString::from("false"),
+                ),
+                (
+                    OsString::from("CARGO_PROFILE_DEV_STRIP"),
+                    OsString::from("true"),
+                ),
+            ]);
+        }
+        CargoProfile::Release => {
+            cargo_args.push("--release");
+            cargo_env.push((
+                OsString::from("CARGO_PROFILE_RELEASE_STRIP"),
+                OsString::from("true"),
+            ));
+        }
     }
 
     let exit_status = Command::new("cargo")

@@ -123,7 +123,7 @@ fn handle_libcnb_package(args: PackageArgs) {
         &current_dir,
         &cargo_metadata,
         cargo_profile,
-        cargo_build_env,
+        &cargo_build_env,
         &target_triple,
     ) {
         Ok(binaries) => binaries,
