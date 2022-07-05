@@ -24,6 +24,10 @@ pub use crate::test_config::*;
 pub use crate::test_context::*;
 pub use crate::test_runner::*;
 
+// Suppress warnings due to the `unused_crate_dependencies` lint not handling integration tests well.
+#[cfg(test)]
+use indoc as _;
+
 // This runs the README.md as a doctest, ensuring the code examples in it are valid.
 // It will not be part of the final crate.
 #[doc = include_str!("../README.md")]
