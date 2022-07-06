@@ -9,7 +9,8 @@
 
 use indoc::indoc;
 use libcnb_test::{
-    assert_contains, assert_not_contains, BuildpackReference, PackResult, TestConfig, TestRunner,
+    assert_contains, assert_empty, assert_not_contains, BuildpackReference, PackResult, TestConfig,
+    TestRunner,
 };
 use std::path::PathBuf;
 use std::time::Duration;
@@ -23,7 +24,7 @@ fn basic_build() {
             BuildpackReference::Other(String::from("heroku/procfile")),
         ]),
         |context| {
-            assert_eq!(context.pack_stderr, "");
+            assert_empty!(context.pack_stderr);
             assert_contains!(
                 context.pack_stdout,
                 indoc! {"
@@ -43,12 +44,12 @@ fn rebuild() {
             BuildpackReference::Other(String::from("heroku/procfile")),
         ]),
         |context| {
-            assert_eq!(context.pack_stderr, "");
+            assert_empty!(context.pack_stderr);
             assert_not_contains!(context.pack_stdout, "Reusing layer");
 
             let config = context.config.clone();
             context.run_test(config, |rebuild_context| {
-                assert_eq!(rebuild_context.pack_stderr, "");
+                assert_empty!(rebuild_context.pack_stderr);
                 assert_contains!(rebuild_context.pack_stdout, "Reusing layer");
             });
         },
@@ -72,14 +73,14 @@ fn starting_containers() {
                     thread::sleep(Duration::from_secs(2));
 
                     let log_output_until_now = container.logs_now();
-                    assert_contains!(log_output_until_now.stderr, "");
+                    assert_empty!(log_output_until_now.stderr);
                     assert_contains!(
                         log_output_until_now.stdout,
                         "Serving HTTP on 0.0.0.0 port 8000"
                     );
 
                     let exec_log_output = container.shell_exec("ps");
-                    assert_eq!(exec_log_output.stderr, "");
+                    assert_empty!(exec_log_output.stderr);
                     assert_contains!(exec_log_output.stdout, "python3");
                 });
 
@@ -92,7 +93,7 @@ fn starting_containers() {
                 .prepare_container()
                 .start_with_process(String::from("worker"), |container| {
                     let all_log_output = container.logs_wait();
-                    assert_eq!(all_log_output.stderr, "");
+                    assert_empty!(all_log_output.stderr);
                     assert_eq!(all_log_output.stdout, "this is the worker process!\n");
                 });
 
@@ -101,7 +102,7 @@ fn starting_containers() {
                 ["Hello!"],
                 |container| {
                     let all_log_output = container.logs_wait();
-                    assert_eq!(all_log_output.stderr, "");
+                    assert_empty!(all_log_output.stderr);
                     assert_eq!(all_log_output.stdout, "Hello!\n");
                 },
             );
@@ -111,7 +112,7 @@ fn starting_containers() {
                 .env("TEST_VAR", "TEST_VALUE")
                 .start_with_shell_command("env", |container| {
                     let all_log_output = container.logs_wait();
-                    assert_eq!(all_log_output.stderr, "");
+                    assert_empty!(all_log_output.stderr);
                     assert_contains!(all_log_output.stdout, "TEST_VAR=TEST_VALUE");
                 });
         },
@@ -171,7 +172,7 @@ fn expected_pack_failure() {
             .buildpacks(Vec::new())
             .expected_pack_result(PackResult::Failure),
         |context| {
-            assert_eq!(context.pack_stdout, "");
+            assert_empty!(context.pack_stdout);
             assert_contains!(
                 context.pack_stderr,
                 "ERROR: failed to build: failed to fetch builder image 'index.docker.io/libcnb/invalid-builder:latest'"
