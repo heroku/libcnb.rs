@@ -136,6 +136,12 @@ impl TestRunner {
                 config.app_dir.clone()
             };
 
+            assert!(
+                normalized_app_dir_path.is_dir(),
+                "App dir is not a valid directory: {}",
+                normalized_app_dir_path.display()
+            );
+
             // Copy the app to a temporary directory if an app_dir_preprocessor is specified and run the
             // preprocessor. Skip app copying if no changes to the app will be made.
             if let Some(app_dir_preprocessor) = &config.app_dir_preprocessor {
