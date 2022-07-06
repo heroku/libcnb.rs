@@ -2,9 +2,10 @@
 
 ## [Unreleased]
 
+- Improve the error message shown when Pack CLI is not installed. ([#455](https://github.com/heroku/libcnb.rs/pull/455))
 - Check that `TestConfig::app_dir` is a valid directory before applying `TestConfig::app_dir_preprocessor` or invoking Pack, so that a clearer error message can be displayed. ([#452](https://github.com/heroku/libcnb.rs/pull/452))
-- Add an `assert_empty!` macro, for improved UX over using `assert!` with `str::is_empty`. ([#451](https://github.com/heroku/libcnb.rs/pull/451)).
-- Fix rustdocs for `LogOutput`. ([#440](https://github.com/heroku/libcnb.rs/pull/440)).
+- Add an `assert_empty!` macro, for improved UX over using `assert!` with `str::is_empty`. ([#451](https://github.com/heroku/libcnb.rs/pull/451))
+- Fix rustdocs for `LogOutput`. ([#440](https://github.com/heroku/libcnb.rs/pull/440))
 - Increase minimum supported Rust version from 1.58 to 1.59. ([#445](https://github.com/heroku/libcnb.rs/pull/445))
 
 ## [0.4.0] 2022-06-24
