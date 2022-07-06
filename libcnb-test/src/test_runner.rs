@@ -161,7 +161,7 @@ impl TestRunner {
                 .buildpacks
                 .contains(&BuildpackReference::Crate)
                 .then(|| {
-                    build::package_crate_buildpack(&config.target_triple)
+                    build::package_crate_buildpack(config.cargo_profile, &config.target_triple)
                         .expect("Could not package current crate as buildpack")
                 });
 
