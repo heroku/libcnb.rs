@@ -256,10 +256,16 @@ fn app_dir_absolute_path() {
 
 #[test]
 #[ignore]
-// TODO: We should validate `app_dir` explicitly before passing to pack:
-// https://github.com/heroku/libcnb.rs/issues/448
-#[should_panic(expected = "pack stderr:
-ERROR: failed to build: invalid app path")]
+// The actual panic message looks like this:
+// `"App dir is not a valid directory: /.../libcnb-test/test-fixtures/non-existent-fixture"`
+// It's intentionally an absolute path to make debugging failures easier when a relative path
+// has been passed (the common case). However, since the absolute path is system/environment
+// dependent, we would need to construct the expected string dynamically in `should_panic`,
+// but cannot due to: https://github.com/rust-lang/rust/issues/88430
+// As such we test the most important part, the fact that the error message lists the non-existent
+// fixture directory path. We intentionally include the `libcnb-test/` crate directory prefix,
+// since that only appears in the absolute path, not the relative path passed to `TestConfig::new`.
+#[should_panic(expected = "libcnb-test/test-fixtures/non-existent-fixture")]
 fn app_dir_invalid_path() {
     TestRunner::default().run_test(
         TestConfig::new("heroku/builder:22", "test-fixtures/non-existent-fixture")
@@ -270,12 +276,11 @@ fn app_dir_invalid_path() {
 
 #[test]
 #[ignore]
-// TODO: We should validate `app_dir` explicitly before passing to app_dir_preprocessor:
-// https://github.com/heroku/libcnb.rs/issues/448
-#[should_panic(
-    expected = "Could not copy app to temporary location: CopyAppError(Error { kind: NotFound"
-)]
-fn app_dir_invalid_path_with_preprocessor() {
+// The actual panic message looks like this:
+// `"App dir is not a valid directory: /.../libcnb-test/test-fixtures/non-existent-fixture"`
+// See above for why we only test this substring.
+#[should_panic(expected = "libcnb-test/test-fixtures/non-existent-fixture")]
+fn app_dir_invalid_path_checked_before_applying_preprocessor() {
     TestRunner::default().run_test(
         TestConfig::new("heroku/builder:22", "test-fixtures/non-existent-fixture")
             .buildpacks(Vec::new())
