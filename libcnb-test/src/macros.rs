@@ -96,6 +96,51 @@ right: `{:?}`: {}"#,
     }};
 }
 
+/// Asserts that the provided value is empty.
+///
+/// Commonly used when asserting `pack` output in integration tests. Expands to a [`str::is_empty`]
+/// call and logs the value (in unescaped and escaped form) on failure.
+///
+/// # Example
+///
+/// ```
+/// use libcnb_test::assert_empty;
+///
+/// let output = "";
+/// assert_empty!(output);
+/// ```
+#[macro_export]
+macro_rules! assert_empty {
+    ($value:expr $(,)?) => {{
+        if !$value.is_empty() {
+            ::std::panic!(
+                r#"assertion failed: `(is empty)`
+value (unescaped):
+{}
+
+value (escaped): `{:?}`"#,
+                $value,
+                $value,
+            )
+        }
+    }};
+
+    ($value:expr, $($arg:tt)+) => {{
+        if !$value.is_empty() {
+            ::std::panic!(
+                r#"assertion failed: `(is empty)`
+value (unescaped):
+{}
+
+value (escaped): `{:?}`: {}"#,
+                $value,
+                $value,
+                ::core::format_args!($($arg)+)
+            )
+        }
+    }};
+}
+
 #[cfg(test)]
 mod tests {
     #[test]
@@ -230,5 +275,61 @@ right: `\"Eggs\"`: We must not have eggs!")]
             "Eggs",
             "We must not have eggs!"
         );
+    }
+
+    #[test]
+    fn empty_simple() {
+        assert_empty!("");
+    }
+
+    #[test]
+    fn empty_simple_with_args() {
+        assert_empty!("", "Value must be empty!");
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed: `(is empty)`
+value (unescaped):
+foo
+
+value (escaped): `\"foo\"`")]
+    fn empty_simple_failure() {
+        assert_empty!("foo");
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed: `(is empty)`
+value (unescaped):
+Hello World!
+
+value (escaped): `\"Hello World!\"`: Greeting must be empty!")]
+    fn empty_simple_failure_with_args() {
+        assert_empty!("Hello World!", "Greeting must be empty!");
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed: `(is empty)`
+value (unescaped):
+Hello World!
+Foo
+Bar
+Baz
+
+value (escaped): `\"Hello World!\\nFoo\\nBar\\nBaz\"`")]
+    fn empty_multiline_failure() {
+        assert_empty!("Hello World!\nFoo\nBar\nBaz");
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed: `(is empty)`
+value (unescaped):
+Hello World!
+Foo
+Bar
+Baz
+
+value (escaped): `\"Hello World!\\nFoo\\nBar\\nBaz\"`: Greeting must be empty!")]
+    fn empty_multiline_failure_with_args() {
+        assert_empty!("Hello World!\nFoo\nBar\nBaz", "Greeting must be empty!");
     }
 }

@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Add an `assert_empty!` macro, for improved UX over using `assert!` with `str::is_empty`. ([#451](https://github.com/heroku/libcnb.rs/pull/451)).
 - Fix rustdocs for `LogOutput`. ([#440](https://github.com/heroku/libcnb.rs/pull/440)).
 - Increase minimum supported Rust version from 1.58 to 1.59. ([#445](https://github.com/heroku/libcnb.rs/pull/445))
 
