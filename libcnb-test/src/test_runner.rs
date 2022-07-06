@@ -1,4 +1,4 @@
-use crate::pack::{PackBuildCommand, PullPolicy};
+use crate::pack::PackBuildCommand;
 use crate::{app, build, util, BuildpackReference, PackResult, TestConfig, TestContext};
 use bollard::Docker;
 use std::borrow::Borrow;
@@ -159,13 +159,7 @@ impl TestRunner {
                         .expect("Could not package current crate as buildpack")
                 });
 
-        let mut pack_command = PackBuildCommand::new(
-            &config.builder_name,
-            &app_dir,
-            &image_name,
-            // Prevent redundant image-pulling, which slows tests and risks hitting registry rate limits.
-            PullPolicy::IfNotPresent,
-        );
+        let mut pack_command = PackBuildCommand::new(&config.builder_name, &app_dir, &image_name);
 
         config.env.iter().for_each(|(key, value)| {
             pack_command.env(key, value);
