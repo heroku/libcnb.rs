@@ -255,6 +255,8 @@ fn app_dir_absolute_path() {
 
 #[test]
 #[ignore]
+// TODO: We should validate `app_dir` explicitly before passing to pack:
+// https://github.com/heroku/libcnb.rs/issues/448
 #[should_panic(expected = "pack stderr:
 ERROR: failed to build: invalid app path")]
 fn app_dir_invalid_path() {
@@ -267,6 +269,8 @@ fn app_dir_invalid_path() {
 
 #[test]
 #[ignore]
+// TODO: We should validate `app_dir` explicitly before passing to app_dir_preprocessor:
+// https://github.com/heroku/libcnb.rs/issues/448
 #[should_panic(
     expected = "Could not copy app to temporary location: CopyAppError(Error { kind: NotFound"
 )]
