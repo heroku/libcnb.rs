@@ -59,16 +59,19 @@ impl<'a> TestContext<'a> {
     ///
     /// # Example
     /// ```no_run
-    /// use libcnb_test::{assert_contains, TestRunner, TestConfig};
+    /// use libcnb_test::{assert_contains, TestConfig, TestRunner};
     ///
     /// TestRunner::default().run_test(
     ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
     ///     |context| {
-    ///         assert_contains!(context.pack_stdout, "---> Ruby Buildpack");
-    ///         assert_contains!(context.pack_stdout, "---> Installing bundler");
     ///         assert_contains!(context.pack_stdout, "---> Installing gems");
+    ///
+    ///         let config = context.config.clone();
+    ///         context.run_test(config, |context| {
+    ///             assert_contains!(context.pack_stdout, "---> Using cached gems");
+    ///         });
     ///     },
-    /// )
+    /// );
     /// ```
     pub fn run_test<C: Borrow<TestConfig>, F: FnOnce(TestContext)>(self, config: C, f: F) {
         self.runner
