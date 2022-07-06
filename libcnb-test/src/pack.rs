@@ -57,7 +57,6 @@ impl PackBuildCommand {
         builder: impl Into<String>,
         path: impl Into<PathBuf>,
         image_name: impl Into<String>,
-        pull_policy: PullPolicy,
     ) -> PackBuildCommand {
         PackBuildCommand {
             builder: builder.into(),
@@ -65,7 +64,8 @@ impl PackBuildCommand {
             env: BTreeMap::new(),
             image_name: image_name.into(),
             path: path.into(),
-            pull_policy,
+            // Prevent redundant image-pulling, which slows tests and risks hitting registry rate limits.
+            pull_policy: PullPolicy::IfNotPresent,
             trust_builder: true,
             verbose: false,
         }
