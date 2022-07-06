@@ -2,10 +2,13 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
+pub use libcnb_package::CargoProfile;
+
 /// Configuration for a test.
 #[derive(Clone)]
 pub struct TestConfig {
     pub(crate) app_dir: PathBuf,
+    pub(crate) cargo_profile: CargoProfile,
     pub(crate) target_triple: String,
     pub(crate) builder_name: String,
     pub(crate) buildpacks: Vec<BuildpackReference>,
@@ -35,6 +38,7 @@ impl TestConfig {
     pub fn new(builder_name: impl Into<String>, app_dir: impl AsRef<Path>) -> Self {
         TestConfig {
             app_dir: PathBuf::from(app_dir.as_ref()),
+            cargo_profile: CargoProfile::Dev,
             target_triple: String::from("x86_64-unknown-linux-musl"),
             builder_name: builder_name.into(),
             buildpacks: vec![BuildpackReference::Crate],
@@ -64,6 +68,27 @@ impl TestConfig {
     /// ```
     pub fn buildpacks(&mut self, buildpacks: impl Into<Vec<BuildpackReference>>) -> &mut Self {
         self.buildpacks = buildpacks.into();
+        self
+    }
+
+    /// Sets the Cargo profile used when compiling the buildpack.
+    ///
+    /// Defaults to [`CargoProfile::Dev`].
+    ///
+    /// # Example
+    /// ```no_run
+    /// use libcnb_test::{CargoProfile, TestConfig, TestRunner};
+    ///
+    /// TestRunner::default().run_test(
+    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app")
+    ///         .cargo_profile(CargoProfile::Release),
+    ///     |context| {
+    ///         // ...
+    ///     },
+    /// );
+    /// ```
+    pub fn cargo_profile(&mut self, cargo_profile: CargoProfile) -> &mut Self {
+        self.cargo_profile = cargo_profile;
         self
     }
 

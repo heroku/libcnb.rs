@@ -7,6 +7,7 @@ use tempfile::{tempdir, TempDir};
 
 /// Packages the current crate as a buildpack into a temporary directory.
 pub(crate) fn package_crate_buildpack(
+    cargo_profile: CargoProfile,
     target_triple: impl AsRef<str>,
 ) -> Result<TempDir, PackageCrateBuildpackError> {
     let cargo_manifest_dir = std::env::var("CARGO_MANIFEST_DIR")
@@ -34,7 +35,7 @@ pub(crate) fn package_crate_buildpack(
     let buildpack_binaries = build_buildpack_binaries(
         &cargo_manifest_dir,
         &cargo_metadata,
-        CargoProfile::Dev,
+        cargo_profile,
         &cargo_env,
         target_triple.as_ref(),
     )

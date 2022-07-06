@@ -13,9 +13,14 @@ use libcnb_data::buildpack::SingleBuildpackDescriptor;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+/// The profile to use when invoking Cargo.
+///
+/// <https://doc.rust-lang.org/cargo/reference/profiles.html>
 #[derive(Copy, Clone)]
 pub enum CargoProfile {
+    /// Provides faster compilation times at the expense of runtime performance and binary size.
     Dev,
+    /// Produces assets with optimised runtime performance and binary size, at the expense of compilation time.
     Release,
 }
 
