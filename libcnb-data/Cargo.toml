@@ -8,8 +8,8 @@ description = "Types for data formats specified in the Cloud Native Buildpack sp
 keywords = ["buildpacks", "CNB"]
 repository = "https://github.com/heroku/libcnb.rs/tree/main/libcnb-data"
 documentation = "https://docs.rs/libcnb-data"
-readme = "../README.md"
-include = ["src/**/*", "../LICENSE", "../README.md"]
+readme = "README.md"
+include = ["src/**/*", "../LICENSE", "README.md"]
 
 [dependencies]
 fancy-regex = { version = "0.10.0", default-features = false }

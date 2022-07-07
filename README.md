@@ -1,13 +1,13 @@
-# libcnb.rs [![Build Status]][ci] [![Docs]][docs.rs] [![Latest Version]][crates.io] [![Rustc Version 1.58+]][rustc]
+# libcnb.rs &emsp; [![Build Status]][ci] [![Docs]][docs.rs] [![Latest Version]][crates.io] [![MSRV]][install-rust]
 
 [Build Status]: https://img.shields.io/github/workflow/status/heroku/libcnb.rs/CI/main
 [ci]: https://github.com/heroku/libcnb.rs/actions/workflows/ci.yml?query=branch%3Amain
 [Docs]: https://img.shields.io/docsrs/libcnb
-[docs.rs]: https://docs.rs/libcnb/*/libcnb/
+[docs.rs]: https://docs.rs/libcnb/latest/libcnb/
 [Latest Version]: https://img.shields.io/crates/v/libcnb.svg
 [crates.io]: https://crates.io/crates/libcnb
-[Rustc Version 1.58+]: https://img.shields.io/badge/rustc-1.58+-lightgray.svg
-[rustc]: https://blog.rust-lang.org/2022/01/13/Rust-1.58.0.html
+[MSRV]: https://img.shields.io/badge/MSRV-rustc_1.59+-lightgray.svg
+[install-rust]: https://www.rust-lang.org/tools/install
 
 `libcnb.rs` is a framework for writing [Cloud Native Buildpacks](https://buildpacks.io) in Rust. It is an opinionated implementation adding language constructs and convenience methods for working with the spec. It values strong adherence to the spec and data formats.
 
@@ -33,9 +33,9 @@ $ cargo install libcnb-cargo
 
 #### Cross-compilation prerequisites
 
-It is common to write and build your buildpack on a platform that is different from the platform the buildpack will
-eventually run on. This means we have to cross-compile our buildpack. The `libcnb package` Cargo command tries to help you setting
-up your environment depending on your host platform, but we always need the appropriate target platform for Rust which 
+It is common to write and build your buildpack on a platform that is different from the platform on which the buildpack will
+eventually run. This means we have to cross-compile our buildpack. The `libcnb package` Cargo command tries to help you set
+up your environment depending on your host platform, but we always need the appropriate target platform for Rust, which
 we can install with `rustup`:
 
 ```shell
@@ -89,8 +89,8 @@ id = "*"
 
 That's all we need! We can now move on to finally write some buildpack code!
 
-
 ### Writing the Buildpack
+
 As aforementioned, the buildpack we're writing will be very simple. We will just log a "Hello World" message during the build
 and set the default process type to a command that will also emit "Hello World" when the application image is run. 
 Find more complex example buildpacks in the [examples directory](examples).
@@ -199,12 +199,7 @@ application code at all, we just create an empty directory and use that as our a
 ```shell
 $ mkdir bogus-app
 $ pack build my-image --buildpack target/buildpack/debug/libcnb-examples_my-buildpack --path bogus-app --builder heroku/builder:22
-22: Pulling from heroku/builder
-Digest: sha256:0e1db52b480805c63b793a1c0155ea30cabffbf7977f722c88dc42cef750a1d1
-Status: Image is up to date for heroku/builder:22
-22-cnb: Pulling from heroku/heroku
-Digest: sha256:3fd7866f22dcbcd3a72c7ab4b47728dcfbaacfa9730341d0fb10665f63d93788
-Status: Image is up to date for heroku/heroku:22-cnb
+...
 ===> ANALYZING
 Previous image with name "my-image" not found
 ===> DETECTING
@@ -230,6 +225,7 @@ Successfully built image my-image
 ```
 
 ### Running the image
+
 The newly created Docker image can be run in the same way as you would a Docker image created via `docker build`.
 If all went well, you should see our "Hello World!" message in your terminal:
 
@@ -239,6 +235,7 @@ Hello World!
 ```
 
 ### Next Steps
+
 While the buildpack we've written in this quick start guide is not very useful, it can serve as a starting point for a 
 more useful buildpack. To discover more of the libcnb API, browse the [examples directory](examples) and the 
 [documentation on docs.rs][docs.rs].
