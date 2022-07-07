@@ -18,7 +18,7 @@ use syn::Token;
 /// It is designed to be used within other macros to produce compile time errors when the regex
 /// doesn't match but it might work for other use-cases as well.
 ///
-/// ```no_run
+/// ```
 /// libcnb_proc_macros::verify_regex!("^A-Z+$", "foobar", println!("It did match!"), println!("It did not match!"));
 /// ```
 #[proc_macro]

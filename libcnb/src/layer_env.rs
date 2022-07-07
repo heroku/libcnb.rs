@@ -29,12 +29,12 @@ use std::path::Path;
 /// know the layer name or any of the logic for constructing `PATH`.
 ///
 /// # Applying the delta
-///`LayerEnv` is not a static set of environment variables, but a delta. Layers can modify existing
+/// `LayerEnv` is not a static set of environment variables, but a delta. Layers can modify existing
 /// variables by appending, prepending or setting variables only if they were not already defined. If you only need a
 /// static set of environment variables, see [`Env`].
 ///
 /// To apply a `LayerEnv` delta to a given `Env`, use [`LayerEnv::apply`] like so:
-///```
+/// ```
 /// use libcnb::layer_env::{LayerEnv, Scope, ModificationBehavior};
 /// use libcnb::Env;
 ///
@@ -61,10 +61,9 @@ use std::path::Path;
 ///
 /// libcnb supports these, including all precedence and lifecycle rules, when a `LayerEnv` is read
 /// from disk:
-///```
+/// ```
 /// use libcnb::layer_env::{LayerEnv, Scope};
 /// use tempfile::tempdir;
-/// use libcnb::Env;
 /// use std::fs;
 ///
 /// // Create a bogus layer directory
@@ -105,7 +104,7 @@ impl LayerEnv {
     /// use libcnb::Env;
     ///
     /// let layer_env = LayerEnv::new();
-    /// let mut env = Env::new();
+    /// let env = Env::new();
     ///
     /// let modified_env = layer_env.apply(Scope::Build, &env);
     /// assert_eq!(env, modified_env);
@@ -120,7 +119,7 @@ impl LayerEnv {
     /// For applying to an empty [`Env`], see [`apply_to_empty`](Self::apply_to_empty).
     ///
     /// # Example:
-    ///```
+    /// ```
     /// use libcnb::layer_env::{LayerEnv, Scope, ModificationBehavior};
     /// use libcnb::Env;
     ///
@@ -173,7 +172,6 @@ impl LayerEnv {
     /// # Example:
     /// ```
     /// use libcnb::layer_env::{LayerEnv, Scope, ModificationBehavior};
-    /// use libcnb::Env;
     ///
     /// let mut layer_env = LayerEnv::new();
     /// layer_env.insert(Scope::All, ModificationBehavior::Default, "VAR", "hello");
@@ -217,7 +215,6 @@ impl LayerEnv {
     /// # Example:
     /// ```
     /// use libcnb::layer_env::{LayerEnv, ModificationBehavior, Scope};
-    /// use libcnb::Env;
     ///
     /// fn something_that_needs_layer_env(layer_env: LayerEnv) {
     ///     let env = layer_env.apply_to_empty(Scope::Build);
@@ -262,10 +259,9 @@ impl LayerEnv {
     /// rely on libcnb to pass `LayerEnv` values to minimize side effects in buildpack code.
     ///
     /// # Example:
-    ///```
+    /// ```
     /// use libcnb::layer_env::{LayerEnv, Scope};
     /// use tempfile::tempdir;
-    /// use libcnb::Env;
     /// use std::fs;
     ///
     /// // Create a bogus layer directory
@@ -350,7 +346,7 @@ impl LayerEnv {
     /// layer_env.insert(Scope::Build, ModificationBehavior::Default, "FOO", "bar");
     /// layer_env.insert(Scope::All, ModificationBehavior::Append, "PATH", "some-path");
     ///
-    /// let mut temp_dir = tempdir().unwrap();
+    /// let temp_dir = tempdir().unwrap();
     /// layer_env.write_to_layer_dir(&temp_dir).unwrap();
     ///
     /// assert_eq!(fs::read_to_string(temp_dir.path().join("env.build").join("FOO.default")).unwrap(), "bar");

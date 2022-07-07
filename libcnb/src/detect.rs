@@ -34,7 +34,7 @@ pub(crate) enum InnerDetectResult {
 /// # Examples:
 /// ```
 /// use libcnb::detect::{DetectResultBuilder, DetectResult};
-/// use libcnb_data::build_plan::{BuildPlan, BuildPlanBuilder};
+/// use libcnb_data::build_plan::BuildPlanBuilder;
 ///
 /// let simple_pass: Result<DetectResult, ()> = DetectResultBuilder::pass().build();
 /// let simple_fail: Result<DetectResult, ()> = DetectResultBuilder::fail().build();

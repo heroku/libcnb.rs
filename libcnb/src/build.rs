@@ -133,7 +133,7 @@ pub(crate) enum InnerBuildResult {
 /// # Examples:
 /// ```
 /// use libcnb::build::{BuildResultBuilder, BuildResult};
-/// use libcnb::data::launch::{Launch, Process};
+/// use libcnb::data::launch::Launch;
 /// use libcnb::data::process_type;
 /// use libcnb::data::launch::ProcessBuilder;
 ///
