@@ -4,6 +4,7 @@
 
 - Strip buildpack binaries when packaging, to reduce buildpack size. This not only reduces the size of production builder images, but also speeds up workflows that involve non-release builds (such as integration tests). ([#445](https://github.com/heroku/libcnb.rs/pull/445))
 - The type of the `cargo_env` argument to `build::build_buildpack_binaries` and `build::build_binary` has changed. ([#445](https://github.com/heroku/libcnb.rs/pull/445))
+- Use the crate's `README.md` as the root module's rustdocs, so that all of the crate's documentation can be seen in one place on `docs.rs`. ([#460](https://github.com/heroku/libcnb.rs/pull/460))
 - Increase minimum supported Rust version from 1.58 to 1.59. ([#445](https://github.com/heroku/libcnb.rs/pull/445))
 
 ## [0.1.2] 2022-06-24

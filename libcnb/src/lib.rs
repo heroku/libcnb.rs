@@ -1,10 +1,6 @@
-//! This crate provides a library to implement [Cloud Native Buildpacks](https://buildpacks.io/).
-
-// Enable rustc and Clippy lints that are disabled by default.
-// https://doc.rust-lang.org/rustc/lints/listing/allowed-by-default.html#unused-crate-dependencies
-#![warn(unused_crate_dependencies)]
-// https://rust-lang.github.io/rust-clippy/stable/index.html
+#![doc = include_str!("../../README.md")]
 #![warn(clippy::pedantic)]
+#![warn(unused_crate_dependencies)]
 // Most of libcnb's public API returns user-provided errors, making error docs redundant.
 #![allow(clippy::missing_errors_doc)]
 // This lint is too noisy and enforces a style that reduces readability in many cases.
