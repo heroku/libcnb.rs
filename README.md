@@ -48,13 +48,13 @@ $ rustup target add x86_64-unknown-linux-musl
 #### Docker
 
 If you don't have it already, we need to install Docker. Refer to the Docker documentation on how to install it for your
-operating system: https://docs.docker.com/engine/install/
+operating system: <https://docs.docker.com/engine/install/>
 
 #### pack
 
 To run our buildpack locally, we will use `pack`, a tool maintained by the Cloud Native Buildpacks project to support 
 the use of buildpacks. It's the tool that we will eventually use to run our buildpack and create application images. 
-Find their documentation about installing it here: https://buildpacks.io/docs/tools/pack/
+Find their documentation about installing it here: <https://buildpacks.io/docs/install-pack/>
 
 ### Project Setup
 
@@ -94,9 +94,9 @@ That's all we need! We can now move on to finally write some buildpack code!
 
 ### Writing the Buildpack
 
-As aforementioned, the buildpack we're writing will be very simple. We will just log a "Hello World" message during the build
-and set the default process type to a command that will also emit "Hello World" when the application image is run. 
-Find more complex example buildpacks in the [examples directory](examples).
+The buildpack we're writing will be very simple. We will just log a "Hello World" message during the build
+and set the default process type to a command that will also emit "Hello World" when the application image is run.
+Examples of more complex buildpacks can be found in the [examples directory](https://github.com/heroku/libcnb.rs/tree/main/examples).
 
 Modify the project's `src/main.rs` file to contain the following:
 
@@ -239,6 +239,7 @@ Hello World!
 
 ### Next Steps
 
-While the buildpack we've written in this quick start guide is not very useful, it can serve as a starting point for a 
-more useful buildpack. To discover more of the libcnb API, browse the [examples directory](examples) and the 
-[documentation on docs.rs][docs.rs].
+While the buildpack we've written in this quick start guide is not very useful, it can
+serve as a starting point for a more useful buildpack. To discover more of the libcnb API,
+browse the [examples directory](https://github.com/heroku/libcnb.rs/tree/main/examples)
+and the [documentation on docs.rs][docs.rs].

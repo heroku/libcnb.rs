@@ -1,7 +1,6 @@
-// Enable rustc and Clippy lints that are disabled by default.
-// https://doc.rust-lang.org/rustc/lints/listing/allowed-by-default.html#unused-crate-dependencies
+#![doc = include_str!("../README.md")]
+// Enable lints that are disabled by default.
 #![warn(unused_crate_dependencies)]
-// https://rust-lang.github.io/rust-clippy/stable/index.html
 #![warn(clippy::pedantic)]
 // This lint is too noisy and enforces a style that reduces readability in many cases.
 #![allow(clippy::module_name_repetitions)]
@@ -27,9 +26,3 @@ pub use crate::test_runner::*;
 // Suppress warnings due to the `unused_crate_dependencies` lint not handling integration tests well.
 #[cfg(test)]
 use indoc as _;
-
-// This runs the README.md as a doctest, ensuring the code examples in it are valid.
-// It will not be part of the final crate.
-#[doc = include_str!("../README.md")]
-#[cfg(doctest)]
-pub struct ReadmeDoctests;
