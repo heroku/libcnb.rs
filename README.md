@@ -9,7 +9,9 @@
 [MSRV]: https://img.shields.io/badge/MSRV-rustc_1.59+-lightgray.svg
 [install-rust]: https://www.rust-lang.org/tools/install
 
-`libcnb.rs` is a framework for writing [Cloud Native Buildpacks](https://buildpacks.io) in Rust. It is an opinionated implementation adding language constructs and convenience methods for working with the spec. It values strong adherence to the spec and data formats.
+`libcnb.rs` is a framework for writing [Cloud Native Buildpacks](https://buildpacks.io) in Rust.
+It is an opinionated implementation adding language constructs and convenience methods for working
+with the spec. It values strong adherence to the spec and data formats.
 
 It currently targets version `0.6` of the CNB spec.
 
@@ -25,7 +27,8 @@ be carried out once and don't need to be repeated for each buildpack you will wr
 
 #### libcnb Cargo Command
 
-Start by installing the libcnb Cargo command which we will later use to package our buildpack:
+Start by installing [libcnb-cargo](https://crates.io/crates/libcnb-cargo), which provides the `libcnb` Cargo command
+that we will use later to package our buildpack:
 
 ```shell
 $ cargo install libcnb-cargo
