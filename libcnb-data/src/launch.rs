@@ -111,7 +111,7 @@ impl ProcessBuilder {
     /// Adds an argument to the process.
     ///
     /// Only one argument can be passed per use. So instead of:
-    /// ```no_run
+    /// ```
     /// # use libcnb_data::process_type;
     /// # libcnb_data::launch::ProcessBuilder::new(process_type!("web"), "command")
     /// .arg("-C /path/to/repo")
@@ -120,7 +120,7 @@ impl ProcessBuilder {
     ///
     /// usage would be:
     ///
-    /// ```no_run
+    /// ```
     /// # use libcnb_data::process_type;
     /// # libcnb_data::launch::ProcessBuilder::new(process_type!("web"), "command")
     /// .arg("-C")

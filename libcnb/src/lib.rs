@@ -53,7 +53,7 @@ const LIBCNB_SUPPORTED_BUILDPACK_API: data::buildpack::BuildpackApi =
 /// use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
 /// use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 /// use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};
-/// use libcnb::{buildpack_main, data::build_plan::BuildPlan, Buildpack};
+/// use libcnb::{buildpack_main, Buildpack};
 ///
 /// pub(crate) struct MyBuildpack;
 ///
