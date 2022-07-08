@@ -243,3 +243,5 @@ While the buildpack we've written in this quick start guide is not very useful, 
 serve as a starting point for a more useful buildpack. To discover more of the libcnb API,
 browse the [examples directory](https://github.com/heroku/libcnb.rs/tree/main/examples)
 and the [documentation on docs.rs][docs.rs].
+
+Later, when you are ready to write integration tests for your buildpack, see the [libcnb-test documentation](https://docs.rs/libcnb-test/).
