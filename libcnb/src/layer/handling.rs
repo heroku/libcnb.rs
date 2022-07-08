@@ -1,3 +1,6 @@
+// This lint triggers when both layer_dir and layers_dir are present which are quite common.
+#![allow(clippy::similar_names)]
+
 use crate::build::BuildContext;
 use crate::data::layer::LayerName;
 use crate::data::layer_content_metadata::LayerContentMetadata;

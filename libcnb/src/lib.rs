@@ -5,8 +5,6 @@
 #![allow(clippy::missing_errors_doc)]
 // This lint is too noisy and enforces a style that reduces readability in many cases.
 #![allow(clippy::module_name_repetitions)]
-// This lint triggers when both layer_dir and layers_dir are present which are quite common.
-#![allow(clippy::similar_names)]
 
 pub mod build;
 pub mod detect;
