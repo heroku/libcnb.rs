@@ -66,6 +66,7 @@ fn starting_containers() {
         |context| {
             context
                 .prepare_container()
+                .env("PORT", "5678")
                 .start_with_default_process(|container| {
                     // Give the server time to boot up.
                     // TODO: Make requests to the server using a client that retries, and fetch logs after
@@ -76,10 +77,10 @@ fn starting_containers() {
                     assert_empty!(log_output_until_now.stderr);
                     assert_contains!(
                         log_output_until_now.stdout,
-                        "Serving HTTP on 0.0.0.0 port 8000"
+                        "Serving HTTP on 0.0.0.0 port 5678"
                     );
 
-                    let exec_log_output = container.shell_exec("ps");
+                    let exec_log_output = container.shell_exec("ps | grep python3");
                     assert_empty!(exec_log_output.stderr);
                     assert_contains!(exec_log_output.stdout, "python3");
                 });
@@ -107,14 +108,14 @@ fn starting_containers() {
                 },
             );
 
-            context
-                .prepare_container()
-                .env("TEST_VAR", "TEST_VALUE")
-                .start_with_shell_command("env", |container| {
+            context.prepare_container().start_with_shell_command(
+                "for i in {1..3}; do echo \"${i}\"; done",
+                |container| {
                     let all_log_output = container.logs_wait();
                     assert_empty!(all_log_output.stderr);
-                    assert_contains!(all_log_output.stdout, "TEST_VAR=TEST_VALUE");
-                });
+                    assert_eq!(all_log_output.stdout, "1\n2\n3\n");
+                },
+            );
         },
     );
 }

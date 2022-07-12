@@ -218,7 +218,7 @@ impl<'a> PrepareContainerContext<'a> {
     /// Creates and starts the container configured by this context using the given shell command.
     ///
     /// The CNB lifecycle launcher will be implicitly used. Environment variables will be set. Uses
-    /// `/bin/sh` as the shell.
+    /// `bash` as the shell.
     ///
     /// See: [CNB App Developer Guide: Run a multi-process app - User-provided shell process](https://buildpacks.io/docs/app-developer-guide/run-an-app/#user-provided-shell-process)
     ///
@@ -243,12 +243,8 @@ impl<'a> PrepareContainerContext<'a> {
         f: F,
     ) {
         self.start_internal(
-            Some(vec![String::from(CNB_LAUNCHER_PATH)]),
-            Some(vec![
-                String::from(SHELL_PATH),
-                String::from("-c"),
-                command.into(),
-            ]),
+            Some(vec![String::from(CNB_LAUNCHER_BINARY)]),
+            Some(vec![command.into()]),
             f,
         );
     }
@@ -472,7 +468,7 @@ impl<'a> ContainerContext<'a> {
                 .create_exec(
                     &self.container_name,
                     CreateExecOptions {
-                        cmd: Some(vec![CNB_LAUNCHER_PATH, SHELL_PATH, "-c", command.as_ref()]),
+                        cmd: Some(vec![CNB_LAUNCHER_BINARY, command.as_ref()]),
                         attach_stdout: Some(true),
                         ..CreateExecOptions::default()
                     },
@@ -516,5 +512,4 @@ impl<'a> Drop for ContainerContext<'a> {
     }
 }
 
-const CNB_LAUNCHER_PATH: &str = "/cnb/lifecycle/launcher";
-const SHELL_PATH: &str = "/bin/sh";
+const CNB_LAUNCHER_BINARY: &str = "launcher";

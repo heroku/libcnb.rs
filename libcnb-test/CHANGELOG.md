@@ -6,6 +6,7 @@
 - Add `TestConfig::cargo_profile` and `CargoProfile` to support compilation of buildpacks in release mode. ([#456](https://github.com/heroku/libcnb.rs/pull/456))
 - Improve the error message shown when Pack CLI is not installed. ([#455](https://github.com/heroku/libcnb.rs/pull/455))
 - Check that `TestConfig::app_dir` is a valid directory before applying `TestConfig::app_dir_preprocessor` or invoking Pack, so that a clearer error message can be displayed. ([#452](https://github.com/heroku/libcnb.rs/pull/452))
+- `PrepareContainerContext::start_with_shell_command` and `ContainerContext::shell_exec` now use `bash` instead of `/bin/sh`. ([#464](https://github.com/heroku/libcnb.rs/pull/464))
 - Use the crate's `README.md` as the root module's rustdocs, so that all of the crate's documentation can be seen in one place on `docs.rs`. ([#460](https://github.com/heroku/libcnb.rs/pull/460))
 - Add rustdocs with code examples for all public APIs. ([#441](https://github.com/heroku/libcnb.rs/pull/441))
 - Fix rustdocs for `LogOutput`. ([#440](https://github.com/heroku/libcnb.rs/pull/440))
