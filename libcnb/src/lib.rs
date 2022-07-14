@@ -1,4 +1,4 @@
-#![doc = include_str!("../../README.md")]
+#![doc = include_str!("../README.md")]
 #![warn(clippy::pedantic)]
 #![warn(unused_crate_dependencies)]
 // Most of libcnb's public API returns user-provided errors, making error docs redundant.
@@ -119,9 +119,3 @@ macro_rules! additional_buildpack_binary_path {
         )
     };
 }
-
-// This runs the README.md as a doctest, ensuring the code examples in it are valid.
-// It will not be part of the final crate.
-#[cfg(doctest)]
-#[doc = include_str!("../../README.md")]
-pub struct ReadmeDoctests;
