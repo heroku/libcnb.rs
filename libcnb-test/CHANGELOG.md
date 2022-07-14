@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.5.0] 2022-07-14
+
 - Add an `assert_empty!` macro, for improved UX over using `assert!` with `str::is_empty`. ([#451](https://github.com/heroku/libcnb.rs/pull/451))
 - Add `TestConfig::cargo_profile` and `CargoProfile` to support compilation of buildpacks in release mode. ([#456](https://github.com/heroku/libcnb.rs/pull/456))
 - Improve the error message shown when Pack CLI is not installed. ([#455](https://github.com/heroku/libcnb.rs/pull/455))
@@ -11,6 +13,7 @@
 - Add rustdocs with code examples for all public APIs. ([#441](https://github.com/heroku/libcnb.rs/pull/441))
 - Fix rustdocs for `LogOutput`. ([#440](https://github.com/heroku/libcnb.rs/pull/440))
 - Increase minimum supported Rust version from 1.58 to 1.59. ([#445](https://github.com/heroku/libcnb.rs/pull/445))
+- Update `libcnb-package` from `0.1.2` to `0.2.0`. Of note, buildpack binaries are now stripped when packaging to reduce buildpack size, which also speeds up integration tests. See the [libcnb-package changelog](../libcnb-package/CHANGELOG.md#020-2022-07-14). ([#465](https://github.com/heroku/libcnb.rs/pull/465))
 
 ## [0.4.0] 2022-06-24
 

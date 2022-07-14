@@ -2,8 +2,12 @@
 
 ## [Unreleased]
 
+## [0.9.0] 2022-07-14
+
 - Use the crate's `README.md` as the root module's rustdocs, so that all of the crate's documentation can be seen in one place on `docs.rs`. ([#460](https://github.com/heroku/libcnb.rs/pull/460))
 - Increase minimum supported Rust version from 1.58 to 1.59. ([#445](https://github.com/heroku/libcnb.rs/pull/445))
+- Update `libcnb-data` (which provides the types in the `data` module) from `0.7.0` to `0.8.0` - see the [libcnb-data changelog](../libcnb-data/CHANGELOG.md#080-2022-07-14). ([#465](https://github.com/heroku/libcnb.rs/pull/465))
+- Update `libcnb-proc-macros` from `0.2.2` to `0.3.0` - see the [libcnb-proc-macros changelog](../libcnb-proc-macros/CHANGELOG.md#030-2022-07-14). ([#465](https://github.com/heroku/libcnb.rs/pull/465))
 
 ## [0.8.0] 2022-06-24
 
