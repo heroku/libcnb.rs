@@ -2,10 +2,13 @@
 
 ## [Unreleased]
 
+## [0.5.0] 2022-07-14
+
 - Fix the packaged buildpack size reported by `cargo libcnb package`. ([#442](https://github.com/heroku/libcnb.rs/pull/442))
 - Reduce number of dependencies to improve installation time. ([#442](https://github.com/heroku/libcnb.rs/pull/442) and [#443](https://github.com/heroku/libcnb.rs/pull/443))
 - Use the crate's `README.md` as the root module's rustdocs, so that all of the crate's documentation can be seen in one place on `docs.rs`. ([#460](https://github.com/heroku/libcnb.rs/pull/460))
 - Increase minimum supported Rust version from 1.58 to 1.59. ([#445](https://github.com/heroku/libcnb.rs/pull/445))
+- Update `libcnb-package` from `0.1.2` to `0.2.0`. Of note, buildpack binaries are now stripped when packaging to reduce buildpack size. See the [libcnb-package changelog](../libcnb-package/CHANGELOG.md#020-2022-07-14). ([#465](https://github.com/heroku/libcnb.rs/pull/465))
 
 ## [0.4.1] 2022-06-24
 

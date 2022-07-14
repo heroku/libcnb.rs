@@ -2,9 +2,12 @@
 
 ## [Unreleased]
 
+## [0.8.0] 2022-07-14
+
 - Disable `fancy-regex` default features (such as unused unicode support) to reduce buildpack binary size. ([#439](https://github.com/heroku/libcnb.rs/pull/439))
 - Add a crate `README.md` and use it as the root module's rustdocs, so that all of the crate's documentation can be seen in one place on `docs.rs`. ([#458](https://github.com/heroku/libcnb.rs/pull/458) and [#460](https://github.com/heroku/libcnb.rs/pull/460))
 - Increase minimum supported Rust version from 1.58 to 1.59. ([#445](https://github.com/heroku/libcnb.rs/pull/445))
+- Update `libcnb-proc-macros` from `0.2.2` to `0.3.0` - see the [libcnb-proc-macros changelog](../libcnb-proc-macros/CHANGELOG.md#030-2022-07-14). ([#465](https://github.com/heroku/libcnb.rs/pull/465))
 
 # [0.7.0] 2022-06-24
 

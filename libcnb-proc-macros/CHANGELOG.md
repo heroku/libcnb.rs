@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.3.0] 2022-07-14
+
 - Disable `fancy-regex` default features (such as unused unicode support) to reduce buildpack binary size. ([#439](https://github.com/heroku/libcnb.rs/pull/439))
 - Fix `verify_regex`'s error handling when the regex could not be compiled. ([#438](https://github.com/heroku/libcnb.rs/pull/438))
 - Add a crate `README.md` and use it as the root module's rustdocs, so that all of the crate's documentation can be seen in one place on `docs.rs`. ([#458](https://github.com/heroku/libcnb.rs/pull/458) and [#460](https://github.com/heroku/libcnb.rs/pull/460))

@@ -8,11 +8,11 @@ publish = false
 [dependencies]
 flate2 = "1.0.24"
 libcnb = { path = "../../libcnb" }
-serde = "1.0.137"
+serde = "1.0.139"
 sha2 = "0.10.2"
 tar = "0.4.38"
 tempfile = "3.3.0"
-ureq = "2.4.0"
+ureq = "2.5.0"
 
 [dev-dependencies]
 libcnb-test = { path = "../../libcnb-test" }
