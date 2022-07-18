@@ -1,4 +1,8 @@
-use crate::{PrepareContainerContext, TestConfig, TestRunner};
+use crate::{
+    container_port_mapping, util, ContainerConfig, ContainerContext, LogOutput, TestConfig,
+    TestRunner,
+};
+use bollard::container::{Config, CreateContainerOptions, StartContainerOptions};
 use bollard::image::RemoveImageOptions;
 use std::borrow::Borrow;
 
@@ -16,32 +20,143 @@ pub struct TestContext<'a> {
 }
 
 impl<'a> TestContext<'a> {
-    /// Prepares a new container with the image from the test.
+    /// Starts a container using the provided [`ContainerConfig`].
     ///
-    /// This will not create nor run the container immediately. Use the returned
-    /// `PrepareContainerContext` to configure the container, then call
-    /// [`start_with_default_process`](PrepareContainerContext::start_with_default_process) on it
-    /// to actually create and start the container.
+    /// If you wish to run a shell command and don't need to customise the configuration, use
+    /// the convenience function [`TestContext::run_shell_command`] instead.
     ///
-    /// # Example:
-    ///
+    /// # Examples
     /// ```no_run
-    /// use libcnb_test::{TestConfig, TestRunner};
+    /// use libcnb_test::{ContainerConfig, TestConfig, TestRunner};
     ///
     /// TestRunner::default().run_test(
     ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
     ///     |context| {
-    ///         context
-    ///             .prepare_container()
-    ///             .start_with_default_process(|container| {
+    ///         // Start the container using the default process-type:
+    ///         // https://buildpacks.io/docs/app-developer-guide/run-an-app/#default-process-type
+    ///         context.start_container(&ContainerConfig::new(), |container| {
+    ///             // ...
+    ///         });
+    ///
+    ///         // Start the container using the specified process-type:
+    ///         // https://buildpacks.io/docs/app-developer-guide/run-an-app/#non-default-process-type
+    ///         context.start_container(ContainerConfig::new().entrypoint(["worker"]), |container| {
+    ///             // ...
+    ///         });
+    ///
+    ///         // Start the container using the specified process-type and additional arguments:
+    ///         // https://buildpacks.io/docs/app-developer-guide/run-an-app/#non-default-process-type-with-additional-arguments
+    ///         context.start_container(
+    ///             ContainerConfig::new()
+    ///                 .entrypoint(["another-process"])
+    ///                 .command(["--additional-arg"]),
+    ///             |container| {
     ///                 // ...
-    ///             });
+    ///             },
+    ///         );
+    ///
+    ///         // Start the container using the provided bash script:
+    ///         // https://buildpacks.io/docs/app-developer-guide/run-an-app/#user-provided-shell-process-with-bash-script
+    ///         // Only use this shell command form if you need to customise the `ContainerConfig`,
+    ///         // otherwise use the convenience function `TestContext::run_shell_command` instead.
+    ///         context.start_container(
+    ///             ContainerConfig::new()
+    ///                 .entrypoint(["launcher"])
+    ///                 .command(["for i in {1..3}; do echo \"${i}\"; done"]),
+    ///             |container| {
+    ///                 // ...
+    ///             },
+    ///         );
     ///     },
     /// );
     /// ```
-    #[must_use]
-    pub fn prepare_container(&self) -> PrepareContainerContext {
-        PrepareContainerContext::new(self)
+    pub fn start_container<F: FnOnce(ContainerContext)>(&self, config: &ContainerConfig, f: F) {
+        let container_name = util::random_docker_identifier();
+
+        self.runner.tokio_runtime.block_on(async {
+            self.runner
+                .docker
+                .create_container(
+                    Some(CreateContainerOptions {
+                        name: container_name.clone(),
+                    }),
+                    Config {
+                        image: Some(self.image_name.clone()),
+                        env: Some(config.env.iter().map(|(k, v)| format!("{k}={v}")).collect()),
+                        entrypoint: config.entrypoint.clone(),
+                        cmd: config.command.clone(),
+                        ..container_port_mapping::port_mapped_container_config(
+                            &config.exposed_ports,
+                        )
+                    },
+                )
+                .await
+                .expect("Could not create container");
+
+            self.runner
+                .docker
+                .start_container(&container_name, None::<StartContainerOptions<String>>)
+                .await
+                .expect("Could not start container");
+        });
+
+        f(ContainerContext {
+            container_name,
+            test_context: self,
+        });
+    }
+
+    /// Run the provided shell script.
+    ///
+    /// The CNB launcher will run the provided script using `bash`.
+    ///
+    /// Note: This method will block until the container stops.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use libcnb_test::{ContainerConfig, TestConfig, TestRunner};
+    ///
+    /// TestRunner::default().run_test(
+    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
+    ///     |context| {
+    ///         // ...
+    ///         let log_output = context.run_shell_command("for i in {1..3}; do echo \"${i}\"; done");
+    ///         assert_eq!(log_output.stdout, "1\n2\n3\n");
+    ///     },
+    /// );
+    /// ```
+    ///
+    /// This is a convenience function for running shell scripts inside the image, and is equivalent to:
+    /// ```no_run
+    /// use libcnb_test::{ContainerConfig, TestConfig, TestRunner};
+    ///
+    /// TestRunner::default().run_test(
+    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
+    ///     |context| {
+    ///         // ...
+    ///         context.start_container(
+    ///             ContainerConfig::new()
+    ///                 .entrypoint(["launcher"])
+    ///                 .command(["for i in {1..3}; do echo \"${i}\"; done"]),
+    ///             |container| {
+    ///                 let log_output = container.logs_wait();
+    ///                 // ...
+    ///             },
+    ///         );
+    ///     },
+    /// );
+    /// ```
+    pub fn run_shell_command(&self, command: impl Into<String>) -> LogOutput {
+        let mut log_output = LogOutput::default();
+        self.start_container(
+            ContainerConfig::new()
+                .entrypoint(vec![util::CNB_LAUNCHER_BINARY])
+                .command(&[command.into()]),
+            |context| {
+                log_output = context.logs_wait();
+            },
+        );
+        log_output
     }
 
     /// Starts a subsequent integration test run.

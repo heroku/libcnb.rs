@@ -9,8 +9,8 @@
 
 use indoc::indoc;
 use libcnb_test::{
-    assert_contains, assert_empty, assert_not_contains, BuildpackReference, PackResult, TestConfig,
-    TestRunner,
+    assert_contains, assert_empty, assert_not_contains, BuildpackReference, ContainerConfig,
+    PackResult, TestConfig, TestRunner,
 };
 use std::path::PathBuf;
 use std::time::Duration;
@@ -64,10 +64,9 @@ fn starting_containers() {
             BuildpackReference::Other(String::from("heroku/procfile")),
         ]),
         |context| {
-            context
-                .prepare_container()
-                .env("PORT", "5678")
-                .start_with_default_process(|container| {
+            context.start_container(
+                ContainerConfig::new().env("PORT", "5678").expose_port(5678),
+                |container| {
                     // Give the server time to boot up.
                     // TODO: Make requests to the server using a client that retries, and fetch logs after
                     // that, instead of sleeping. This will also allow us to test `expose_port()` etc.
@@ -83,24 +82,24 @@ fn starting_containers() {
                     let exec_log_output = container.shell_exec("ps | grep python3");
                     assert_empty!(exec_log_output.stderr);
                     assert_contains!(exec_log_output.stdout, "python3");
-                });
+                },
+            );
 
             // TODO: Add a test for `start_with_default_process_args` based on the above,
             // that passes "5000" as the argument. This isn't possible at the moment,
             // since `lifecycle` seems to have a bug around passing arguments to
             // non-direct processes (and Procfile creates processes as non-direct).
 
-            context
-                .prepare_container()
-                .start_with_process(String::from("worker"), |container| {
-                    let all_log_output = container.logs_wait();
-                    assert_empty!(all_log_output.stderr);
-                    assert_eq!(all_log_output.stdout, "this is the worker process!\n");
-                });
+            context.start_container(ContainerConfig::new().entrypoint(["worker"]), |container| {
+                let all_log_output = container.logs_wait();
+                assert_empty!(all_log_output.stderr);
+                assert_eq!(all_log_output.stdout, "this is the worker process!\n");
+            });
 
-            context.prepare_container().start_with_process_args(
-                String::from("echo-args"),
-                ["Hello!"],
+            context.start_container(
+                ContainerConfig::new()
+                    .entrypoint(["echo-args"])
+                    .command(["Hello!"]),
                 |container| {
                     let all_log_output = container.logs_wait();
                     assert_empty!(all_log_output.stderr);
@@ -108,14 +107,9 @@ fn starting_containers() {
                 },
             );
 
-            context.prepare_container().start_with_shell_command(
-                "for i in {1..3}; do echo \"${i}\"; done",
-                |container| {
-                    let all_log_output = container.logs_wait();
-                    assert_empty!(all_log_output.stderr);
-                    assert_eq!(all_log_output.stdout, "1\n2\n3\n");
-                },
-            );
+            let log_output = context.run_shell_command("for i in {1..3}; do echo \"${i}\"; done");
+            assert_empty!(log_output.stderr);
+            assert_eq!(log_output.stdout, "1\n2\n3\n");
         },
     );
 }
@@ -208,13 +202,11 @@ fn app_dir_preprocessor() {
                 fs::write(app_dir.join("Procfile"), "list-files: find . | sort").unwrap();
             }),
         |context| {
-            context
-                .prepare_container()
-                .start_with_default_process(|container| {
-                    let log_output = container.logs_wait();
-                    assert_contains!(
-                        log_output.stdout,
-                        indoc! {"
+            context.start_container(&ContainerConfig::new(), |container| {
+                let log_output = container.logs_wait();
+                assert_contains!(
+                    log_output.stdout,
+                    indoc! {"
                             ./Procfile
                             ./file1.txt
                             ./subdir1
@@ -223,8 +215,8 @@ fn app_dir_preprocessor() {
                             ./subdir1/subdir2/subdir3
                             ./subdir1/subdir2/subdir3/file3.txt
                         "}
-                    );
-                });
+                );
+            });
         },
     );
 

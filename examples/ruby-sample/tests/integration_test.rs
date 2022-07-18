@@ -7,7 +7,9 @@
 // https://rust-lang.github.io/rust-clippy/stable/index.html
 #![warn(clippy::pedantic)]
 
-use libcnb_test::{assert_contains, assert_not_contains, PackResult, TestConfig, TestRunner};
+use libcnb_test::{
+    assert_contains, assert_not_contains, ContainerConfig, PackResult, TestConfig, TestRunner,
+};
 use std::io::{Read, Write};
 use std::net;
 use std::net::ToSocketAddrs;
@@ -24,11 +26,11 @@ fn basic() {
         assert_contains!(context.pack_stdout, "---> Installing bundler");
         assert_contains!(context.pack_stdout, "---> Installing gems");
 
-        context
-            .prepare_container()
-            .env("PORT", TEST_PORT.to_string())
-            .expose_port(TEST_PORT)
-            .start_with_default_process(|container| {
+        context.start_container(
+            ContainerConfig::new()
+                .env("PORT", TEST_PORT.to_string())
+                .expose_port(TEST_PORT),
+            |container| {
                 std::thread::sleep(Duration::from_secs(2));
 
                 assert_eq!(
@@ -39,12 +41,13 @@ fn basic() {
                     .unwrap(),
                     "!dlroW olleH"
                 );
+            },
+        );
 
-                assert_contains!(
-                    container.shell_exec("ruby --version").stdout,
-                    "ruby 2.7.0p0"
-                );
-            });
+        assert_contains!(
+            context.run_shell_command("ruby --version").stdout,
+            "ruby 2.7.0p0"
+        );
 
         context.run_test(&config, |context| {
             assert_not_contains!(context.pack_stdout, "---> Installing bundler");
