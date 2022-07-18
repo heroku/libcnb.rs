@@ -29,7 +29,7 @@ fn basic() {
             .env("PORT", TEST_PORT.to_string())
             .expose_port(TEST_PORT)
             .start_with_default_process(|container| {
-                std::thread::sleep(Duration::from_secs(1));
+                std::thread::sleep(Duration::from_secs(2));
 
                 assert_eq!(
                     call_test_fixture_service(
