@@ -111,9 +111,9 @@ impl<'a> TestContext<'a> {
         });
     }
 
-    /// Run the provided shell script.
+    /// Run the provided shell command.
     ///
-    /// The CNB launcher will run the provided script using `bash`.
+    /// The CNB launcher will run the provided command using `bash`.
     ///
     /// Note: This method will block until the container stops.
     ///
@@ -131,7 +131,7 @@ impl<'a> TestContext<'a> {
     /// );
     /// ```
     ///
-    /// This is a convenience function for running shell scripts inside the image, and is equivalent to:
+    /// This is a convenience function for running shell commands inside the image, and is equivalent to:
     /// ```no_run
     /// use libcnb_test::{ContainerConfig, TestConfig, TestRunner};
     ///
