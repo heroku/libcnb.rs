@@ -4,6 +4,7 @@
 
 - Add `TestContext::start_container`, `TestContext::run_shell_command` and `ContainerConfig`. ([#469](https://github.com/heroku/libcnb.rs/pull/469))
 - Remove `TestContext::prepare_container` and `PrepareContainerContext`. To start a container use `TestContext::start_container` combined with `ContainerConfig` (or else the convenience function `TestContext::run_shell_command`) instead. ([#469](https://github.com/heroku/libcnb.rs/pull/469))
+- Fix missing logs when using `ContainerContext::logs_now`. ([#471](https://github.com/heroku/libcnb.rs/pull/471))
 
 ## [0.5.0] 2022-07-14
 
