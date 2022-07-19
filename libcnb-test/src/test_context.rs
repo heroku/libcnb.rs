@@ -34,7 +34,7 @@ impl<'a> TestContext<'a> {
     ///     |context| {
     ///         // Start the container using the default process-type:
     ///         // https://buildpacks.io/docs/app-developer-guide/run-an-app/#default-process-type
-    ///         context.start_container(&ContainerConfig::new(), |container| {
+    ///         context.start_container(ContainerConfig::new(), |container| {
     ///             // ...
     ///         });
     ///
@@ -70,7 +70,12 @@ impl<'a> TestContext<'a> {
     ///     },
     /// );
     /// ```
-    pub fn start_container<F: FnOnce(ContainerContext)>(&self, config: &ContainerConfig, f: F) {
+    pub fn start_container<C: Borrow<ContainerConfig>, F: FnOnce(ContainerContext)>(
+        &self,
+        config: C,
+        f: F,
+    ) {
+        let config = config.borrow();
         let container_name = util::random_docker_identifier();
 
         self.runner.tokio_runtime.block_on(async {

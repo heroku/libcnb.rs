@@ -202,7 +202,7 @@ fn app_dir_preprocessor() {
                 fs::write(app_dir.join("Procfile"), "list-files: find . | sort").unwrap();
             }),
         |context| {
-            context.start_container(&ContainerConfig::new(), |container| {
+            context.start_container(ContainerConfig::new(), |container| {
                 let log_output = container.logs_wait();
                 assert_contains!(
                     log_output.stdout,

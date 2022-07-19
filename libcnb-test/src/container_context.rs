@@ -31,7 +31,7 @@ impl<'a> ContainerContext<'a> {
     ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
     ///     |context| {
     ///         // ...
-    ///         context.start_container(&ContainerConfig::new(), |container| {
+    ///         context.start_container(ContainerConfig::new(), |container| {
     ///             let log_output_until_now = container.logs_now();
     ///             assert_empty!(log_output_until_now.stderr);
     ///             assert_contains!(log_output_until_now.stdout, "Expected output");
@@ -72,7 +72,7 @@ impl<'a> ContainerContext<'a> {
     ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
     ///     |context| {
     ///         // ...
-    ///         context.start_container(&ContainerConfig::new(), |container| {
+    ///         context.start_container(ContainerConfig::new(), |container| {
     ///             let all_log_output = container.logs_wait();
     ///             assert_empty!(all_log_output.stderr);
     ///             assert_contains!(all_log_output.stdout, "Expected output");
@@ -158,7 +158,7 @@ impl<'a> ContainerContext<'a> {
     ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
     ///     |context| {
     ///         // ...
-    ///         context.start_container(&ContainerConfig::new(), |container| {
+    ///         context.start_container(ContainerConfig::new(), |container| {
     ///             let log_output = container.shell_exec("ps");
     ///             assert_contains!(log_output.stdout, "gunicorn");
     ///         });
