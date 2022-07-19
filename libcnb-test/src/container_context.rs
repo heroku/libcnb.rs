@@ -1,295 +1,11 @@
 use crate::log::LogOutput;
 use crate::{container_port_mapping, util};
 use crate::{log, TestContext};
-use bollard::container::{
-    Config, CreateContainerOptions, RemoveContainerOptions, StartContainerOptions,
-};
+use bollard::container::RemoveContainerOptions;
 use bollard::exec::{CreateExecOptions, StartExecResults};
 use serde::Serialize;
-use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::time::{SystemTime, UNIX_EPOCH};
-
-/// Context for preparing a container.
-///
-/// Created by [`TestContext::prepare_container`] and is used to configure the
-/// container before running it.
-pub struct PrepareContainerContext<'a> {
-    test_context: &'a TestContext<'a>,
-    exposed_ports: Vec<u16>,
-    env: HashMap<String, String>,
-}
-
-impl<'a> PrepareContainerContext<'a> {
-    pub(crate) fn new(test_context: &'a TestContext) -> Self {
-        Self {
-            test_context,
-            exposed_ports: Vec::new(),
-            env: HashMap::new(),
-        }
-    }
-
-    /// Exposes a given port of the container to the host machine.
-    ///
-    /// The given port is mapped to a random port on the host machine. Use
-    /// [`ContainerContext::address_for_port`] to obtain the local port for a mapped port.
-    pub fn expose_port(&mut self, port: u16) -> &mut Self {
-        self.exposed_ports.push(port);
-        self
-    }
-
-    /// Inserts or updates an environment variable mapping for the container.
-    ///
-    /// # Example
-    /// ```no_run
-    /// use libcnb_test::{TestConfig, TestRunner};
-    ///
-    /// TestRunner::default().run_test(
-    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
-    ///     |context| {
-    ///         context
-    ///             .prepare_container()
-    ///             .env("FOO", "FOO_VALUE")
-    ///             .env("BAR", "BAR_VALUE")
-    ///             .start_with_default_process(|container| {
-    ///                 // ...
-    ///             });
-    ///     },
-    /// );
-    /// ```
-    pub fn env(&mut self, key: impl Into<String>, value: impl Into<String>) -> &mut Self {
-        self.env.insert(key.into(), value.into());
-        self
-    }
-
-    /// Adds or updates multiple environment variable mappings for the container.
-    ///
-    /// # Example
-    /// ```no_run
-    /// use libcnb_test::{TestConfig, TestRunner};
-    ///
-    /// TestRunner::default().run_test(
-    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
-    ///     |context| {
-    ///         context
-    ///             .prepare_container()
-    ///             .envs(vec![("FOO", "FOO_VALUE"), ("BAR", "BAR_VALUE")])
-    ///             .start_with_default_process(|container| {
-    ///                 // ...
-    ///             });
-    ///     },
-    /// );
-    /// ```
-    pub fn envs<K: Into<String>, V: Into<String>, I: IntoIterator<Item = (K, V)>>(
-        &mut self,
-        envs: I,
-    ) -> &mut Self {
-        envs.into_iter().for_each(|(key, value)| {
-            self.env(key.into(), value.into());
-        });
-
-        self
-    }
-
-    /// Creates and starts the container configured by this context using the image's default
-    /// CNB process.
-    ///
-    /// See: [CNB App Developer Guide: Run a multi-process app - Default process type](https://buildpacks.io/docs/app-developer-guide/run-an-app/#default-process-type)
-    ///
-    /// # Example
-    /// ```no_run
-    /// use libcnb_test::{TestConfig, TestRunner};
-    ///
-    /// TestRunner::default().run_test(
-    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
-    ///     |context| {
-    ///         context
-    ///             .prepare_container()
-    ///             .start_with_default_process(|container| {
-    ///                 // ...
-    ///             });
-    ///     },
-    /// );
-    /// ```
-    pub fn start_with_default_process<F: FnOnce(ContainerContext)>(&self, f: F) {
-        self.start_internal(None, None, f);
-    }
-
-    /// Creates and starts the container configured by this context using the image's default
-    /// CNB process and given arguments.
-    ///
-    /// See: [CNB App Developer Guide: Run a multi-process app - Default process type with additional arguments](https://buildpacks.io/docs/app-developer-guide/run-an-app/#default-process-type-with-additional-arguments)
-    ///
-    /// # Example
-    /// ```no_run
-    /// use libcnb_test::{TestConfig, TestRunner};
-    ///
-    /// TestRunner::default().run_test(
-    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
-    ///     |context| {
-    ///         context.prepare_container().start_with_default_process_args(
-    ///             ["--version"],
-    ///             |container| {
-    ///                 // ...
-    ///             },
-    ///         );
-    ///     },
-    /// );
-    /// ```
-    pub fn start_with_default_process_args<
-        F: FnOnce(ContainerContext),
-        A: IntoIterator<Item = I>,
-        I: Into<String>,
-    >(
-        &self,
-        args: A,
-        f: F,
-    ) {
-        self.start_internal(None, Some(args.into_iter().map(I::into).collect()), f);
-    }
-
-    /// Creates and starts the container configured by this context using the given CNB process.
-    ///
-    /// See: [CNB App Developer Guide: Run a multi-process app - Non-default process-type](https://buildpacks.io/docs/app-developer-guide/run-an-app/#non-default-process-type)
-    ///
-    /// # Example
-    /// ```no_run
-    /// use libcnb_test::{TestConfig, TestRunner};
-    ///
-    /// TestRunner::default().run_test(
-    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
-    ///     |context| {
-    ///         context
-    ///             .prepare_container()
-    ///             .start_with_process("worker", |container| {
-    ///                 // ...
-    ///             });
-    ///     },
-    /// );
-    /// ```
-    pub fn start_with_process<F: FnOnce(ContainerContext), P: Into<String>>(
-        &self,
-        process: P,
-        f: F,
-    ) {
-        self.start_internal(Some(vec![process.into()]), None, f);
-    }
-
-    /// Creates and starts the container configured by this context using the given CNB process
-    /// and arguments.
-    ///
-    /// See: [CNB App Developer Guide: Run a multi-process app - Non-default process-type with additional arguments](https://buildpacks.io/docs/app-developer-guide/run-an-app/#non-default-process-type-with-additional-arguments)
-    ///
-    /// # Example
-    /// ```no_run
-    /// use libcnb_test::{TestConfig, TestRunner};
-    ///
-    /// TestRunner::default().run_test(
-    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
-    ///     |context| {
-    ///         context.prepare_container().start_with_process_args(
-    ///             "worker",
-    ///             ["--config", "foo.toml"],
-    ///             |container| {
-    ///                 // ...
-    ///             },
-    ///         );
-    ///     },
-    /// );
-    /// ```
-    pub fn start_with_process_args<
-        F: FnOnce(ContainerContext),
-        A: IntoIterator<Item = I>,
-        I: Into<String>,
-        P: Into<String>,
-    >(
-        &self,
-        process: P,
-        args: A,
-        f: F,
-    ) {
-        self.start_internal(
-            Some(vec![process.into()]),
-            Some(args.into_iter().map(I::into).collect()),
-            f,
-        );
-    }
-
-    /// Creates and starts the container configured by this context using the given shell command.
-    ///
-    /// The CNB lifecycle launcher will be implicitly used. Environment variables will be set. Uses
-    /// `bash` as the shell.
-    ///
-    /// See: [CNB App Developer Guide: Run a multi-process app - User-provided shell process](https://buildpacks.io/docs/app-developer-guide/run-an-app/#user-provided-shell-process)
-    ///
-    /// # Example
-    /// ```no_run
-    /// use libcnb_test::{TestConfig, TestRunner};
-    ///
-    /// TestRunner::default().run_test(
-    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
-    ///     |context| {
-    ///         context
-    ///             .prepare_container()
-    ///             .start_with_shell_command("env", |container| {
-    ///                 // ...
-    ///             });
-    ///     },
-    /// );
-    /// ```
-    pub fn start_with_shell_command<F: FnOnce(ContainerContext), C: Into<String>>(
-        &self,
-        command: C,
-        f: F,
-    ) {
-        self.start_internal(
-            Some(vec![String::from(CNB_LAUNCHER_BINARY)]),
-            Some(vec![command.into()]),
-            f,
-        );
-    }
-
-    fn start_internal<F: FnOnce(ContainerContext)>(
-        &self,
-        entrypoint: Option<Vec<String>>,
-        cmd: Option<Vec<String>>,
-        f: F,
-    ) {
-        let container_name = util::random_docker_identifier();
-
-        self.test_context.runner.tokio_runtime.block_on(async {
-            self.test_context
-                .runner
-                .docker
-                .create_container(
-                    Some(CreateContainerOptions {
-                        name: container_name.clone(),
-                    }),
-                    Config {
-                        image: Some(self.test_context.image_name.clone()),
-                        env: Some(self.env.iter().map(|(k, v)| format!("{k}={v}")).collect()),
-                        entrypoint,
-                        cmd,
-                        ..container_port_mapping::port_mapped_container_config(&self.exposed_ports)
-                    },
-                )
-                .await
-                .expect("Could not create container");
-
-            self.test_context
-                .runner
-                .docker
-                .start_container(&container_name, None::<StartContainerOptions<String>>)
-                .await
-                .expect("Could not start container");
-        });
-
-        f(ContainerContext {
-            container_name,
-            test_context: self.test_context,
-        });
-    }
-}
 
 /// Context of a launched container.
 pub struct ContainerContext<'a> {
@@ -309,17 +25,17 @@ impl<'a> ContainerContext<'a> {
     ///
     /// # Example
     /// ```no_run
-    /// use libcnb_test::{assert_contains, TestConfig, TestRunner};
+    /// use libcnb_test::{assert_contains, assert_empty, ContainerConfig, TestConfig, TestRunner};
     ///
     /// TestRunner::default().run_test(
     ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
     ///     |context| {
     ///         // ...
-    ///         context
-    ///             .prepare_container()
-    ///             .start_with_default_process(|container| {
-    ///                 assert_contains!(container.logs_now().stdout, "Expected output");
-    ///             });
+    ///         context.start_container(ContainerConfig::new(), |container| {
+    ///             let log_output_until_now = container.logs_now();
+    ///             assert_empty!(log_output_until_now.stderr);
+    ///             assert_contains!(log_output_until_now.stdout, "Expected output");
+    ///         });
     ///     },
     /// );
     /// ```
@@ -350,17 +66,17 @@ impl<'a> ContainerContext<'a> {
     ///
     /// # Example
     /// ```no_run
-    /// use libcnb_test::{assert_contains, TestConfig, TestRunner};
+    /// use libcnb_test::{assert_contains, assert_empty, ContainerConfig, TestConfig, TestRunner};
     ///
     /// TestRunner::default().run_test(
     ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
     ///     |context| {
     ///         // ...
-    ///         context
-    ///             .prepare_container()
-    ///             .start_with_default_process(|container| {
-    ///                 assert_contains!(container.logs_wait().stdout, "Expected output");
-    ///             });
+    ///         context.start_container(ContainerConfig::new(), |container| {
+    ///             let all_log_output = container.logs_wait();
+    ///             assert_empty!(all_log_output.stderr);
+    ///             assert_contains!(all_log_output.stdout, "Expected output");
+    ///         });
     ///     },
     /// );
     /// ```
@@ -396,28 +112,19 @@ impl<'a> ContainerContext<'a> {
     ///
     /// # Example
     /// ```no_run
-    /// use libcnb_test::{TestConfig, TestRunner};
+    /// use libcnb_test::{ContainerConfig, TestConfig, TestRunner};
     ///
-    /// # fn call_test_fixture_service(addr: std::net::SocketAddr, payload: &str) -> Result<String, ()> {
-    /// #    unimplemented!()
-    /// # }
     /// TestRunner::default().run_test(
     ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
     ///     |context| {
     ///         // ...
-    ///         context
-    ///             .prepare_container()
-    ///             .expose_port(12345)
-    ///             .start_with_default_process(|container| {
-    ///                 assert_eq!(
-    ///                     call_test_fixture_service(
-    ///                         container.address_for_port(12345).unwrap(),
-    ///                         "Hagbard Celine"
-    ///                     )
-    ///                     .unwrap(),
-    ///                     "enileC drabgaH"
-    ///                 );
-    ///             });
+    ///         context.start_container(
+    ///             ContainerConfig::new().env("PORT", "12345").expose_port(12345),
+    ///             |container| {
+    ///                 let port_on_host = container.address_for_port(12345).unwrap();
+    ///                 // ...
+    ///             },
+    ///         );
     ///     },
     /// );
     /// ```
@@ -445,17 +152,16 @@ impl<'a> ContainerContext<'a> {
     ///
     /// # Example
     /// ```no_run
-    /// use libcnb_test::{assert_contains, TestConfig, TestRunner};
+    /// use libcnb_test::{assert_contains, ContainerConfig, TestConfig, TestRunner};
     ///
     /// TestRunner::default().run_test(
     ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
     ///     |context| {
     ///         // ...
-    ///         context
-    ///             .prepare_container()
-    ///             .start_with_default_process(|container| {
-    ///                 assert_contains!(container.shell_exec("ps").stdout, "gunicorn");
-    ///             });
+    ///         context.start_container(ContainerConfig::new(), |container| {
+    ///             let log_output = container.shell_exec("ps");
+    ///             assert_contains!(log_output.stdout, "gunicorn");
+    ///         });
     ///     },
     /// );
     /// ```
@@ -468,7 +174,7 @@ impl<'a> ContainerContext<'a> {
                 .create_exec(
                     &self.container_name,
                     CreateExecOptions {
-                        cmd: Some(vec![CNB_LAUNCHER_BINARY, command.as_ref()]),
+                        cmd: Some(vec![util::CNB_LAUNCHER_BINARY, command.as_ref()]),
                         attach_stdout: Some(true),
                         ..CreateExecOptions::default()
                     },
@@ -511,5 +217,3 @@ impl<'a> Drop for ContainerContext<'a> {
         );
     }
 }
-
-const CNB_LAUNCHER_BINARY: &str = "launcher";

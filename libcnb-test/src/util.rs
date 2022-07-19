@@ -13,3 +13,5 @@ pub(crate) fn random_docker_identifier() -> String {
             .collect::<String>()
     )
 }
+
+pub(crate) const CNB_LAUNCHER_BINARY: &str = "launcher";

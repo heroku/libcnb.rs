@@ -15,7 +15,7 @@ Please use the same tag for feature requests.
 
 ```rust,no_run
 // In $CRATE_ROOT/tests/integration_test.rs
-use libcnb_test::{assert_contains, TestConfig, TestRunner};
+use libcnb_test::{assert_contains, ContainerConfig, TestConfig, TestRunner};
 
 // In your code you'll want to mark your function as a test with `#[test]`.
 // It is removed here for compatibility with doctest so this code in the readme
@@ -28,10 +28,11 @@ fn test() {
             assert_contains!(context.pack_stdout, "---> Installing Maven");
             assert_contains!(context.pack_stdout, "---> Running mvn package");
 
-            context
-                .prepare_container()
-                .expose_port(12345)
-                .start_with_default_process(|container| {
+            context.start_container(
+                ContainerConfig::new()
+                    .env("PORT", "12345")
+                    .expose_port(12345),
+                |container| {
                     assert_eq!(
                         call_test_fixture_service(
                             container.address_for_port(12345).unwrap(),
@@ -40,7 +41,8 @@ fn test() {
                         .unwrap(),
                         "enileC drabgaH"
                     );
-                });
+                },
+            );
         },
     );
 }

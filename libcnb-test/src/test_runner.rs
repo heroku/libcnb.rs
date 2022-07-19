@@ -16,7 +16,7 @@ use std::{env, io};
 ///
 /// # Example
 /// ```no_run
-/// use libcnb_test::{assert_contains, TestConfig, TestRunner};
+/// use libcnb_test::{assert_contains, ContainerConfig, TestConfig, TestRunner};
 ///
 /// # fn call_test_fixture_service(addr: std::net::SocketAddr, payload: &str) -> Result<String, ()> {
 /// #    unimplemented!()
@@ -28,10 +28,11 @@ use std::{env, io};
 ///         assert_contains!(context.pack_stdout, "---> Installing Maven");
 ///         assert_contains!(context.pack_stdout, "---> Running mvn package");
 ///
-///         context
-///             .prepare_container()
-///             .expose_port(12345)
-///             .start_with_default_process(|container| {
+///         context.start_container(
+///             ContainerConfig::new()
+///                 .env("PORT", "12345")
+///                 .expose_port(12345),
+///             |container| {
 ///                 assert_eq!(
 ///                     call_test_fixture_service(
 ///                         container.address_for_port(12345).unwrap(),
@@ -40,7 +41,8 @@ use std::{env, io};
 ///                     .unwrap(),
 ///                     "enileC drabgaH"
 ///                 );
-///             });
+///             },
+///         );
 ///     },
 /// );
 /// ```
