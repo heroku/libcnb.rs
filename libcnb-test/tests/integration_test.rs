@@ -64,20 +64,37 @@ fn starting_containers() {
             BuildpackReference::Other(String::from("heroku/procfile")),
         ]),
         |context| {
-            context.start_container(
-                ContainerConfig::new().env("PORT", "5678").expose_port(5678),
-                |container| {
-                    // Give the server time to boot up.
-                    // TODO: Make requests to the server using a client that retries, and fetch logs after
-                    // that, instead of sleeping. This will also allow us to test `expose_port()` etc.
-                    thread::sleep(Duration::from_secs(2));
+            const TEST_PORT: u16 = 12345;
 
-                    let log_output_until_now = container.logs_now();
-                    assert_empty!(log_output_until_now.stderr);
+            context.start_container(
+                ContainerConfig::new()
+                    .env("PORT", TEST_PORT.to_string())
+                    .expose_port(TEST_PORT),
+                |container| {
+                    let address_on_host = container.address_for_port(TEST_PORT).unwrap();
+                    let url = format!("http://{}:{}", address_on_host.ip(), address_on_host.port());
+
+                    // Retries needed since the server takes a moment to start up.
+                    let mut attempts_remaining = 5;
+                    let response = loop {
+                        let response = ureq::get(&url).call();
+                        if response.is_ok() || attempts_remaining == 0 {
+                            break response;
+                        }
+                        attempts_remaining -= 1;
+                        thread::sleep(Duration::from_secs(1));
+                    }
+                    .unwrap();
+
+                    let body = response.into_string().unwrap();
+                    assert_contains!(body, "Directory listing for /");
+
+                    let server_log_output = container.logs_now();
                     assert_contains!(
-                        log_output_until_now.stdout,
-                        "Serving HTTP on 0.0.0.0 port 5678"
+                        server_log_output.stdout,
+                        &format!("Serving HTTP on 0.0.0.0 port {TEST_PORT}")
                     );
+                    assert_contains!(server_log_output.stderr, "GET /");
 
                     let exec_log_output = container.shell_exec("ps | grep python3");
                     assert_empty!(exec_log_output.stderr);
@@ -99,11 +116,12 @@ fn starting_containers() {
             context.start_container(
                 ContainerConfig::new()
                     .entrypoint(["echo-args"])
-                    .command(["Hello!"]),
+                    .command(["$GREETING", "$DESIGNATION"])
+                    .envs([("GREETING", "Hello"), ("DESIGNATION", "World")]),
                 |container| {
                     let all_log_output = container.logs_wait();
                     assert_empty!(all_log_output.stderr);
-                    assert_eq!(all_log_output.stdout, "Hello!\n");
+                    assert_eq!(all_log_output.stdout, "Hello World\n");
                 },
             );
 
@@ -199,23 +217,31 @@ fn app_dir_preprocessor() {
             ))])
             .app_dir_preprocessor(|app_dir| {
                 assert!(app_dir.join("file1.txt").exists());
-                fs::write(app_dir.join("Procfile"), "list-files: find . | sort").unwrap();
+                fs::remove_file(app_dir.join("file1.txt")).unwrap();
+                assert!(!app_dir.join("Procfile").exists());
+                fs::write(app_dir.join("Procfile"), "web: true").unwrap();
             }),
         |context| {
-            context.start_container(ContainerConfig::new(), |container| {
-                let log_output = container.logs_wait();
-                assert_contains!(
-                    log_output.stdout,
-                    indoc! {"
-                            ./Procfile
-                            ./file1.txt
-                            ./subdir1
-                            ./subdir1/file2.txt
-                            ./subdir1/subdir2
-                            ./subdir1/subdir2/subdir3
-                            ./subdir1/subdir2/subdir3/file3.txt
-                        "}
-                );
+            let expected_directory_listing = indoc! {"
+                .
+                ./Procfile
+                ./subdir1
+                ./subdir1/file2.txt
+                ./subdir1/subdir2
+                ./subdir1/subdir2/subdir3
+                ./subdir1/subdir2/subdir3/file3.txt
+            "};
+
+            let log_output = context.run_shell_command("find . | sort");
+            assert_empty!(log_output.stderr);
+            assert_eq!(log_output.stdout, expected_directory_listing);
+
+            // Check that rebuilds get a new/clean ephemeral fixture directory.
+            let config = context.config.clone();
+            context.run_test(config, |context| {
+                let log_output = context.run_shell_command("find . | sort");
+                assert_empty!(log_output.stderr);
+                assert_eq!(log_output.stdout, expected_directory_listing);
             });
         },
     );
@@ -277,7 +303,9 @@ fn app_dir_invalid_path_checked_before_applying_preprocessor() {
     TestRunner::default().run_test(
         TestConfig::new("heroku/builder:22", "test-fixtures/non-existent-fixture")
             .buildpacks(Vec::new())
-            .app_dir_preprocessor(|_| {}),
+            .app_dir_preprocessor(|_| {
+                unreachable!("The app dir should be validated before the preprocessor is run")
+            }),
         |_| {},
     );
 }
