@@ -125,9 +125,10 @@ fn starting_containers() {
                 },
             );
 
-            let log_output = context.run_shell_command("for i in {1..3}; do echo \"${i}\"; done");
-            assert_empty!(log_output.stderr);
-            assert_eq!(log_output.stdout, "1\n2\n3\n");
+            let command_output =
+                context.run_shell_command("for i in {1..3}; do echo \"${i}\"; done");
+            assert_empty!(command_output.stderr);
+            assert_eq!(command_output.stdout, "1\n2\n3\n");
         },
     );
 }

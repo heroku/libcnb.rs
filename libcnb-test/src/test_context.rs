@@ -125,8 +125,8 @@ impl<'a> TestContext<'a> {
     ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
     ///     |context| {
     ///         // ...
-    ///         let log_output = context.run_shell_command("for i in {1..3}; do echo \"${i}\"; done");
-    ///         assert_eq!(log_output.stdout, "1\n2\n3\n");
+    ///         let command_output = context.run_shell_command("for i in {1..3}; do echo \"${i}\"; done");
+    ///         assert_eq!(command_output.stdout, "1\n2\n3\n");
     ///     },
     /// );
     /// ```
@@ -184,11 +184,11 @@ impl<'a> TestContext<'a> {
     /// TestRunner::default().build(
     ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
     ///     |context| {
-    ///         assert_contains!(context.pack_stdout, "---> Installing gems");
+    ///         assert_contains!(context.pack_stdout, "---> Installing dependencies");
     ///
     ///         let config = context.config.clone();
     ///         context.rebuild(config, |context| {
-    ///             assert_contains!(context.pack_stdout, "---> Using cached gems");
+    ///             assert_contains!(context.pack_stdout, "---> Using cached dependencies");
     ///         });
     ///     },
     /// );

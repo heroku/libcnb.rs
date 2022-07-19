@@ -18,7 +18,7 @@ pub struct BuildConfig {
 }
 
 impl BuildConfig {
-    /// Creates a new test configuration.
+    /// Creates a new build configuration.
     ///
     /// If the `app_dir` parameter is a relative path, it is treated as relative to the Cargo
     /// manifest directory ([`CARGO_MANIFEST_DIR`](https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-crates)),
@@ -48,7 +48,7 @@ impl BuildConfig {
         }
     }
 
-    /// Sets the buildpacks order.
+    /// Sets the buildpacks (and their ordering) to use when building the app.
     ///
     /// Defaults to [`BuildpackReference::Crate`].
     ///
@@ -220,7 +220,7 @@ impl BuildConfig {
 
     /// Set the expected `pack` command result.
     ///
-    /// In some cases, users might want to explicitly test that a build fails and asserting against
+    /// In some cases, users might want to explicitly test that a build fails and assert against
     /// error output. When passed [`PackResult::Failure`], the test will fail if the pack build
     /// succeeds and vice-versa.
     ///
@@ -228,13 +228,13 @@ impl BuildConfig {
     ///
     /// # Example
     /// ```no_run
-    /// use libcnb_test::{BuildConfig, PackResult, TestRunner};
+    /// use libcnb_test::{assert_contains, BuildConfig, PackResult, TestRunner};
     ///
     /// TestRunner::default().build(
     ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app")
     ///         .expected_pack_result(PackResult::Failure),
     ///     |context| {
-    ///         // ...
+    ///         assert_contains!(context.pack_stderr, "ERROR: Invalid Procfile!");
     ///     },
     /// );
     /// ```
