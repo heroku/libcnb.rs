@@ -6,7 +6,7 @@ pub use libcnb_package::CargoProfile;
 
 /// Configuration for a test.
 #[derive(Clone)]
-pub struct TestConfig {
+pub struct BuildConfig {
     pub(crate) app_dir: PathBuf,
     pub(crate) cargo_profile: CargoProfile,
     pub(crate) target_triple: String,
@@ -17,7 +17,7 @@ pub struct TestConfig {
     pub(crate) expected_pack_result: PackResult,
 }
 
-impl TestConfig {
+impl BuildConfig {
     /// Creates a new test configuration.
     ///
     /// If the `app_dir` parameter is a relative path, it is treated as relative to the Cargo
@@ -26,17 +26,17 @@ impl TestConfig {
     ///
     /// # Example
     /// ```no_run
-    /// use libcnb_test::{TestConfig, TestRunner};
+    /// use libcnb_test::{BuildConfig, TestRunner};
     ///
-    /// TestRunner::default().run_test(
-    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
+    /// TestRunner::default().build(
+    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
     ///     |context| {
     ///         // ...
     ///     },
     /// );
     /// ```
     pub fn new(builder_name: impl Into<String>, app_dir: impl AsRef<Path>) -> Self {
-        TestConfig {
+        Self {
             app_dir: PathBuf::from(app_dir.as_ref()),
             cargo_profile: CargoProfile::Dev,
             target_triple: String::from("x86_64-unknown-linux-musl"),
@@ -54,10 +54,10 @@ impl TestConfig {
     ///
     /// # Example
     /// ```no_run
-    /// use libcnb_test::{BuildpackReference, TestConfig, TestRunner};
+    /// use libcnb_test::{BuildConfig, BuildpackReference, TestRunner};
     ///
-    /// TestRunner::default().run_test(
-    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app").buildpacks(vec![
+    /// TestRunner::default().build(
+    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app").buildpacks(vec![
     ///         BuildpackReference::Other(String::from("heroku/another-buildpack")),
     ///         BuildpackReference::Crate,
     ///     ]),
@@ -77,10 +77,10 @@ impl TestConfig {
     ///
     /// # Example
     /// ```no_run
-    /// use libcnb_test::{CargoProfile, TestConfig, TestRunner};
+    /// use libcnb_test::{BuildConfig, CargoProfile, TestRunner};
     ///
-    /// TestRunner::default().run_test(
-    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app")
+    /// TestRunner::default().build(
+    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app")
     ///         .cargo_profile(CargoProfile::Release),
     ///     |context| {
     ///         // ...
@@ -98,10 +98,10 @@ impl TestConfig {
     ///
     /// # Example
     /// ```no_run
-    /// use libcnb_test::{TestConfig, TestRunner};
+    /// use libcnb_test::{BuildConfig, TestRunner};
     ///
-    /// TestRunner::default().run_test(
-    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app")
+    /// TestRunner::default().build(
+    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app")
     ///         .target_triple("x86_64-unknown-linux-musl"),
     ///     |context| {
     ///         // ...
@@ -120,10 +120,10 @@ impl TestConfig {
     ///
     /// # Example
     /// ```no_run
-    /// use libcnb_test::{TestConfig, TestRunner};
+    /// use libcnb_test::{BuildConfig, TestRunner};
     ///
-    /// TestRunner::default().run_test(
-    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app")
+    /// TestRunner::default().build(
+    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app")
     ///         .env("ENV_VAR_ONE", "VALUE ONE")
     ///         .env("ENV_VAR_TWO", "SOME OTHER VALUE"),
     ///     |context| {
@@ -143,10 +143,10 @@ impl TestConfig {
     ///
     /// # Example
     /// ```no_run
-    /// use libcnb_test::{TestConfig, TestRunner};
+    /// use libcnb_test::{BuildConfig, TestRunner};
     ///
-    /// TestRunner::default().run_test(
-    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app").envs(vec![
+    /// TestRunner::default().build(
+    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app").envs(vec![
     ///         ("ENV_VAR_ONE", "VALUE ONE"),
     ///         ("ENV_VAR_TWO", "SOME OTHER VALUE"),
     ///     ]),
@@ -176,10 +176,10 @@ impl TestConfig {
     ///
     /// # Example
     /// ```no_run
-    /// use libcnb_test::{TestConfig, TestRunner};
+    /// use libcnb_test::{BuildConfig, TestRunner};
     ///
-    /// TestRunner::default().run_test(
-    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app").app_dir_preprocessor(|app_dir| {
+    /// TestRunner::default().build(
+    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app").app_dir_preprocessor(|app_dir| {
     ///         std::fs::remove_file(app_dir.join("Procfile")).unwrap();
     ///     }),
     ///     |context| {
@@ -194,19 +194,19 @@ impl TestConfig {
 
     /// Sets the app directory.
     ///
-    /// The app directory is normally set in the [`TestConfig::new`] call, but when sharing test
+    /// The app directory is normally set in the [`BuildConfig::new`] call, but when sharing test
     /// configuration, it might be necessary to change the app directory but keep everything else
     /// the same.
     ///
     /// # Example
     /// ```no_run
-    /// use libcnb_test::{TestConfig, TestRunner};
+    /// use libcnb_test::{BuildConfig, TestRunner};
     ///
-    /// fn default_config() -> TestConfig {
-    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app")
+    /// fn default_config() -> BuildConfig {
+    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app")
     /// }
     ///
-    /// TestRunner::default().run_test(
+    /// TestRunner::default().build(
     ///     default_config().app_dir("test-fixtures/a-different-app"),
     ///     |context| {
     ///         // ...
@@ -228,10 +228,10 @@ impl TestConfig {
     ///
     /// # Example
     /// ```no_run
-    /// use libcnb_test::{PackResult, TestConfig, TestRunner};
+    /// use libcnb_test::{BuildConfig, PackResult, TestRunner};
     ///
-    /// TestRunner::default().run_test(
-    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app")
+    /// TestRunner::default().build(
+    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app")
     ///         .expected_pack_result(PackResult::Failure),
     ///     |context| {
     ///         // ...

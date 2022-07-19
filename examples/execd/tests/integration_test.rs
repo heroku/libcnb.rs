@@ -7,13 +7,13 @@
 // https://rust-lang.github.io/rust-clippy/stable/index.html
 #![warn(clippy::pedantic)]
 
-use libcnb_test::{assert_contains, assert_empty, TestConfig, TestRunner};
+use libcnb_test::{assert_contains, assert_empty, BuildConfig, TestRunner};
 
 #[test]
 #[ignore]
 fn basic() {
-    TestRunner::default().run_test(
-        TestConfig::new("heroku/builder:22", "test-fixtures/empty-app"),
+    TestRunner::default().build(
+        BuildConfig::new("heroku/builder:22", "test-fixtures/empty-app"),
         |context| {
             let log_output = context.run_shell_command("env");
             assert_empty!(log_output.stderr);

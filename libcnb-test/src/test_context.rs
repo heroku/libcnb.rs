@@ -1,5 +1,5 @@
 use crate::{
-    container_port_mapping, util, ContainerConfig, ContainerContext, LogOutput, TestConfig,
+    container_port_mapping, util, BuildConfig, ContainerConfig, ContainerContext, LogOutput,
     TestRunner,
 };
 use bollard::container::{Config, CreateContainerOptions, StartContainerOptions};
@@ -13,7 +13,7 @@ pub struct TestContext<'a> {
     /// Standard error of `pack`, interpreted as an UTF-8 string.
     pub pack_stderr: String,
     /// The configuration used for this integration test.
-    pub config: TestConfig,
+    pub config: BuildConfig,
 
     pub(crate) image_name: String,
     pub(crate) runner: &'a TestRunner,
@@ -27,10 +27,10 @@ impl<'a> TestContext<'a> {
     ///
     /// # Examples
     /// ```no_run
-    /// use libcnb_test::{ContainerConfig, TestConfig, TestRunner};
+    /// use libcnb_test::{BuildConfig, ContainerConfig, TestRunner};
     ///
-    /// TestRunner::default().run_test(
-    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
+    /// TestRunner::default().build(
+    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
     ///     |context| {
     ///         // Start the container using the default process-type:
     ///         // https://buildpacks.io/docs/app-developer-guide/run-an-app/#default-process-type
@@ -119,10 +119,10 @@ impl<'a> TestContext<'a> {
     ///
     /// # Example
     /// ```no_run
-    /// use libcnb_test::{ContainerConfig, TestConfig, TestRunner};
+    /// use libcnb_test::{BuildConfig, ContainerConfig, TestRunner};
     ///
-    /// TestRunner::default().run_test(
-    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
+    /// TestRunner::default().build(
+    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
     ///     |context| {
     ///         // ...
     ///         let log_output = context.run_shell_command("for i in {1..3}; do echo \"${i}\"; done");
@@ -133,10 +133,10 @@ impl<'a> TestContext<'a> {
     ///
     /// This is a convenience function for running shell commands inside the image, and is equivalent to:
     /// ```no_run
-    /// use libcnb_test::{ContainerConfig, TestConfig, TestRunner};
+    /// use libcnb_test::{BuildConfig, ContainerConfig, TestRunner};
     ///
-    /// TestRunner::default().run_test(
-    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
+    /// TestRunner::default().build(
+    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
     ///     |context| {
     ///         // ...
     ///         context.start_container(
@@ -164,9 +164,9 @@ impl<'a> TestContext<'a> {
         log_output
     }
 
-    /// Starts a subsequent integration test run.
+    /// Starts a subsequent integration test build.
     ///
-    /// This function behaves exactly like [`TestRunner::run_test`], but it will reuse the OCI image
+    /// This function behaves exactly like [`TestRunner::build`], but it will reuse the OCI image
     /// from the previous test, causing the CNB lifecycle to restore any cached layers. It will use the
     /// same [`TestRunner`] as the previous test run.
     ///
@@ -179,23 +179,23 @@ impl<'a> TestContext<'a> {
     ///
     /// # Example
     /// ```no_run
-    /// use libcnb_test::{assert_contains, TestConfig, TestRunner};
+    /// use libcnb_test::{assert_contains, BuildConfig, TestRunner};
     ///
-    /// TestRunner::default().run_test(
-    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
+    /// TestRunner::default().build(
+    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
     ///     |context| {
     ///         assert_contains!(context.pack_stdout, "---> Installing gems");
     ///
     ///         let config = context.config.clone();
-    ///         context.run_test(config, |context| {
+    ///         context.rebuild(config, |context| {
     ///             assert_contains!(context.pack_stdout, "---> Using cached gems");
     ///         });
     ///     },
     /// );
     /// ```
-    pub fn run_test<C: Borrow<TestConfig>, F: FnOnce(TestContext)>(self, config: C, f: F) {
+    pub fn rebuild<C: Borrow<BuildConfig>, F: FnOnce(TestContext)>(self, config: C, f: F) {
         self.runner
-            .run_test_internal(self.image_name.clone(), config, f);
+            .build_internal(self.image_name.clone(), config, f);
     }
 }
 
