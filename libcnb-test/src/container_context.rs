@@ -5,7 +5,6 @@ use bollard::container::RemoveContainerOptions;
 use bollard::exec::{CreateExecOptions, StartExecResults};
 use serde::Serialize;
 use std::net::SocketAddr;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Context of a launched container.
 pub struct ContainerContext<'a> {
@@ -41,16 +40,9 @@ impl<'a> ContainerContext<'a> {
     /// ```
     #[must_use]
     pub fn logs_now(&self) -> LogOutput {
-        // Bollard forces us to cast to i64
-        #[allow(clippy::cast_possible_wrap)]
         self.logs_internal(bollard::container::LogsOptions {
             stdout: true,
             stderr: true,
-            since: 0,
-            until: SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("System time is before UNIX epoch")
-                .as_secs() as i64,
             tail: "all",
             ..bollard::container::LogsOptions::default()
         })
