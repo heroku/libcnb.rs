@@ -29,11 +29,13 @@ mod util;
 pub use buildpack::Buildpack;
 pub use env::*;
 pub use error::*;
-#[doc(inline)]
-pub use libcnb_data as data;
 pub use platform::*;
 pub use runtime::*;
 pub use toml_file::*;
+
+/// Provides types for CNB data formats. Is a re-export of the `libcnb-data` crate.
+#[doc(inline)]
+pub use libcnb_data as data;
 
 const LIBCNB_SUPPORTED_BUILDPACK_API: data::buildpack::BuildpackApi =
     data::buildpack::BuildpackApi { major: 0, minor: 6 };
