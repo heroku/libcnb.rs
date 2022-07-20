@@ -24,6 +24,7 @@ tokio-stream = "0.1.9"
 
 [dev-dependencies]
 indoc = "1.0.6"
+ureq = { version = "2.5.0", default-features = false }
 
 [features]
 # Enables experimental support for connecting to a remote Docker daemon.

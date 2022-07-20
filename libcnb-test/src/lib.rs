@@ -28,3 +28,5 @@ pub use crate::test_runner::*;
 // Suppress warnings due to the `unused_crate_dependencies` lint not handling integration tests well.
 #[cfg(test)]
 use indoc as _;
+#[cfg(test)]
+use ureq as _;
