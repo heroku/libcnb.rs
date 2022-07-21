@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Overhaul the crate README/docs, to improve the learning/onboarding UX. ([#478](https://github.com/heroku/libcnb.rs/pull/478))
 - Rename `TestRunner::run_test` to `TestRunner::build`, `TestConfig` to `BuildConfig` and `TestContext::run_test` to `TestContext::rebuild`. ([#470](https://github.com/heroku/libcnb.rs/pull/470))
 - Add `TestContext::start_container`, `TestContext::run_shell_command` and `ContainerConfig`. ([#469](https://github.com/heroku/libcnb.rs/pull/469))
 - Remove `TestContext::prepare_container` and `PrepareContainerContext`. To start a container use `TestContext::start_container` combined with `ContainerConfig` (or else the convenience function `TestContext::run_shell_command`) instead. ([#469](https://github.com/heroku/libcnb.rs/pull/469))

@@ -9,42 +9,17 @@ use std::{env, io};
 
 /// Runner for libcnb integration tests.
 ///
-/// # Dependencies
-/// Integration tests require external tools to be available on the host to run:
-/// - [pack](https://buildpacks.io/docs/tools/pack/)
-/// - [Docker](https://www.docker.com/)
-///
 /// # Example
 /// ```no_run
-/// use libcnb_test::{assert_contains, BuildConfig, ContainerConfig, TestRunner};
+/// use libcnb_test::{assert_contains, assert_empty, BuildConfig, TestRunner};
 ///
-/// # fn call_test_fixture_service(addr: std::net::SocketAddr, payload: &str) -> Result<String, ()> {
-/// #    unimplemented!()
-/// # }
 /// TestRunner::default().build(
 ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
 ///     |context| {
-///         assert_contains!(context.pack_stdout, "---> Maven Buildpack");
-///         assert_contains!(context.pack_stdout, "---> Installing Maven");
-///         assert_contains!(context.pack_stdout, "---> Running mvn package");
-///
-///         context.start_container(
-///             ContainerConfig::new()
-///                 .env("PORT", "12345")
-///                 .expose_port(12345),
-///             |container| {
-///                 assert_eq!(
-///                     call_test_fixture_service(
-///                         container.address_for_port(12345).unwrap(),
-///                         "Hagbard Celine"
-///                     )
-///                     .unwrap(),
-///                     "enileC drabgaH"
-///                 );
-///             },
-///         );
+///         assert_empty!(context.pack_stderr);
+///         assert_contains!(context.pack_stdout, "Expected build output");
 ///     },
-/// );
+/// )
 /// ```
 pub struct TestRunner {
     pub(crate) docker: Docker,
@@ -105,14 +80,13 @@ impl TestRunner {
     ///
     /// # Example
     /// ```no_run
-    /// use libcnb_test::{assert_contains, BuildConfig, TestRunner};
+    /// use libcnb_test::{assert_contains, assert_empty, BuildConfig, TestRunner};
     ///
     /// TestRunner::default().build(
     ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
     ///     |context| {
-    ///         assert_contains!(context.pack_stdout, "---> Ruby Buildpack");
-    ///         assert_contains!(context.pack_stdout, "---> Installing bundler");
-    ///         assert_contains!(context.pack_stdout, "---> Installing gems");
+    ///         assert_empty!(context.pack_stderr);
+    ///         assert_contains!(context.pack_stdout, "Expected build output");
     ///     },
     /// )
     /// ```
