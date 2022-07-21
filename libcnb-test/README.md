@@ -90,7 +90,7 @@ Running a shell command against the built image, using [`TestContext::run_shell_
 use libcnb_test::{assert_empty, BuildConfig, TestRunner};
 
 // #[test]
-fn starting_web_server_container() {
+fn run_shell_command() {
     TestRunner::default().build(
         BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
         |context| {
