@@ -8,7 +8,7 @@
 #![warn(clippy::pedantic)]
 
 use libcnb_test::{
-    assert_contains, assert_not_contains, ContainerConfig, PackResult, TestConfig, TestRunner,
+    assert_contains, assert_not_contains, BuildConfig, ContainerConfig, PackResult, TestRunner,
 };
 use std::io::{Read, Write};
 use std::net;
@@ -19,9 +19,9 @@ use std::{fs, io};
 #[test]
 #[ignore]
 fn basic() {
-    let config = TestConfig::new("heroku/buildpacks:20", "test-fixtures/simple-ruby-app");
+    let config = BuildConfig::new("heroku/buildpacks:20", "test-fixtures/simple-ruby-app");
 
-    TestRunner::default().run_test(&config, |context| {
+    TestRunner::default().build(&config, |context| {
         assert_contains!(context.pack_stdout, "---> Ruby Buildpack");
         assert_contains!(context.pack_stdout, "---> Installing bundler");
         assert_contains!(context.pack_stdout, "---> Installing gems");
@@ -49,7 +49,7 @@ fn basic() {
             "ruby 2.7.0p0"
         );
 
-        context.run_test(&config, |context| {
+        context.rebuild(&config, |context| {
             assert_not_contains!(context.pack_stdout, "---> Installing bundler");
             assert_not_contains!(context.pack_stdout, "---> Installing gems");
         });
@@ -59,8 +59,8 @@ fn basic() {
 #[test]
 #[ignore]
 fn missing_gemfile_lock() {
-    TestRunner::default().run_test(
-        TestConfig::new("heroku/buildpacks:20", "test-fixtures/simple-ruby-app")
+    TestRunner::default().build(
+        BuildConfig::new("heroku/buildpacks:20", "test-fixtures/simple-ruby-app")
             .app_dir_preprocessor(|path| fs::remove_file(path.join("Gemfile.lock")).unwrap())
             .expected_pack_result(PackResult::Failure),
         |context| {

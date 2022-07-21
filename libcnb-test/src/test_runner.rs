@@ -1,5 +1,5 @@
 use crate::pack::PackBuildCommand;
-use crate::{app, build, util, BuildpackReference, PackResult, TestConfig, TestContext};
+use crate::{app, build, util, BuildConfig, BuildpackReference, PackResult, TestContext};
 use bollard::Docker;
 use std::borrow::Borrow;
 use std::env::VarError;
@@ -16,13 +16,13 @@ use std::{env, io};
 ///
 /// # Example
 /// ```no_run
-/// use libcnb_test::{assert_contains, ContainerConfig, TestConfig, TestRunner};
+/// use libcnb_test::{assert_contains, BuildConfig, ContainerConfig, TestRunner};
 ///
 /// # fn call_test_fixture_service(addr: std::net::SocketAddr, payload: &str) -> Result<String, ()> {
 /// #    unimplemented!()
 /// # }
-/// TestRunner::default().run_test(
-///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
+/// TestRunner::default().build(
+///     BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
 ///     |context| {
 ///         assert_contains!(context.pack_stdout, "---> Maven Buildpack");
 ///         assert_contains!(context.pack_stdout, "---> Installing Maven");
@@ -93,11 +93,11 @@ impl TestRunner {
         }
     }
 
-    /// Starts a new integration test run.
+    /// Starts a new integration test build.
     ///
     /// This function copies the application to a temporary directory (if necessary), cross-compiles the current
     /// crate, packages it as a buildpack and then invokes [pack](https://buildpacks.io/docs/tools/pack/)
-    /// to build a new Docker image with the buildpacks specified by the passed [`TestConfig`].
+    /// to build a new Docker image with the buildpacks specified by the passed [`BuildConfig`].
     ///
     /// Since this function is supposed to only be used in integration tests, failures are not
     /// signalled via [`Result`](Result) values. Instead, this function panics whenever an unexpected error
@@ -105,10 +105,10 @@ impl TestRunner {
     ///
     /// # Example
     /// ```no_run
-    /// use libcnb_test::{assert_contains, TestRunner, TestConfig};
+    /// use libcnb_test::{assert_contains, BuildConfig, TestRunner};
     ///
-    /// TestRunner::default().run_test(
-    ///     TestConfig::new("heroku/builder:22", "test-fixtures/app"),
+    /// TestRunner::default().build(
+    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
     ///     |context| {
     ///         assert_contains!(context.pack_stdout, "---> Ruby Buildpack");
     ///         assert_contains!(context.pack_stdout, "---> Installing bundler");
@@ -116,11 +116,11 @@ impl TestRunner {
     ///     },
     /// )
     /// ```
-    pub fn run_test<C: Borrow<TestConfig>, F: FnOnce(TestContext)>(&self, config: C, f: F) {
-        self.run_test_internal(util::random_docker_identifier(), config, f);
+    pub fn build<C: Borrow<BuildConfig>, F: FnOnce(TestContext)>(&self, config: C, f: F) {
+        self.build_internal(util::random_docker_identifier(), config, f);
     }
 
-    pub(crate) fn run_test_internal<C: Borrow<TestConfig>, F: FnOnce(TestContext)>(
+    pub(crate) fn build_internal<C: Borrow<BuildConfig>, F: FnOnce(TestContext)>(
         &self,
         image_name: String,
         config: C,

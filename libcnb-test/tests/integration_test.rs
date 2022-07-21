@@ -9,8 +9,8 @@
 
 use indoc::indoc;
 use libcnb_test::{
-    assert_contains, assert_empty, assert_not_contains, BuildpackReference, ContainerConfig,
-    PackResult, TestConfig, TestRunner,
+    assert_contains, assert_empty, assert_not_contains, BuildConfig, BuildpackReference,
+    ContainerConfig, PackResult, TestRunner,
 };
 use std::path::PathBuf;
 use std::time::Duration;
@@ -19,8 +19,8 @@ use std::{env, fs, thread};
 #[test]
 #[ignore]
 fn basic_build() {
-    TestRunner::default().run_test(
-        TestConfig::new("heroku/builder:22", "test-fixtures/procfile").buildpacks(vec![
+    TestRunner::default().build(
+        BuildConfig::new("heroku/builder:22", "test-fixtures/procfile").buildpacks(vec![
             BuildpackReference::Other(String::from("heroku/procfile")),
         ]),
         |context| {
@@ -39,8 +39,8 @@ fn basic_build() {
 #[test]
 #[ignore]
 fn rebuild() {
-    TestRunner::default().run_test(
-        TestConfig::new("heroku/builder:22", "test-fixtures/procfile").buildpacks(vec![
+    TestRunner::default().build(
+        BuildConfig::new("heroku/builder:22", "test-fixtures/procfile").buildpacks(vec![
             BuildpackReference::Other(String::from("heroku/procfile")),
         ]),
         |context| {
@@ -48,7 +48,7 @@ fn rebuild() {
             assert_not_contains!(context.pack_stdout, "Reusing layer");
 
             let config = context.config.clone();
-            context.run_test(config, |rebuild_context| {
+            context.rebuild(config, |rebuild_context| {
                 assert_empty!(rebuild_context.pack_stderr);
                 assert_contains!(rebuild_context.pack_stdout, "Reusing layer");
             });
@@ -59,8 +59,8 @@ fn rebuild() {
 #[test]
 #[ignore]
 fn starting_containers() {
-    TestRunner::default().run_test(
-        TestConfig::new("heroku/builder:22", "test-fixtures/procfile").buildpacks(vec![
+    TestRunner::default().build(
+        BuildConfig::new("heroku/builder:22", "test-fixtures/procfile").buildpacks(vec![
             BuildpackReference::Other(String::from("heroku/procfile")),
         ]),
         |context| {
@@ -138,8 +138,8 @@ fn starting_containers() {
     expected = "Could not package current crate as buildpack: BuildBinariesError(ConfigError(NoBinTargetsFound))"
 )]
 fn buildpack_packaging_failure() {
-    TestRunner::default().run_test(
-        TestConfig::new("libcnb/invalid-builder", "test-fixtures/empty"),
+    TestRunner::default().build(
+        BuildConfig::new("libcnb/invalid-builder", "test-fixtures/empty"),
         |_| {},
     );
 }
@@ -154,8 +154,8 @@ pack stdout:
 pack stderr:
 ERROR: failed to build: failed to fetch builder image 'index.docker.io/libcnb/invalid-builder:latest'")]
 fn unexpected_pack_failure() {
-    TestRunner::default().run_test(
-        TestConfig::new("libcnb/invalid-builder", "test-fixtures/empty").buildpacks(Vec::new()),
+    TestRunner::default().build(
+        BuildConfig::new("libcnb/invalid-builder", "test-fixtures/empty").buildpacks(Vec::new()),
         |_| {},
     );
 }
@@ -167,8 +167,8 @@ fn unexpected_pack_failure() {
 pack stdout:
 ")]
 fn unexpected_pack_success() {
-    TestRunner::default().run_test(
-        TestConfig::new("heroku/builder:22", "test-fixtures/procfile")
+    TestRunner::default().build(
+        BuildConfig::new("heroku/builder:22", "test-fixtures/procfile")
             .buildpacks(vec![BuildpackReference::Other(String::from(
                 "heroku/procfile",
             ))])
@@ -180,8 +180,8 @@ fn unexpected_pack_success() {
 #[test]
 #[ignore]
 fn expected_pack_failure() {
-    TestRunner::default().run_test(
-        TestConfig::new("libcnb/invalid-builder", "test-fixtures/empty")
+    TestRunner::default().build(
+        BuildConfig::new("libcnb/invalid-builder", "test-fixtures/empty")
             .buildpacks(Vec::new())
             .expected_pack_result(PackResult::Failure),
         |context| {
@@ -200,8 +200,8 @@ fn expected_pack_failure() {
     expected = "Could not package current crate as buildpack: BuildBinariesError(ConfigError(NoBinTargetsFound))"
 )]
 fn expected_pack_failure_still_panics_for_non_pack_failure() {
-    TestRunner::default().run_test(
-        TestConfig::new("libcnb/invalid-builder", "test-fixtures/empty")
+    TestRunner::default().build(
+        BuildConfig::new("libcnb/invalid-builder", "test-fixtures/empty")
             .expected_pack_result(PackResult::Failure),
         |_| {},
     );
@@ -210,8 +210,8 @@ fn expected_pack_failure_still_panics_for_non_pack_failure() {
 #[test]
 #[ignore]
 fn app_dir_preprocessor() {
-    TestRunner::default().run_test(
-        TestConfig::new("heroku/builder:22", "test-fixtures/nested_dirs")
+    TestRunner::default().build(
+        BuildConfig::new("heroku/builder:22", "test-fixtures/nested_dirs")
             .buildpacks(vec![BuildpackReference::Other(String::from(
                 "heroku/procfile",
             ))])
@@ -238,7 +238,7 @@ fn app_dir_preprocessor() {
 
             // Check that rebuilds get a new/clean ephemeral fixture directory.
             let config = context.config.clone();
-            context.run_test(config, |context| {
+            context.rebuild(config, |context| {
                 let log_output = context.run_shell_command("find . | sort");
                 assert_empty!(log_output.stderr);
                 assert_eq!(log_output.stdout, expected_directory_listing);
@@ -265,8 +265,8 @@ fn app_dir_absolute_path() {
         .canonicalize()
         .unwrap();
 
-    TestRunner::default().run_test(
-        TestConfig::new("heroku/builder:22", absolute_app_dir).buildpacks(vec![
+    TestRunner::default().build(
+        BuildConfig::new("heroku/builder:22", absolute_app_dir).buildpacks(vec![
             BuildpackReference::Other(String::from("heroku/procfile")),
         ]),
         |_| {},
@@ -283,11 +283,11 @@ fn app_dir_absolute_path() {
 // but cannot due to: https://github.com/rust-lang/rust/issues/88430
 // As such we test the most important part, the fact that the error message lists the non-existent
 // fixture directory path. We intentionally include the `libcnb-test/` crate directory prefix,
-// since that only appears in the absolute path, not the relative path passed to `TestConfig::new`.
+// since that only appears in the absolute path, not the relative path passed to `BuildConfig::new`.
 #[should_panic(expected = "libcnb-test/test-fixtures/non-existent-fixture")]
 fn app_dir_invalid_path() {
-    TestRunner::default().run_test(
-        TestConfig::new("heroku/builder:22", "test-fixtures/non-existent-fixture")
+    TestRunner::default().build(
+        BuildConfig::new("heroku/builder:22", "test-fixtures/non-existent-fixture")
             .buildpacks(Vec::new()),
         |_| {},
     );
@@ -300,8 +300,8 @@ fn app_dir_invalid_path() {
 // See above for why we only test this substring.
 #[should_panic(expected = "libcnb-test/test-fixtures/non-existent-fixture")]
 fn app_dir_invalid_path_checked_before_applying_preprocessor() {
-    TestRunner::default().run_test(
-        TestConfig::new("heroku/builder:22", "test-fixtures/non-existent-fixture")
+    TestRunner::default().build(
+        BuildConfig::new("heroku/builder:22", "test-fixtures/non-existent-fixture")
             .buildpacks(Vec::new())
             .app_dir_preprocessor(|_| {
                 unreachable!("The app dir should be validated before the preprocessor is run")

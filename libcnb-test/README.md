@@ -15,14 +15,14 @@ Please use the same tag for feature requests.
 
 ```rust,no_run
 // In $CRATE_ROOT/tests/integration_test.rs
-use libcnb_test::{assert_contains, ContainerConfig, TestConfig, TestRunner};
+use libcnb_test::{assert_contains, BuildConfig, ContainerConfig, TestRunner};
 
 // In your code you'll want to mark your function as a test with `#[test]`.
 // It is removed here for compatibility with doctest so this code in the readme
 // tests for compilation.
 fn test() {
-    TestRunner::default().run_test(
-        TestConfig::new("heroku/builder:22", "test-fixtures/app"),
+    TestRunner::default().build(
+        BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
         |context| {
             assert_contains!(context.pack_stdout, "---> Maven Buildpack");
             assert_contains!(context.pack_stdout, "---> Installing Maven");
