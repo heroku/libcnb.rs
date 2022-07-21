@@ -7,21 +7,21 @@
 
 mod app;
 mod build;
+mod build_config;
 mod container_config;
 mod container_context;
 mod container_port_mapping;
 mod log;
 mod macros;
 mod pack;
-mod test_config;
 mod test_context;
 mod test_runner;
 mod util;
 
+pub use crate::build_config::*;
 pub use crate::container_config::*;
 pub use crate::container_context::*;
 pub use crate::log::*;
-pub use crate::test_config::*;
 pub use crate::test_context::*;
 pub use crate::test_runner::*;
 
