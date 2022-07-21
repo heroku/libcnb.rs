@@ -17,7 +17,7 @@ use std::time::Duration;
 use std::{fs, io};
 
 #[test]
-#[ignore]
+#[ignore = "integration test"]
 fn basic() {
     let config = BuildConfig::new("heroku/buildpacks:20", "test-fixtures/simple-ruby-app");
 
@@ -57,7 +57,7 @@ fn basic() {
 }
 
 #[test]
-#[ignore]
+#[ignore = "integration test"]
 fn missing_gemfile_lock() {
     TestRunner::default().build(
         BuildConfig::new("heroku/buildpacks:20", "test-fixtures/simple-ruby-app")

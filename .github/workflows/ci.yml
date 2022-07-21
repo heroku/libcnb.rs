@@ -61,7 +61,7 @@ jobs:
       - name: Install Pack CLI
         uses: buildpacks/github-actions/setup-pack@v4.8.0
       - name: Run integration tests
-        # Runs any tests annotated with the `#[ignore]` attribute (which in this repo, are all of the integration tests).
+        # Runs any tests annotated with the `ignore` attribute (which in this repo, are all of the integration tests).
         run: cargo test -- --ignored
       - name: Compile and package examples/basics
         run: cargo run --package libcnb-cargo -- libcnb package
