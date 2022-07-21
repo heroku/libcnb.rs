@@ -17,7 +17,7 @@ use std::time::Duration;
 use std::{env, fs, thread};
 
 #[test]
-#[ignore]
+#[ignore = "integration test"]
 fn basic_build() {
     TestRunner::default().build(
         BuildConfig::new("heroku/builder:22", "test-fixtures/procfile").buildpacks(vec![
@@ -37,7 +37,7 @@ fn basic_build() {
 }
 
 #[test]
-#[ignore]
+#[ignore = "integration test"]
 fn rebuild() {
     TestRunner::default().build(
         BuildConfig::new("heroku/builder:22", "test-fixtures/procfile").buildpacks(vec![
@@ -57,7 +57,7 @@ fn rebuild() {
 }
 
 #[test]
-#[ignore]
+#[ignore = "integration test"]
 fn starting_containers() {
     TestRunner::default().build(
         BuildConfig::new("heroku/builder:22", "test-fixtures/procfile").buildpacks(vec![
@@ -133,7 +133,7 @@ fn starting_containers() {
 }
 
 #[test]
-#[ignore]
+#[ignore = "integration test"]
 #[should_panic(
     expected = "Could not package current crate as buildpack: BuildBinariesError(ConfigError(NoBinTargetsFound))"
 )]
@@ -145,7 +145,7 @@ fn buildpack_packaging_failure() {
 }
 
 #[test]
-#[ignore]
+#[ignore = "integration test"]
 #[should_panic(expected = "pack command unexpectedly failed with exit-code 1!
 
 pack stdout:
@@ -161,7 +161,7 @@ fn unexpected_pack_failure() {
 }
 
 #[test]
-#[ignore]
+#[ignore = "integration test"]
 #[should_panic(expected = "pack command unexpectedly succeeded with exit-code 0!
 
 pack stdout:
@@ -178,7 +178,7 @@ fn unexpected_pack_success() {
 }
 
 #[test]
-#[ignore]
+#[ignore = "integration test"]
 fn expected_pack_failure() {
     TestRunner::default().build(
         BuildConfig::new("libcnb/invalid-builder", "test-fixtures/empty")
@@ -195,7 +195,7 @@ fn expected_pack_failure() {
 }
 
 #[test]
-#[ignore]
+#[ignore = "integration test"]
 #[should_panic(
     expected = "Could not package current crate as buildpack: BuildBinariesError(ConfigError(NoBinTargetsFound))"
 )]
@@ -208,7 +208,7 @@ fn expected_pack_failure_still_panics_for_non_pack_failure() {
 }
 
 #[test]
-#[ignore]
+#[ignore = "integration test"]
 fn app_dir_preprocessor() {
     TestRunner::default().build(
         BuildConfig::new("heroku/builder:22", "test-fixtures/nested_dirs")
@@ -256,7 +256,7 @@ fn app_dir_preprocessor() {
 }
 
 #[test]
-#[ignore]
+#[ignore = "integration test"]
 fn app_dir_absolute_path() {
     let absolute_app_dir = env::var("CARGO_MANIFEST_DIR")
         .map(PathBuf::from)
@@ -274,7 +274,7 @@ fn app_dir_absolute_path() {
 }
 
 #[test]
-#[ignore]
+#[ignore = "integration test"]
 // The actual panic message looks like this:
 // `"App dir is not a valid directory: /.../libcnb-test/test-fixtures/non-existent-fixture"`
 // It's intentionally an absolute path to make debugging failures easier when a relative path
@@ -294,7 +294,7 @@ fn app_dir_invalid_path() {
 }
 
 #[test]
-#[ignore]
+#[ignore = "integration test"]
 // The actual panic message looks like this:
 // `"App dir is not a valid directory: /.../libcnb-test/test-fixtures/non-existent-fixture"`
 // See above for why we only test this substring.
