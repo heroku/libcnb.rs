@@ -20,9 +20,8 @@ use std::{env, fs, thread};
 #[ignore = "integration test"]
 fn basic_build() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "test-fixtures/procfile").buildpacks(vec![
-            BuildpackReference::Other(String::from("heroku/procfile")),
-        ]),
+        BuildConfig::new("heroku/builder:22", "test-fixtures/procfile")
+            .buildpacks(vec![BuildpackReference::Other(String::from(PROCFILE_URL))]),
         |context| {
             assert_empty!(context.pack_stderr);
             assert_contains!(
@@ -40,9 +39,8 @@ fn basic_build() {
 #[ignore = "integration test"]
 fn rebuild() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "test-fixtures/procfile").buildpacks(vec![
-            BuildpackReference::Other(String::from("heroku/procfile")),
-        ]),
+        BuildConfig::new("heroku/builder:22", "test-fixtures/procfile")
+            .buildpacks(vec![BuildpackReference::Other(String::from(PROCFILE_URL))]),
         |context| {
             assert_empty!(context.pack_stderr);
             assert_not_contains!(context.pack_stdout, "Reusing layer");
@@ -60,9 +58,8 @@ fn rebuild() {
 #[ignore = "integration test"]
 fn starting_containers() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "test-fixtures/procfile").buildpacks(vec![
-            BuildpackReference::Other(String::from("heroku/procfile")),
-        ]),
+        BuildConfig::new("heroku/builder:22", "test-fixtures/procfile")
+            .buildpacks(vec![BuildpackReference::Other(String::from(PROCFILE_URL))]),
         |context| {
             const TEST_PORT: u16 = 12345;
 
@@ -170,9 +167,7 @@ pack stdout:
 fn unexpected_pack_success() {
     TestRunner::default().build(
         BuildConfig::new("heroku/builder:22", "test-fixtures/procfile")
-            .buildpacks(vec![BuildpackReference::Other(String::from(
-                "heroku/procfile",
-            ))])
+            .buildpacks(vec![BuildpackReference::Other(String::from(PROCFILE_URL))])
             .expected_pack_result(PackResult::Failure),
         |_| {},
     );
@@ -213,9 +208,7 @@ fn expected_pack_failure_still_panics_for_non_pack_failure() {
 fn app_dir_preprocessor() {
     TestRunner::default().build(
         BuildConfig::new("heroku/builder:22", "test-fixtures/nested_dirs")
-            .buildpacks(vec![BuildpackReference::Other(String::from(
-                "heroku/procfile",
-            ))])
+            .buildpacks(vec![BuildpackReference::Other(String::from(PROCFILE_URL))])
             .app_dir_preprocessor(|app_dir| {
                 assert!(app_dir.join("file1.txt").exists());
                 fs::remove_file(app_dir.join("file1.txt")).unwrap();
@@ -267,9 +260,8 @@ fn app_dir_absolute_path() {
         .unwrap();
 
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", absolute_app_dir).buildpacks(vec![
-            BuildpackReference::Other(String::from("heroku/procfile")),
-        ]),
+        BuildConfig::new("heroku/builder:22", absolute_app_dir)
+            .buildpacks(vec![BuildpackReference::Other(String::from(PROCFILE_URL))]),
         |_| {},
     );
 }
@@ -310,3 +302,10 @@ fn app_dir_invalid_path_checked_before_applying_preprocessor() {
         |_| {},
     );
 }
+
+// We're referencing the procfile buildpack via HTTP to pin the version for the tests. This also
+// prevents issues when the builder contains multiple heroku/procfile versions. We don't use CNB
+// registry URLs since, as of August 2022, pack fails when another pack instance is resolving such
+// an URL in parallel.
+const PROCFILE_URL: &str =
+    "https://github.com/heroku/procfile-cnb/releases/download/v1.0.2/heroku_procfile_1.0.2.cnb";
