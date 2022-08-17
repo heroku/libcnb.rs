@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Replace builder style functions from `Launch` with a dedicated `LaunchBuilder` to be more consistent with other builders in the library. Additionally, all fields of `Launch` can now be modified via the builder pattern. ([#000](https://github.com/heroku/libcnb.rs/pull/000))
+- Rename `paths` field in `launch::Slice` to `path_globs` and add docs to make it clearer that these strings are Go standard library globs. ([#000](https://github.com/heroku/libcnb.rs/pull/000))
+
 ## [0.8.0] 2022-07-14
 
 - Disable `fancy-regex` default features (such as unused unicode support) to reduce buildpack binary size. ([#439](https://github.com/heroku/libcnb.rs/pull/439))

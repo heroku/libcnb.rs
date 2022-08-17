@@ -1,12 +1,13 @@
-use crate::bom;
+use crate::bom::Bom;
 use crate::newtypes::libcnb_newtype;
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize, Debug, Default)]
+/// Data Structure for the launch.toml file.
+#[derive(Deserialize, Serialize, Clone, Debug, Default)]
 #[serde(deny_unknown_fields)]
 pub struct Launch {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub bom: bom::Bom,
+    pub bom: Bom,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub labels: Vec<Label>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -15,46 +16,96 @@ pub struct Launch {
     pub slices: Vec<Slice>,
 }
 
-/// Data Structure for the launch.toml file.
+/// A non-consuming builder for [`Launch`] values.
 ///
 /// # Examples
 /// ```
-/// use libcnb_data::launch;
+/// use libcnb_data::launch::{LaunchBuilder, ProcessBuilder};
 /// use libcnb_data::process_type;
 ///
-/// let mut launch_toml = launch::Launch::new();
-/// let web = launch::ProcessBuilder::new(process_type!("web"), "bundle")
-///     .args(vec!["exec", "ruby", "app.rb"])
+/// let launch_toml = LaunchBuilder::new()
+///     .process(
+///         ProcessBuilder::new(process_type!("web"), "bundle")
+///             .args(vec!["exec", "ruby", "app.rb"])
+///             .build(),
+///     )
 ///     .build();
 ///
-/// launch_toml.processes.push(web);
 /// assert!(toml::to_string(&launch_toml).is_ok());
 /// ```
-impl Launch {
+#[derive(Default)]
+pub struct LaunchBuilder {
+    launch: Launch,
+}
+
+impl LaunchBuilder {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
     /// Adds a process to the launch configuration.
-    #[must_use]
-    pub fn process<P: Into<Process>>(mut self, process: P) -> Self {
-        self.processes.push(process.into());
+    pub fn process<P: Into<Process>>(&mut self, process: P) -> &mut Self {
+        self.launch.processes.push(process.into());
         self
     }
 
     /// Adds multiple processes to the launch configuration.
-    #[must_use]
-    pub fn processes<I: IntoIterator<Item = P>, P: Into<Process>>(mut self, processes: I) -> Self {
+    pub fn processes<I: IntoIterator<Item = P>, P: Into<Process>>(
+        &mut self,
+        processes: I,
+    ) -> &mut Self {
         for process in processes {
-            self.processes.push(process.into());
+            self.process(process);
         }
 
         self
     }
+
+    /// Adds a BOM to the launch configuration.
+    pub fn bom<B: Into<Bom>>(&mut self, bom: B) -> &mut Self {
+        self.launch.bom = bom.into();
+        self
+    }
+
+    /// Adds a label to the launch configuration.
+    pub fn label<L: Into<Label>>(&mut self, label: L) -> &mut Self {
+        self.launch.labels.push(label.into());
+        self
+    }
+
+    /// Adds multiple processes to the launch configuration.
+    pub fn labels<I: IntoIterator<Item = L>, L: Into<Label>>(&mut self, labels: I) -> &mut Self {
+        for label in labels {
+            self.label(label);
+        }
+
+        self
+    }
+
+    /// Adds a slice to the launch configuration.
+    pub fn slice<S: Into<Slice>>(&mut self, slice: S) -> &mut Self {
+        self.launch.slices.push(slice.into());
+        self
+    }
+
+    /// Adds multiple slices to the launch configuration.
+    pub fn slices<I: IntoIterator<Item = S>, S: Into<Slice>>(&mut self, slices: I) -> &mut Self {
+        for slice in slices {
+            self.slice(slice);
+        }
+
+        self
+    }
+
+    /// Builds the `Launch` based on the configuration of this builder.
+    #[must_use]
+    pub fn build(&self) -> Launch {
+        self.launch.clone()
+    }
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct Label {
     pub key: String,
@@ -169,10 +220,15 @@ impl ProcessBuilder {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct Slice {
-    pub paths: Vec<String>,
+    /// Path globs for this slice.
+    ///
+    /// These globs need to follow the pattern syntax defined in the [Go standard library](https://golang.org/pkg/path/filepath/#Match)
+    /// and only match files/directories inside the application directory.
+    #[serde(rename = "paths")]
+    pub path_globs: Vec<String>,
 }
 
 libcnb_newtype!(
@@ -222,22 +278,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn launch_add_processes() {
-        let mut launch = Launch::new();
-
-        assert_eq!(launch.processes, vec![]);
-
-        launch = launch.process(ProcessBuilder::new(process_type!("web"), "web_command").build());
-
-        assert_eq!(
-            launch.processes,
-            vec![ProcessBuilder::new(process_type!("web"), "web_command").build()]
-        );
-
-        launch = launch.processes(vec![
-            ProcessBuilder::new(process_type!("another"), "another_command").build(),
-            ProcessBuilder::new(process_type!("worker"), "worker_command").build(),
-        ]);
+    fn launch_builder_add_processes() {
+        let launch = LaunchBuilder::new()
+            .process(ProcessBuilder::new(process_type!("web"), "web_command").build())
+            .processes(vec![
+                ProcessBuilder::new(process_type!("another"), "another_command").build(),
+                ProcessBuilder::new(process_type!("worker"), "worker_command").build(),
+            ])
+            .build();
 
         assert_eq!(
             launch.processes,

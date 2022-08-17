@@ -102,7 +102,7 @@ Modify the project's `src/main.rs` file to contain the following:
 
 ```rust,no_run
 use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
-use libcnb::data::launch::{Launch, ProcessBuilder};
+use libcnb::data::launch::{LaunchBuilder, ProcessBuilder};
 use libcnb::data::process_type;
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};
@@ -153,12 +153,13 @@ impl Buildpack for HelloWorldBuildpack {
 
         BuildResultBuilder::new()
             .launch(
-                Launch::new().process(
+                LaunchBuilder::new().process(
                     ProcessBuilder::new(process_type!("web"), "echo")
                         .arg("Hello World!")
                         .default(true)
                         .build(),
-                ),
+                )
+                .build(),
             )
             .build()
     }
