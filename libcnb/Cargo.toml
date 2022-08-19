@@ -16,6 +16,7 @@ anyhow = { version = "1.0.58", optional = true }
 libcnb-data = { path = "../libcnb-data", version = "0.8.0" }
 libcnb-proc-macros = { version = "0.3.0", path = "../libcnb-proc-macros" }
 serde = { version = "1.0.139", features = ["derive"] }
+stacker = "0.1.15"
 thiserror = "1.0.31"
 toml = "0.5.9"
 

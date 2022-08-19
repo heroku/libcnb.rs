@@ -7,7 +7,7 @@ use crate::data::layer_content_metadata::LayerContentMetadata;
 use crate::generic::GenericMetadata;
 use crate::layer::{ExistingLayerStrategy, Layer, LayerData, MetadataMigration};
 use crate::layer_env::LayerEnv;
-use crate::util::default_on_not_found;
+use crate::util::{default_on_not_found, remove_recursively};
 use crate::Buildpack;
 use crate::{write_toml_file, TomlFileError};
 use serde::de::DeserializeOwned;
@@ -167,6 +167,12 @@ impl<E> From<HandleLayerError> for HandleLayerErrorOrBuildpackError<E> {
     }
 }
 
+impl<E> From<DeleteLayerError> for HandleLayerErrorOrBuildpackError<E> {
+    fn from(e: DeleteLayerError) -> Self {
+        HandleLayerErrorOrBuildpackError::HandleLayerError(HandleLayerError::DeleteLayerError(e))
+    }
+}
+
 impl<E> From<ReadLayerError> for HandleLayerErrorOrBuildpackError<E> {
     fn from(e: ReadLayerError) -> Self {
         HandleLayerErrorOrBuildpackError::HandleLayerError(HandleLayerError::ReadLayerError(e))
@@ -190,6 +196,9 @@ pub enum HandleLayerError {
     #[error("Unexpected IoError while handling layer: {0}")]
     IoError(#[from] std::io::Error),
 
+    #[error("Unexpected DeleteLayerError while handling layer: {0}")]
+    DeleteLayerError(#[from] DeleteLayerError),
+
     #[error("Unexpected ReadLayerError while handling layer: {0}")]
     ReadLayerError(#[from] ReadLayerError),
 
@@ -198,6 +207,12 @@ pub enum HandleLayerError {
 
     #[error("Expected layer to be present, but it was missing")]
     UnexpectedMissingLayer,
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum DeleteLayerError {
+    #[error("IOError while deleting existing layer: {0}")]
+    IoError(#[from] std::io::Error),
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -231,11 +246,11 @@ enum ExecDPrograms {
 fn delete_layer<P: AsRef<Path>>(
     layers_dir: P,
     layer_name: &LayerName,
-) -> Result<(), std::io::Error> {
+) -> Result<(), DeleteLayerError> {
     let layer_dir = layers_dir.as_ref().join(layer_name.as_str());
     let layer_toml = layers_dir.as_ref().join(format!("{layer_name}.toml"));
 
-    default_on_not_found(fs::remove_dir_all(&layer_dir))?;
+    default_on_not_found(remove_recursively(&layer_dir))?;
     default_on_not_found(fs::remove_file(&layer_toml))?;
 
     Ok(())
