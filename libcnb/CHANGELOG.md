@@ -2,8 +2,8 @@
 
 ## [Unreleased]
 
-- Fix permission issues during layer handling when the layer contains read-only directories. ([#000](https://github.com/heroku/libcnb.rs/pull/000)).
-- Add explicit `DeleteLayerError` to provide more context when debugging layer handling problems. ([#000](https://github.com/heroku/libcnb.rs/pull/000)).
+- Fix permission issues during layer handling when the layer contains read-only directories. ([#488](https://github.com/heroku/libcnb.rs/pull/488)).
+- Add explicit `DeleteLayerError` to provide more context when debugging layer handling problems. ([#488](https://github.com/heroku/libcnb.rs/pull/488)).
 
 ## [0.9.0] 2022-07-14
 
