@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Fix permission issues during layer handling when the layer contains read-only directories. ([#000](https://github.com/heroku/libcnb.rs/pull/000)).
+- Add explicit `DeleteLayerError` to provide more context when debugging layer handling problems. ([#000](https://github.com/heroku/libcnb.rs/pull/000)).
+
 ## [0.9.0] 2022-07-14
 
 - Use the crate's `README.md` as the root module's rustdocs, so that all of the crate's documentation can be seen in one place on `docs.rs`. ([#460](https://github.com/heroku/libcnb.rs/pull/460))

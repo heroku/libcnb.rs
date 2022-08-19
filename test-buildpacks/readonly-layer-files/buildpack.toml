@@ -1,0 +1,9 @@
+api = "0.6"
+
+[buildpack]
+id = "libcnb-test-buildpacks/readonly-layer-files"
+version = "0.1.0"
+name = "libcnb test buildpack: readonly-layer-files"
+
+[[stacks]]
+id = "*"
