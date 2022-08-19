@@ -42,8 +42,12 @@ pub(crate) fn remove_recursively<P: AsRef<Path>>(path: P) -> std::io::Result<()>
             let path = entry?.path();
 
             // Since the directory structure could be a deep, blowing the stack is a real danger
-            // here. We use the `stacker` crate to allocate stack on the heap if we're below
-            // 4kb of remaining stack.
+            // here. We use the `stacker` crate to allocate stack on the heap if we're running out
+            // of stack space.
+            //
+            // Neither the minimum stack size nor the amount of bytes allocated when we run out of
+            // stack space are backed by data/science. They're "best guesses", if you have reason
+            // to believe they need to change, you're probably right.
             stacker::maybe_grow(4096, 32768, || remove_recursively(&path))?;
         }
 
