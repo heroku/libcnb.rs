@@ -1,5 +1,6 @@
 use crate::newtypes::libcnb_newtype;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Serializer};
+use std::path::PathBuf;
 
 /// Data Structure for the launch.toml file.
 #[derive(Deserialize, Serialize, Clone, Debug, Default)]
@@ -114,6 +115,54 @@ pub struct Process {
     pub direct: bool,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub default: bool,
+    #[serde(
+        rename = "working-directory",
+        default,
+        skip_serializing_if = "WorkingDirectory::is_app"
+    )]
+    pub working_directory: WorkingDirectory,
+}
+
+#[derive(Deserialize, Debug, Clone, PartialEq, Eq)]
+#[serde(untagged)]
+pub enum WorkingDirectory {
+    // There is no explicitly defined value in the CNB spec that denotes the app directory. Since
+    // we cannot enforce skipping serialization (which indicates the app directory) from this type
+    // directly, we serialize this a ".". The CNB spec says that any relative path is treated
+    // relative to the app directory, so "." will be the app directory itself. However, types that
+    // contain this type (i.e. Process), should always add
+    // `#[serde(skip_serializing_if = "WorkingDirectory::is_app")]` to a field of this type.
+    App,
+    Directory(PathBuf),
+}
+
+impl WorkingDirectory {
+    #[must_use]
+    pub fn is_app(&self) -> bool {
+        matches!(self, Self::App)
+    }
+}
+
+// Custom Serialize implementation since we want to always serialize as a string. Serde's untagged
+// enum representation does not work here since App would serialize as null, but we want a default
+// string value. #[serde(rename = ".")] doesnt work here. There are more generic solutions that can
+// be found on the web, but they're much more heavyweight than this simple Serialize implementation.
+impl Serialize for WorkingDirectory {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            WorkingDirectory::App => serializer.serialize_str("."),
+            WorkingDirectory::Directory(path) => path.serialize(serializer),
+        }
+    }
+}
+
+impl Default for WorkingDirectory {
+    fn default() -> Self {
+        WorkingDirectory::App
+    }
 }
 
 pub struct ProcessBuilder {
@@ -146,6 +195,7 @@ impl ProcessBuilder {
                 args: Vec::new(),
                 direct: false,
                 default: false,
+                working_directory: WorkingDirectory::App,
             },
         }
     }
@@ -201,6 +251,12 @@ impl ProcessBuilder {
     /// default during the export phase.
     pub fn default(&mut self, value: bool) -> &mut Self {
         self.process.default = value;
+        self
+    }
+
+    /// Set the working directory for the process.
+    pub fn working_directory(&mut self, value: WorkingDirectory) -> &mut Self {
+        self.process.working_directory = value;
         self
     }
 
@@ -267,6 +323,7 @@ libcnb_newtype!(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_test::{assert_ser_tokens, Token};
 
     #[test]
     fn launch_builder_add_processes() {
@@ -328,7 +385,8 @@ command = "foo"
                 command: String::from("foo"),
                 args: vec![],
                 direct: false,
-                default: false
+                default: false,
+                working_directory: WorkingDirectory::App
             })
         );
     }
@@ -350,6 +408,7 @@ command = "foo"
     fn process_with_some_default_values_serialization() {
         let process = ProcessBuilder::new(process_type!("web"), "foo")
             .default(true)
+            .working_directory(WorkingDirectory::Directory(PathBuf::from("dist")))
             .build();
 
         let string = toml::to_string(&process).unwrap();
@@ -358,6 +417,7 @@ command = "foo"
             r#"type = "web"
 command = "foo"
 default = true
+working-directory = "dist"
 "#
         );
     }
@@ -373,7 +433,8 @@ default = true
                 command: String::from("java"),
                 args: vec![],
                 direct: false,
-                default: false
+                default: false,
+                working_directory: WorkingDirectory::App
             }
         );
 
@@ -386,7 +447,8 @@ default = true
                 command: String::from("java"),
                 args: vec![],
                 direct: false,
-                default: true
+                default: true,
+                working_directory: WorkingDirectory::App
             }
         );
 
@@ -399,7 +461,22 @@ default = true
                 command: String::from("java"),
                 args: vec![],
                 direct: true,
-                default: true
+                default: true,
+                working_directory: WorkingDirectory::App
+            }
+        );
+
+        process_builder.working_directory(WorkingDirectory::Directory(PathBuf::from("dist")));
+
+        assert_eq!(
+            process_builder.build(),
+            Process {
+                r#type: process_type!("web"),
+                command: String::from("java"),
+                args: vec![],
+                direct: true,
+                default: true,
+                working_directory: WorkingDirectory::Directory(PathBuf::from("dist"))
             }
         );
     }
@@ -422,8 +499,27 @@ default = true
                     String::from("bar"),
                 ],
                 direct: false,
-                default: false
+                default: false,
+                working_directory: WorkingDirectory::App
             }
+        );
+    }
+
+    #[test]
+    fn process_working_directory_serialization() {
+        assert_ser_tokens(&WorkingDirectory::App, &[Token::BorrowedStr(".")]);
+
+        assert_ser_tokens(
+            &WorkingDirectory::Directory(PathBuf::from("/")),
+            &[Token::BorrowedStr("/")],
+        );
+        assert_ser_tokens(
+            &WorkingDirectory::Directory(PathBuf::from("/foo/bar")),
+            &[Token::BorrowedStr("/foo/bar")],
+        );
+        assert_ser_tokens(
+            &WorkingDirectory::Directory(PathBuf::from("relative/foo/bar")),
+            &[Token::BorrowedStr("relative/foo/bar")],
         );
     }
 }
