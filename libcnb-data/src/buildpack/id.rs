@@ -40,7 +40,7 @@ libcnb_newtype!(
     /// ```
     BuildpackId,
     BuildpackIdError,
-    r"^(?!(app|config)$)[[:alnum:]./-]+$"
+    r"^(?!(app|config|sbom)$)[[:alnum:]./-]+$"
 );
 
 #[cfg(test)]
@@ -76,6 +76,10 @@ mod tests {
         assert_eq!(
             "config".parse::<BuildpackId>(),
             Err(BuildpackIdError::InvalidValue(String::from("config")))
+        );
+        assert_eq!(
+            "sbom".parse::<BuildpackId>(),
+            Err(BuildpackIdError::InvalidValue(String::from("sbom")))
         );
         assert_eq!(
             "".parse::<BuildpackId>(),
