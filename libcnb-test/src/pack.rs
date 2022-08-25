@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
-use std::process::Command;
+use std::process::{Command, Output, Stdio};
 use tempfile::TempDir;
 
 /// Represents a `pack build` command.
@@ -133,6 +133,66 @@ impl From<PackBuildCommand> for Command {
     }
 }
 
+#[derive(Clone, Debug)]
+pub(crate) struct PackSbomDownloadCommand {
+    image_name: String,
+    output_dir: Option<PathBuf>,
+}
+
+/// Represents a `pack sbom download` command.
+impl PackSbomDownloadCommand {
+    pub fn new(image_name: impl Into<String>) -> Self {
+        Self {
+            image_name: image_name.into(),
+            output_dir: None,
+        }
+    }
+
+    pub fn output_dir(&mut self, output_dir: impl Into<PathBuf>) -> &mut Self {
+        self.output_dir = Some(output_dir.into());
+        self
+    }
+}
+
+impl From<PackSbomDownloadCommand> for Command {
+    fn from(pack_command: PackSbomDownloadCommand) -> Self {
+        let mut command = Command::new("pack");
+
+        let mut args = vec![
+            String::from("sbom"),
+            String::from("download"),
+            pack_command.image_name,
+        ];
+
+        if let Some(output_dir) = pack_command.output_dir {
+            args.push(String::from("--output-dir"));
+            args.push(String::from(output_dir.to_string_lossy()));
+        }
+
+        command.args(args);
+
+        command
+    }
+}
+
+/// Runs the given pack command, panicking with user-friendly error messages when errors occur and
+/// pipes through stdout and stderr.
+pub(crate) fn run_pack_command<C: Into<Command>>(command: C) -> Output {
+    command.into()
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap_or_else(|io_error| {
+            if io_error.kind() == std::io::ErrorKind::NotFound {
+                panic!("External `pack` command not found. Install Pack CLI and ensure it is on PATH: https://buildpacks.io/docs/install-pack");
+            } else {
+                panic!("Could not spawn external `pack` process: {io_error}");
+            };
+        })
+        .wait_with_output()
+        .expect("Error while waiting on external `pack` process")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -198,5 +258,37 @@ mod tests {
         input.verbose = false;
         let command: Command = input.into();
         assert!(!command.get_args().any(|arg| arg == OsStr::new("--verbose")));
+    }
+
+    #[test]
+    fn from_pack_sbom_download_command_to_command() {
+        let mut input = PackSbomDownloadCommand {
+            image_name: String::from("my-image"),
+            output_dir: None,
+        };
+
+        let command: Command = input.clone().into();
+
+        assert_eq!(command.get_program(), "pack");
+
+        assert_eq!(
+            command.get_args().collect::<Vec<&OsStr>>(),
+            vec!["sbom", "download", "my-image"]
+        );
+
+        assert_eq!(command.get_envs().collect::<Vec<_>>(), vec![]);
+
+        // Assert conditional '--output-dir' flag works as expected:
+        input.output_dir = Some(PathBuf::from("/tmp/sboms"));
+        let command: Command = input.into();
+
+        assert_eq!(command.get_program(), "pack");
+
+        assert_eq!(
+            command.get_args().collect::<Vec<&OsStr>>(),
+            vec!["sbom", "download", "my-image", "--output-dir", "/tmp/sboms"]
+        );
+
+        assert_eq!(command.get_envs().collect::<Vec<_>>(), vec![]);
     }
 }

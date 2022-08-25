@@ -16,6 +16,7 @@ bollard = "0.13.0"
 cargo_metadata = "0.15.0"
 fastrand = "1.7.0"
 fs_extra = "1.2.0"
+libcnb-data = { version = "0.8.0", path = "../libcnb-data" }
 libcnb-package = { version = "0.2.0", path = "../libcnb-package" }
 serde = "1.0.139"
 tempfile = "3.3.0"
