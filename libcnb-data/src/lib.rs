@@ -4,7 +4,6 @@
 // This lint is too noisy and enforces a style that reduces readability in many cases.
 #![allow(clippy::module_name_repetitions)]
 
-pub mod bom;
 pub mod build;
 pub mod build_plan;
 pub mod buildpack;

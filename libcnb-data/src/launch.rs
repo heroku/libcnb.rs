@@ -1,4 +1,3 @@
-use crate::bom::Bom;
 use crate::newtypes::libcnb_newtype;
 use serde::{Deserialize, Serialize};
 
@@ -6,8 +5,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Deserialize, Serialize, Clone, Debug, Default)]
 #[serde(deny_unknown_fields)]
 pub struct Launch {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub bom: Bom,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub labels: Vec<Label>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -59,12 +56,6 @@ impl LaunchBuilder {
             self.process(process);
         }
 
-        self
-    }
-
-    /// Adds a BOM to the launch configuration.
-    pub fn bom<B: Into<Bom>>(&mut self, bom: B) -> &mut Self {
-        self.launch.bom = bom.into();
         self
     }
 
