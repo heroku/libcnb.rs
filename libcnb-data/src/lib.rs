@@ -12,6 +12,7 @@ pub mod exec_d;
 pub mod launch;
 pub mod layer;
 pub mod layer_content_metadata;
+pub mod sbom;
 pub mod store;
 
 mod newtypes;

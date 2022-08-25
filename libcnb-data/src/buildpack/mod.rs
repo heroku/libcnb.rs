@@ -4,11 +4,13 @@ mod stack;
 mod stack_id;
 mod version;
 
+use crate::sbom::SbomFormat;
 pub use api::*;
 pub use id::*;
 use serde::Deserialize;
 pub use stack::*;
 pub use stack_id::*;
+use std::collections::HashSet;
 pub use version::*;
 
 /// Data structures for the Buildpack descriptor (buildpack.toml).
@@ -159,6 +161,12 @@ pub struct Buildpack {
     pub keywords: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub licenses: Vec<License>,
+    #[serde(
+        default,
+        rename = "sbom-formats",
+        skip_serializing_if = "HashSet::is_empty"
+    )]
+    pub sbom_formats: HashSet<SbomFormat>,
 }
 
 #[derive(Deserialize, Debug, Eq, PartialEq)]
@@ -186,6 +194,7 @@ pub struct Group {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::sbom::SbomFormat;
 
     type GenericMetadata = Option<toml::value::Table>;
 
@@ -203,6 +212,8 @@ homepage = "https://example.tld"
 clear-env = true
 description = "A buildpack for Foo Bar"
 keywords = ["foo", "bar"]
+# Duplication of the Syft entry is intentional!
+sbom-formats = ["application/vnd.cyclonedx+json", "application/spdx+json", "application/vnd.syft+json", "application/vnd.syft+json"]
 
 [[buildpack.licenses]]
 type = "BSD-3-Clause"
@@ -282,6 +293,14 @@ checksum = "abc123"
                     uri: Some(String::from("https://example.tld/my-license"))
                 }
             ]
+        );
+        assert_eq!(
+            buildpack_descriptor.buildpack.sbom_formats,
+            HashSet::from([
+                SbomFormat::SyftJson,
+                SbomFormat::CycloneDxJson,
+                SbomFormat::SpdxJson
+            ])
         );
         assert_eq!(
             buildpack_descriptor.stacks,
@@ -456,6 +475,7 @@ id = "*"
             Vec::<String>::new()
         );
         assert_eq!(buildpack_descriptor.buildpack.licenses, Vec::new());
+        assert_eq!(buildpack_descriptor.buildpack.sbom_formats, HashSet::new());
         assert_eq!(buildpack_descriptor.stacks, vec![Stack::Any]);
         assert_eq!(buildpack_descriptor.metadata, None);
     }

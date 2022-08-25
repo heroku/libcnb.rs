@@ -27,6 +27,7 @@ use libcnb_data::layer::LayerName;
 use libcnb_data::layer_content_metadata::LayerContentMetadata;
 use serde::Deserialize;
 use serde::Serialize;
+use std::collections::HashSet;
 use std::fs;
 use std::iter::repeat_with;
 use std::path::{Path, PathBuf};
@@ -914,6 +915,7 @@ fn build_context(temp_dir: &TempDir) -> BuildContext<TestBuildpack> {
                 description: None,
                 keywords: vec![],
                 licenses: vec![],
+                sbom_formats: HashSet::new(),
             },
             stacks: vec![Stack::Any],
             metadata: GenericMetadata::default(),
