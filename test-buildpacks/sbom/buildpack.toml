@@ -1,0 +1,10 @@
+api = "0.8"
+
+[buildpack]
+id = "libcnb-test-buildpacks/sbom"
+version = "0.1.0"
+name = "libcnb test buildpack: SBOM"
+sbom-formats = ["application/vnd.cyclonedx+json", "application/spdx+json", "application/vnd.syft+json"]
+
+[[stacks]]
+id = "*"

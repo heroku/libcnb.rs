@@ -9,5 +9,6 @@ members = [
     "examples/basics",
     "examples/execd",
     "examples/ruby-sample",
-    "test-buildpacks/readonly-layer-files"
+    "test-buildpacks/readonly-layer-files",
+    "test-buildpacks/sbom"
 ]
