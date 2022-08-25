@@ -48,6 +48,12 @@ pub enum Error<E: Debug> {
     #[error("Cannot write store.toml: {0}")]
     CannotWriteStore(TomlFileError),
 
+    #[error("Cannot write build SBOM files: {0}")]
+    CannotWriteBuildSbom(std::io::Error),
+
+    #[error("Cannot write launch SBOM files: {0}")]
+    CannotWriteLaunchSbom(std::io::Error),
+
     #[error("Buildpack error: {0:?}")]
     BuildpackError(E),
 }

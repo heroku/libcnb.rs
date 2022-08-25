@@ -12,6 +12,7 @@ pub mod exec_d;
 pub mod generic;
 pub mod layer;
 pub mod layer_env;
+pub mod sbom;
 
 // Internals that need to be public for macros
 #[doc(hidden)]

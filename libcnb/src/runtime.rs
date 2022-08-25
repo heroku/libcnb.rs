@@ -4,15 +4,16 @@ use crate::data::buildpack::{BuildpackApi, StackId};
 use crate::detect::{DetectContext, InnerDetectResult};
 use crate::error::Error;
 use crate::platform::Platform;
+use crate::sbom::cnb_sbom_path;
 use crate::toml_file::{read_toml_file, write_toml_file};
 use crate::{exit_code, LIBCNB_SUPPORTED_BUILDPACK_API};
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
-use std::env;
 use std::ffi::OsStr;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::process::exit;
+use std::{env, fs};
 
 /// Main entry point for this framework.
 ///
@@ -181,7 +182,12 @@ pub fn libcnb_runtime_build<B: Buildpack>(
     })?;
 
     match build_result.0 {
-        InnerBuildResult::Pass { launch, store } => {
+        InnerBuildResult::Pass {
+            launch,
+            store,
+            build_sboms,
+            launch_sboms,
+        } => {
             if let Some(launch) = launch {
                 write_toml_file(&launch, layers_dir.join("launch.toml"))
                     .map_err(Error::CannotWriteLaunch)?;
@@ -191,6 +197,22 @@ pub fn libcnb_runtime_build<B: Buildpack>(
                 write_toml_file(&store, layers_dir.join("store.toml"))
                     .map_err(Error::CannotWriteStore)?;
             };
+
+            for build_sbom in build_sboms {
+                fs::write(
+                    cnb_sbom_path(&build_sbom.format, &layers_dir, "build"),
+                    &build_sbom.data,
+                )
+                .map_err(Error::CannotWriteBuildSbom)?;
+            }
+
+            for launch_sbom in launch_sboms {
+                fs::write(
+                    cnb_sbom_path(&launch_sbom.format, &layers_dir, "launch"),
+                    &launch_sbom.data,
+                )
+                .map_err(Error::CannotWriteLaunchSbom)?;
+            }
 
             Ok(exit_code::GENERIC_SUCCESS)
         }
