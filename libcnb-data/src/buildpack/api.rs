@@ -9,8 +9,8 @@ use std::fmt::{Display, Formatter};
 #[derive(Deserialize, Debug, Eq, PartialEq)]
 #[serde(try_from = "&str")]
 pub struct BuildpackApi {
-    pub major: u32,
-    pub minor: u32,
+    pub major: u64,
+    pub minor: u64,
 }
 
 impl TryFrom<&str> for BuildpackApi {
