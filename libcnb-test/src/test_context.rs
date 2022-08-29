@@ -244,20 +244,6 @@ impl<'a> TestContext<'a> {
     }
 }
 
-/// Downloaded SBOM files.
-pub struct SbomFiles {
-    sbom_files_directory: PathBuf,
-}
-
-/// The type of SBOM.
-///
-/// Not to be confused with [`libcnb_data::sbom::SbomFormat`].
-pub enum SbomType {
-    Launch,
-    /// SBOM of a specific layer.
-    Layer(LayerName),
-}
-
 impl<'a> Drop for TestContext<'a> {
     fn drop(&mut self) {
         // We do not care if image removal succeeded or not. Panicking here would result in
@@ -274,6 +260,20 @@ impl<'a> Drop for TestContext<'a> {
                     None,
                 ));
     }
+}
+
+/// Downloaded SBOM files.
+pub struct SbomFiles {
+    sbom_files_directory: PathBuf,
+}
+
+/// The type of SBOM.
+///
+/// Not to be confused with [`libcnb_data::sbom::SbomFormat`].
+pub enum SbomType {
+    Launch,
+    /// SBOM of a specific layer.
+    Layer(LayerName),
 }
 
 impl SbomFiles {
