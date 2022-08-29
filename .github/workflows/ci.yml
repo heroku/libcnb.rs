@@ -59,7 +59,7 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2.0.0
       - name: Install Pack CLI
-        uses: buildpacks/github-actions/setup-pack@v4.8.0
+        uses: buildpacks/github-actions/setup-pack@v4.8.1
       - name: Run integration tests
         # Runs any tests annotated with the `ignore` attribute (which in this repo, are all of the integration tests).
         run: cargo test -- --ignored
