@@ -1,10 +1,16 @@
+use crate::pack::{run_pack_command, PackSbomDownloadCommand};
 use crate::{
     container_port_mapping, util, BuildConfig, ContainerConfig, ContainerContext, LogOutput,
     TestRunner,
 };
 use bollard::container::{Config, CreateContainerOptions, StartContainerOptions};
 use bollard::image::RemoveImageOptions;
+use libcnb_data::buildpack::BuildpackId;
+use libcnb_data::layer::LayerName;
+use libcnb_data::sbom::SbomFormat;
 use std::borrow::Borrow;
+use std::path::PathBuf;
+use tempfile::tempdir;
 
 /// Context for a currently executing test.
 pub struct TestContext<'a> {
@@ -164,6 +170,45 @@ impl<'a> TestContext<'a> {
         log_output
     }
 
+    /// Downloads SBOM files from the built image into a temporary directory.
+    ///
+    /// References to the downloaded files are passed into the given function and will be cleaned-up
+    /// after the function exits.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use libcnb_data::sbom::SbomFormat;
+    /// use libcnb_test::{BuildConfig, ContainerConfig, SbomType, TestRunner};
+    /// use libcnb_data::buildpack_id;
+    ///
+    /// TestRunner::default().build(
+    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
+    ///     |context| {
+    ///         context.download_sbom_files(|sbom_files| {
+    ///             assert!(sbom_files
+    ///                 .path_for(
+    ///                     buildpack_id!("heroku/jvm"),
+    ///                     SbomType::Launch,
+    ///                     SbomFormat::SyftJson
+    ///                 )
+    ///                 .exists());
+    ///         });
+    ///     },
+    /// );
+    /// ```
+    pub fn download_sbom_files<R, F: Fn(SbomFiles) -> R>(&self, f: F) -> R {
+        let temp_dir = tempdir().expect("Could not create temporary directory for SBOM files");
+
+        let mut command = PackSbomDownloadCommand::new(&self.image_name);
+        command.output_dir(temp_dir.path());
+
+        run_pack_command(command);
+
+        f(SbomFiles {
+            sbom_files_directory: temp_dir.path().into(),
+        })
+    }
+
     /// Starts a subsequent integration test build.
     ///
     /// This function behaves exactly like [`TestRunner::build`], but it will reuse the OCI image
@@ -214,5 +259,45 @@ impl<'a> Drop for TestContext<'a> {
                     }),
                     None,
                 ));
+    }
+}
+
+/// Downloaded SBOM files.
+pub struct SbomFiles {
+    sbom_files_directory: PathBuf,
+}
+
+/// The type of SBOM.
+///
+/// Not to be confused with [`libcnb_data::sbom::SbomFormat`].
+pub enum SbomType {
+    /// Launch SBOM
+    Launch,
+    /// Layer SBOM
+    Layer(LayerName),
+}
+
+impl SbomFiles {
+    /// Returns the path of a specific downloaded SBOM file.
+    pub fn path_for<I: Borrow<BuildpackId>, T: Borrow<SbomType>, F: Borrow<SbomFormat>>(
+        &self,
+        buildpack_id: I,
+        sbom_type: T,
+        format: F,
+    ) -> PathBuf {
+        self.sbom_files_directory
+            .join("layers")
+            .join("sbom")
+            .join("launch")
+            .join(buildpack_id.borrow().replace('/', "_"))
+            .join(match sbom_type.borrow() {
+                SbomType::Layer(layer_name) => layer_name.to_string(),
+                SbomType::Launch => String::new(),
+            })
+            .join(match format.borrow() {
+                SbomFormat::CycloneDxJson => "sbom.cdx.json",
+                SbomFormat::SpdxJson => "sbom.spdx.json",
+                SbomFormat::SyftJson => "sbom.syft.json",
+            })
     }
 }

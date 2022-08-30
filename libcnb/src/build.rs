@@ -8,6 +8,7 @@ use crate::data::{
     buildpack::SingleBuildpackDescriptor, buildpack_plan::BuildpackPlan, launch::Launch,
 };
 use crate::layer::{HandleLayerErrorOrBuildpackError, Layer, LayerData};
+use crate::sbom::Sbom;
 use std::path::PathBuf;
 
 /// Context for the build phase execution.
@@ -125,6 +126,8 @@ pub(crate) enum InnerBuildResult {
     Pass {
         launch: Option<Launch>,
         store: Option<Store>,
+        build_sboms: Vec<Sbom>,
+        launch_sboms: Vec<Sbom>,
     },
 }
 
@@ -156,6 +159,8 @@ pub(crate) enum InnerBuildResult {
 pub struct BuildResultBuilder {
     launch: Option<Launch>,
     store: Option<Store>,
+    build_sboms: Vec<Sbom>,
+    launch_sboms: Vec<Sbom>,
 }
 
 impl BuildResultBuilder {
@@ -178,6 +183,8 @@ impl BuildResultBuilder {
         BuildResult(InnerBuildResult::Pass {
             launch: self.launch,
             store: self.store,
+            build_sboms: self.build_sboms,
+            launch_sboms: self.launch_sboms,
         })
     }
 
@@ -188,6 +195,27 @@ impl BuildResultBuilder {
 
     pub fn store(mut self, store: Store) -> Self {
         self.store = Some(store);
+        self
+    }
+
+    /// Adds a build SBOM to the build result.
+    ///
+    /// Entries in this SBOM represent materials in the build container for auditing purposes.
+    /// This function can be called multiple times to add SBOMs in different formats.
+    ///
+    /// Please note that these SBOMs are not added to the resulting image, they are purely for
+    /// auditing the build container.
+    pub fn build_sbom(mut self, sbom: Sbom) -> Self {
+        self.build_sboms.push(sbom);
+        self
+    }
+
+    /// Adds a launch SBOM to the build result.
+    ///
+    /// Entries in this SBOM represent materials in the launch image for auditing purposes.
+    /// This function can be called multiple times to add SBOMs in different formats.
+    pub fn launch_sbom(mut self, sbom: Sbom) -> Self {
+        self.launch_sboms.push(sbom);
         self
     }
 }

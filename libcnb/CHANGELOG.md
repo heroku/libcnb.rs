@@ -4,6 +4,8 @@
 
 - Fix permission issues during layer handling when the layer contains read-only directories. ([#488](https://github.com/heroku/libcnb.rs/pull/488)).
 - Add explicit `DeleteLayerError` to provide more context when debugging layer handling problems. ([#488](https://github.com/heroku/libcnb.rs/pull/488)).
+- libcnb.rs now targets [Buildpack API 0.8](https://github.com/buildpacks/spec/releases/tag/buildpack%2Fv0.8). Buildpacks need to upgrade the `api` key to `0.8` in their `buildpack.toml`. ([#489](https://github.com/heroku/libcnb.rs/pull/489))
+- Add `BuildResultBuilder::build_sbom`, `BuildResultBuilder::launch_sbom` and `LayerResultBuilder::sbom` to enable buildpack authors to attach SBOM data for layers and launch. ([#489](https://github.com/heroku/libcnb.rs/pull/489))
 
 ## [0.9.0] 2022-07-14
 

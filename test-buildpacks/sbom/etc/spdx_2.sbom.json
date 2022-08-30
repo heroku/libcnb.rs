@@ -1,0 +1,106 @@
+{
+ "SPDXID": "SPDXRef-DOCUMENT",
+ "name": "Cargo.lock",
+ "spdxVersion": "SPDX-2.2",
+ "creationInfo": {
+  "created": "2022-08-23T12:58:19.243862Z",
+  "creators": [
+   "Organization: Anchore, Inc",
+   "Tool: syft-0.54.0"
+  ],
+  "licenseListVersion": "3.18"
+ },
+ "dataLicense": "CC0-1.0",
+ "documentNamespace": "https://anchore.com/syft/file/Cargo.lock-cf7675b3-11a6-47e1-90bf-e6b79945812e",
+ "packages": [
+  {
+   "SPDXID": "SPDXRef-9384c415ef79d6b1",
+   "name": "rust-sbom-test",
+   "licenseConcluded": "NONE",
+   "downloadLocation": "NOASSERTION",
+   "externalRefs": [
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rust-sbom-test:rust-sbom-test:0.1.0:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rust-sbom-test:rust_sbom_test:0.1.0:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rust_sbom_test:rust-sbom-test:0.1.0:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rust_sbom_test:rust_sbom_test:0.1.0:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rust-sbom:rust-sbom-test:0.1.0:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rust-sbom:rust_sbom_test:0.1.0:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rust_sbom:rust-sbom-test:0.1.0:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rust_sbom:rust_sbom_test:0.1.0:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rust:rust-sbom-test:0.1.0:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rust:rust_sbom_test:0.1.0:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "PACKAGE_MANAGER",
+     "referenceLocator": "pkg:cargo/rust-sbom-test@0.1.0",
+     "referenceType": "purl"
+    }
+   ],
+   "filesAnalyzed": false,
+   "licenseDeclared": "NONE",
+   "sourceInfo": "acquired package info from rust cargo manifest: /Users/manuel.fuchs/projects/rust-sbom-test/Cargo.lock",
+   "versionInfo": "0.1.0"
+  },
+  {
+   "SPDXID": "SPDXRef-904532b9d2584348",
+   "name": "serde",
+   "licenseConcluded": "NONE",
+   "downloadLocation": "NOASSERTION",
+   "externalRefs": [
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:serde:serde:1.0.144:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "PACKAGE_MANAGER",
+     "referenceLocator": "pkg:cargo/serde@1.0.144",
+     "referenceType": "purl"
+    }
+   ],
+   "filesAnalyzed": false,
+   "licenseDeclared": "NONE",
+   "sourceInfo": "acquired package info from rust cargo manifest: /Users/manuel.fuchs/projects/rust-sbom-test/Cargo.lock",
+   "versionInfo": "1.0.144"
+  }
+ ]
+}

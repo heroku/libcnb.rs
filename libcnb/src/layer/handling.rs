@@ -7,9 +7,11 @@ use crate::data::layer_content_metadata::LayerContentMetadata;
 use crate::generic::GenericMetadata;
 use crate::layer::{ExistingLayerStrategy, Layer, LayerData, MetadataMigration};
 use crate::layer_env::LayerEnv;
+use crate::sbom::{cnb_sbom_path, Sbom};
 use crate::util::{default_on_not_found, remove_recursively};
 use crate::Buildpack;
 use crate::{write_toml_file, TomlFileError};
+use libcnb_data::sbom::SBOM_FORMATS;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -49,6 +51,7 @@ pub(crate) fn handle_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
                             metadata: layer_data.content_metadata.metadata,
                         },
                         ExecDPrograms::Keep,
+                        Sboms::Keep,
                     )?;
 
                     // Reread the layer from disk to ensure the returned layer data accurately reflects
@@ -83,6 +86,7 @@ pub(crate) fn handle_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
                                     metadata: migrated_metadata,
                                 },
                                 ExecDPrograms::Keep,
+                                Sboms::Keep,
                             )?;
                         }
                     }
@@ -123,6 +127,7 @@ fn handle_create_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
             metadata: layer_result.metadata,
         },
         ExecDPrograms::Overwrite(layer_result.exec_d_programs),
+        Sboms::Overwrite(layer_result.sboms),
     )?;
 
     read_layer(&context.layers_dir, layer_name)?
@@ -148,6 +153,7 @@ fn handle_update_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
             metadata: layer_result.metadata,
         },
         ExecDPrograms::Overwrite(layer_result.exec_d_programs),
+        Sboms::Overwrite(layer_result.sboms),
     )?;
 
     read_layer(&context.layers_dir, &layer_data.name)?
@@ -242,6 +248,12 @@ enum ExecDPrograms {
     Overwrite(HashMap<String, PathBuf>),
 }
 
+#[derive(Debug)]
+enum Sboms {
+    Keep,
+    Overwrite(Vec<Sbom>),
+}
+
 /// Does not error if the layer doesn't exist.
 fn delete_layer<P: AsRef<Path>>(
     layers_dir: P,
@@ -263,6 +275,7 @@ fn write_layer<M: Serialize, P: AsRef<Path>>(
     layer_env: &LayerEnv,
     layer_content_metadata: &LayerContentMetadata<M>,
     layer_exec_d_programs: ExecDPrograms,
+    layer_sboms: Sboms,
 ) -> Result<(), WriteLayerError> {
     let layer_dir = layers_dir.as_ref().join(layer_name.as_str());
     let layer_content_metadata_path = layers_dir.as_ref().join(format!("{layer_name}.toml"));
@@ -270,6 +283,26 @@ fn write_layer<M: Serialize, P: AsRef<Path>>(
     fs::create_dir_all(&layer_dir)?;
     layer_env.write_to_layer_dir(&layer_dir)?;
     write_toml_file(&layer_content_metadata, layer_content_metadata_path)?;
+
+    match layer_sboms {
+        Sboms::Overwrite(layer_sboms) => {
+            for format in SBOM_FORMATS {
+                default_on_not_found(fs::remove_file(cnb_sbom_path(
+                    format,
+                    &layers_dir,
+                    layer_name,
+                )))?;
+            }
+
+            for layer_sbom in layer_sboms {
+                fs::write(
+                    cnb_sbom_path(&layer_sbom.format, &layers_dir, layer_name),
+                    &layer_sbom.data,
+                )?;
+            }
+        }
+        Sboms::Keep => {}
+    }
 
     match layer_exec_d_programs {
         ExecDPrograms::Overwrite(exec_d_programs) => {
@@ -450,6 +483,7 @@ mod tests {
                 metadata: GenericMetadata::default(),
             },
             ExecDPrograms::Overwrite(HashMap::from([(String::from("foo"), foo_execd_file)])),
+            Sboms::Keep,
         )
         .unwrap();
 
@@ -498,6 +532,7 @@ mod tests {
                 metadata: GenericMetadata::default(),
             },
             ExecDPrograms::Overwrite(HashMap::from([(String::from("foo"), execd_file.clone())])),
+            Sboms::Keep,
         )
         .unwrap_err();
 
@@ -554,6 +589,7 @@ mod tests {
                 metadata: GenericMetadata::default(),
             },
             ExecDPrograms::Overwrite(HashMap::from([(String::from("foo"), foo_execd_file)])),
+            Sboms::Keep,
         )
         .unwrap();
 
@@ -580,6 +616,7 @@ mod tests {
                 (String::from("bar"), bar_execd_file),
                 (String::from("baz"), baz_execd_file),
             ])),
+            Sboms::Keep,
         )
         .unwrap();
 
@@ -642,6 +679,7 @@ mod tests {
                 metadata: GenericMetadata::default(),
             },
             ExecDPrograms::Keep,
+            Sboms::Keep,
         )
         .unwrap();
 
@@ -672,6 +710,7 @@ mod tests {
                 metadata: GenericMetadata::default(),
             },
             ExecDPrograms::Overwrite(HashMap::from([(String::from("foo"), foo_execd_file)])),
+            Sboms::Keep,
         )
         .unwrap();
 
@@ -693,6 +732,7 @@ mod tests {
                 metadata: GenericMetadata::default(),
             },
             ExecDPrograms::Keep,
+            Sboms::Keep,
         )
         .unwrap();
 
@@ -726,6 +766,7 @@ mod tests {
                 metadata: GenericMetadata::default(),
             },
             ExecDPrograms::Overwrite(HashMap::from([(String::from("foo"), foo_execd_file)])),
+            Sboms::Keep,
         )
         .unwrap();
 
@@ -747,6 +788,7 @@ mod tests {
                 metadata: GenericMetadata::default(),
             },
             ExecDPrograms::Overwrite(HashMap::new()),
+            Sboms::Keep,
         )
         .unwrap();
 

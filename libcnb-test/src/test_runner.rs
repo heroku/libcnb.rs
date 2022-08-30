@@ -1,11 +1,10 @@
-use crate::pack::PackBuildCommand;
+use crate::pack::{run_pack_command, PackBuildCommand};
 use crate::{app, build, util, BuildConfig, BuildpackReference, PackResult, TestContext};
 use bollard::Docker;
 use std::borrow::Borrow;
+use std::env;
 use std::env::VarError;
 use std::path::PathBuf;
-use std::process::{Command, Stdio};
-use std::{env, io};
 
 /// Runner for libcnb integration tests.
 ///
@@ -157,19 +156,7 @@ impl TestRunner {
             };
         }
 
-        let output = Command::from(pack_command)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .unwrap_or_else(|io_error| {
-                if io_error.kind() == io::ErrorKind::NotFound {
-                    panic!("External `pack` command not found. Install Pack CLI and ensure it is on PATH: https://buildpacks.io/docs/install-pack");
-                } else {
-                    panic!("Could not spawn external `pack` process: {io_error}");
-                };
-            })
-            .wait_with_output()
-            .expect("Error while waiting on external `pack` process");
+        let output = run_pack_command(pack_command);
 
         let test_context = TestContext {
             pack_stdout: String::from_utf8_lossy(&output.stdout).into_owned(),

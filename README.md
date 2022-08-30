@@ -13,7 +13,7 @@
 It is an opinionated implementation adding language constructs and convenience methods for working
 with the spec. It values strong adherence to the spec and data formats.
 
-It currently targets version `0.6` of the CNB spec.
+It currently targets version `0.8` of the CNB spec.
 
 ## Quick Start Guide
 
@@ -79,7 +79,7 @@ Since we're writing a Cloud Native Buildpack, we also need a `buildpack.toml`. U
 file named `buildpack.toml` in the root of your project, right next to `Cargo.toml`.
 
 ```toml
-api = "0.6"
+api = "0.8"
 
 [buildpack]
 id = "libcnb-examples/my-buildpack"

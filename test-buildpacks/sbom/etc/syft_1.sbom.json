@@ -1,0 +1,388 @@
+{
+ "artifacts": [
+  {
+   "id": "97dc71790e500d1c",
+   "name": "cfg-if",
+   "version": "1.0.0",
+   "type": "rust-crate",
+   "foundBy": "rust-cargo-lock-cataloger",
+   "locations": [
+    {
+     "path": "/Users/manuel.fuchs/projects/rust-sbom-test/Cargo.lock"
+    }
+   ],
+   "licenses": [],
+   "language": "rust",
+   "cpes": [
+    "cpe:2.3:a:cfg-if:cfg-if:1.0.0:*:*:*:*:*:*:*",
+    "cpe:2.3:a:cfg-if:cfg_if:1.0.0:*:*:*:*:*:*:*",
+    "cpe:2.3:a:cfg_if:cfg-if:1.0.0:*:*:*:*:*:*:*",
+    "cpe:2.3:a:cfg_if:cfg_if:1.0.0:*:*:*:*:*:*:*",
+    "cpe:2.3:a:cfg:cfg-if:1.0.0:*:*:*:*:*:*:*",
+    "cpe:2.3:a:cfg:cfg_if:1.0.0:*:*:*:*:*:*:*"
+   ],
+   "purl": "pkg:cargo/cfg-if@1.0.0",
+   "metadataType": "RustCargoPackageMetadata",
+   "metadata": {
+    "name": "cfg-if",
+    "version": "1.0.0",
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "checksum": "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd",
+    "dependencies": []
+   }
+  },
+  {
+   "id": "f34f7918add79842",
+   "name": "getrandom",
+   "version": "0.2.7",
+   "type": "rust-crate",
+   "foundBy": "rust-cargo-lock-cataloger",
+   "locations": [
+    {
+     "path": "/Users/manuel.fuchs/projects/rust-sbom-test/Cargo.lock"
+    }
+   ],
+   "licenses": [],
+   "language": "rust",
+   "cpes": [
+    "cpe:2.3:a:getrandom:getrandom:0.2.7:*:*:*:*:*:*:*"
+   ],
+   "purl": "pkg:cargo/getrandom@0.2.7",
+   "metadataType": "RustCargoPackageMetadata",
+   "metadata": {
+    "name": "getrandom",
+    "version": "0.2.7",
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "checksum": "4eb1a864a501629691edf6c15a593b7a51eebaa1e8468e9ddc623de7c9b58ec6",
+    "dependencies": [
+     "cfg-if",
+     "libc",
+     "wasi"
+    ]
+   }
+  },
+  {
+   "id": "7f676a064ff67f42",
+   "name": "libc",
+   "version": "0.2.132",
+   "type": "rust-crate",
+   "foundBy": "rust-cargo-lock-cataloger",
+   "locations": [
+    {
+     "path": "/Users/manuel.fuchs/projects/rust-sbom-test/Cargo.lock"
+    }
+   ],
+   "licenses": [],
+   "language": "rust",
+   "cpes": [
+    "cpe:2.3:a:libc:libc:0.2.132:*:*:*:*:*:*:*"
+   ],
+   "purl": "pkg:cargo/libc@0.2.132",
+   "metadataType": "RustCargoPackageMetadata",
+   "metadata": {
+    "name": "libc",
+    "version": "0.2.132",
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "checksum": "8371e4e5341c3a96db127eb2465ac681ced4c433e01dd0e938adbef26ba93ba5",
+    "dependencies": []
+   }
+  },
+  {
+   "id": "4acb3e2c7bd08a7f",
+   "name": "ppv-lite86",
+   "version": "0.2.16",
+   "type": "rust-crate",
+   "foundBy": "rust-cargo-lock-cataloger",
+   "locations": [
+    {
+     "path": "/Users/manuel.fuchs/projects/rust-sbom-test/Cargo.lock"
+    }
+   ],
+   "licenses": [],
+   "language": "rust",
+   "cpes": [
+    "cpe:2.3:a:ppv-lite86:ppv-lite86:0.2.16:*:*:*:*:*:*:*",
+    "cpe:2.3:a:ppv-lite86:ppv_lite86:0.2.16:*:*:*:*:*:*:*",
+    "cpe:2.3:a:ppv_lite86:ppv-lite86:0.2.16:*:*:*:*:*:*:*",
+    "cpe:2.3:a:ppv_lite86:ppv_lite86:0.2.16:*:*:*:*:*:*:*",
+    "cpe:2.3:a:ppv:ppv-lite86:0.2.16:*:*:*:*:*:*:*",
+    "cpe:2.3:a:ppv:ppv_lite86:0.2.16:*:*:*:*:*:*:*"
+   ],
+   "purl": "pkg:cargo/ppv-lite86@0.2.16",
+   "metadataType": "RustCargoPackageMetadata",
+   "metadata": {
+    "name": "ppv-lite86",
+    "version": "0.2.16",
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "checksum": "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872",
+    "dependencies": []
+   }
+  },
+  {
+   "id": "882ff94a9e9de281",
+   "name": "rand",
+   "version": "0.8.5",
+   "type": "rust-crate",
+   "foundBy": "rust-cargo-lock-cataloger",
+   "locations": [
+    {
+     "path": "/Users/manuel.fuchs/projects/rust-sbom-test/Cargo.lock"
+    }
+   ],
+   "licenses": [],
+   "language": "rust",
+   "cpes": [
+    "cpe:2.3:a:rand:rand:0.8.5:*:*:*:*:*:*:*"
+   ],
+   "purl": "pkg:cargo/rand@0.8.5",
+   "metadataType": "RustCargoPackageMetadata",
+   "metadata": {
+    "name": "rand",
+    "version": "0.8.5",
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "checksum": "34af8d1a0e25924bc5b7c43c079c942339d8f0a8b57c39049bef581b46327404",
+    "dependencies": [
+     "libc",
+     "rand_chacha",
+     "rand_core"
+    ]
+   }
+  },
+  {
+   "id": "1790a38fa8063a13",
+   "name": "rand_chacha",
+   "version": "0.3.1",
+   "type": "rust-crate",
+   "foundBy": "rust-cargo-lock-cataloger",
+   "locations": [
+    {
+     "path": "/Users/manuel.fuchs/projects/rust-sbom-test/Cargo.lock"
+    }
+   ],
+   "licenses": [],
+   "language": "rust",
+   "cpes": [
+    "cpe:2.3:a:rand-chacha:rand-chacha:0.3.1:*:*:*:*:*:*:*",
+    "cpe:2.3:a:rand-chacha:rand_chacha:0.3.1:*:*:*:*:*:*:*",
+    "cpe:2.3:a:rand_chacha:rand-chacha:0.3.1:*:*:*:*:*:*:*",
+    "cpe:2.3:a:rand_chacha:rand_chacha:0.3.1:*:*:*:*:*:*:*",
+    "cpe:2.3:a:rand:rand-chacha:0.3.1:*:*:*:*:*:*:*",
+    "cpe:2.3:a:rand:rand_chacha:0.3.1:*:*:*:*:*:*:*"
+   ],
+   "purl": "pkg:cargo/rand_chacha@0.3.1",
+   "metadataType": "RustCargoPackageMetadata",
+   "metadata": {
+    "name": "rand_chacha",
+    "version": "0.3.1",
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "checksum": "e6c10a63a0fa32252be49d21e7709d4d4baf8d231c2dbce1eaa8141b9b127d88",
+    "dependencies": [
+     "ppv-lite86",
+     "rand_core"
+    ]
+   }
+  },
+  {
+   "id": "c6225b9129fa815a",
+   "name": "rand_core",
+   "version": "0.6.3",
+   "type": "rust-crate",
+   "foundBy": "rust-cargo-lock-cataloger",
+   "locations": [
+    {
+     "path": "/Users/manuel.fuchs/projects/rust-sbom-test/Cargo.lock"
+    }
+   ],
+   "licenses": [],
+   "language": "rust",
+   "cpes": [
+    "cpe:2.3:a:rand-core:rand-core:0.6.3:*:*:*:*:*:*:*",
+    "cpe:2.3:a:rand-core:rand_core:0.6.3:*:*:*:*:*:*:*",
+    "cpe:2.3:a:rand_core:rand-core:0.6.3:*:*:*:*:*:*:*",
+    "cpe:2.3:a:rand_core:rand_core:0.6.3:*:*:*:*:*:*:*",
+    "cpe:2.3:a:rand:rand-core:0.6.3:*:*:*:*:*:*:*",
+    "cpe:2.3:a:rand:rand_core:0.6.3:*:*:*:*:*:*:*"
+   ],
+   "purl": "pkg:cargo/rand_core@0.6.3",
+   "metadataType": "RustCargoPackageMetadata",
+   "metadata": {
+    "name": "rand_core",
+    "version": "0.6.3",
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "checksum": "d34f1408f55294453790c48b2f1ebbb1c5b4b7563eb1f418bcfcfdbb06ebb4e7",
+    "dependencies": [
+     "getrandom"
+    ]
+   }
+  },
+  {
+   "id": "5a2a0e1b70a26840",
+   "name": "rust-sbom-test",
+   "version": "0.1.0",
+   "type": "rust-crate",
+   "foundBy": "rust-cargo-lock-cataloger",
+   "locations": [
+    {
+     "path": "/Users/manuel.fuchs/projects/rust-sbom-test/Cargo.lock"
+    }
+   ],
+   "licenses": [],
+   "language": "rust",
+   "cpes": [
+    "cpe:2.3:a:rust-sbom-test:rust-sbom-test:0.1.0:*:*:*:*:*:*:*",
+    "cpe:2.3:a:rust-sbom-test:rust_sbom_test:0.1.0:*:*:*:*:*:*:*",
+    "cpe:2.3:a:rust_sbom_test:rust-sbom-test:0.1.0:*:*:*:*:*:*:*",
+    "cpe:2.3:a:rust_sbom_test:rust_sbom_test:0.1.0:*:*:*:*:*:*:*",
+    "cpe:2.3:a:rust-sbom:rust-sbom-test:0.1.0:*:*:*:*:*:*:*",
+    "cpe:2.3:a:rust-sbom:rust_sbom_test:0.1.0:*:*:*:*:*:*:*",
+    "cpe:2.3:a:rust_sbom:rust-sbom-test:0.1.0:*:*:*:*:*:*:*",
+    "cpe:2.3:a:rust_sbom:rust_sbom_test:0.1.0:*:*:*:*:*:*:*",
+    "cpe:2.3:a:rust:rust-sbom-test:0.1.0:*:*:*:*:*:*:*",
+    "cpe:2.3:a:rust:rust_sbom_test:0.1.0:*:*:*:*:*:*:*"
+   ],
+   "purl": "pkg:cargo/rust-sbom-test@0.1.0",
+   "metadataType": "RustCargoPackageMetadata",
+   "metadata": {
+    "name": "rust-sbom-test",
+    "version": "0.1.0",
+    "source": "",
+    "checksum": "",
+    "dependencies": [
+     "libc",
+     "rand"
+    ]
+   }
+  },
+  {
+   "id": "a026e27ee58d2b0e",
+   "name": "wasi",
+   "version": "0.11.0+wasi-snapshot-preview1",
+   "type": "rust-crate",
+   "foundBy": "rust-cargo-lock-cataloger",
+   "locations": [
+    {
+     "path": "/Users/manuel.fuchs/projects/rust-sbom-test/Cargo.lock"
+    }
+   ],
+   "licenses": [],
+   "language": "rust",
+   "cpes": [
+    "cpe:2.3:a:wasi:wasi:0.11.0\\+wasi-snapshot-preview1:*:*:*:*:*:*:*"
+   ],
+   "purl": "pkg:cargo/wasi@0.11.0+wasi-snapshot-preview1",
+   "metadataType": "RustCargoPackageMetadata",
+   "metadata": {
+    "name": "wasi",
+    "version": "0.11.0+wasi-snapshot-preview1",
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "checksum": "9c8d87e72b64a3b4db28d11ce29237c246188f4f51057d65a7eab63b7987e423",
+    "dependencies": []
+   }
+  }
+ ],
+ "artifactRelationships": [],
+ "source": {
+  "type": "file",
+  "target": "Cargo.lock"
+ },
+ "distro": {},
+ "descriptor": {
+  "name": "syft",
+  "version": "0.54.0",
+  "configuration": {
+   "configPath": "",
+   "verbosity": 0,
+   "quiet": false,
+   "output": [
+    "json"
+   ],
+   "output-template-path": "",
+   "file": "",
+   "check-for-app-update": true,
+   "anchore": {
+    "host": "",
+    "path": "",
+    "dockerfile": "",
+    "overwrite-existing-image": false,
+    "import-timeout": 30
+   },
+   "dev": {
+    "profile-cpu": false,
+    "profile-mem": false
+   },
+   "log": {
+    "structured": false,
+    "level": "warning",
+    "file-location": ""
+   },
+   "catalogers": null,
+   "package": {
+    "cataloger": {
+     "enabled": true,
+     "scope": "Squashed"
+    },
+    "search-unindexed-archives": false,
+    "search-indexed-archives": true
+   },
+   "file-metadata": {
+    "cataloger": {
+     "enabled": false,
+     "scope": "Squashed"
+    },
+    "digests": [
+     "sha256"
+    ]
+   },
+   "file-classification": {
+    "cataloger": {
+     "enabled": false,
+     "scope": "Squashed"
+    }
+   },
+   "file-contents": {
+    "cataloger": {
+     "enabled": false,
+     "scope": "Squashed"
+    },
+    "skip-files-above-size": 1048576,
+    "globs": []
+   },
+   "secrets": {
+    "cataloger": {
+     "enabled": false,
+     "scope": "AllLayers"
+    },
+    "additional-patterns": {},
+    "exclude-pattern-names": [],
+    "reveal-values": false,
+    "skip-files-above-size": 1048576
+   },
+   "registry": {
+    "insecure-skip-tls-verify": false,
+    "insecure-use-http": false,
+    "auth": []
+   },
+   "exclude": [],
+   "attest": {
+    "key": "",
+    "cert": "",
+    "noUpload": false,
+    "force": false,
+    "recursive": false,
+    "replace": false,
+    "fulcioUrl": "https://fulcio.sigstore.dev",
+    "fulcio_identity_token": "",
+    "insecure_skip_verify": false,
+    "rekorUrl": "https://rekor.sigstore.dev",
+    "oidcIssuer": "https://oauth2.sigstore.dev/auth",
+    "oidcClientId": "sigstore",
+    "OIDCRedirectURL": ""
+   },
+   "platform": ""
+  }
+ },
+ "schema": {
+  "version": "3.3.2",
+  "url": "https://raw.githubusercontent.com/anchore/syft/main/schema/json/schema-3.3.2.json"
+ }
+}

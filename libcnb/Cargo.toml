@@ -13,6 +13,7 @@ include = ["src/**/*", "../LICENSE", "../README.md"]
 
 [dependencies]
 anyhow = { version = "1.0.58", optional = true }
+cyclonedx-bom = { version = "0.3.2", optional = true }
 libcnb-data = { path = "../libcnb-data", version = "0.8.0" }
 libcnb-proc-macros = { version = "0.3.0", path = "../libcnb-proc-macros" }
 serde = { version = "1.0.139", features = ["derive"] }

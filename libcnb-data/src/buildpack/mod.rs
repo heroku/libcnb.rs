@@ -4,11 +4,13 @@ mod stack;
 mod stack_id;
 mod version;
 
+use crate::sbom::SbomFormat;
 pub use api::*;
 pub use id::*;
 use serde::Deserialize;
 pub use stack::*;
 pub use stack_id::*;
+use std::collections::HashSet;
 pub use version::*;
 
 /// Data structures for the Buildpack descriptor (buildpack.toml).
@@ -24,7 +26,7 @@ pub use version::*;
 /// use libcnb_data::buildpack::BuildpackDescriptor;
 ///
 /// let toml_str = r#"
-/// api = "0.6"
+/// api = "0.8"
 ///
 /// [buildpack]
 /// id = "foo/bar"
@@ -68,7 +70,7 @@ pub enum BuildpackDescriptor<BM> {
 /// use libcnb_data::buildpack::{SingleBuildpackDescriptor, Stack};
 ///
 /// let toml_str = r#"
-/// api = "0.6"
+/// api = "0.8"
 ///
 /// [buildpack]
 /// id = "foo/bar"
@@ -112,7 +114,7 @@ pub struct SingleBuildpackDescriptor<BM> {
 /// use libcnb_data::buildpack::MetaBuildpackDescriptor;
 ///
 /// let toml_str = r#"
-/// api = "0.6"
+/// api = "0.8"
 ///
 /// [buildpack]
 /// id = "foo/bar"
@@ -159,6 +161,12 @@ pub struct Buildpack {
     pub keywords: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub licenses: Vec<License>,
+    #[serde(
+        default,
+        rename = "sbom-formats",
+        skip_serializing_if = "HashSet::is_empty"
+    )]
+    pub sbom_formats: HashSet<SbomFormat>,
 }
 
 #[derive(Deserialize, Debug, Eq, PartialEq)]
@@ -186,6 +194,7 @@ pub struct Group {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::sbom::SbomFormat;
 
     type GenericMetadata = Option<toml::value::Table>;
 
@@ -193,7 +202,7 @@ mod tests {
     #[allow(clippy::too_many_lines)]
     fn deserialize_singlebuildpack() {
         let toml_str = r#"
-api = "0.6"
+api = "0.8"
 
 [buildpack]
 id = "foo/bar"
@@ -203,6 +212,8 @@ homepage = "https://example.tld"
 clear-env = true
 description = "A buildpack for Foo Bar"
 keywords = ["foo", "bar"]
+# Duplication of the Syft entry is intentional!
+sbom-formats = ["application/vnd.cyclonedx+json", "application/spdx+json", "application/vnd.syft+json", "application/vnd.syft+json"]
 
 [[buildpack.licenses]]
 type = "BSD-3-Clause"
@@ -239,7 +250,7 @@ checksum = "abc123"
 
         assert_eq!(
             buildpack_descriptor.api,
-            BuildpackApi { major: 0, minor: 6 }
+            BuildpackApi { major: 0, minor: 8 }
         );
         assert_eq!(
             buildpack_descriptor.buildpack.id,
@@ -284,6 +295,14 @@ checksum = "abc123"
             ]
         );
         assert_eq!(
+            buildpack_descriptor.buildpack.sbom_formats,
+            HashSet::from([
+                SbomFormat::SyftJson,
+                SbomFormat::CycloneDxJson,
+                SbomFormat::SpdxJson
+            ])
+        );
+        assert_eq!(
             buildpack_descriptor.stacks,
             vec![
                 Stack::Specific {
@@ -311,7 +330,7 @@ checksum = "abc123"
     #[test]
     fn deserialize_metabuildpack() {
         let toml_str = r#"
-api = "0.6"
+api = "0.8"
 
 [buildpack]
 id = "foo/bar"
@@ -352,7 +371,7 @@ checksum = "abc123"
 
         assert_eq!(
             buildpack_descriptor.api,
-            BuildpackApi { major: 0, minor: 6 }
+            BuildpackApi { major: 0, minor: 8 }
         );
         assert_eq!(
             buildpack_descriptor.buildpack.id,
@@ -422,7 +441,7 @@ checksum = "abc123"
     #[test]
     fn deserialize_minimal_singlebuildpack() {
         let toml_str = r#"
-api = "0.6"
+api = "0.8"
 
 [buildpack]
 id = "foo/bar"
@@ -437,7 +456,7 @@ id = "*"
 
         assert_eq!(
             buildpack_descriptor.api,
-            BuildpackApi { major: 0, minor: 6 }
+            BuildpackApi { major: 0, minor: 8 }
         );
         assert_eq!(
             buildpack_descriptor.buildpack.id,
@@ -456,6 +475,7 @@ id = "*"
             Vec::<String>::new()
         );
         assert_eq!(buildpack_descriptor.buildpack.licenses, Vec::new());
+        assert_eq!(buildpack_descriptor.buildpack.sbom_formats, HashSet::new());
         assert_eq!(buildpack_descriptor.stacks, vec![Stack::Any]);
         assert_eq!(buildpack_descriptor.metadata, None);
     }
@@ -463,7 +483,7 @@ id = "*"
     #[test]
     fn deserialize_minimal_metabuildpack() {
         let toml_str = r#"
-api = "0.6"
+api = "0.8"
 
 [buildpack]
 id = "foo/bar"
@@ -481,7 +501,7 @@ version = "0.0.1"
 
         assert_eq!(
             buildpack_descriptor.api,
-            BuildpackApi { major: 0, minor: 6 }
+            BuildpackApi { major: 0, minor: 8 }
         );
         assert_eq!(
             buildpack_descriptor.buildpack.id,
@@ -516,7 +536,7 @@ version = "0.0.1"
     #[test]
     fn deserialize_buildpackdescriptor_single() {
         let toml_str = r#"
-api = "0.6"
+api = "0.8"
 
 [buildpack]
 id = "foo/bar"
@@ -537,7 +557,7 @@ id = "*"
     #[test]
     fn deserialize_buildpackdescriptor_meta() {
         let toml_str = r#"
-api = "0.6"
+api = "0.8"
 
 [buildpack]
 id = "foo/bar"
@@ -558,7 +578,7 @@ version = "0.0.1"
     #[test]
     fn reject_buildpack_with_both_stacks_and_order() {
         let toml_str = r#"
-api = "0.6"
+api = "0.8"
 
 [buildpack]
 id = "foo/bar"

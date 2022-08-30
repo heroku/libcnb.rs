@@ -3,6 +3,7 @@ use crate::data::layer::LayerName;
 use crate::data::layer_content_metadata::{LayerContentMetadata, LayerTypes};
 use crate::generic::GenericMetadata;
 use crate::layer_env::LayerEnv;
+use crate::sbom::Sbom;
 use crate::Buildpack;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -168,6 +169,7 @@ pub struct LayerResult<M> {
     pub metadata: M,
     pub env: Option<LayerEnv>,
     pub exec_d_programs: HashMap<String, PathBuf>,
+    pub sboms: Vec<Sbom>,
 }
 
 /// A builder that simplifies the creation of [`LayerResult`] values.
@@ -175,6 +177,7 @@ pub struct LayerResultBuilder<M> {
     metadata: M,
     env: Option<LayerEnv>,
     exec_d_programs: HashMap<String, PathBuf>,
+    sboms: Vec<Sbom>,
 }
 
 impl<M> LayerResultBuilder<M> {
@@ -184,6 +187,7 @@ impl<M> LayerResultBuilder<M> {
             metadata,
             env: None,
             exec_d_programs: HashMap::new(),
+            sboms: vec![],
         }
     }
 
@@ -221,6 +225,32 @@ impl<M> LayerResultBuilder<M> {
         self
     }
 
+    /// Adds an SBOM to the layer.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use std::path::PathBuf;
+    /// use libcnb::generic::GenericMetadata;
+    /// use libcnb::layer::LayerResultBuilder;
+    /// use libcnb::sbom::Sbom;
+    /// use libcnb::data::sbom::SbomFormat;
+    ///
+    /// # fn wrapper() -> std::io::Result<libcnb::layer::LayerResult<GenericMetadata>> {
+    /// LayerResultBuilder::new(GenericMetadata::default())
+    ///     .sbom(Sbom::from_path(
+    ///         SbomFormat::CycloneDxJson,
+    ///         PathBuf::from("/path/to/generated_sbom"),
+    ///     )?)
+    ///     .build()
+    /// # }
+    /// ```
+    #[must_use]
+    pub fn sbom<S: Into<Sbom>>(mut self, s: S) -> Self {
+        self.sboms.push(s.into());
+        self
+    }
+
     /// Builds the final [`LayerResult`].
     ///
     /// This method returns the [`LayerResult`] wrapped in a [`Result`] even though its technically
@@ -239,6 +269,7 @@ impl<M> LayerResultBuilder<M> {
             metadata: self.metadata,
             env: self.env,
             exec_d_programs: self.exec_d_programs,
+            sboms: self.sboms,
         }
     }
 }

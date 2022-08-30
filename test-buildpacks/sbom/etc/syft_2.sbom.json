@@ -1,0 +1,172 @@
+{
+ "artifacts": [
+  {
+   "id": "9384c415ef79d6b1",
+   "name": "rust-sbom-test",
+   "version": "0.1.0",
+   "type": "rust-crate",
+   "foundBy": "rust-cargo-lock-cataloger",
+   "locations": [
+    {
+     "path": "/Users/manuel.fuchs/projects/rust-sbom-test/Cargo.lock"
+    }
+   ],
+   "licenses": [],
+   "language": "rust",
+   "cpes": [
+    "cpe:2.3:a:rust-sbom-test:rust-sbom-test:0.1.0:*:*:*:*:*:*:*",
+    "cpe:2.3:a:rust-sbom-test:rust_sbom_test:0.1.0:*:*:*:*:*:*:*",
+    "cpe:2.3:a:rust_sbom_test:rust-sbom-test:0.1.0:*:*:*:*:*:*:*",
+    "cpe:2.3:a:rust_sbom_test:rust_sbom_test:0.1.0:*:*:*:*:*:*:*",
+    "cpe:2.3:a:rust-sbom:rust-sbom-test:0.1.0:*:*:*:*:*:*:*",
+    "cpe:2.3:a:rust-sbom:rust_sbom_test:0.1.0:*:*:*:*:*:*:*",
+    "cpe:2.3:a:rust_sbom:rust-sbom-test:0.1.0:*:*:*:*:*:*:*",
+    "cpe:2.3:a:rust_sbom:rust_sbom_test:0.1.0:*:*:*:*:*:*:*",
+    "cpe:2.3:a:rust:rust-sbom-test:0.1.0:*:*:*:*:*:*:*",
+    "cpe:2.3:a:rust:rust_sbom_test:0.1.0:*:*:*:*:*:*:*"
+   ],
+   "purl": "pkg:cargo/rust-sbom-test@0.1.0",
+   "metadataType": "RustCargoPackageMetadata",
+   "metadata": {
+    "name": "rust-sbom-test",
+    "version": "0.1.0",
+    "source": "",
+    "checksum": "",
+    "dependencies": [
+     "serde"
+    ]
+   }
+  },
+  {
+   "id": "904532b9d2584348",
+   "name": "serde",
+   "version": "1.0.144",
+   "type": "rust-crate",
+   "foundBy": "rust-cargo-lock-cataloger",
+   "locations": [
+    {
+     "path": "/Users/manuel.fuchs/projects/rust-sbom-test/Cargo.lock"
+    }
+   ],
+   "licenses": [],
+   "language": "rust",
+   "cpes": [
+    "cpe:2.3:a:serde:serde:1.0.144:*:*:*:*:*:*:*"
+   ],
+   "purl": "pkg:cargo/serde@1.0.144",
+   "metadataType": "RustCargoPackageMetadata",
+   "metadata": {
+    "name": "serde",
+    "version": "1.0.144",
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "checksum": "0f747710de3dcd43b88c9168773254e809d8ddbdf9653b84e2554ab219f17860",
+    "dependencies": []
+   }
+  }
+ ],
+ "artifactRelationships": [],
+ "source": {
+  "type": "file",
+  "target": "Cargo.lock"
+ },
+ "distro": {},
+ "descriptor": {
+  "name": "syft",
+  "version": "0.54.0",
+  "configuration": {
+   "configPath": "",
+   "verbosity": 0,
+   "quiet": false,
+   "output": [
+    "json"
+   ],
+   "output-template-path": "",
+   "file": "",
+   "check-for-app-update": true,
+   "anchore": {
+    "host": "",
+    "path": "",
+    "dockerfile": "",
+    "overwrite-existing-image": false,
+    "import-timeout": 30
+   },
+   "dev": {
+    "profile-cpu": false,
+    "profile-mem": false
+   },
+   "log": {
+    "structured": false,
+    "level": "warning",
+    "file-location": ""
+   },
+   "catalogers": null,
+   "package": {
+    "cataloger": {
+     "enabled": true,
+     "scope": "Squashed"
+    },
+    "search-unindexed-archives": false,
+    "search-indexed-archives": true
+   },
+   "file-metadata": {
+    "cataloger": {
+     "enabled": false,
+     "scope": "Squashed"
+    },
+    "digests": [
+     "sha256"
+    ]
+   },
+   "file-classification": {
+    "cataloger": {
+     "enabled": false,
+     "scope": "Squashed"
+    }
+   },
+   "file-contents": {
+    "cataloger": {
+     "enabled": false,
+     "scope": "Squashed"
+    },
+    "skip-files-above-size": 1048576,
+    "globs": []
+   },
+   "secrets": {
+    "cataloger": {
+     "enabled": false,
+     "scope": "AllLayers"
+    },
+    "additional-patterns": {},
+    "exclude-pattern-names": [],
+    "reveal-values": false,
+    "skip-files-above-size": 1048576
+   },
+   "registry": {
+    "insecure-skip-tls-verify": false,
+    "insecure-use-http": false,
+    "auth": []
+   },
+   "exclude": [],
+   "attest": {
+    "key": "",
+    "cert": "",
+    "noUpload": false,
+    "force": false,
+    "recursive": false,
+    "replace": false,
+    "fulcioUrl": "https://fulcio.sigstore.dev",
+    "fulcio_identity_token": "",
+    "insecure_skip_verify": false,
+    "rekorUrl": "https://rekor.sigstore.dev",
+    "oidcIssuer": "https://oauth2.sigstore.dev/auth",
+    "oidcClientId": "sigstore",
+    "OIDCRedirectURL": ""
+   },
+   "platform": ""
+  }
+ },
+ "schema": {
+  "version": "3.3.2",
+  "url": "https://raw.githubusercontent.com/anchore/syft/main/schema/json/schema-3.3.2.json"
+ }
+}

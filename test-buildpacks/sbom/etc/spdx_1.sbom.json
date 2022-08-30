@@ -1,0 +1,360 @@
+{
+ "SPDXID": "SPDXRef-DOCUMENT",
+ "name": "Cargo.lock",
+ "spdxVersion": "SPDX-2.2",
+ "creationInfo": {
+  "created": "2022-08-23T12:57:33.335675Z",
+  "creators": [
+   "Organization: Anchore, Inc",
+   "Tool: syft-0.54.0"
+  ],
+  "licenseListVersion": "3.18"
+ },
+ "dataLicense": "CC0-1.0",
+ "documentNamespace": "https://anchore.com/syft/file/Cargo.lock-d05c406a-0f36-4941-b71f-f8ae2579c7a9",
+ "packages": [
+  {
+   "SPDXID": "SPDXRef-97dc71790e500d1c",
+   "name": "cfg-if",
+   "licenseConcluded": "NONE",
+   "downloadLocation": "NOASSERTION",
+   "externalRefs": [
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:cfg-if:cfg-if:1.0.0:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:cfg-if:cfg_if:1.0.0:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:cfg_if:cfg-if:1.0.0:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:cfg_if:cfg_if:1.0.0:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:cfg:cfg-if:1.0.0:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:cfg:cfg_if:1.0.0:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "PACKAGE_MANAGER",
+     "referenceLocator": "pkg:cargo/cfg-if@1.0.0",
+     "referenceType": "purl"
+    }
+   ],
+   "filesAnalyzed": false,
+   "licenseDeclared": "NONE",
+   "sourceInfo": "acquired package info from rust cargo manifest: /Users/manuel.fuchs/projects/rust-sbom-test/Cargo.lock",
+   "versionInfo": "1.0.0"
+  },
+  {
+   "SPDXID": "SPDXRef-f34f7918add79842",
+   "name": "getrandom",
+   "licenseConcluded": "NONE",
+   "downloadLocation": "NOASSERTION",
+   "externalRefs": [
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:getrandom:getrandom:0.2.7:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "PACKAGE_MANAGER",
+     "referenceLocator": "pkg:cargo/getrandom@0.2.7",
+     "referenceType": "purl"
+    }
+   ],
+   "filesAnalyzed": false,
+   "licenseDeclared": "NONE",
+   "sourceInfo": "acquired package info from rust cargo manifest: /Users/manuel.fuchs/projects/rust-sbom-test/Cargo.lock",
+   "versionInfo": "0.2.7"
+  },
+  {
+   "SPDXID": "SPDXRef-7f676a064ff67f42",
+   "name": "libc",
+   "licenseConcluded": "NONE",
+   "downloadLocation": "NOASSERTION",
+   "externalRefs": [
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:libc:libc:0.2.132:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "PACKAGE_MANAGER",
+     "referenceLocator": "pkg:cargo/libc@0.2.132",
+     "referenceType": "purl"
+    }
+   ],
+   "filesAnalyzed": false,
+   "licenseDeclared": "NONE",
+   "sourceInfo": "acquired package info from rust cargo manifest: /Users/manuel.fuchs/projects/rust-sbom-test/Cargo.lock",
+   "versionInfo": "0.2.132"
+  },
+  {
+   "SPDXID": "SPDXRef-4acb3e2c7bd08a7f",
+   "name": "ppv-lite86",
+   "licenseConcluded": "NONE",
+   "downloadLocation": "NOASSERTION",
+   "externalRefs": [
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:ppv-lite86:ppv-lite86:0.2.16:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:ppv-lite86:ppv_lite86:0.2.16:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:ppv_lite86:ppv-lite86:0.2.16:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:ppv_lite86:ppv_lite86:0.2.16:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:ppv:ppv-lite86:0.2.16:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:ppv:ppv_lite86:0.2.16:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "PACKAGE_MANAGER",
+     "referenceLocator": "pkg:cargo/ppv-lite86@0.2.16",
+     "referenceType": "purl"
+    }
+   ],
+   "filesAnalyzed": false,
+   "licenseDeclared": "NONE",
+   "sourceInfo": "acquired package info from rust cargo manifest: /Users/manuel.fuchs/projects/rust-sbom-test/Cargo.lock",
+   "versionInfo": "0.2.16"
+  },
+  {
+   "SPDXID": "SPDXRef-882ff94a9e9de281",
+   "name": "rand",
+   "licenseConcluded": "NONE",
+   "downloadLocation": "NOASSERTION",
+   "externalRefs": [
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rand:rand:0.8.5:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "PACKAGE_MANAGER",
+     "referenceLocator": "pkg:cargo/rand@0.8.5",
+     "referenceType": "purl"
+    }
+   ],
+   "filesAnalyzed": false,
+   "licenseDeclared": "NONE",
+   "sourceInfo": "acquired package info from rust cargo manifest: /Users/manuel.fuchs/projects/rust-sbom-test/Cargo.lock",
+   "versionInfo": "0.8.5"
+  },
+  {
+   "SPDXID": "SPDXRef-1790a38fa8063a13",
+   "name": "rand_chacha",
+   "licenseConcluded": "NONE",
+   "downloadLocation": "NOASSERTION",
+   "externalRefs": [
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rand-chacha:rand-chacha:0.3.1:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rand-chacha:rand_chacha:0.3.1:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rand_chacha:rand-chacha:0.3.1:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rand_chacha:rand_chacha:0.3.1:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rand:rand-chacha:0.3.1:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rand:rand_chacha:0.3.1:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "PACKAGE_MANAGER",
+     "referenceLocator": "pkg:cargo/rand_chacha@0.3.1",
+     "referenceType": "purl"
+    }
+   ],
+   "filesAnalyzed": false,
+   "licenseDeclared": "NONE",
+   "sourceInfo": "acquired package info from rust cargo manifest: /Users/manuel.fuchs/projects/rust-sbom-test/Cargo.lock",
+   "versionInfo": "0.3.1"
+  },
+  {
+   "SPDXID": "SPDXRef-c6225b9129fa815a",
+   "name": "rand_core",
+   "licenseConcluded": "NONE",
+   "downloadLocation": "NOASSERTION",
+   "externalRefs": [
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rand-core:rand-core:0.6.3:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rand-core:rand_core:0.6.3:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rand_core:rand-core:0.6.3:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rand_core:rand_core:0.6.3:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rand:rand-core:0.6.3:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rand:rand_core:0.6.3:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "PACKAGE_MANAGER",
+     "referenceLocator": "pkg:cargo/rand_core@0.6.3",
+     "referenceType": "purl"
+    }
+   ],
+   "filesAnalyzed": false,
+   "licenseDeclared": "NONE",
+   "sourceInfo": "acquired package info from rust cargo manifest: /Users/manuel.fuchs/projects/rust-sbom-test/Cargo.lock",
+   "versionInfo": "0.6.3"
+  },
+  {
+   "SPDXID": "SPDXRef-5a2a0e1b70a26840",
+   "name": "rust-sbom-test",
+   "licenseConcluded": "NONE",
+   "downloadLocation": "NOASSERTION",
+   "externalRefs": [
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rust-sbom-test:rust-sbom-test:0.1.0:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rust-sbom-test:rust_sbom_test:0.1.0:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rust_sbom_test:rust-sbom-test:0.1.0:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rust_sbom_test:rust_sbom_test:0.1.0:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rust-sbom:rust-sbom-test:0.1.0:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rust-sbom:rust_sbom_test:0.1.0:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rust_sbom:rust-sbom-test:0.1.0:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rust_sbom:rust_sbom_test:0.1.0:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rust:rust-sbom-test:0.1.0:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:rust:rust_sbom_test:0.1.0:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "PACKAGE_MANAGER",
+     "referenceLocator": "pkg:cargo/rust-sbom-test@0.1.0",
+     "referenceType": "purl"
+    }
+   ],
+   "filesAnalyzed": false,
+   "licenseDeclared": "NONE",
+   "sourceInfo": "acquired package info from rust cargo manifest: /Users/manuel.fuchs/projects/rust-sbom-test/Cargo.lock",
+   "versionInfo": "0.1.0"
+  },
+  {
+   "SPDXID": "SPDXRef-a026e27ee58d2b0e",
+   "name": "wasi",
+   "licenseConcluded": "NONE",
+   "downloadLocation": "NOASSERTION",
+   "externalRefs": [
+    {
+     "referenceCategory": "SECURITY",
+     "referenceLocator": "cpe:2.3:a:wasi:wasi:0.11.0\\+wasi-snapshot-preview1:*:*:*:*:*:*:*",
+     "referenceType": "cpe23Type"
+    },
+    {
+     "referenceCategory": "PACKAGE_MANAGER",
+     "referenceLocator": "pkg:cargo/wasi@0.11.0+wasi-snapshot-preview1",
+     "referenceType": "purl"
+    }
+   ],
+   "filesAnalyzed": false,
+   "licenseDeclared": "NONE",
+   "sourceInfo": "acquired package info from rust cargo manifest: /Users/manuel.fuchs/projects/rust-sbom-test/Cargo.lock",
+   "versionInfo": "0.11.0+wasi-snapshot-preview1"
+  }
+ ]
+}

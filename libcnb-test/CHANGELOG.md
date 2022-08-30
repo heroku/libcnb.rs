@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Add `TestContext::download_sbom_files` to allow testing of SBOM logic. ([#489](https://github.com/heroku/libcnb.rs/pull/489))
+
 ## [0.6.0] 2022-07-21
 
 - Overhaul the crate README/docs, to improve the learning/onboarding UX. ([#478](https://github.com/heroku/libcnb.rs/pull/478))

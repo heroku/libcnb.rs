@@ -12,6 +12,7 @@ pub mod exec_d;
 pub mod generic;
 pub mod layer;
 pub mod layer_env;
+pub mod sbom;
 
 // Internals that need to be public for macros
 #[doc(hidden)]
@@ -38,7 +39,7 @@ pub use toml_file::*;
 pub use libcnb_data as data;
 
 const LIBCNB_SUPPORTED_BUILDPACK_API: data::buildpack::BuildpackApi =
-    data::buildpack::BuildpackApi { major: 0, minor: 6 };
+    data::buildpack::BuildpackApi { major: 0, minor: 8 };
 
 /// Generates a main function for the given buildpack.
 ///
