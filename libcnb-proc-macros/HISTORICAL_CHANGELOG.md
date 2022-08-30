@@ -1,6 +1,7 @@
 # Changelog
 
-## [Unreleased]
+This is the historical changelog. It is no longer updated for newer versions. See [CHANGELOG.md](../CHANGELOG.md) in the
+repository root for the new unified changelog that contains changes for all libcnb.rs crates.
 
 ## [0.3.0] 2022-07-14
 

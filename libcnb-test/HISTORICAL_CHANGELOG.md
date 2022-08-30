@@ -1,8 +1,7 @@
 # Changelog
 
-## [Unreleased]
-
-- Add `TestContext::download_sbom_files` to allow testing of SBOM logic. ([#489](https://github.com/heroku/libcnb.rs/pull/489))
+This is the historical changelog. It is no longer updated for newer versions. See [CHANGELOG.md](../CHANGELOG.md) in the
+repository root for the new unified changelog that contains changes for all libcnb.rs crates.
 
 ## [0.6.0] 2022-07-21
 
@@ -23,7 +22,7 @@
 - Add rustdocs with code examples for all public APIs. ([#441](https://github.com/heroku/libcnb.rs/pull/441))
 - Fix rustdocs for `LogOutput`. ([#440](https://github.com/heroku/libcnb.rs/pull/440))
 - Increase minimum supported Rust version from 1.58 to 1.59. ([#445](https://github.com/heroku/libcnb.rs/pull/445))
-- Update `libcnb-package` from `0.1.2` to `0.2.0`. Of note, buildpack binaries are now stripped when packaging to reduce buildpack size, which also speeds up integration tests. See the [libcnb-package changelog](../libcnb-package/CHANGELOG.md#020-2022-07-14). ([#465](https://github.com/heroku/libcnb.rs/pull/465))
+- Update `libcnb-package` from `0.1.2` to `0.2.0`. Of note, buildpack binaries are now stripped when packaging to reduce buildpack size, which also speeds up integration tests. See the [libcnb-package changelog](../libcnb-package/HISTORICAL_CHANGELOG.md#020-2022-07-14). ([#465](https://github.com/heroku/libcnb.rs/pull/465))
 
 ## [0.4.0] 2022-06-24
 
@@ -65,7 +64,7 @@
 - Increase minimum supported Rust version from 1.56 to 1.58. ([#318](https://github.com/heroku/libcnb.rs/pull/318))
 - Add `assert_contains!` macro for easier matching of `pack` output in integration tests. ([#322](https://github.com/heroku/libcnb.rs/pull/322))
 - Fail tests early with a clearer error message, if expected cross-compilation toolchains are not found. ([#347](https://github.com/heroku/libcnb.rs/pull/347))
-- Update `libcnb-cargo` from `0.2.1` to `0.3.0` - see the [libcnb-cargo changelog](../libcnb-cargo/CHANGELOG.md#030-2022-02-28). ([#361](https://github.com/heroku/libcnb.rs/pull/361))
+- Update `libcnb-cargo` from `0.2.1` to `0.3.0` - see the [libcnb-cargo changelog](../libcnb-cargo/HISTORICAL_CHANGELOG.md#030-2022-02-28). ([#361](https://github.com/heroku/libcnb.rs/pull/361))
 
 ## [0.1.1] 2022-02-04
 
