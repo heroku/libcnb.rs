@@ -13,6 +13,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Check that only one version is used across all workspace crates
-        # Exclude crates with version 0.0.0 used by examples and test buildpacks which are part of the workspace too
+        # Crates that are not published to any registry (i.e. examples, test buildpacks) will not be part of this check.
         run: |
-          cargo metadata --no-deps --format-version 1 | jq -e '(.packages | map(select(.version != "0.0.0")) | group_by(.version) | length) == 1'
+          cargo metadata --no-deps --format-version 1 | jq -e '(.packages | map(select(.publish != false and .publish != [])) | group_by(.version) | length) == 1'
