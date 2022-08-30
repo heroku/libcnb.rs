@@ -1,6 +1,6 @@
 [package]
 name = "libcnb-cargo"
-version = "0.5.0"
+version = "0.10.0"
 edition = "2021"
 rust-version = "1.59"
 license = "BSD-3-Clause"
@@ -21,7 +21,7 @@ clap = { version = "3.2.11", default-features = false, features = [
   "std",
   "derive",
 ] }
-libcnb-package = { version = "0.2.0", path = "../libcnb-package" }
+libcnb-package = { version = "0.10.0", path = "../libcnb-package" }
 log = "0.4.17"
 pathdiff = "0.2.1"
 stderrlog = { version = "0.5.3", default-features = false }
