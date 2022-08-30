@@ -187,6 +187,7 @@ impl ProcessBuilder {
     /// * No arguments to the process
     /// * `direct` is `false`
     /// * `default` is `false`
+    /// * `working_directory` will be `WorkingDirectory::App`.
     pub fn new(r#type: ProcessType, command: impl Into<String>) -> Self {
         Self {
             process: Process {
