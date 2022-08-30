@@ -271,8 +271,9 @@ pub struct SbomFiles {
 ///
 /// Not to be confused with [`libcnb_data::sbom::SbomFormat`].
 pub enum SbomType {
+    /// Launch SBOM
     Launch,
-    /// SBOM of a specific layer.
+    /// Layer SBOM
     Layer(LayerName),
 }
 
