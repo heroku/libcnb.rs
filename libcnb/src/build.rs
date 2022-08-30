@@ -200,8 +200,11 @@ impl BuildResultBuilder {
 
     /// Adds a build SBOM to the build result.
     ///
-    /// Entries in this SBOM represent materials in the build container(sic!) for auditing purposes.
+    /// Entries in this SBOM represent materials in the build container for auditing purposes.
     /// This function can be called multiple times to add SBOMs in different formats.
+    ///
+    /// Please note that these SBOMs are not added to the resulting image, they are purely for
+    /// auditing the build container.
     pub fn build_sbom(mut self, sbom: Sbom) -> Self {
         self.build_sboms.push(sbom);
         self
