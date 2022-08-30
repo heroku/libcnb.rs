@@ -1,0 +1,18 @@
+name: Check Versions
+
+on:
+  # Only perform branch builds for `main`, to avoid duplicate builds on PRs.
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  check-versions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check that only one version is used across all workspace crates
+        # Exclude crates with version 0.0.0 used by examples and test buildpacks which are part of the workspace too
+        run: |
+          cargo metadata --no-deps --format-version 1 | jq -e '(.packages | map(select(.version != "0.0.0")) | group_by(.version) | length) == 1'
