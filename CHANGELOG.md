@@ -6,6 +6,8 @@ separate changelogs for each crate were used. If you need to refer to these old 
 
 ## [Unreleased]
 
+## [0.10.0] 2022-08-31
+
 Highlight of this release is the bump to
 [Buildpack API 0.8](https://github.com/buildpacks/spec/releases/tag/buildpack%2Fv0.8) which brings support for SBOM to
 libcnb.rs. This is also the first release where all libcnb.rs crates are released at the same time and with the same
