@@ -1,6 +1,6 @@
 [package]
 name = "libcnb"
-version = "0.9.0"
+version = "0.10.0"
 edition = "2021"
 rust-version = "1.59"
 license = "BSD-3-Clause"
@@ -14,8 +14,8 @@ include = ["src/**/*", "../LICENSE", "../README.md"]
 [dependencies]
 anyhow = { version = "1.0.58", optional = true }
 cyclonedx-bom = { version = "0.3.2", optional = true }
-libcnb-data = { path = "../libcnb-data", version = "0.8.0" }
-libcnb-proc-macros = { version = "0.3.0", path = "../libcnb-proc-macros" }
+libcnb-data = { version = "0.10.0", path = "../libcnb-data" }
+libcnb-proc-macros = { version = "0.10.0", path = "../libcnb-proc-macros" }
 serde = { version = "1.0.139", features = ["derive"] }
 stacker = "0.1.15"
 thiserror = "1.0.31"

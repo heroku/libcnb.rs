@@ -1,22 +1,14 @@
 # Changelog
 
-## [Unreleased]
-
-- Replace builder style functions from `Launch` with a dedicated `LaunchBuilder` to be more consistent with other builders in the library. Additionally, all fields of `Launch` can now be modified via the builder pattern. ([#487](https://github.com/heroku/libcnb.rs/pull/487))
-- Rename `paths` field in `launch::Slice` to `path_globs` and add docs to make it clearer that these strings are Go standard library globs. ([#487](https://github.com/heroku/libcnb.rs/pull/487))
-- Remove support for legacy BOM. Remove `Launch::bom`, `Build::bom`, `bom::Bom`, `bom::Entry`. ([#489](https://github.com/heroku/libcnb.rs/pull/489))
-- Add `sbom::SbomFormat`, describing supported SBOM formats. ([#489](https://github.com/heroku/libcnb.rs/pull/489))
-- Add `Buildpack::sbom_formats` field. ([#489](https://github.com/heroku/libcnb.rs/pull/489))
-- In accordance to the CNB spec, `BuildpackId` no longer permits `sbom` as a buildpack id. ([#489](https://github.com/heroku/libcnb.rs/pull/489))
-- Fix `BuildpackApi` to use `u64` instead of `u32` for major and minor version parts. ([#489](https://github.com/heroku/libcnb.rs/pull/489))
-- Add support for setting a working directory for launch processes. ([#489](https://github.com/heroku/libcnb.rs/pull/489))
+This is the historical changelog. It is no longer updated for newer versions. See [CHANGELOG.md](../CHANGELOG.md) in the
+repository root for the new unified changelog that contains changes for all libcnb.rs crates.
 
 ## [0.8.0] 2022-07-14
 
 - Disable `fancy-regex` default features (such as unused unicode support) to reduce buildpack binary size. ([#439](https://github.com/heroku/libcnb.rs/pull/439))
 - Add a crate `README.md` and use it as the root module's rustdocs, so that all of the crate's documentation can be seen in one place on `docs.rs`. ([#458](https://github.com/heroku/libcnb.rs/pull/458) and [#460](https://github.com/heroku/libcnb.rs/pull/460))
 - Increase minimum supported Rust version from 1.58 to 1.59. ([#445](https://github.com/heroku/libcnb.rs/pull/445))
-- Update `libcnb-proc-macros` from `0.2.2` to `0.3.0` - see the [libcnb-proc-macros changelog](../libcnb-proc-macros/CHANGELOG.md#030-2022-07-14). ([#465](https://github.com/heroku/libcnb.rs/pull/465))
+- Update `libcnb-proc-macros` from `0.2.2` to `0.3.0` - see the [libcnb-proc-macros changelog](../libcnb-proc-macros/HISTORICAL_CHANGELOG.md#030-2022-07-14). ([#465](https://github.com/heroku/libcnb.rs/pull/465))
 
 # [0.7.0] 2022-06-24
 
@@ -37,7 +29,7 @@
 - Add `exec_d` module with types representing the output of an `exec.d` program. ([#324](https://github.com/heroku/libcnb.rs/pull/324))
 - Increase minimum supported Rust version from 1.56 to 1.58. ([#318](https://github.com/heroku/libcnb.rs/pull/318))
 - Adjust newtype generated compile-time validation macros so that they don't also perform redundant validation at runtime. In cases where only compile-time validation is being performed (for example `exec.d` scripts), this results in a significant reduction in binary size. ([#331](https://github.com/heroku/libcnb.rs/pull/331))
-- Update `libcnb-proc-macros` from `0.1.1` to `0.2.0` - see the [libcnb-proc-macros changelog](../libcnb-proc-macros/CHANGELOG.md#020-2022-02-28). ([#361](https://github.com/heroku/libcnb.rs/pull/361))
+- Update `libcnb-proc-macros` from `0.1.1` to `0.2.0` - see the [libcnb-proc-macros changelog](../libcnb-proc-macros/HISTORICAL_CHANGELOG.md#020-2022-02-28). ([#361](https://github.com/heroku/libcnb.rs/pull/361))
 
 ## [0.4.0] 2022-01-14
 
@@ -52,7 +44,7 @@
 - `Launch` and `Process` can now be deserialized when optional fields are missing, and omit default values when serializing. ([#243](https://github.com/heroku/libcnb.rs/pull/243) and [#265](https://github.com/heroku/libcnb.rs/pull/265))
 - `Process::new` has been replaced by `ProcessBuilder`. ([#265](https://github.com/heroku/libcnb.rs/pull/265))
 - Bump external dependency versions. ([#233](https://github.com/heroku/libcnb.rs/pull/233) and [#275](https://github.com/heroku/libcnb.rs/pull/275))
-- Update `libcnb-proc-macros` from `0.1.0` to `0.1.1` - see the [libcnb-proc-macros changelog](../libcnb-proc-macros/CHANGELOG.md#011-2022-01-14). ([#276](https://github.com/heroku/libcnb.rs/pull/276))
+- Update `libcnb-proc-macros` from `0.1.0` to `0.1.1` - see the [libcnb-proc-macros changelog](../libcnb-proc-macros/HISTORICAL_CHANGELOG.md#011-2022-01-14). ([#276](https://github.com/heroku/libcnb.rs/pull/276))
 
 ## [0.3.0] 2021-12-08
 
