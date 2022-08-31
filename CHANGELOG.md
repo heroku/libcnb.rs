@@ -11,7 +11,7 @@ Highlight of this release is the bump to
 libcnb.rs. This is also the first release where all libcnb.rs crates are released at the same time and with the same
 version number. See the changelog below for other changes.
 
-### Changes
+### Changed
 
 - libcnb.rs now targets [Buildpack API 0.8](https://github.com/buildpacks/spec/releases/tag/buildpack%2Fv0.8). Buildpacks need to upgrade the `api` key to `0.8` in their `buildpack.toml`. ([#489](https://github.com/heroku/libcnb.rs/pull/489))
 - In accordance to the CNB specification `>=0.7`, `BuildpackId` no longer permits `sbom` as a buildpack id. ([#489](https://github.com/heroku/libcnb.rs/pull/489))
