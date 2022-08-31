@@ -14,7 +14,7 @@
 #[macro_export]
 macro_rules! assert_contains {
     ($left:expr, $right:expr $(,)?) => {{
-        if !$left.contains($right) {
+        if !(&$left).contains(&$right) {
             ::std::panic!(
                 r#"assertion failed: `(left contains right)`
 left (unescaped):
@@ -30,7 +30,7 @@ right: `{:?}`"#,
     }};
 
     ($left:expr, $right:expr, $($arg:tt)+) => {{
-        if !$left.contains($right) {
+        if !(&$left).contains(&$right) {
             ::std::panic!(
                 r#"assertion failed: `(left contains right)`
 left (unescaped):
@@ -63,7 +63,7 @@ right: `{:?}`: {}"#,
 #[macro_export]
 macro_rules! assert_not_contains {
     ($left:expr, $right:expr $(,)?) => {{
-        if $left.contains($right) {
+        if (&$left).contains(&$right) {
             ::std::panic!(
                 r#"assertion failed: `(left does not contain right)`
 left (unescaped):
@@ -79,7 +79,7 @@ right: `{:?}`"#,
     }};
 
     ($left:expr, $right:expr, $($arg:tt)+) => {{
-        if $left.contains($right) {
+        if (&$left).contains(&$right) {
             ::std::panic!(
                 r#"assertion failed: `(left does not contain right)`
 left (unescaped):
@@ -149,6 +149,13 @@ mod tests {
     }
 
     #[test]
+    fn contains_simple_with_string() {
+        assert_contains!("Hello World!", String::from("World"));
+        assert_contains!(String::from("Hello World!"), String::from("World"));
+        assert_contains!(String::from("Hello World!"), "World");
+    }
+
+    #[test]
     fn contains_simple_with_args() {
         assert_contains!("Hello World!", "World", "World must be greeted!");
     }
@@ -211,6 +218,13 @@ right: `\"Eggs\"`: We need eggs!")]
     #[test]
     fn not_contains_simple() {
         assert_not_contains!("Hello World!", "Bahamas");
+    }
+
+    #[test]
+    fn not_contains_simple_with_string() {
+        assert_not_contains!("Hello World!", String::from("Bahamas"));
+        assert_not_contains!(String::from("Hello World!"), String::from("Bahamas"));
+        assert_not_contains!(String::from("Hello World!"), "Bahamas");
     }
 
     #[test]
@@ -280,6 +294,11 @@ right: `\"Eggs\"`: We must not have eggs!")]
     #[test]
     fn empty_simple() {
         assert_empty!("");
+    }
+
+    #[test]
+    fn empty_simple_with_string() {
+        assert_empty!(String::from(""));
     }
 
     #[test]
