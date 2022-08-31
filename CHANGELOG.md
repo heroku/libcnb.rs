@@ -23,6 +23,7 @@ version number. See the changelog below for other changes.
 
 - Fix `BuildpackApi` to use `u64` instead of `u32` for major and minor version parts. ([#489](https://github.com/heroku/libcnb.rs/pull/489))
 - Fix permission issues during layer handling when the layer contains read-only directories. ([#488](https://github.com/heroku/libcnb.rs/pull/488))
+- `assert_contains` and `assert_not_contains` macros can now be used with `std::string::String` values. ([#493](https://github.com/heroku/libcnb.rs/pull/493))
 
 ### Added
 
