@@ -25,4 +25,5 @@ easier to gauge cross-crate compatibility.
    4. `cargo publish -p libcnb-cargo`
    5. `cargo publish -p libcnb-test`
    6. `cargo publish -p libcnb`
+   7. `cargo publish -p libcnb-buildpack-commons`
 5. Create a GitHub release from the tag created earlier. Copy the contents for the release in [CHANGELOG.md](./CHANGELOG.md) for the release description.
