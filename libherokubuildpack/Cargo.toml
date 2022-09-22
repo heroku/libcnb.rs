@@ -11,6 +11,9 @@ documentation = "https://docs.rs/libherokubuildpack"
 readme = "./README.md"
 include = ["src/**/*", "../LICENSE", "../README.md"]
 
+[package.metadata.docs.rs]
+all-features = true
+
 [features]
 default = ["digest", "error", "log", "tar", "toml"]
 download = ["dep:ureq", "dep:thiserror"]
