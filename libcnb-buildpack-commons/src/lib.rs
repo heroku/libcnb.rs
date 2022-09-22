@@ -1,6 +1,24 @@
 //! Opinionated common code for buildpacks implemented with libcnb.rs
 //!
 //! Contains common helpers and functionality that is not present in the more generic libcnb.rs library.
+//!
+//! # Crate Features
+//!
+//! * **download** -
+//!   Enables helpers to download files over HTTP.
+//! * **digest** -
+//!   Enables helpers to create checksums of files.
+//! * **error** -
+//!   Enables helpers to achieve consistent error logging.
+//! * **log** -
+//!   Enables helpers for logging.
+//! * **tar** -
+//!   Enables helpers for working with tarballs.
+//! * **toml** -
+//!   Enables helpers for working with TOML data.
+//! * **fs** -
+//!   Enables helpers for filesystem related tasks.
+//!
 
 // Enable rustc and Clippy lints that are disabled by default.
 // https://doc.rust-lang.org/rustc/lints/listing/allowed-by-default.html#unused-crate-dependencies
