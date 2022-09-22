@@ -2,7 +2,7 @@
 name = "libcnb-proc-macros"
 version = "0.10.0"
 edition = "2021"
-rust-version = "1.59"
+rust-version = "1.60"
 license = "BSD-3-Clause"
 description = "Procedural macros used within libcnb.rs"
 repository = "https://github.com/heroku/libcnb.rs/tree/main/libcnb-proc-macros"

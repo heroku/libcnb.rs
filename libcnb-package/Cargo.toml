@@ -2,7 +2,7 @@
 name = "libcnb-package"
 version = "0.10.0"
 edition = "2021"
-rust-version = "1.59"
+rust-version = "1.60"
 license = "BSD-3-Clause"
 description = "Library for cross-compiling and packaging buildpacks written with libcnb.rs"
 keywords = ["buildpacks", "CNB"]

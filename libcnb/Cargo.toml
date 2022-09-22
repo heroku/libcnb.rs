@@ -2,7 +2,7 @@
 name = "libcnb"
 version = "0.10.0"
 edition = "2021"
-rust-version = "1.59"
+rust-version = "1.60"
 license = "BSD-3-Clause"
 description = "A framework for writing Cloud Native Buildpacks in Rust"
 keywords = ["buildpacks", "CNB"]
