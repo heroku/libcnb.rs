@@ -6,7 +6,7 @@ use std::path::Path;
 ///
 /// # Examples:
 /// ```no_run
-/// use libcnb_buildpack_commons::fs::move_directory_contents;
+/// use libherokubuildpack::fs::move_directory_contents;
 /// use std::path::PathBuf;
 ///
 /// move_directory_contents(PathBuf::from("foo"), PathBuf::from("bar")).unwrap();

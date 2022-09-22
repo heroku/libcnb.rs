@@ -4,12 +4,12 @@ members = [
     "examples/execd",
     "examples/ruby-sample",
     "libcnb",
-    "libcnb-buildpack-commons",
     "libcnb-cargo",
     "libcnb-data",
     "libcnb-package",
     "libcnb-proc-macros",
     "libcnb-test",
+    "libherokubuildpack",
     "test-buildpacks/readonly-layer-files",
     "test-buildpacks/sbom"
 ]

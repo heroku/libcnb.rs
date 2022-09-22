@@ -1,6 +1,8 @@
-# libcnb-buildpack-commons &emsp; [![Docs]][docs.rs] [![Latest Version]][crates.io] [![MSRV]][install-rust]
+# libherokubuildpack &emsp; [![Docs]][docs.rs] [![Latest Version]][crates.io] [![MSRV]][install-rust]
 
-Common utilities for buildpacks written with [libcnb.rs](https://github.com/heroku/libcnb.rs).
+Common utilities for buildpacks written with [libcnb.rs](https://github.com/heroku/libcnb.rs). Originally designed to be
+only used for official Heroku buildpacks. It was moved into the libcnb.rs repository as an incubator for utilities that
+might find their way into libcnb.rs proper.
 
 This crate is optional and not required to write buildpacks with libcnb.rs. It provides helpers that buildpack authors 
 commonly need. Examples are digest generation, filesystem utilities, HTTP download helpers and tarball extraction. 
@@ -27,9 +29,9 @@ The feature names line up with the modules in this crate. All features are enabl
 * **fs** -
   Enables helpers for filesystem related tasks.
 
-[Docs]: https://img.shields.io/docsrs/libcnb-buildpack-commons
-[docs.rs]: https://docs.rs/libcnb-test/latest/libcnb-buildpack-commons/
-[Latest Version]: https://img.shields.io/crates/v/libcnb-buildpack-commons.svg
-[crates.io]: https://crates.io/crates/libcnb-buildpack-commons
+[Docs]: https://img.shields.io/docsrs/libherokubuildpack
+[docs.rs]: https://docs.rs/libcnb-test/latest/libherokubuildpack/
+[Latest Version]: https://img.shields.io/crates/v/libherokubuildpack.svg
+[crates.io]: https://crates.io/crates/libherokubuildpack
 [MSRV]: https://img.shields.io/badge/MSRV-rustc_1.60+-lightgray.svg
 [install-rust]: https://www.rust-lang.org/tools/install

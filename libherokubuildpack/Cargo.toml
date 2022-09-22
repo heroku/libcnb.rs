@@ -1,5 +1,5 @@
 [package]
-name = "libcnb-buildpack-commons"
+name = "libherokubuildpack"
 version = "0.10.0"
 edition = "2021"
 rust-version = "1.60"
@@ -7,8 +7,8 @@ license = "BSD-3-Clause"
 description = "Opinionated common code for buildpacks implemented with libcnb.rs"
 keywords = ["buildpacks", "CNB"]
 repository = "https://github.com/heroku/libcnb.rs"
-documentation = "https://docs.rs/libcnb-buildpack-commons"
-readme = "../README.md"
+documentation = "https://docs.rs/libherokubuildpack"
+readme = "./README.md"
 include = ["src/**/*", "../LICENSE", "../README.md"]
 
 [features]

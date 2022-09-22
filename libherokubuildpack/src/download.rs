@@ -14,8 +14,8 @@ pub enum DownloadError {
 ///
 /// # Examples
 /// ```
-/// use libcnb_buildpack_commons::download::download_file;
-/// use libcnb_buildpack_commons::digest::sha256;
+/// use libherokubuildpack::download::download_file;
+/// use libherokubuildpack::digest::sha256;
 /// use tempfile::tempdir;
 ///
 /// let temp_dir = tempdir().unwrap();

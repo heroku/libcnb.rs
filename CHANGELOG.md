@@ -12,7 +12,7 @@ separate changelogs for each crate were used. If you need to refer to these old 
 
 ### Added
 
-- Add new crate `libcnb-buildpack-commons` with common code that can be useful when implementing buildpacks with libcnb. ([#495](https://github.com/heroku/libcnb.rs/pull/495))
+- Add new crate `libherokubuildpack` with common code that can be useful when implementing buildpacks with libcnb. Originally hosted in a separate, private, repository. Code from `libherokubuildpack` might eventually find its way into libcnb.rs proper. At this point, consider it an incubator. ([#495](https://github.com/heroku/libcnb.rs/pull/495))
 
 ## [0.10.0] 2022-08-31
 

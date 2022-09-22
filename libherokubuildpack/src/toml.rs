@@ -9,7 +9,7 @@ use std::ops::Deref;
 /// Example:
 /// ```
 /// use toml::toml;
-/// use libcnb_buildpack_commons::toml::toml_select_value;
+/// use libherokubuildpack::toml::toml_select_value;
 ///
 /// let toml = toml!{
 ///     [config]

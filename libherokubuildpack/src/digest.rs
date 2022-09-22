@@ -8,7 +8,7 @@ use sha2::{Digest, Sha256};
 ///
 /// # Examples
 /// ```
-/// use libcnb_buildpack_commons::digest::sha256;
+/// use libherokubuildpack::digest::sha256;
 /// use std::fs::write;
 /// use tempfile::tempdir;
 ///

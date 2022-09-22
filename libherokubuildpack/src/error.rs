@@ -14,8 +14,8 @@ use std::fmt::Debug;
 /// use libcnb::Buildpack;
 /// use libcnb::detect::{DetectContext, DetectResult};
 /// use libcnb::generic::{GenericMetadata, GenericPlatform};
-/// use libcnb_buildpack_commons::log::log_error;
-/// use libcnb_buildpack_commons::error::on_error;
+/// use libherokubuildpack::log::log_error;
+/// use libherokubuildpack::error::on_error;
 ///
 /// #[derive(Debug)]
 /// enum FooBuildpackError {
