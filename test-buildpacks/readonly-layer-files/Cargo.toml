@@ -2,7 +2,7 @@
 name = "readonly-layer-files"
 version = "0.0.0"
 edition = "2021"
-rust-version = "1.59"
+rust-version = "1.60"
 publish = false
 
 [dependencies]
