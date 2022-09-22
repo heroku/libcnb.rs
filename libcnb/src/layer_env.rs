@@ -305,8 +305,8 @@ impl LayerEnv {
                     _ => unreachable!("Unexpected Scope in read_from_layer_dir implementation. This is a libcnb implementation error!"),
                 };
 
-                target_delta.insert(ModificationBehavior::Prepend, &name, &path);
-                target_delta.insert(ModificationBehavior::Delimiter, &name, PATH_LIST_SEPARATOR);
+                target_delta.insert(ModificationBehavior::Prepend, name, path);
+                target_delta.insert(ModificationBehavior::Delimiter, name, PATH_LIST_SEPARATOR);
             }
         }
 
@@ -430,36 +430,36 @@ impl LayerEnvDelta {
         for ((modification_behavior, name), value) in &self.entries {
             match modification_behavior {
                 ModificationBehavior::Override => {
-                    result_env.insert(&name, &value);
+                    result_env.insert(name, value);
                 }
                 ModificationBehavior::Default => {
-                    if !result_env.contains_key(&name) {
-                        result_env.insert(&name, &value);
+                    if !result_env.contains_key(name) {
+                        result_env.insert(name, value);
                     }
                 }
                 ModificationBehavior::Append => {
-                    let mut previous_value = result_env.get(&name).unwrap_or_default();
+                    let mut previous_value = result_env.get(name).unwrap_or_default();
 
                     if previous_value.len() > 0 {
-                        previous_value.push(self.delimiter_for(&name));
+                        previous_value.push(self.delimiter_for(name));
                     }
 
-                    previous_value.push(&value);
+                    previous_value.push(value);
 
-                    result_env.insert(&name, previous_value);
+                    result_env.insert(name, previous_value);
                 }
                 ModificationBehavior::Prepend => {
-                    let previous_value = result_env.get(&name).unwrap_or_default();
+                    let previous_value = result_env.get(name).unwrap_or_default();
 
                     let mut new_value = OsString::new();
-                    new_value.push(&value);
+                    new_value.push(value);
 
                     if !previous_value.is_empty() {
-                        new_value.push(self.delimiter_for(&name));
+                        new_value.push(self.delimiter_for(name));
                         new_value.push(previous_value);
                     }
 
-                    result_env.insert(&name, new_value);
+                    result_env.insert(name, new_value);
                 }
                 ModificationBehavior::Delimiter => (),
             };
@@ -562,7 +562,7 @@ impl LayerEnvDelta {
                 #[cfg(target_family = "unix")]
                 {
                     use std::os::unix::ffi::OsStrExt;
-                    fs::write(file_path, &value.as_bytes())?;
+                    fs::write(file_path, value.as_bytes())?;
                 }
 
                 #[cfg(not(target_family = "unix"))]
@@ -765,8 +765,8 @@ mod tests {
 
         let temp_dir = tempdir().unwrap();
 
-        original_delta.write_to_env_dir(&temp_dir.path()).unwrap();
-        let disk_delta = LayerEnvDelta::read_from_env_dir(&temp_dir.path()).unwrap();
+        original_delta.write_to_env_dir(temp_dir.path()).unwrap();
+        let disk_delta = LayerEnvDelta::read_from_env_dir(temp_dir.path()).unwrap();
 
         assert_eq!(original_delta, disk_delta);
     }
@@ -873,7 +873,7 @@ mod tests {
         fs::create_dir_all(layer_dir.join("include")).unwrap();
         fs::create_dir_all(layer_dir.join("pkgconfig")).unwrap();
 
-        let layer_env = LayerEnv::read_from_layer_dir(&layer_dir).unwrap();
+        let layer_env = LayerEnv::read_from_layer_dir(layer_dir).unwrap();
 
         let env = layer_env.apply_to_empty(Scope::Launch);
         assert_eq!(env.get("PATH").unwrap(), layer_dir.join("bin"));
@@ -894,7 +894,7 @@ mod tests {
         fs::create_dir_all(layer_dir.join("include")).unwrap();
         fs::create_dir_all(layer_dir.join("pkgconfig")).unwrap();
 
-        let layer_env = LayerEnv::read_from_layer_dir(&layer_dir).unwrap();
+        let layer_env = LayerEnv::read_from_layer_dir(layer_dir).unwrap();
 
         let env = layer_env.apply_to_empty(Scope::Build);
         assert_eq!(env.get("PATH").unwrap(), layer_dir.join("bin"));

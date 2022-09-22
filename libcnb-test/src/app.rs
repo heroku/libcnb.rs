@@ -86,7 +86,7 @@ mod tests {
                 std::fs::create_dir_all(dir).unwrap();
             }
 
-            std::fs::write(absolute_path, &contents).unwrap();
+            std::fs::write(absolute_path, contents).unwrap();
         }
 
         let temp_app_dir = super::copy_app(source_app_dir.path()).unwrap();

@@ -415,7 +415,7 @@ mod tests {
         )
         .unwrap();
 
-        super::delete_layer(&layers_dir, &layer_name).unwrap();
+        super::delete_layer(layers_dir, &layer_name).unwrap();
 
         assert!(!layer_dir.exists());
         assert!(!layers_dir.join(format!("{layer_name}.toml")).exists());
@@ -439,7 +439,7 @@ mod tests {
         )
         .unwrap();
 
-        super::delete_layer(&layers_dir, &layer_name).unwrap();
+        super::delete_layer(layers_dir, &layer_name).unwrap();
 
         assert!(!layer_dir.exists());
         assert!(!layers_dir.join(format!("{layer_name}.toml")).exists());
@@ -451,7 +451,7 @@ mod tests {
         let temp_dir = tempdir().unwrap();
         let layers_dir = temp_dir.path();
 
-        super::delete_layer(&layers_dir, &layer_name).unwrap();
+        super::delete_layer(layers_dir, &layer_name).unwrap();
     }
 
     #[test]
@@ -466,7 +466,7 @@ mod tests {
         fs::write(&foo_execd_file, "foo-contents").unwrap();
 
         super::write_layer(
-            &layers_dir,
+            layers_dir,
             &layer_name,
             &LayerEnv::new().chainable_insert(
                 Scope::All,
@@ -520,7 +520,7 @@ mod tests {
 
         let execd_file = PathBuf::from("/this/path/should/not/exist/exec_d_binary");
         let write_layer_error = super::write_layer(
-            &layers_dir,
+            layers_dir,
             &layer_name,
             &LayerEnv::new(),
             &LayerContentMetadata {
@@ -565,7 +565,7 @@ mod tests {
         fs::write(&baz_execd_file, "baz-contents").unwrap();
 
         super::write_layer(
-            &layers_dir,
+            layers_dir,
             &layer_name,
             &LayerEnv::new()
                 .chainable_insert(
@@ -596,7 +596,7 @@ mod tests {
         fs::write(layer_dir.join("content.txt"), "Hello World!").unwrap();
 
         super::write_layer(
-            &layers_dir,
+            layers_dir,
             &layer_name,
             &LayerEnv::new().chainable_insert(
                 Scope::All,
@@ -667,7 +667,7 @@ mod tests {
         let layer_dir = layers_dir.join(layer_name.as_str());
 
         super::write_layer(
-            &layers_dir,
+            layers_dir,
             &layer_name,
             &LayerEnv::new(),
             &LayerContentMetadata {
@@ -698,7 +698,7 @@ mod tests {
         fs::write(&foo_execd_file, "foo-contents").unwrap();
 
         super::write_layer(
-            &layers_dir,
+            layers_dir,
             &layer_name,
             &LayerEnv::new(),
             &LayerContentMetadata {
@@ -720,7 +720,7 @@ mod tests {
         );
 
         super::write_layer(
-            &layers_dir,
+            layers_dir,
             &layer_name,
             &LayerEnv::new(),
             &LayerContentMetadata {
@@ -754,7 +754,7 @@ mod tests {
         fs::write(&foo_execd_file, "foo-contents").unwrap();
 
         super::write_layer(
-            &layers_dir,
+            layers_dir,
             &layer_name,
             &LayerEnv::new(),
             &LayerContentMetadata {
@@ -776,7 +776,7 @@ mod tests {
         );
 
         super::write_layer(
-            &layers_dir,
+            layers_dir,
             &layer_name,
             &LayerEnv::new(),
             &LayerContentMetadata {
@@ -831,7 +831,7 @@ mod tests {
         fs::create_dir_all(layer_dir.join("env")).unwrap();
         fs::write(layer_dir.join("env/CUSTOM_ENV"), "CUSTOM_ENV_VALUE").unwrap();
 
-        let layer_data = super::read_layer::<TestLayerMetadata, _>(&layers_dir, &layer_name)
+        let layer_data = super::read_layer::<TestLayerMetadata, _>(layers_dir, &layer_name)
             .unwrap()
             .unwrap();
 
@@ -889,7 +889,7 @@ mod tests {
         )
         .unwrap();
 
-        match super::read_layer::<GenericMetadata, _>(&layers_dir, &layer_name) {
+        match super::read_layer::<GenericMetadata, _>(layers_dir, &layer_name) {
             Err(ReadLayerError::LayerContentMetadataParseError(toml_error)) => {
                 assert_eq!(toml_error.line_col(), Some((1, 18)));
             }
@@ -925,7 +925,7 @@ mod tests {
         )
         .unwrap();
 
-        match super::read_layer::<TestLayerMetadata, _>(&layers_dir, &layer_name) {
+        match super::read_layer::<TestLayerMetadata, _>(layers_dir, &layer_name) {
             Err(ReadLayerError::LayerContentMetadataParseError(toml_error)) => {
                 assert_eq!(toml_error.line_col(), Some((6, 12)));
             }
@@ -942,7 +942,7 @@ mod tests {
 
         fs::create_dir_all(&layer_dir).unwrap();
 
-        match super::read_layer::<GenericMetadata, _>(&layers_dir, &layer_name) {
+        match super::read_layer::<GenericMetadata, _>(layers_dir, &layer_name) {
             Ok(Some(layer_data)) => {
                 assert_eq!(
                     layer_data.content_metadata,
@@ -964,7 +964,7 @@ mod tests {
 
         fs::write(layers_dir.join(format!("{layer_name}.toml")), "").unwrap();
 
-        match super::read_layer::<GenericMetadata, _>(&layers_dir, &layer_name) {
+        match super::read_layer::<GenericMetadata, _>(layers_dir, &layer_name) {
             Ok(None) => {}
             _ => panic!("Expected Ok(None)!"),
         }
@@ -976,7 +976,7 @@ mod tests {
         let temp_dir = tempdir().unwrap();
         let layers_dir = temp_dir.path();
 
-        match super::read_layer::<GenericMetadata, _>(&layers_dir, &layer_name) {
+        match super::read_layer::<GenericMetadata, _>(layers_dir, &layer_name) {
             Ok(None) => {}
             _ => panic!("Expected Ok(None)!"),
         }

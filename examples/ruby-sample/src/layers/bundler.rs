@@ -39,7 +39,7 @@ impl Layer for BundlerLayer {
 
         util::run_simple_command(
             Command::new("gem")
-                .args(&["install", "bundler", "--force"])
+                .args(["install", "bundler", "--force"])
                 .envs(&self.ruby_env),
             RubyBuildpackError::GemInstallBundlerCommandError,
             RubyBuildpackError::GemInstallBundlerUnexpectedExitStatus,
@@ -49,7 +49,7 @@ impl Layer for BundlerLayer {
 
         util::run_simple_command(
             Command::new("bundle")
-                .args(&[
+                .args([
                     "install",
                     "--path",
                     layer_path.to_str().unwrap(),
@@ -93,7 +93,7 @@ impl Layer for BundlerLayer {
 
         util::run_simple_command(
             Command::new("bundle")
-                .args(&["config", "--local", "path", layer.path.to_str().unwrap()])
+                .args(["config", "--local", "path", layer.path.to_str().unwrap()])
                 .envs(&self.ruby_env),
             RubyBuildpackError::BundleConfigCommandError,
             RubyBuildpackError::BundleConfigUnexpectedExitStatus,
@@ -101,7 +101,7 @@ impl Layer for BundlerLayer {
 
         util::run_simple_command(
             Command::new("bundle")
-                .args(&[
+                .args([
                     "config",
                     "--local",
                     "bin",
