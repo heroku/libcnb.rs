@@ -6,7 +6,7 @@ rust-version = "1.60"
 license = "BSD-3-Clause"
 description = "Opinionated common code for buildpacks implemented with libcnb.rs"
 keywords = ["buildpacks", "CNB"]
-repository = "https://github.com/heroku/libcnb.rs"
+repository = "https://github.com/heroku/libcnb.rs/tree/main/libherokubuildpack"
 documentation = "https://docs.rs/libherokubuildpack"
 readme = "./README.md"
 include = ["src/**/*", "../LICENSE", "../README.md"]
@@ -15,7 +15,7 @@ include = ["src/**/*", "../LICENSE", "../README.md"]
 all-features = true
 
 [features]
-default = ["digest", "error", "log", "tar", "toml"]
+default = ["download", "digest", "error", "log", "tar", "toml", "fs"]
 download = ["dep:ureq", "dep:thiserror"]
 digest = ["dep:sha2"]
 error = ["log", "dep:libcnb"]
@@ -25,8 +25,8 @@ toml = ["dep:toml"]
 fs = ["dep:pathdiff"]
 
 [dependencies]
-libcnb = { path = "../libcnb", version = "0.10.0", optional = true }
 flate2 = { version = "1.0.24", optional = true }
+libcnb = { path = "../libcnb", version = "0.10.0", optional = true }
 pathdiff = { version = "0.2.1", optional = true }
 sha2 = { version ="0.10.2", optional = true }
 tar = { version = "0.4.38", optional = true }
