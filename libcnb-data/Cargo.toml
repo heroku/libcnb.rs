@@ -1,9 +1,9 @@
 [package]
 name = "libcnb-data"
-version = "0.10.0"
-edition = "2021"
-rust-version = "1.60"
-license = "BSD-3-Clause"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
 description = "Types for data formats specified in the Cloud Native Buildpack specification, used by libcnb.rs"
 keywords = ["buildpacks", "CNB"]
 repository = "https://github.com/heroku/libcnb.rs/tree/main/libcnb-data"
@@ -13,10 +13,10 @@ include = ["src/**/*", "../LICENSE", "README.md"]
 
 [dependencies]
 fancy-regex = { version = "0.10.0", default-features = false }
-libcnb-proc-macros = { path = "../libcnb-proc-macros", version = "0.10.0" }
+libcnb-proc-macros.workspace = true
 serde = { version = "1.0.139", features = ["derive"] }
-thiserror = "1.0.31"
-toml = "0.5.9"
+thiserror.workspace = true
+toml.workspace = true
 
 [dev-dependencies]
 serde_test = "1.0.139"

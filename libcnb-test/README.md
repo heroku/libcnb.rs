@@ -224,5 +224,5 @@ fn additional_buildpacks() {
 [docs.rs]: https://docs.rs/libcnb-test/latest/libcnb_test/
 [Latest Version]: https://img.shields.io/crates/v/libcnb-test.svg
 [crates.io]: https://crates.io/crates/libcnb-test
-[MSRV]: https://img.shields.io/badge/MSRV-rustc_1.60+-lightgray.svg
+[MSRV]: https://img.shields.io/badge/MSRV-rustc_1.64+-lightgray.svg
 [install-rust]: https://www.rust-lang.org/tools/install

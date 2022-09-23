@@ -1,9 +1,9 @@
 [package]
 name = "libcnb-cargo"
-version = "0.10.0"
-edition = "2021"
-rust-version = "1.60"
-license = "BSD-3-Clause"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
 description = "Cargo command for managing buildpacks written with libcnb.rs"
 keywords = ["buildpacks", "CNB"]
 repository = "https://github.com/heroku/libcnb.rs/tree/main/libcnb-cargo"
@@ -21,7 +21,7 @@ clap = { version = "3.2.11", default-features = false, features = [
   "std",
   "derive",
 ] }
-libcnb-package = { version = "0.10.0", path = "../libcnb-package" }
+libcnb-package.workspace = true
 log = "0.4.17"
 pathdiff = "0.2.1"
 stderrlog = { version = "0.5.3", default-features = false }

@@ -10,5 +10,5 @@ on this crate directly.
 [docs.rs]: https://docs.rs/libcnb-data/latest/libcnb_data/
 [Latest Version]: https://img.shields.io/crates/v/libcnb-data.svg
 [crates.io]: https://crates.io/crates/libcnb-data
-[MSRV]: https://img.shields.io/badge/MSRV-rustc_1.60+-lightgray.svg
+[MSRV]: https://img.shields.io/badge/MSRV-rustc_1.64+-lightgray.svg
 [install-rust]: https://www.rust-lang.org/tools/install
