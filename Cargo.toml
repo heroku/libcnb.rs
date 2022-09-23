@@ -25,3 +25,4 @@ libcnb = { version = "0.10.0", path = "libcnb" }
 libcnb-data = { version = "0.10.0", path = "libcnb-data" }
 libcnb-package = { version = "0.10.0", path = "libcnb-package" }
 libcnb-proc-macros = { version = "0.10.0", path = "libcnb-proc-macros" }
+libcnb-test = { version = "0.10.0", path = "libcnb-test" }
