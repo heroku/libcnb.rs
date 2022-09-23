@@ -6,7 +6,7 @@
 [docs.rs]: https://docs.rs/libcnb/latest/libcnb/
 [Latest Version]: https://img.shields.io/crates/v/libcnb.svg
 [crates.io]: https://crates.io/crates/libcnb
-[MSRV]: https://img.shields.io/badge/MSRV-rustc_1.60+-lightgray.svg
+[MSRV]: https://img.shields.io/badge/MSRV-rustc_1.64+-lightgray.svg
 [install-rust]: https://www.rust-lang.org/tools/install
 
 `libcnb.rs` is a framework for writing [Cloud Native Buildpacks](https://buildpacks.io) in Rust.

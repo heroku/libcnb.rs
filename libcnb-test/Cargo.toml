@@ -1,9 +1,9 @@
 [package]
 name = "libcnb-test"
-version = "0.10.0"
-edition = "2021"
-rust-version = "1.60"
-license = "BSD-3-Clause"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
 description = "An integration testing framework for buildpacks written with libcnb.rs"
 keywords = ["buildpacks", "CNB"]
 repository = "https://github.com/heroku/libcnb.rs/tree/main/libcnb-test"
@@ -16,8 +16,8 @@ bollard = "0.13.0"
 cargo_metadata = "0.15.0"
 fastrand = "1.7.0"
 fs_extra = "1.2.0"
-libcnb-data = { version = "0.10.0", path = "../libcnb-data" }
-libcnb-package = { version = "0.10.0", path = "../libcnb-package" }
+libcnb-data.workspace = true
+libcnb-package.workspace = true
 serde = "1.0.139"
 tempfile = "3.3.0"
 tokio = "1.20.0"

@@ -1,13 +1,13 @@
 [package]
 name = "examples-ruby-sample"
 version = "0.0.0"
-edition = "2021"
-rust-version = "1.60"
+edition.workspace = true
+rust-version.workspace = true
 publish = false
 
 [dependencies]
 flate2 = "1.0.24"
-libcnb = { path = "../../libcnb" }
+libcnb.workspace = true
 serde = "1.0.139"
 sha2 = "0.10.2"
 tar = "0.4.38"
@@ -15,4 +15,4 @@ tempfile = "3.3.0"
 ureq = "2.5.0"
 
 [dev-dependencies]
-libcnb-test = { path = "../../libcnb-test" }
+libcnb-test.workspace = true

@@ -1,9 +1,9 @@
 [package]
 name = "libcnb-proc-macros"
-version = "0.10.0"
-edition = "2021"
-rust-version = "1.60"
-license = "BSD-3-Clause"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
 description = "Procedural macros used within libcnb.rs"
 repository = "https://github.com/heroku/libcnb.rs/tree/main/libcnb-proc-macros"
 documentation = "https://docs.rs/libcnb-proc-macros"

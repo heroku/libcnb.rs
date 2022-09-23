@@ -1,13 +1,13 @@
 [package]
 name = "examples-execd"
 version = "0.0.0"
-edition = "2021"
-rust-version = "1.60"
+edition.workspace = true
+rust-version.workspace = true
 publish = false
 
 [dependencies]
-libcnb = { path = "../../libcnb" }
+libcnb.workspace = true
 fastrand = "1.7.0"
 
 [dev-dependencies]
-libcnb-test = { path = "../../libcnb-test" }
+libcnb-test.workspace = true

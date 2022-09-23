@@ -1,9 +1,9 @@
 [package]
 name = "libcnb-package"
-version = "0.10.0"
-edition = "2021"
-rust-version = "1.60"
-license = "BSD-3-Clause"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
 description = "Library for cross-compiling and packaging buildpacks written with libcnb.rs"
 keywords = ["buildpacks", "CNB"]
 repository = "https://github.com/heroku/libcnb.rs/tree/main/libcnb-package"
@@ -13,6 +13,6 @@ include = ["src/**/*", "../LICENSE", "README.md"]
 
 [dependencies]
 cargo_metadata = "0.15.0"
-libcnb-data = { version = "0.10.0", path = "../libcnb-data" }
+libcnb-data.workspace = true
 toml = "0.5.9"
 which = "4.2.5"
