@@ -14,17 +14,17 @@ include = ["src/**/*", "../LICENSE", "README.md"]
 [dependencies]
 bollard = "0.13.0"
 cargo_metadata = "0.15.0"
-fastrand = "1.7.0"
+fastrand = "1.8.0"
 fs_extra = "1.2.0"
 libcnb-data.workspace = true
 libcnb-package.workspace = true
-serde = "1.0.139"
+serde = "1.0.145"
 tempfile = "3.3.0"
-tokio = "1.20.0"
-tokio-stream = "0.1.9"
+tokio = "1.21.1"
+tokio-stream = "0.1.10"
 
 [dev-dependencies]
-indoc = "1.0.6"
+indoc = "1.0.7"
 ureq = { version = "2.5.0", default-features = false }
 
 [features]

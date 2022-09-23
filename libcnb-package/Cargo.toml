@@ -15,4 +15,4 @@ include = ["src/**/*", "../LICENSE", "README.md"]
 cargo_metadata = "0.15.0"
 libcnb-data.workspace = true
 toml = "0.5.9"
-which = "4.2.5"
+which = "4.3.0"
