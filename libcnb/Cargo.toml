@@ -18,8 +18,8 @@ libcnb-data.workspace = true
 libcnb-proc-macros.workspace = true
 serde = { version = "1.0.139", features = ["derive"] }
 stacker = "0.1.15"
-thiserror.workspace = true
-toml.workspace = true
+thiserror = "1.0.31"
+toml = "0.5.9"
 
 [dev-dependencies]
 fastrand = "1.7.0"

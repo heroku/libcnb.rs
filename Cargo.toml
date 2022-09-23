@@ -24,5 +24,3 @@ license = "BSD-3-Clause"
 libcnb-data = { version = "0.10.0", path = "libcnb-data" }
 libcnb-package = { version = "0.10.0", path = "libcnb-package" }
 libcnb-proc-macros = { version = "0.10.0", path = "libcnb-proc-macros" }
-thiserror = "1.0.31"
-toml = "0.5.9"
