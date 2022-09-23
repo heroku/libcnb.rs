@@ -291,7 +291,7 @@ fn create_then_recreate() {
     // Add a random file to the layer directory between handle_layer calls to assess if the layer is
     // actually recreated without any residue left in the directory
     fs::write(
-        handle_layer_result.path.join(&residue_file_name),
+        handle_layer_result.path.join(residue_file_name),
         "RESIDUE DATA",
     )
     .unwrap();
@@ -353,7 +353,7 @@ fn create_then_recreate() {
         fs::read_to_string(handle_layer_result.path.join(TEST_LAYER_UPDATE_FILE_NAME)).ok();
 
     let residue_file_contents =
-        fs::read_to_string(handle_layer_result.path.join(&residue_file_name)).ok();
+        fs::read_to_string(handle_layer_result.path.join(residue_file_name)).ok();
 
     assert_eq!(
         create_file_contents,
@@ -384,8 +384,8 @@ fn create_then_keep() {
     // Add a random file to the layer directory between handle_layer calls to assess if the layer is
     // kept as-is.
     fs::write(
-        handle_layer_result.path.join(&residue_file_name),
-        &residue_file_data,
+        handle_layer_result.path.join(residue_file_name),
+        residue_file_data,
     )
     .unwrap();
 
@@ -447,7 +447,7 @@ fn create_then_keep() {
         fs::read_to_string(handle_layer_result.path.join(TEST_LAYER_UPDATE_FILE_NAME)).ok();
 
     let residue_file_contents =
-        fs::read_to_string(handle_layer_result.path.join(&residue_file_name)).ok();
+        fs::read_to_string(handle_layer_result.path.join(residue_file_name)).ok();
 
     assert_eq!(
         create_file_contents,

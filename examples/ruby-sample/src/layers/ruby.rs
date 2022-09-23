@@ -38,7 +38,7 @@ impl Layer for RubyLayer {
         )
         .map_err(RubyBuildpackError::RubyDownloadError)?;
 
-        util::untar(ruby_tgz.path(), &layer_path).map_err(RubyBuildpackError::RubyUntarError)?;
+        util::untar(ruby_tgz.path(), layer_path).map_err(RubyBuildpackError::RubyUntarError)?;
 
         LayerResultBuilder::new(GenericMetadata::default())
             .env(

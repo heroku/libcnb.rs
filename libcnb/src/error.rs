@@ -11,7 +11,7 @@ pub type Result<T, E> = std::result::Result<T, Error<E>>;
 
 /// An error that occurred during buildpack execution.
 #[derive(thiserror::Error, Debug)]
-pub enum Error<E: Debug> {
+pub enum Error<E> {
     #[error("HandleLayer error: {0}")]
     HandleLayerError(#[from] HandleLayerError),
 
