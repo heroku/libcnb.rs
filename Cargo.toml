@@ -1,14 +1,15 @@
 [workspace]
 members = [
+    "examples/basics",
+    "examples/execd",
+    "examples/ruby-sample",
     "libcnb",
     "libcnb-cargo",
     "libcnb-data",
     "libcnb-package",
     "libcnb-proc-macros",
     "libcnb-test",
-    "examples/basics",
-    "examples/execd",
-    "examples/ruby-sample",
+    "libherokubuildpack",
     "test-buildpacks/readonly-layer-files",
     "test-buildpacks/sbom"
 ]
