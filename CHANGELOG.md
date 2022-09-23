@@ -8,7 +8,8 @@ separate changelogs for each crate were used. If you need to refer to these old 
 
 ### Changed
 
-- Bump Minimum Supported Rust Version (MSRV) to `1.64` ([#500](https://github.com/heroku/libcnb.rs/pull/500))
+- Bump Minimum Supported Rust Version (MSRV) to `1.64`. ([#500](https://github.com/heroku/libcnb.rs/pull/500))
+- Bump minimum external dependency versions. ([#502](https://github.com/heroku/libcnb.rs/pull/502))
 
 ### Added
 

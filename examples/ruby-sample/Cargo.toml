@@ -8,8 +8,8 @@ publish = false
 [dependencies]
 flate2 = "1.0.24"
 libcnb.workspace = true
-serde = "1.0.139"
-sha2 = "0.10.2"
+serde = "1.0.145"
+sha2 = "0.10.6"
 tar = "0.4.38"
 tempfile = "3.3.0"
 ureq = "2.5.0"

@@ -12,15 +12,15 @@ readme = "../README.md"
 include = ["src/**/*", "../LICENSE", "../README.md"]
 
 [dependencies]
-anyhow = { version = "1.0.58", optional = true }
-cyclonedx-bom = { version = "0.3.2", optional = true }
+anyhow = { version = "1.0.65", optional = true }
+cyclonedx-bom = { version = "0.3.5", optional = true }
 libcnb-data.workspace = true
 libcnb-proc-macros.workspace = true
-serde = { version = "1.0.139", features = ["derive"] }
+serde = { version = "1.0.145", features = ["derive"] }
 stacker = "0.1.15"
-thiserror = "1.0.31"
+thiserror = "1.0.35"
 toml = "0.5.9"
 
 [dev-dependencies]
-fastrand = "1.7.0"
+fastrand = "1.8.0"
 tempfile = "3.3.0"

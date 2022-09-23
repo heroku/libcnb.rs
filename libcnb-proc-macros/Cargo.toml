@@ -16,5 +16,5 @@ proc-macro = true
 [dependencies]
 cargo_metadata = "0.15.0"
 fancy-regex = { version = "0.10.0", default-features = false }
-quote = "1.0.20"
-syn = { version = "1.0.98", features = ["full"] }
+quote = "1.0.21"
+syn = { version = "1.0.100", features = ["full"] }
