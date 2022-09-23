@@ -6,6 +6,8 @@ separate changelogs for each crate were used. If you need to refer to these old 
 
 ## [Unreleased]
 
+## [0.11.0] 2022-09-23
+
 ### Changed
 
 - Bump Minimum Supported Rust Version (MSRV) to `1.64`. ([#500](https://github.com/heroku/libcnb.rs/pull/500))
