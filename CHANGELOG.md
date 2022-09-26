@@ -6,6 +6,10 @@ separate changelogs for each crate were used. If you need to refer to these old 
 
 ## [Unreleased]
 
+### Changed
+
+- Improve the `libherokubuildpack` root module rustdocs. ([#503](https://github.com/heroku/libcnb.rs/pull/503))
+
 ## [0.11.0] 2022-09-23
 
 ### Changed
