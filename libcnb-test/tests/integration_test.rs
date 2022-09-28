@@ -303,9 +303,8 @@ fn app_dir_invalid_path_checked_before_applying_preprocessor() {
     );
 }
 
-// We're referencing the procfile buildpack via HTTP to pin the version for the tests. This also
+// We're referencing the procfile buildpack via Docker URL to pin the version for the tests. This also
 // prevents issues when the builder contains multiple heroku/procfile versions. We don't use CNB
 // registry URLs since, as of August 2022, pack fails when another pack instance is resolving such
 // an URL in parallel.
-const PROCFILE_URL: &str =
-    "https://github.com/heroku/procfile-cnb/releases/download/v1.0.2/heroku_procfile_1.0.2.cnb";
+const PROCFILE_URL: &str = "docker://docker.io/heroku/procfile-cnb:2.0.0";
