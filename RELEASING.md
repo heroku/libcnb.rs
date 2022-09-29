@@ -8,7 +8,7 @@ easier to gauge cross-crate compatibility.
 1. Create a new branch for the upcoming release
 2. Update [Cargo.toml](./Cargo.toml) in the root of the repository:
    1. In the `workspace.package` table, update `version` to the new version
-   2. In the `workspace.dependencies` table, update the `version` of each of the repository-local dependency to the new version
+   2. In the `workspace.dependencies` table, update the `version` of each of the repository-local dependencies to the new version
 3. Update [CHANGELOG.md](./CHANGELOG.md)
    1. Move all content under `## [Unreleased]` to a new section that follows this pattern: `## [VERSION] YYYY-MM-DD`
    2. If appropriate, add a high-level summary of changes at the beginning of the new section
