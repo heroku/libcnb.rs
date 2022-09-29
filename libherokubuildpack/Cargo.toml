@@ -8,8 +8,8 @@ description = "Opinionated common code for buildpacks implemented with libcnb.rs
 keywords = ["buildpacks", "CNB"]
 repository = "https://github.com/heroku/libcnb.rs/tree/main/libherokubuildpack"
 documentation = "https://docs.rs/libherokubuildpack"
-readme = "./README.md"
-include = ["src/**/*", "../LICENSE", "../README.md"]
+readme = "README.md"
+include = ["src/**/*", "LICENSE", "README.md"]
 
 [package.metadata.docs.rs]
 all-features = true

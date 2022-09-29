@@ -6,6 +6,11 @@ separate changelogs for each crate were used. If you need to refer to these old 
 
 ## [Unreleased]
 
+### Fixed
+
+- All crates now properly include the `LICENSE` file. ([#506](https://github.com/heroku/libcnb.rs/pull/506))
+- Fix `libcnb` readme file metadata which prevented vendoring `libcnb` via `cargo vendor`. ([#506](https://github.com/heroku/libcnb.rs/pull/506))
+
 ### Changed
 
 - Improve the `libherokubuildpack` root module rustdocs. ([#503](https://github.com/heroku/libcnb.rs/pull/503))

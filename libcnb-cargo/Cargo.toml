@@ -9,7 +9,7 @@ keywords = ["buildpacks", "CNB"]
 repository = "https://github.com/heroku/libcnb.rs/tree/main/libcnb-cargo"
 documentation = "https://github.com/heroku/libcnb.rs/blob/main/libcnb-cargo/README.md"
 readme = "README.md"
-include = ["src/**/*", "../LICENSE", "README.md"]
+include = ["src/**/*", "LICENSE", "README.md"]
 
 [[bin]]
 name = "cargo-libcnb"

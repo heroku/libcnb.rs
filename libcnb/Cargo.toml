@@ -8,8 +8,8 @@ description = "A framework for writing Cloud Native Buildpacks in Rust"
 keywords = ["buildpacks", "CNB"]
 repository = "https://github.com/heroku/libcnb.rs"
 documentation = "https://docs.rs/libcnb"
-readme = "../README.md"
-include = ["src/**/*", "../LICENSE", "../README.md"]
+readme = "README.md"
+include = ["src/**/*", "LICENSE", "README.md"]
 
 [dependencies]
 anyhow = { version = "1.0.65", optional = true }
