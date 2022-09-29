@@ -6,6 +6,8 @@ separate changelogs for each crate were used. If you need to refer to these old 
 
 ## [Unreleased]
 
+## [0.11.1] 2022-09-29
+
 ### Fixed
 
 - All crates now properly include the `LICENSE` file. ([#506](https://github.com/heroku/libcnb.rs/pull/506))
