@@ -8,7 +8,7 @@ description = "Procedural macros used within libcnb.rs"
 repository = "https://github.com/heroku/libcnb.rs/tree/main/libcnb-proc-macros"
 documentation = "https://docs.rs/libcnb-proc-macros"
 readme = "README.md"
-include = ["src/**/*", "../LICENSE", "README.md"]
+include = ["src/**/*", "LICENSE", "README.md"]
 
 [lib]
 proc-macro = true

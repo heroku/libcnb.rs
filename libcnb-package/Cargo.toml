@@ -9,7 +9,7 @@ keywords = ["buildpacks", "CNB"]
 repository = "https://github.com/heroku/libcnb.rs/tree/main/libcnb-package"
 documentation = "https://docs.rs/libcnb-package"
 readme = "README.md"
-include = ["src/**/*", "../LICENSE", "README.md"]
+include = ["src/**/*", "LICENSE", "README.md"]
 
 [dependencies]
 cargo_metadata = "0.15.0"
