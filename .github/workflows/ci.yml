@@ -1,18 +1,21 @@
 name: CI
 
 on:
-  # Only perform branch builds for `main`, to avoid duplicate builds on PRs.
   push:
+    # Avoid duplicate builds on PRs.
     branches:
       - main
   pull_request:
+
+permissions:
+  contents: read
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -27,14 +30,14 @@ jobs:
         # Not using --locked here and below since Cargo.lock is in .gitignore.
         run: cargo clippy --all-targets --all-features -- --deny warnings
       - name: rustfmt
-        run: cargo fmt -- --check --verbose
+        run: cargo fmt -- --check
       - name: Check docs
         # Using RUSTDOCFLAGS until `cargo doc --check` is stabilised:
         # https://github.com/rust-lang/cargo/issues/10025
         run: RUSTDOCFLAGS="-D warnings" cargo doc --all-features --document-private-items --no-deps
 
-  test:
-    runs-on: ubuntu-latest
+  unit-test:
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -42,11 +45,11 @@ jobs:
         run: rustup update
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2.0.0
-      - name: Run tests
+      - name: Run unit tests
         run: cargo test --all-features
 
-  integration:
-    runs-on: ubuntu-latest
+  integration-test:
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -61,7 +64,7 @@ jobs:
       - name: Install Pack CLI
         uses: buildpacks/github-actions/setup-pack@v4.8.1
       - name: Run integration tests
-        # Runs any tests annotated with the `ignore` attribute (which in this repo, are all of the integration tests).
+        # Runs only tests annotated with the `ignore` attribute (which in this repo, are the integration tests).
         run: cargo test -- --ignored
       - name: Compile and package examples/basics
         run: cargo run --package libcnb-cargo -- libcnb package
