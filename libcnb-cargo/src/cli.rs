@@ -1,14 +1,14 @@
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[clap(bin_name = "cargo")]
+#[command(bin_name = "cargo")]
 pub(crate) enum Cli {
-    #[clap(subcommand)]
+    #[command(subcommand)]
     Libcnb(LibcnbSubcommand),
 }
 
 #[derive(Subcommand)]
-#[clap(version, about, long_about = None)]
+#[command(version, about, long_about = None)]
 pub(crate) enum LibcnbSubcommand {
     /// Packages a libcnb.rs Cargo project as a Cloud Native Buildpack
     Package(PackageArgs),
@@ -17,13 +17,13 @@ pub(crate) enum LibcnbSubcommand {
 #[derive(Parser)]
 pub(crate) struct PackageArgs {
     /// Disable cross-compile assistance
-    #[clap(long)]
+    #[arg(long)]
     pub no_cross_compile_assistance: bool,
     /// Build in release mode, with optimizations
-    #[clap(long)]
+    #[arg(long)]
     pub release: bool,
     /// Build for the target triple
-    #[clap(long, default_value = "x86_64-unknown-linux-musl")]
+    #[arg(long, default_value = "x86_64-unknown-linux-musl")]
     pub target: String,
 }
 
