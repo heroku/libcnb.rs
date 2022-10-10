@@ -6,6 +6,10 @@ separate changelogs for each crate were used. If you need to refer to these old 
 
 ## [Unreleased]
 
+### Changed
+
+- libcnb-cargo: Updated to Clap v4. ([#511](https://github.com/heroku/libcnb.rs/pull/511))
+
 ## [0.11.1] 2022-09-29
 
 ### Fixed
