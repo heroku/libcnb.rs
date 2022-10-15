@@ -30,7 +30,7 @@ The feature names line up with the modules in this crate. All features are enabl
   Enables helpers for filesystem related tasks.
 
 [Docs]: https://img.shields.io/docsrs/libherokubuildpack
-[docs.rs]: https://docs.rs/libcnb-test/latest/libherokubuildpack/
+[docs.rs]: https://docs.rs/libherokubuildpack/latest/libherokubuildpack/
 [Latest Version]: https://img.shields.io/crates/v/libherokubuildpack.svg
 [crates.io]: https://crates.io/crates/libherokubuildpack
 [MSRV]: https://img.shields.io/badge/MSRV-rustc_1.64+-lightgray.svg
