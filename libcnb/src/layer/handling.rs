@@ -8,7 +8,7 @@ use crate::generic::GenericMetadata;
 use crate::layer::{ExistingLayerStrategy, Layer, LayerData, MetadataMigration};
 use crate::layer_env::LayerEnv;
 use crate::sbom::{cnb_sbom_path, Sbom};
-use crate::util::{default_on_not_found, remove_recursively};
+use crate::util::{default_on_not_found, remove_dir_recursively};
 use crate::Buildpack;
 use crate::{write_toml_file, TomlFileError};
 use libcnb_data::sbom::SBOM_FORMATS;
@@ -262,7 +262,7 @@ fn delete_layer<P: AsRef<Path>>(
     let layer_dir = layers_dir.as_ref().join(layer_name.as_str());
     let layer_toml = layers_dir.as_ref().join(format!("{layer_name}.toml"));
 
-    default_on_not_found(remove_recursively(&layer_dir))?;
+    default_on_not_found(remove_dir_recursively(&layer_dir))?;
     default_on_not_found(fs::remove_file(&layer_toml))?;
 
     Ok(())

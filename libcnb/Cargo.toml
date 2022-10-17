@@ -17,7 +17,6 @@ cyclonedx-bom = { version = "0.3.5", optional = true }
 libcnb-data.workspace = true
 libcnb-proc-macros.workspace = true
 serde = { version = "1.0.145", features = ["derive"] }
-stacker = "0.1.15"
 thiserror = "1.0.35"
 toml = "0.5.9"
 

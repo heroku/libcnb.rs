@@ -18,48 +18,42 @@ pub(crate) fn default_on_not_found<T: Default>(
 
 /// Recursively removes the given path, similar to [`std::fs::remove_dir_all`].
 ///
-/// Compared to `remove_dir_all`, this function behaves more like `rm -rf` on UNIX systems. It will
-/// delete files and directories even if their permissions would normally prevent deletion as long
-/// as the current user is the owner of these files (or root).
-pub(crate) fn remove_recursively<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
-    if path.as_ref().symlink_metadata()?.is_dir() {
-        // To delete a directory, the current user must have the permission to write and list the
-        // directory (to empty it before deleting). To reduce the possibility of permission errors,
-        // we try to set the correct permissions before attempting to delete the directory and the
-        // files within it.
-        let permissions = if cfg!(target_family = "unix") {
-            use std::os::unix::fs::PermissionsExt;
-            Permissions::from_mode(0o777)
-        } else {
-            let mut permissions = path.as_ref().metadata()?.permissions();
-            permissions.set_readonly(false);
-            permissions
-        };
-
-        fs::set_permissions(&path, permissions)?;
-
-        for entry in fs::read_dir(&path)? {
-            let path = entry?.path();
-
-            // Since the directory structure could be a deep, blowing the stack is a real danger
-            // here. We use the `stacker` crate to allocate stack on the heap if we're running out
-            // of stack space.
-            //
-            // Neither the minimum stack size nor the amount of bytes allocated when we run out of
-            // stack space are backed by data/science. They're "best guesses", if you have reason
-            // to believe they need to change, you're probably right.
-            stacker::maybe_grow(4096, 32768, || remove_recursively(&path))?;
-        }
-
-        fs::remove_dir(&path)
+/// Compared to `remove_dir_all`, this function behaves more like `rm -rf` on UNIX systems.
+/// It will delete directories even if their permissions would normally prevent deletion as
+/// long as the current user is the owner of them (or root).
+pub(crate) fn remove_dir_recursively(dir: &Path) -> std::io::Result<()> {
+    // To delete a directory, the current user must have the permission to write and list the
+    // directory (to empty it before deleting). To reduce the possibility of permission errors,
+    // we try to set the correct permissions before attempting to delete the directory and the
+    // files within it.
+    let permissions = if cfg!(target_family = "unix") {
+        use std::os::unix::fs::PermissionsExt;
+        Permissions::from_mode(0o777)
     } else {
-        fs::remove_file(&path)
+        let mut permissions = dir.symlink_metadata()?.permissions();
+        permissions.set_readonly(false);
+        permissions
+    };
+
+    fs::set_permissions(dir, permissions)?;
+
+    for entry in fs::read_dir(dir)? {
+        let entry = entry?;
+        let path = entry.path();
+
+        if entry.file_type()?.is_dir() {
+            remove_dir_recursively(&path)?;
+        } else {
+            fs::remove_file(path)?;
+        }
     }
+
+    fs::remove_dir(dir)
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::util::{default_on_not_found, remove_recursively};
+    use crate::util::{default_on_not_found, remove_dir_recursively};
     use std::fs;
     use std::fs::Permissions;
     use std::io::ErrorKind;
@@ -98,7 +92,7 @@ mod tests {
         fs::write(directory.join("destination.txt"), "LV-426").unwrap();
         fs::set_permissions(&directory, Permissions::from_mode(0o555)).unwrap();
 
-        remove_recursively(temp_dir.path()).unwrap();
+        remove_dir_recursively(temp_dir.path()).unwrap();
     }
 
     #[test]
@@ -112,6 +106,6 @@ mod tests {
         fs::write(directory.join("destination.txt"), "LV-426").unwrap();
         fs::set_permissions(&directory, Permissions::from_mode(0o666)).unwrap();
 
-        remove_recursively(temp_dir.path()).unwrap();
+        remove_dir_recursively(temp_dir.path()).unwrap();
     }
 }
