@@ -15,12 +15,13 @@ include = ["src/**/*", "LICENSE", "README.md"]
 all-features = true
 
 [features]
-default = ["download", "digest", "error", "log", "tar", "toml", "fs"]
+default = ["download", "digest", "error", "log", "tar", "tgz", "toml", "fs"]
 download = ["dep:ureq", "dep:thiserror"]
 digest = ["dep:sha2"]
 error = ["log", "dep:libcnb"]
 log = ["dep:termcolor"]
 tar = ["dep:tar", "dep:flate2"]
+tgz = ["dep:sha2", "dep:flate2", "dep:tar"]
 toml = ["dep:toml"]
 fs = ["dep:pathdiff"]
 

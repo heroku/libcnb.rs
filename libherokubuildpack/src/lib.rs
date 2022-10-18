@@ -19,5 +19,7 @@ pub mod fs;
 pub mod log;
 #[cfg(feature = "tar")]
 pub mod tar;
+#[cfg(feature = "tgz")]
+pub mod tgz;
 #[cfg(feature = "toml")]
 pub mod toml;
