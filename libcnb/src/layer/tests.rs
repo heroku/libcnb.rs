@@ -123,7 +123,7 @@ struct TestLayerMetadata {
 
 impl Default for TestLayer {
     fn default() -> Self {
-        TestLayer {
+        Self {
             existing_layer_strategy: ExistingLayerStrategy::Recreate,
             write_version: String::from("1.0.0"),
             write_layer_env: None,

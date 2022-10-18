@@ -169,31 +169,31 @@ pub(crate) enum HandleLayerErrorOrBuildpackError<E> {
 
 impl<E> From<HandleLayerError> for HandleLayerErrorOrBuildpackError<E> {
     fn from(e: HandleLayerError) -> Self {
-        HandleLayerErrorOrBuildpackError::HandleLayerError(e)
+        Self::HandleLayerError(e)
     }
 }
 
 impl<E> From<DeleteLayerError> for HandleLayerErrorOrBuildpackError<E> {
     fn from(e: DeleteLayerError) -> Self {
-        HandleLayerErrorOrBuildpackError::HandleLayerError(HandleLayerError::DeleteLayerError(e))
+        Self::HandleLayerError(HandleLayerError::DeleteLayerError(e))
     }
 }
 
 impl<E> From<ReadLayerError> for HandleLayerErrorOrBuildpackError<E> {
     fn from(e: ReadLayerError) -> Self {
-        HandleLayerErrorOrBuildpackError::HandleLayerError(HandleLayerError::ReadLayerError(e))
+        Self::HandleLayerError(HandleLayerError::ReadLayerError(e))
     }
 }
 
 impl<E> From<WriteLayerError> for HandleLayerErrorOrBuildpackError<E> {
     fn from(e: WriteLayerError) -> Self {
-        HandleLayerErrorOrBuildpackError::HandleLayerError(HandleLayerError::WriteLayerError(e))
+        Self::HandleLayerError(HandleLayerError::WriteLayerError(e))
     }
 }
 
 impl<E> From<std::io::Error> for HandleLayerErrorOrBuildpackError<E> {
     fn from(e: std::io::Error) -> Self {
-        HandleLayerErrorOrBuildpackError::HandleLayerError(HandleLayerError::IoError(e))
+        Self::HandleLayerError(HandleLayerError::IoError(e))
     }
 }
 

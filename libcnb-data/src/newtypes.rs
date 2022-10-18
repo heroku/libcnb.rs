@@ -71,7 +71,7 @@ macro_rules! libcnb_newtype {
         impl ::std::fmt::Display for $error_name {
             fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
                 match self {
-                    $error_name::InvalidValue(value) => {
+                    Self::InvalidValue(value) => {
                         ::std::write!(f, "Invalid Value: {}", value)
                     }
                 }

@@ -35,8 +35,8 @@ pub(crate) enum AppDir {
 impl AppDir {
     pub fn as_path(&self) -> &Path {
         match self {
-            AppDir::Temporary(temp_dir) => temp_dir.path(),
-            AppDir::Unmanaged(path) => path,
+            Self::Temporary(temp_dir) => temp_dir.path(),
+            Self::Unmanaged(path) => path,
         }
     }
 }
@@ -49,13 +49,13 @@ impl AsRef<OsStr> for AppDir {
 
 impl From<PathBuf> for AppDir {
     fn from(value: PathBuf) -> Self {
-        AppDir::Unmanaged(value)
+        Self::Unmanaged(value)
     }
 }
 
 impl From<TempDir> for AppDir {
     fn from(value: TempDir) -> Self {
-        AppDir::Temporary(value)
+        Self::Temporary(value)
     }
 }
 

@@ -25,19 +25,19 @@ pub(crate) enum BuildpackReference {
 
 impl From<PathBuf> for BuildpackReference {
     fn from(path: PathBuf) -> Self {
-        BuildpackReference::Path(path)
+        Self::Path(path)
     }
 }
 
 impl From<&TempDir> for BuildpackReference {
     fn from(path: &TempDir) -> Self {
-        BuildpackReference::Path(path.path().into())
+        Self::Path(path.path().into())
     }
 }
 
 impl From<String> for BuildpackReference {
     fn from(id: String) -> Self {
-        BuildpackReference::Id(id)
+        Self::Id(id)
     }
 }
 
@@ -58,8 +58,8 @@ impl PackBuildCommand {
         builder: impl Into<String>,
         path: impl Into<PathBuf>,
         image_name: impl Into<String>,
-    ) -> PackBuildCommand {
-        PackBuildCommand {
+    ) -> Self {
+        Self {
             builder: builder.into(),
             buildpacks: Vec::new(),
             env: BTreeMap::new(),
@@ -85,7 +85,7 @@ impl PackBuildCommand {
 
 impl From<PackBuildCommand> for Command {
     fn from(pack_build_command: PackBuildCommand) -> Self {
-        let mut command = Command::new("pack");
+        let mut command = Self::new("pack");
 
         let mut args = vec![
             String::from("build"),
@@ -157,7 +157,7 @@ impl PackSbomDownloadCommand {
 
 impl From<PackSbomDownloadCommand> for Command {
     fn from(pack_command: PackSbomDownloadCommand) -> Self {
-        let mut command = Command::new("pack");
+        let mut command = Self::new("pack");
 
         let mut args = vec![
             String::from("sbom"),

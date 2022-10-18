@@ -27,12 +27,12 @@ impl TryFrom<StackUnchecked> for Stack {
 
         if id.as_str() == "*" {
             if mixins.is_empty() {
-                Ok(Stack::Any)
+                Ok(Self::Any)
             } else {
                 Err(Self::Error::InvalidAnyStack(mixins))
             }
         } else {
-            Ok(Stack::Specific {
+            Ok(Self::Specific {
                 id: id.parse()?,
                 mixins,
             })

@@ -25,7 +25,7 @@ impl Sbom {
     /// Note that there is no validation performed by libcnb.rs, the CNB lifecycle will error at
     /// runtime should the SBOM be invalid.
     pub fn from_path<P: AsRef<Path>>(format: SbomFormat, path: P) -> std::io::Result<Self> {
-        fs::read(path.as_ref()).map(|data| Sbom { format, data })
+        fs::read(path.as_ref()).map(|data| Self { format, data })
     }
 
     /// Constructs an `Sbom` from the given bytes, treating it as the SBOM format specified.
@@ -33,7 +33,7 @@ impl Sbom {
     /// Note that there is no validation performed by libcnb.rs, the CNB lifecycle will error at
     /// runtime should the SBOM be invalid.
     pub fn from_bytes<D: Into<Vec<u8>>>(format: SbomFormat, data: D) -> Self {
-        Sbom {
+        Self {
             format,
             data: data.into(),
         }
@@ -49,7 +49,7 @@ impl TryFrom<cyclonedx_bom::models::bom::Bom> for Sbom {
 
         cyclonedx_bom.output_as_json_v1_3(&mut data)?;
 
-        Ok(Sbom {
+        Ok(Self {
             format: SbomFormat::CycloneDxJson,
             data,
         })

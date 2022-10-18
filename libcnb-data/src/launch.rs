@@ -153,15 +153,15 @@ impl Serialize for WorkingDirectory {
         S: Serializer,
     {
         match self {
-            WorkingDirectory::App => serializer.serialize_str("."),
-            WorkingDirectory::Directory(path) => path.serialize(serializer),
+            Self::App => serializer.serialize_str("."),
+            Self::Directory(path) => path.serialize(serializer),
         }
     }
 }
 
 impl Default for WorkingDirectory {
     fn default() -> Self {
-        WorkingDirectory::App
+        Self::App
     }
 }
 
