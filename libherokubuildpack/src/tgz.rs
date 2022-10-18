@@ -9,16 +9,6 @@ use std::path::Path;
 use std::{io::Read, path::StripPrefixError};
 use tar::Archive;
 
-/// Decompresses and untars a given .tar.gz file to the given directory.
-pub fn decompress_tarball(
-    tarball: &mut File,
-    destination: impl AsRef<Path>,
-) -> Result<(), std::io::Error> {
-    tarball.seek(SeekFrom::Start(0))?;
-    let mut archive = Archive::new(GzDecoder::new(tarball));
-    archive.unpack(destination)
-}
-
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("HTTP error while fetching archive: {0}")]
