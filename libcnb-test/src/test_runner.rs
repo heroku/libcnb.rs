@@ -1,5 +1,5 @@
 use crate::pack::{run_pack_command, PackBuildCommand};
-use crate::{app, build, util, BuildConfig, BuildpackReference, PackResult, TestContext};
+use crate::{app, build, util, BuildConfig, BuildpackReference, TestContext};
 use bollard::Docker;
 use std::borrow::Borrow;
 use std::env;
@@ -156,7 +156,7 @@ impl TestRunner {
             };
         }
 
-        let output = run_pack_command(pack_command);
+        let output = run_pack_command(pack_command, &config.expected_pack_result);
 
         let test_context = TestContext {
             pack_stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
@@ -166,21 +166,6 @@ impl TestRunner {
             runner: self,
         };
 
-        if (config.expected_pack_result == PackResult::Failure && output.status.success())
-            || (config.expected_pack_result == PackResult::Success && !output.status.success())
-        {
-            panic!(
-                "pack command unexpectedly {} with exit-code {}!\n\npack stdout:\n{}\n\npack stderr:\n{}",
-                if output.status.success() { "succeeded" } else { "failed" },
-                output
-                    .status
-                    .code()
-                    .map_or(String::from("<unknown>"), |exit_code| exit_code.to_string()),
-                test_context.pack_stdout,
-                test_context.pack_stderr
-            );
-        } else {
-            f(test_context);
-        }
+        f(test_context);
     }
 }
