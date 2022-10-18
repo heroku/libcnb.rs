@@ -51,7 +51,7 @@ impl Default for TestRunner {
         }
             .expect("Could not connect to local Docker daemon");
 
-        TestRunner::new(tokio_runtime, docker)
+        Self::new(tokio_runtime, docker)
     }
 }
 
@@ -61,7 +61,7 @@ impl TestRunner {
     /// This function is meant for advanced use-cases where fine control over the Tokio runtime
     /// and/or Docker connection is required. For the common use-cases, use `Runner::default`.
     pub fn new(tokio_runtime: tokio::runtime::Runtime, docker: Docker) -> Self {
-        TestRunner {
+        Self {
             docker,
             tokio_runtime,
         }

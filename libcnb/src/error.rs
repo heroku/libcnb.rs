@@ -61,6 +61,6 @@ pub enum Error<E> {
 #[cfg(feature = "anyhow")]
 impl From<anyhow::Error> for Error<anyhow::Error> {
     fn from(error: anyhow::Error) -> Self {
-        Error::BuildpackError(error)
+        Self::BuildpackError(error)
     }
 }

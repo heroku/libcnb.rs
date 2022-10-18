@@ -234,9 +234,9 @@ pub struct DetectArgs {
 }
 
 impl DetectArgs {
-    pub fn parse(args: &[String]) -> Result<DetectArgs, DetectArgsParseError> {
+    pub fn parse(args: &[String]) -> Result<Self, DetectArgsParseError> {
         if let [_, platform_dir_path, build_plan_path] = args {
-            Ok(DetectArgs {
+            Ok(Self {
                 platform_dir_path: PathBuf::from(platform_dir_path),
                 build_plan_path: PathBuf::from(build_plan_path),
             })
@@ -260,9 +260,9 @@ pub struct BuildArgs {
 }
 
 impl BuildArgs {
-    pub fn parse(args: &[String]) -> Result<BuildArgs, BuildArgsParseError> {
+    pub fn parse(args: &[String]) -> Result<Self, BuildArgsParseError> {
         if let [_, layers_dir_path, platform_dir_path, buildpack_plan_path] = args {
-            Ok(BuildArgs {
+            Ok(Self {
                 layers_dir_path: PathBuf::from(layers_dir_path),
                 platform_dir_path: PathBuf::from(platform_dir_path),
                 buildpack_plan_path: PathBuf::from(buildpack_plan_path),

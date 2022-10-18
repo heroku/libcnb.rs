@@ -35,6 +35,6 @@ impl Platform for GenericPlatform {
     }
 
     fn from_path(platform_dir: impl AsRef<Path>) -> std::io::Result<Self> {
-        read_platform_env(platform_dir.as_ref()).map(|env| GenericPlatform { env })
+        read_platform_env(platform_dir.as_ref()).map(|env| Self { env })
     }
 }

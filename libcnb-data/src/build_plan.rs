@@ -126,7 +126,7 @@ impl Require {
 
 impl<S: Into<String>> From<S> for Require {
     fn from(s: S) -> Self {
-        Require::new(s)
+        Self::new(s)
     }
 }
 
