@@ -1,6 +1,7 @@
+use crate::PackResult;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
-use std::process::{Command, Output, Stdio};
+use std::process::{Command, Output};
 use tempfile::TempDir;
 
 /// Represents a `pack build` command.
@@ -175,22 +176,41 @@ impl From<PackSbomDownloadCommand> for Command {
     }
 }
 
-/// Runs the given pack command, panicking with user-friendly error messages when errors occur and
-/// pipes through stdout and stderr.
-pub(crate) fn run_pack_command<C: Into<Command>>(command: C) -> Output {
-    command.into()
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
+/// Runs the given pack command, panicking with user-friendly error messages when errors occur.
+pub(crate) fn run_pack_command<C: Into<Command>>(
+    command: C,
+    expected_result: &PackResult,
+) -> Output {
+    let output = command.into()
+        .output()
         .unwrap_or_else(|io_error| {
             if io_error.kind() == std::io::ErrorKind::NotFound {
                 panic!("External `pack` command not found. Install Pack CLI and ensure it is on PATH: https://buildpacks.io/docs/install-pack");
             } else {
                 panic!("Could not spawn external `pack` process: {io_error}");
             };
-        })
-        .wait_with_output()
-        .expect("Error while waiting on external `pack` process")
+        });
+
+    if (expected_result == &PackResult::Success && !output.status.success())
+        || (expected_result == &PackResult::Failure && output.status.success())
+    {
+        panic!(
+            "pack command unexpectedly {} with exit-code {}!\n\npack stdout:\n{}\n\npack stderr:\n{}",
+            if output.status.success() {
+                "succeeded"
+            } else {
+                "failed"
+            },
+            output
+                .status
+                .code()
+                .map_or(String::from("<unknown>"), |exit_code| exit_code.to_string()),
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    output
 }
 
 #[cfg(test)]
