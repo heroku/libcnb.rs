@@ -6,6 +6,8 @@ separate changelogs for each crate were used. If you need to refer to these old 
 
 ## [Unreleased]
 
+- libcnb: `CachedLayer` trait introduced. Any struct that implements this trait must implement `existing_layer_strategy`. ([#522](https://github.com/heroku/libcnb.rs/pull/522))
+
 ### Fixed
 
 - libcnb-test: `TestContext::download_sbom_files` now checks the exit code of the `pack sbom download` command it runs. ([#520](https://github.com/heroku/libcnb.rs/pull/520))
