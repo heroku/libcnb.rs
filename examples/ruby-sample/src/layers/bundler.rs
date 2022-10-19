@@ -1,8 +1,10 @@
 use crate::RubyBuildpack;
 use crate::{util, RubyBuildpackError};
 use libcnb::build::BuildContext;
-use libcnb::data::layer_content_metadata::LayerTypes;
-use libcnb::layer::{ExistingLayerStrategy, Layer, LayerData, LayerResult, LayerResultBuilder};
+use libcnb::layer::{
+    CachedLayer, CachedLayerTypes, ExistingLayerStrategy, LayerData, LayerResult,
+    LayerResultBuilder,
+};
 use libcnb::Env;
 use serde::Deserialize;
 use serde::Serialize;
@@ -18,15 +20,14 @@ pub(crate) struct BundlerLayer {
     pub ruby_env: Env,
 }
 
-impl Layer for BundlerLayer {
+impl CachedLayer for BundlerLayer {
     type Buildpack = RubyBuildpack;
     type Metadata = BundlerLayerMetadata;
 
-    fn types(&self) -> LayerTypes {
-        LayerTypes {
+    fn types(&self) -> CachedLayerTypes {
+        CachedLayerTypes {
             build: true,
             launch: true,
-            cache: true,
         }
     }
 

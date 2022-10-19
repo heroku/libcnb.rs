@@ -10,6 +10,94 @@ use serde::Serialize;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
+/// A specialized version of [`LayerTypes`](LayerTypes)
+/// where [`cached`](LayerTypes.cached) is always true.
+#[derive(Debug, Default, Eq, PartialEq)]
+pub struct CachedLayerTypes {
+    pub build: bool,
+    pub launch: bool,
+}
+/// Represents a buildpack layer that uses `cache: true` with the libcnb framework.
+///
+/// Use of this layer trait enforces that `existing_layer_strategy` is implemented.
+///
+/// Buildpack authors implement this trait to define how a layer is created/updated/removed
+/// depending on its state. To use a `Layer` implementation during build, use
+/// [`BuildContext::handle_layer`](crate::build::BuildContext::handle_layer).
+#[allow(unused_variables)]
+pub trait CachedLayer {
+    type Buildpack: Buildpack;
+
+    type Metadata: DeserializeOwned + Serialize + Clone;
+
+    /// See [`types`](Layer::types)
+    fn types(&self) -> CachedLayerTypes;
+
+    /// See [`create`](Layer::create)
+    fn create(
+        &self,
+        context: &BuildContext<Self::Buildpack>,
+        layer_path: &Path,
+    ) -> Result<LayerResult<Self::Metadata>, <Self::Buildpack as Buildpack>::Error>;
+
+    /// See [`create`](Layer::existing_layer_strategy)
+    fn existing_layer_strategy(
+        &self,
+        context: &BuildContext<Self::Buildpack>,
+        layer_data: &LayerData<Self::Metadata>,
+    ) -> Result<ExistingLayerStrategy, <Self::Buildpack as Buildpack>::Error>;
+
+    fn update(
+        &self,
+        context: &BuildContext<Self::Buildpack>,
+        layer_data: &LayerData<Self::Metadata>,
+    ) -> Result<LayerResult<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {
+        // I couldn't figure out how to allow defining this method without making it required
+        // and still defer to the original default implementation in `Layer`.
+        unimplemented!()
+    }
+
+    fn migrate_incompatible_metadata(
+        &self,
+        context: &BuildContext<Self::Buildpack>,
+        metadata: &GenericMetadata,
+    ) -> Result<MetadataMigration<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {
+        // I couldn't figure out how to allow defining this method without making it required
+        // and still defer to the original default implementation in `Layer`
+        Ok(MetadataMigration::RecreateLayer)
+    }
+}
+
+#[allow(unused_variables)]
+impl<T: CachedLayer> Layer for T {
+    type Buildpack = T::Buildpack;
+    type Metadata = T::Metadata;
+
+    fn types(&self) -> LayerTypes {
+        LayerTypes {
+            launch: <Self as CachedLayer>::types(self).launch,
+            build: <Self as CachedLayer>::types(self).build,
+            cache: true,
+        }
+    }
+
+    fn create(
+        &self,
+        context: &BuildContext<Self::Buildpack>,
+        layer_path: &Path,
+    ) -> Result<LayerResult<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {
+        <Self as CachedLayer>::create(self, context, layer_path)
+    }
+
+    fn existing_layer_strategy(
+        &self,
+        context: &BuildContext<Self::Buildpack>,
+        layer_data: &LayerData<Self::Metadata>,
+    ) -> Result<ExistingLayerStrategy, <Self::Buildpack as Buildpack>::Error> {
+        <Self as CachedLayer>::existing_layer_strategy(self, context, layer_data)
+    }
+}
+
 /// Represents a buildpack layer written with the libcnb framework.
 ///
 /// Buildpack authors implement this trait to define how a layer is created/updated/removed

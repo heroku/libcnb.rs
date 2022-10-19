@@ -36,10 +36,9 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     /// ```
     /// # use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
     /// # use libcnb::data::layer_name;
-    /// # use libcnb::data::layer_content_metadata::LayerTypes;
     /// # use libcnb::detect::{DetectContext, DetectResult};
     /// # use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};
-    /// # use libcnb::layer::{Layer, LayerResult, LayerResultBuilder};
+    /// # use libcnb::layer::{CachedLayer, CachedLayerTypes, LayerResult, LayerResultBuilder, ExistingLayerStrategy, LayerData};
     /// # use libcnb::Buildpack;
     /// # use serde::Deserialize;
     /// # use serde::Serialize;
@@ -75,12 +74,20 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     /// #    monologue: String,
     /// # }
     /// #
-    /// impl Layer for ExampleLayer {
+    /// impl CachedLayer for ExampleLayer {
     /// # type Buildpack = ExampleBuildpack;
     /// #   type Metadata = ExampleLayerMetadata;
     /// #
-    /// #    fn types(&self) -> LayerTypes {
+    /// #    fn types(&self) -> CachedLayerTypes {
     /// #        unimplemented!()
+    /// #    }
+    /// #
+    /// #    fn existing_layer_strategy(
+    /// #        &self,
+    /// #        context: &BuildContext<Self::Buildpack>,
+    /// #        layer_data: &LayerData<Self::Metadata>,
+    /// #    ) -> Result<ExistingLayerStrategy, <Self::Buildpack as Buildpack>::Error> {
+    /// #      unimplemented!()
     /// #    }
     /// #
     ///     fn create(
