@@ -8,7 +8,7 @@ use std::{io::Read, path::StripPrefixError};
 use tar::Archive;
 
 #[derive(Debug, Clone, Default)]
-pub struct Fetch {
+pub struct Fetcher {
     remote_uri: String,
     dest_dir: std::path::PathBuf,
     strip_prefix: String,
@@ -16,29 +16,21 @@ pub struct Fetch {
     verify_digest: String,
 }
 
-#[derive(Default)]
-pub struct FetchBuilder(Fetch);
-
-impl FetchBuilder {
+impl Fetcher {
     #[must_use]
     pub fn new<S: Into<String>, P: Into<PathBuf>>(remote_uri: S, dest_dir: P) -> Self {
-        Self(Fetch {
+        Self {
             remote_uri: remote_uri.into(),
             dest_dir: dest_dir.into(),
             strip_prefix: String::default(),
             filter_prefixes: vec![],
             verify_digest: String::default(),
-        })
-    }
-
-    #[must_use]
-    pub fn build(&self) -> Fetch {
-        self.0.clone()
+        }
     }
 
     #[must_use]
     pub fn verify_digest<S: Into<String>>(&mut self, digest: S) -> &mut Self {
-        self.0.verify_digest = digest.into();
+        self.verify_digest = digest.into();
         self
     }
 
@@ -48,19 +40,17 @@ impl FetchBuilder {
         prefixes: I,
     ) -> &mut Self {
         for prefix in prefixes {
-            self.0.filter_prefixes.push(prefix.into());
+            self.filter_prefixes.push(prefix.into());
         }
         self
     }
 
     #[must_use]
     pub fn strip_prefix<S: Into<String>>(&mut self, strip_prefix: S) -> &mut Self {
-        self.0.strip_prefix = strip_prefix.into();
+        self.strip_prefix = strip_prefix.into();
         self
     }
-}
 
-impl Fetch {
     /// Fetches a tarball from a url, strips component paths, filters path prefixes,
     /// extracts files to a location, and verifies a sha256 checksum. Care is taken
     /// not to write temporary files or read the entire contents into memory. In an
@@ -132,19 +122,50 @@ mod tests {
         let dest = tempfile::tempdir()
             .expect("Couldn't create test tmpdir")
             .into_path();
-        FetchBuilder::new(
+        Fetcher::new(
             "https://mirrors.edge.kernel.org/pub/software/scm/git/git-0.01.tar.gz",
             dest.clone(),
         )
         .strip_prefix("git-0.01")
         .filter_prefixes(vec!["README"])
         .verify_digest("9bdf8a4198b269c5cbe4263b1f581aae885170a6cb93339a2033cb468e57dcd3")
-        .build()
         .fetch()
         .expect("Expected to fetch, strip, filter, extract, and verify");
 
-        let target_path = dest.join("README");
-        assert!(target_path.exists());
+        let bin_path = dest.join("git");
+        let readme_path = dest.join("README");
+        assert!(
+            !bin_path.exists(),
+            "expeted git bin to not exist at {bin_path:?}"
+        );
+        assert!(
+            readme_path.exists(),
+            "expected readme to exist at {readme_path:?}"
+        );
+    }
+
+    #[test]
+    fn test_fetch_extract() {
+        let dest = tempfile::tempdir()
+            .expect("Couldn't create test tmpdir")
+            .into_path();
+        Fetcher::new(
+            "https://mirrors.edge.kernel.org/pub/software/scm/git/git-0.01.tar.gz",
+            dest.clone(),
+        )
+        .fetch()
+        .expect("Expected to fetch, strip, filter, extract, and verify");
+
+        let bin_path = dest.join("git-0.01").join("git");
+        let readme_path = dest.join("git-0.01").join("README");
+        assert!(
+            bin_path.exists(),
+            "expeted git bin to exist at {bin_path:?}"
+        );
+        assert!(
+            readme_path.exists(),
+            "expected readme to exist at {readme_path:?}"
+        );
     }
 }
 
