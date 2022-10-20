@@ -7,16 +7,41 @@ use std::path::PathBuf;
 use std::{io::Read, path::StripPrefixError};
 use tar::Archive;
 
+/// Fetches a tarball (.tgz or .tar.gz) from a `remote_uri` and extracts the
+/// contents to a `dest_dir`. Care is taken not to write temporary files or read
+/// the entire contents into memory. It will also optionally `strip_prefix`
+/// similar to `tar`'s `--strip-components` flag, `filter_prefixes` to prevent
+/// superflous files from being written, and `verify_digest` against a known
+/// SHA256 digest.
 #[derive(Debug, Clone, Default)]
 pub struct Fetcher {
-    remote_uri: String,
-    dest_dir: std::path::PathBuf,
-    strip_prefix: Option<String>,
-    filter_prefixes: Option<Vec<String>>,
-    verify_digest: Option<String>,
+    pub remote_uri: String,
+    pub dest_dir: std::path::PathBuf,
+    pub strip_prefix: Option<String>,
+    pub filter_prefixes: Option<Vec<String>>,
+    pub verify_digest: Option<String>,
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error("HTTP error while fetching archive: {0}")]
+    Http(#[from] Box<ureq::Error>),
+    #[error("Error reading archive entries: {0}")]
+    Entries(std::io::Error),
+    #[error("Error reading archive entry: {0}")]
+    Entry(std::io::Error),
+    #[error("Error reading archive file path: {0}")]
+    Path(std::io::Error),
+    #[error("Failed to validate archive checksum; expected {0}, but found {1}")]
+    Checksum(String, String),
+    #[error("Error writing archive entry: {0}")]
+    Unpack(std::io::Error),
+    #[error("Error stripping archive entry prefix: {0}")]
+    Prefix(StripPrefixError),
 }
 
 impl Fetcher {
+    /// Initialize a Fetcher with the minimum arguments.
     #[must_use]
     pub fn new<S: Into<String>, P: Into<PathBuf>>(remote_uri: S, dest_dir: P) -> Self {
         Self {
@@ -28,12 +53,14 @@ impl Fetcher {
         }
     }
 
+    /// Intruct the fetcher to verify that the tarball digest matches a known SHA256 digest.
     #[must_use]
     pub fn verify_digest<S: Into<String>>(&mut self, digest: S) -> &mut Self {
         self.verify_digest = Some(digest.into());
         self
     }
 
+    /// Instruct the Fetcher to only extract files matching prefixes.
     #[must_use]
     pub fn filter_prefixes<I: IntoIterator<Item = S>, S: Into<String>>(
         &mut self,
@@ -47,25 +74,26 @@ impl Fetcher {
         self
     }
 
+    /// Intruct the Fetcher to write files without the specified prefix.
     #[must_use]
     pub fn strip_prefix<S: Into<String>>(&mut self, strip_prefix: S) -> &mut Self {
         self.strip_prefix = Some(strip_prefix.into());
         self
     }
 
-    /// Fetches a tarball from a url, strips component paths, filters path prefixes,
-    /// extracts files to a location, and verifies a sha256 checksum. Care is taken
-    /// not to write temporary files or read the entire contents into memory. In an
-    /// error scenario, any archive contents already extracted will not be removed.
+    /// Fetches a tarball from a uri, optionally strips component paths,
+    /// optionally filters paths, extracts files to a location, and
+    /// optionally verifies a sha256 checksum.
     ///
     /// # Errors
-    ///
-    /// See `Error` for an enumeration of error scenarios.
+    /// In an error scenario, any archive contents already extracted will not be
+    /// removed. See `Error` for an enumeration of these scenarios
     pub fn fetch(&self) -> Result<(), Error> {
         let body = ureq::get(&self.remote_uri)
             .call()
             .map_err(Box::new)?
             .into_reader();
+
         let mut archive = Archive::new(GzDecoder::new(DigestingReader::new(body, Sha256::new())));
         for entry in archive.entries().map_err(Error::Entries)? {
             let mut file = entry.map_err(Error::Entry)?;
@@ -78,6 +106,7 @@ impl Fetcher {
                     .unwrap_or(Ok(&path))
                     .map_err(Error::Prefix)?,
             );
+
             if self.filter_prefixes.as_ref().map_or(true, |prefixes| {
                 prefixes
                     .iter()
@@ -86,11 +115,14 @@ impl Fetcher {
                 file.unpack(&target_path).map_err(Error::Unpack)?;
             }
         }
-        let actual_digest = format!("{:x}", archive.into_inner().into_inner().finalize());
+
         self.verify_digest.as_ref().map_or(Ok(()), |verify_digest| {
-            (verify_digest == &actual_digest)
-                .then_some(())
-                .ok_or_else(|| Error::Checksum(verify_digest.clone(), actual_digest))
+            let actual_digest = format!("{:x}", archive.into_inner().into_inner().finalize());
+            if verify_digest == &actual_digest {
+                Ok(())
+            } else {
+                Err(Error::Checksum(verify_digest.clone(), actual_digest))
+            }
         })
     }
 }
@@ -178,28 +210,24 @@ mod tests {
             "expected readme to exist at {readme_path:?}"
         );
     }
-}
 
-#[derive(thiserror::Error, Debug)]
-pub enum Error {
-    #[error("HTTP error while fetching archive: {0}")]
-    Http(#[from] Box<ureq::Error>),
+    #[test]
+    fn test_fetch_verify_fail() {
+        let dest = tempfile::tempdir()
+            .expect("Couldn't create test tmpdir")
+            .into_path();
 
-    #[error("Error reading archive entries: {0}")]
-    Entries(std::io::Error),
+        let err = Fetcher::new(
+            "https://mirrors.edge.kernel.org/pub/software/scm/git/git-0.01.tar.gz",
+            dest,
+        )
+        .verify_digest("abcdefg")
+        .fetch()
+        .expect_err("Expected verification to fail");
 
-    #[error("Error reading archive entry: {0}")]
-    Entry(std::io::Error),
-
-    #[error("Error reading archive file path: {0}")]
-    Path(std::io::Error),
-
-    #[error("Failed to validate archive checksum; verify {0}, but found {1}")]
-    Checksum(String, String),
-
-    #[error("Error writing archive entry: {0}")]
-    Unpack(std::io::Error),
-
-    #[error("Error stripping archive entry prefix: {0}")]
-    Prefix(StripPrefixError),
+        assert_eq!(
+            "Failed to validate archive checksum; expected abcdefg, but found 9bdf8a4198b269c5cbe4263b1f581aae885170a6cb93339a2033cb468e57dcd3",
+            format!("{err}")
+        );
+    }
 }
