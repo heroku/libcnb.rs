@@ -11,9 +11,9 @@ use tar::Archive;
 pub struct Fetcher {
     remote_uri: String,
     dest_dir: std::path::PathBuf,
-    strip_prefix: String,
-    filter_prefixes: Vec<String>,
-    verify_digest: String,
+    strip_prefix: Option<String>,
+    filter_prefixes: Option<Vec<String>>,
+    verify_digest: Option<String>,
 }
 
 impl Fetcher {
@@ -22,15 +22,15 @@ impl Fetcher {
         Self {
             remote_uri: remote_uri.into(),
             dest_dir: dest_dir.into(),
-            strip_prefix: String::default(),
-            filter_prefixes: vec![],
-            verify_digest: String::default(),
+            strip_prefix: Option::default(),
+            filter_prefixes: Option::default(),
+            verify_digest: Option::default(),
         }
     }
 
     #[must_use]
     pub fn verify_digest<S: Into<String>>(&mut self, digest: S) -> &mut Self {
-        self.verify_digest = digest.into();
+        self.verify_digest = Some(digest.into());
         self
     }
 
@@ -39,15 +39,17 @@ impl Fetcher {
         &mut self,
         prefixes: I,
     ) -> &mut Self {
+        let mut filter_prefixes: Vec<String> = vec![];
         for prefix in prefixes {
-            self.filter_prefixes.push(prefix.into());
+            filter_prefixes.push(prefix.into());
         }
+        self.filter_prefixes = Some(filter_prefixes);
         self
     }
 
     #[must_use]
     pub fn strip_prefix<S: Into<String>>(&mut self, strip_prefix: S) -> &mut Self {
-        self.strip_prefix = strip_prefix.into();
+        self.strip_prefix = Some(strip_prefix.into());
         self
     }
 
@@ -67,24 +69,29 @@ impl Fetcher {
         let mut archive = Archive::new(GzDecoder::new(DigestingReader::new(body, Sha256::new())));
         for entry in archive.entries().map_err(Error::Entries)? {
             let mut file = entry.map_err(Error::Entry)?;
-            let path = self.dest_dir.join(
-                file.path()
-                    .map_err(Error::Path)?
-                    .strip_prefix(&self.strip_prefix)
+            let path = file.path().map_err(Error::Path)?.into_owned();
+
+            let target_path = self.dest_dir.join(
+                self.strip_prefix
+                    .as_ref()
+                    .map(|prefix| path.strip_prefix(prefix))
+                    .unwrap_or(Ok(&path))
                     .map_err(Error::Prefix)?,
             );
-            if self
-                .filter_prefixes
-                .iter()
-                .any(|prefix| path.starts_with(self.dest_dir.join(prefix)))
-            {
-                file.unpack(&path).map_err(Error::Unpack)?;
+            if self.filter_prefixes.as_ref().map_or(true, |prefixes| {
+                prefixes
+                    .iter()
+                    .any(|prefix| target_path.starts_with(self.dest_dir.join(prefix)))
+            }) {
+                file.unpack(&target_path).map_err(Error::Unpack)?;
             }
         }
         let actual_digest = format!("{:x}", archive.into_inner().into_inner().finalize());
-        (self.verify_digest == actual_digest)
-            .then_some(())
-            .ok_or_else(|| Error::Checksum(self.verify_digest.to_string(), actual_digest))
+        self.verify_digest.as_ref().map_or(Ok(()), |verify_digest| {
+            (verify_digest == &actual_digest)
+                .then_some(())
+                .ok_or_else(|| Error::Checksum(verify_digest.clone(), actual_digest))
+        })
     }
 }
 
@@ -122,6 +129,7 @@ mod tests {
         let dest = tempfile::tempdir()
             .expect("Couldn't create test tmpdir")
             .into_path();
+
         Fetcher::new(
             "https://mirrors.edge.kernel.org/pub/software/scm/git/git-0.01.tar.gz",
             dest.clone(),
@@ -132,12 +140,13 @@ mod tests {
         .fetch()
         .expect("Expected to fetch, strip, filter, extract, and verify");
 
-        let bin_path = dest.join("git");
-        let readme_path = dest.join("README");
+        let diff_path = dest.join("show-diff.c");
         assert!(
-            !bin_path.exists(),
-            "expeted git bin to not exist at {bin_path:?}"
+            !diff_path.exists(),
+            "expeted show-diff.c to not exist at {diff_path:?}"
         );
+
+        let readme_path = dest.join("README");
         assert!(
             readme_path.exists(),
             "expected readme to exist at {readme_path:?}"
@@ -149,19 +158,21 @@ mod tests {
         let dest = tempfile::tempdir()
             .expect("Couldn't create test tmpdir")
             .into_path();
+
         Fetcher::new(
             "https://mirrors.edge.kernel.org/pub/software/scm/git/git-0.01.tar.gz",
             dest.clone(),
         )
         .fetch()
-        .expect("Expected to fetch, strip, filter, extract, and verify");
+        .expect("Expected to fetch and extract");
 
-        let bin_path = dest.join("git-0.01").join("git");
-        let readme_path = dest.join("git-0.01").join("README");
+        let diff_path = dest.join("git-0.01").join("show-diff.c");
         assert!(
-            bin_path.exists(),
-            "expeted git bin to exist at {bin_path:?}"
+            diff_path.exists(),
+            "expeted show-diff.c to exist at {diff_path:?}"
         );
+
+        let readme_path = dest.join("git-0.01").join("README");
         assert!(
             readme_path.exists(),
             "expected readme to exist at {readme_path:?}"
