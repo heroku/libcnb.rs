@@ -7,9 +7,9 @@ libcnb_newtype!(
     /// Passing a string that is not a valid `LayerName` value will yield a compilation error.
     ///
     /// # Examples:
-    /// ```
-    /// use libcnb_data::layer_name;
-    /// use libcnb_data::layer::LayerName;
+    /// ```rust
+    /// use libcnb::data::layer_name;
+    /// use libcnb::data::layer::LayerName;
     ///
     /// let layer_name: LayerName = layer_name!("foobar");
     /// ```
@@ -23,9 +23,9 @@ libcnb_newtype!(
     /// parse a dynamic string into a `LayerName`, use [`str::parse`](str::parse).
     ///
     /// # Examples
-    /// ```
-    /// use libcnb_data::layer::LayerName;
-    /// use libcnb_data::layer_name;
+    /// ```rust
+    /// use libcnb::data::layer::LayerName;
+    /// use libcnb::data::layer_name;
     ///
     /// let from_literal = layer_name!("foobar");
     ///
