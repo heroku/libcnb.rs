@@ -16,6 +16,7 @@ name = "cargo-libcnb"
 path = "src/main.rs"
 
 [dependencies]
+tera = "1.17.1"
 cargo_metadata = "0.15.0"
 clap = { version = "4.0.11", default-features = false, features = [
   "derive",
@@ -28,3 +29,6 @@ libcnb-package.workspace = true
 log = "0.4.17"
 pathdiff = "0.2.1"
 stderrlog = { version = "0.5.3", default-features = false }
+
+[dev-dependencies]
+tempfile = "3.3.0"

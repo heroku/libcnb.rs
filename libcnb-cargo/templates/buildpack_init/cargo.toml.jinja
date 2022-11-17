@@ -1,0 +1,17 @@
+[package]
+name = "todo"
+# The crate is not published, so the only version that is used is the one in buildpack.toml.
+version = "0.0.0"
+publish = false
+edition = "2021"
+rust-version = "1.64"
+
+[dependencies]
+indoc = "1.0.7"
+libcnb = "0.11.1"
+libherokubuildpack = { version = "0.11.1", default-features = false, features = ["error", "log"] }
+linked-hash-map = "0.5.6"
+regex = "1.7.0"
+
+[dev-dependencies]
+libcnb-test = "0.11.1"

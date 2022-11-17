@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
@@ -12,6 +14,15 @@ pub(crate) enum Cli {
 pub(crate) enum LibcnbSubcommand {
     /// Packages a libcnb.rs Cargo project as a Cloud Native Buildpack
     Package(PackageArgs),
+
+    /// Creates a new buildpack from template
+    Init(InitArgs),
+}
+
+#[derive(Parser, Debug, Clone, Eq, PartialEq, Hash)]
+pub(crate) struct InitArgs {
+    /// Buildpack path
+    pub destination: PathBuf,
 }
 
 #[derive(Parser)]

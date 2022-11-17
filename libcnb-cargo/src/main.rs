@@ -10,6 +10,7 @@ mod exit_code;
 use crate::cli::{Cli, LibcnbSubcommand, PackageArgs};
 use cargo_metadata::MetadataCommand;
 use clap::Parser;
+use cli::InitArgs;
 use libcnb_package::build::{build_buildpack_binaries, BuildBinariesError, BuildError};
 use libcnb_package::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
 use libcnb_package::{
@@ -17,15 +18,66 @@ use libcnb_package::{
     BuildpackDataError, CargoProfile,
 };
 use log::{error, info, warn};
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::process::{Command, Output};
 use std::{fs, io};
+use tera::Context;
+use tera::Tera;
 
 fn main() {
     setup_logging();
 
     match Cli::parse() {
         Cli::Libcnb(LibcnbSubcommand::Package(args)) => handle_libcnb_package(args),
+        Cli::Libcnb(LibcnbSubcommand::Init(args)) => handle_libcnb_init(args),
     }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Hash)]
+struct BuildpackTemplate {
+    target_path: PathBuf,
+    contents: String,
+}
+
+fn templates_for_init(args: InitArgs) -> Vec<BuildpackTemplate> {
+    let tera = match Tera::new("templates/buildpack_init/**/*.jinja") {
+        Ok(t) => t,
+        Err(e) => {
+            println!("Parsing error(s): {}", e);
+            ::std::process::exit(1);
+        }
+    };
+    tera.get_template_names()
+        .into_iter()
+        .map(|name| BuildpackTemplate {
+            target_path: args
+                .destination
+                .join(name.strip_suffix(".jinja").unwrap_or(name)),
+            contents: tera
+                .render(name, &Context::new())
+                .expect("Could not compile template"),
+        })
+        .collect()
+}
+
+fn handle_libcnb_init(args: InitArgs) {
+    for template in templates_for_init(args.clone()).iter() {
+        let BuildpackTemplate {
+            target_path,
+            contents,
+        } = template;
+
+        if let Some(parent) = target_path.parent().filter(|p| !p.exists()) {
+            std::fs::create_dir_all(parent).unwrap();
+        };
+
+        info!("Writing {}", template.target_path.display());
+        std::fs::write(target_path, contents).unwrap();
+    }
+
+    let cmd = "cargo fmt --all";
+    info!("running {}", cmd);
+    run_cmd_in_dir(&args.destination, cmd);
 }
 
 #[allow(clippy::too_many_lines)]
@@ -222,4 +274,75 @@ fn calculate_dir_size(path: impl AsRef<Path>) -> io::Result<u64> {
     }
 
     Ok(size_in_bytes)
+}
+
+fn run_cmd_in_dir(dir: &PathBuf, command: &str) -> Output {
+    Command::new("bash")
+        .args(&["-c", &format!("cd {} && {}", dir.display(), command)])
+        .output()
+        .unwrap()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn default_init(destination: PathBuf) -> InitArgs {
+        InitArgs { destination }
+    }
+
+    #[test]
+    fn it_exercises_templates_for_init() {
+        let tempdir = tempfile::tempdir().unwrap();
+        let dir = tempdir.into_path();
+        let templates = templates_for_init(default_init(dir.clone()));
+
+        let expected = dir.clone().join("src").join("main.rs");
+        templates
+            .iter()
+            .find(|template| template.target_path == expected)
+            .unwrap();
+
+        let expected = dir.clone().join("cargo.toml");
+        templates
+            .iter()
+            .find(|template| template.target_path == expected)
+            .unwrap();
+
+        let expected = dir.clone().join("buildpack.toml");
+        templates
+            .iter()
+            .find(|template| template.target_path == expected)
+            .unwrap();
+    }
+
+    #[test]
+    #[ignore = "integration test"]
+    fn test_handle_libcnb_init() {
+        let tempdir = tempfile::tempdir().unwrap();
+        let dir = tempdir.into_path();
+        handle_libcnb_init(default_init(dir.clone()));
+
+        assert!(dir.join("cargo.toml").exists());
+
+        let out = run_cmd_in_dir(
+            &dir,
+            "RUST_BACKTRACE=1 cargo test --all-features -- --include-ignored",
+        );
+        let stdout = std::str::from_utf8(&out.stdout).unwrap();
+        let stderr = std::str::from_utf8(&out.stderr).unwrap();
+        println!("{}\n{}", stdout, stderr);
+
+        assert!(out.status.success());
+
+        let out = run_cmd_in_dir(
+            &dir,
+            "cargo clippy --all-targets --all-features --locked -- --deny warnings",
+        );
+        let stdout = std::str::from_utf8(&out.stdout).unwrap();
+        let stderr = std::str::from_utf8(&out.stderr).unwrap();
+        println!("{}\n{}", stdout, stderr);
+
+        assert!(out.status.success());
+    }
 }
