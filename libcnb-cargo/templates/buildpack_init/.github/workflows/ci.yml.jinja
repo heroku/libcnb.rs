@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    # Avoid duplicate builds on PRs.
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  lint:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Update Rust toolchain
+        run: rustup update
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2.0.0
+      - name: Clippy
+        run: cargo clippy --all-targets --locked -- --deny warnings
+      - name: rustfmt
+        run: cargo fmt -- --check
+
+  unit-test:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Update Rust toolchain
+        run: rustup update
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2.0.0
+      - name: Run unit tests
+        run: cargo test --locked
+
+  integration-test:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install musl-tools
+        run: sudo apt-get install musl-tools --no-install-recommends
+      - name: Update Rust toolchain
+        run: rustup update
+      - name: Install Rust linux-musl target
+        run: rustup target add x86_64-unknown-linux-musl
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2.0.0
+      - name: Install Pack CLI
+        uses: buildpacks/github-actions/setup-pack@v4.8.1
+      - name: Run integration tests
+        # Runs only tests annotated with the `ignore` attribute (which in this repo, are the integration tests).
+        run: cargo test --locked -- --ignored

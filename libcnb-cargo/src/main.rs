@@ -31,7 +31,7 @@ fn main() {
 
     match Cli::parse() {
         Cli::Libcnb(LibcnbSubcommand::Package(args)) => handle_libcnb_package(args),
-        Cli::Libcnb(LibcnbSubcommand::Init(args)) => handle_libcnb_init(args),
+        Cli::Libcnb(LibcnbSubcommand::Init(args)) => handle_libcnb_init(&args),
     }
 }
 
@@ -113,8 +113,8 @@ fn templates_for_init(args: InitArgs) -> Vec<BuildpackTemplate> {
     templates
 }
 
-fn handle_libcnb_init(args: InitArgs) {
-    for template in templates_for_init(args.clone()).iter() {
+fn handle_libcnb_init(args: &InitArgs) {
+    for template in &templates_for_init(args.clone()) {
         let BuildpackTemplate {
             target_path,
             contents,
@@ -129,12 +129,12 @@ fn handle_libcnb_init(args: InitArgs) {
     }
 
     let cmd = "cargo fmt --all";
-    info!("running {}", cmd);
-    run_cmd_in_dir(&args.destination, cmd);
+    info!("Running {}", cmd);
+    run_cmd_in_dir_checked(&args.destination, cmd);
 
-    let cmd = "git init .";
-    info!("running {}", cmd);
-    run_cmd_in_dir(&args.destination, cmd);
+    let cmd = "git init --initial-branch=main --quiet .";
+    info!("Running {}", cmd);
+    run_cmd_in_dir_checked(&args.destination, cmd);
 }
 
 #[allow(clippy::too_many_lines)]
@@ -333,16 +333,27 @@ fn calculate_dir_size(path: impl AsRef<Path>) -> io::Result<u64> {
     Ok(size_in_bytes)
 }
 
-fn run_cmd_in_dir(dir: &PathBuf, command: &str) -> Output {
+fn run_cmd_in_dir(dir: &Path, command: &str) -> Output {
     Command::new("bash")
         .args(&["-c", &format!("cd {} && {}", dir.display(), command)])
         .output()
         .unwrap()
 }
 
+fn run_cmd_in_dir_checked(dir: &Path, command: &str) -> Output {
+    let out = run_cmd_in_dir(dir, command);
+
+    if !out.status.success() {
+        let stdout = std::str::from_utf8(&out.stdout).unwrap();
+        let stderr = std::str::from_utf8(&out.stderr).unwrap();
+
+        panic!("Command failed: {}\n{}\n{}", command, stdout, stderr);
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
-
     use super::*;
     use crate::cli::{CodeOfConduct, License};
 
@@ -354,12 +365,12 @@ mod tests {
         let license = License::Bsd3;
 
         InitArgs {
-            name_namespace,
             destination,
+            name_namespace,
             detect_file,
-            conduct,
-            copyright,
             license,
+            copyright,
+            conduct,
         }
     }
 
@@ -369,19 +380,19 @@ mod tests {
         let dir = tempdir.into_path();
         let templates = templates_for_init(default_init(dir.clone()));
 
-        let expected = dir.clone().join("src").join("main.rs");
+        let expected = dir.join("src").join("main.rs");
         templates
             .iter()
             .find(|template| template.target_path == expected)
             .unwrap();
 
-        let expected = dir.clone().join("cargo.toml");
+        let expected = dir.join("cargo.toml");
         templates
             .iter()
             .find(|template| template.target_path == expected)
             .unwrap();
 
-        let expected = dir.clone().join("buildpack.toml");
+        let expected = dir.join("buildpack.toml");
         templates
             .iter()
             .find(|template| template.target_path == expected)
@@ -393,7 +404,7 @@ mod tests {
     fn test_handle_libcnb_init() {
         let tempdir = tempfile::tempdir().unwrap();
         let dir = tempdir.into_path();
-        handle_libcnb_init(default_init(dir.clone()));
+        handle_libcnb_init(&default_init(dir.clone()));
 
         assert!(dir.join("CODE_OF_CONDUCT.md").exists());
         assert!(dir.join("cargo.toml").exists());

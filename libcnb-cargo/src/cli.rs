@@ -39,7 +39,7 @@ pub(crate) struct InitArgs {
     pub destination: PathBuf,
 
     /// Buildpack name with namespace, must include a slash i.e. `heroku/ruby`
-    #[arg(long = "name", default_value = "todo_namespace/todo_name")]
+    #[arg(long = "name", default_value = "todo-namespace/todo-name")]
     pub name_namespace: String,
 
     /// Filename in the project's root used to detect if the buildpack will execute or not
@@ -61,7 +61,7 @@ pub(crate) struct InitArgs {
 
 impl InitArgs {
     pub fn name(&self) -> String {
-        let mut parts = self.name_namespace.split("/");
+        let mut parts = self.name_namespace.split('/');
         let _ = parts
             .next()
             .expect("Your provided name must contain a slash /");
@@ -73,7 +73,7 @@ impl InitArgs {
     }
 
     pub fn namespace(&self) -> String {
-        let mut parts = self.name_namespace.split("/");
+        let mut parts = self.name_namespace.split('/');
         let namespace = parts
             .next()
             .expect("Your provided name must contain a slash /");
