@@ -16,6 +16,8 @@ name = "cargo-libcnb"
 path = "src/main.rs"
 
 [dependencies]
+heck = "0.4.0"
+chrono = "0.4.23"
 tera = "1.17.1"
 cargo_metadata = "0.15.0"
 clap = { version = "4.0.11", default-features = false, features = [

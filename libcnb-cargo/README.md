@@ -32,3 +32,10 @@ INFO - Hint: To test your buildpack locally with pack, run: pack build my-image 
 [crates.io]: https://crates.io/crates/libcnb-cargo
 [MSRV]: https://img.shields.io/badge/MSRV-rustc_1.64+-lightgray.svg
 [install-rust]: https://www.rust-lang.org/tools/install
+
+## Develop
+
+```
+$ cargo run --package libcnb-cargo -- libcnb init /tmp/lol
+# This is equivalent of running `cargo libcnb init /tmp/lol` in the released code.
+```

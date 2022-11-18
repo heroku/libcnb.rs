@@ -9,8 +9,10 @@ mod exit_code;
 
 use crate::cli::{Cli, LibcnbSubcommand, PackageArgs};
 use cargo_metadata::MetadataCommand;
-use clap::Parser;
+use chrono::Datelike;
+use clap::{Parser, ValueEnum};
 use cli::InitArgs;
+use heck::ToUpperCamelCase;
 use libcnb_package::build::{build_buildpack_binaries, BuildBinariesError, BuildError};
 use libcnb_package::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
 use libcnb_package::{
@@ -40,24 +42,75 @@ struct BuildpackTemplate {
 }
 
 fn templates_for_init(args: InitArgs) -> Vec<BuildpackTemplate> {
-    let tera = match Tera::new("templates/buildpack_init/**/*.jinja") {
+    let mut context = Context::new();
+    context.insert("namespace", &args.namespace());
+    context.insert("name", &args.name());
+    context.insert("copyright", &args.copyright);
+    context.insert("year", &chrono::Utc::now().year().to_string());
+    context.insert("detect_file", &args.detect_file);
+    context.insert(
+        "buildpack_struct_name",
+        &format!("{}Buildpack", &args.name().to_upper_camel_case()),
+    );
+
+    let mut tera = match Tera::new("templates/buildpack_init/**/*.jinja") {
         Ok(t) => t,
         Err(e) => {
             println!("Parsing error(s): {}", e);
             ::std::process::exit(1);
         }
     };
-    tera.get_template_names()
+
+    // Code of Conduct chooser
+    tera.add_template_file(
+        PathBuf::new()
+            .join("templates")
+            .join("code_of_conduct")
+            .join(format!(
+                "{}.md.jinja",
+                args.conduct.to_possible_value().unwrap().get_name()
+            )),
+        Some("CODE_OF_CONDUCT.md"),
+    )
+    .unwrap();
+
+    // License chooser
+    tera.add_template_file(
+        PathBuf::new()
+            .join("templates")
+            .join("license")
+            .join(format!(
+                "{}.md.jinja",
+                args.license.to_possible_value().unwrap().get_name()
+            )),
+        Some("LICENSE.txt"),
+    )
+    .unwrap();
+
+    let mut templates = tera
+        .get_template_names()
         .into_iter()
         .map(|name| BuildpackTemplate {
             target_path: args
                 .destination
                 .join(name.strip_suffix(".jinja").unwrap_or(name)),
             contents: tera
-                .render(name, &Context::new())
+                .render(name, &context)
                 .expect("Could not compile template"),
         })
-        .collect()
+        .collect::<Vec<_>>();
+
+    templates.push(BuildpackTemplate {
+        target_path: args
+            .destination
+            .join("tests")
+            .join("fixtures")
+            .join("hello_world")
+            .join(args.detect_file),
+        contents: String::from(""),
+    });
+
+    templates
 }
 
 fn handle_libcnb_init(args: InitArgs) {
@@ -76,6 +129,10 @@ fn handle_libcnb_init(args: InitArgs) {
     }
 
     let cmd = "cargo fmt --all";
+    info!("running {}", cmd);
+    run_cmd_in_dir(&args.destination, cmd);
+
+    let cmd = "git init .";
     info!("running {}", cmd);
     run_cmd_in_dir(&args.destination, cmd);
 }
@@ -285,10 +342,25 @@ fn run_cmd_in_dir(dir: &PathBuf, command: &str) -> Output {
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
+    use crate::cli::{CodeOfConduct, License};
 
     fn default_init(destination: PathBuf) -> InitArgs {
-        InitArgs { destination }
+        let detect_file = String::from("README.md");
+        let conduct = CodeOfConduct::Salesforce;
+        let name_namespace = String::from("heroku/ruby");
+        let copyright = String::from("David S. Pumpkins");
+        let license = License::Bsd3;
+
+        InitArgs {
+            name_namespace,
+            destination,
+            detect_file,
+            conduct,
+            copyright,
+            license,
+        }
     }
 
     #[test]
@@ -323,6 +395,7 @@ mod tests {
         let dir = tempdir.into_path();
         handle_libcnb_init(default_init(dir.clone()));
 
+        assert!(dir.join("CODE_OF_CONDUCT.md").exists());
         assert!(dir.join("cargo.toml").exists());
 
         let out = run_cmd_in_dir(

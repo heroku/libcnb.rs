@@ -1,13 +1,14 @@
 use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
+use libcnb::data::build_plan::BuildPlanBuilder;
 use libcnb::data::launch::{LaunchBuilder, ProcessBuilder};
 use libcnb::data::process_type;
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};
 use libcnb::{buildpack_main, Buildpack};
 
-pub(crate) struct HelloWorldBuildpack;
+pub(crate) struct {{ buildpack_struct_name }};
 
-impl Buildpack for HelloWorldBuildpack {
+impl Buildpack for {{ buildpack_struct_name }} {
     // The CNB platform this buildpack targets, usually `GenericPlatform`. See the CNB spec for
     // more information about platforms:
     // https://github.com/buildpacks/spec/blob/main/buildpack.md
@@ -38,10 +39,10 @@ impl Buildpack for HelloWorldBuildpack {
     // required exit code as well as the data written to the build plan. libcnb.rs will,
     // according to the returned value, handle both writing the build plan and exiting with
     // the correct status code for you.
-    fn detect(&self, _context: DetectContext<Self>) -> libcnb::Result<DetectResult, Self::Error> {
+    fn detect(&self, context: DetectContext<Self>) -> libcnb::Result<DetectResult, Self::Error> {
         let mut plan_builder = BuildPlanBuilder::new().provides("hello_world");
 
-        if context.app_dir.join("README.md").exists() {
+        if context.app_dir.join("{{ detect_file }}").exists() {
             plan_builder = plan_builder.requires("hello_world");
         }
 
@@ -72,4 +73,4 @@ impl Buildpack for HelloWorldBuildpack {
 }
 
 // Implements the main function and wires up the framework for the given buildpack.
-buildpack_main!(HelloWorldBuildpack);
+buildpack_main!({{ buildpack_struct_name }});
