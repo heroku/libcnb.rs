@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, str::FromStr};
 
 use clap::{Parser, Subcommand};
 
@@ -33,6 +33,33 @@ pub(crate) enum License {
     Bsd3,
 }
 
+#[derive(Clone, Eq, PartialEq, Hash, Debug)]
+pub(crate) struct NameWithNamespace {
+    namespace: String,
+    name: String,
+}
+
+impl FromStr for NameWithNamespace {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (namespace, name) = s
+            .split_once('/')
+            .ok_or(format!("Name with namespace must have a slash '{}'", s))
+            .and_then(|(a, b)| {
+                if a.is_empty() {
+                    Err(format!("Name before the slash cannot be empty '{}'", s))
+                } else if b.is_empty() {
+                    Err(format!("Name after the slash cannot be empty '{}'", s))
+                } else {
+                    Ok((a.to_string(), b.to_string()))
+                }
+            })?;
+
+        Ok(NameWithNamespace { namespace, name })
+    }
+}
+
 #[derive(Parser, Debug, Clone, Eq, PartialEq, Hash)]
 pub(crate) struct InitArgs {
     /// Buildpack path
@@ -40,7 +67,7 @@ pub(crate) struct InitArgs {
 
     /// Buildpack name with namespace, must include a slash i.e. `heroku/ruby`
     #[arg(long = "name", default_value = "todo-namespace/todo-name")]
-    pub name_namespace: String,
+    pub name_namespace: NameWithNamespace,
 
     /// Filename in the project's root used to detect if the buildpack will execute or not
     #[arg(long, default_value = "README.md")]
@@ -60,24 +87,12 @@ pub(crate) struct InitArgs {
 }
 
 impl InitArgs {
-    pub fn name(&self) -> String {
-        let mut parts = self.name_namespace.split('/');
-        let _ = parts
-            .next()
-            .expect("Your provided name must contain a slash /");
-        let name = parts
-            .next()
-            .expect("Your name included a slash, but nothing after it");
-
-        name.to_string()
+    pub fn name(&self) -> &str {
+        &self.name_namespace.name
     }
 
-    pub fn namespace(&self) -> String {
-        let mut parts = self.name_namespace.split('/');
-        let namespace = parts
-            .next()
-            .expect("Your provided name must contain a slash /");
-        namespace.to_string()
+    pub fn namespace(&self) -> &str {
+        &self.name_namespace.namespace
     }
 }
 
@@ -113,6 +128,24 @@ mod tests {
                 .iter()
                 .map(|var| var.to_possible_value().unwrap().get_name().to_string())
                 .collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn test_valid_input_names() {
+        assert_eq!(
+            NameWithNamespace::from_str("lol/"),
+            Err(String::from("Name after the slash cannot be empty 'lol/'"))
+        );
+
+        assert_eq!(
+            NameWithNamespace::from_str("/"),
+            Err(String::from("Name before the slash cannot be empty '/'"))
+        );
+
+        assert_eq!(
+            NameWithNamespace::from_str("lol"),
+            Err(String::from("Name with namespace must have a slash 'lol'"))
         );
     }
 }

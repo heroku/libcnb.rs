@@ -360,7 +360,7 @@ mod tests {
     fn default_init(destination: PathBuf) -> InitArgs {
         let detect_file = String::from("README.md");
         let conduct = CodeOfConduct::Salesforce;
-        let name_namespace = String::from("heroku/ruby");
+        let name_namespace: crate::cli::NameWithNamespace = "heroku/ruby".parse().unwrap();
         let copyright = String::from("David S. Pumpkins");
         let license = License::Bsd3;
 
