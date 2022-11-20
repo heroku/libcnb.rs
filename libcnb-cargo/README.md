@@ -35,7 +35,8 @@ INFO - Hint: To test your buildpack locally with pack, run: pack build my-image 
 
 ## Develop
 
-```
+This is equivalent of running `cargo libcnb init /tmp/lol` in the released code:
+
+```shell
 $ cargo run --package libcnb-cargo -- libcnb init /tmp/lol
-# This is equivalent of running `cargo libcnb init /tmp/lol` in the released code.
 ```

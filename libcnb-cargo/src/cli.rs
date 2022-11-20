@@ -84,6 +84,10 @@ pub(crate) struct InitArgs {
     /// Defines the code of conduct used in the generated project
     #[arg(long = "coc", default_value = "contributor_covenant")]
     pub conduct: CodeOfConduct,
+
+    /// When enabled will skip all prompts
+    #[arg(long, short)]
+    pub force: bool,
 }
 
 impl InitArgs {

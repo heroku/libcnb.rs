@@ -56,8 +56,8 @@ fn templates_for_init(args: InitArgs) -> Vec<BuildpackTemplate> {
     let mut tera = match Tera::new("templates/buildpack_init/**/*.jinja") {
         Ok(t) => t,
         Err(e) => {
-            println!("Parsing error(s): {}", e);
-            ::std::process::exit(1);
+            error!("Parsing template error(s): {}", e);
+            std::process::exit(exit_code::UNSPECIFIED_ERROR);
         }
     };
 
@@ -72,7 +72,7 @@ fn templates_for_init(args: InitArgs) -> Vec<BuildpackTemplate> {
             )),
         Some("CODE_OF_CONDUCT.md"),
     )
-    .unwrap();
+    .expect("Internal error adding code of conduct template file to the templating engine");
 
     // License chooser
     tera.add_template_file(
@@ -85,7 +85,7 @@ fn templates_for_init(args: InitArgs) -> Vec<BuildpackTemplate> {
             )),
         Some("LICENSE.txt"),
     )
-    .unwrap();
+    .expect("Internal error adding license template file to the templating engine");
 
     let mut templates = tera
         .get_template_names()
@@ -107,13 +107,107 @@ fn templates_for_init(args: InitArgs) -> Vec<BuildpackTemplate> {
             .join("fixtures")
             .join("hello_world")
             .join(args.detect_file),
-        contents: String::from(""),
+        contents: String::new(),
     });
 
     templates
 }
 
+use std::io::Write; // <--- bring flush() into scope
+
+fn ask(question: &str) -> Result<String, io::Error> {
+    println!("{}", question);
+    print!("> ");
+    io::stdout().flush()?;
+
+    let mut user_input = String::new();
+
+    io::stdin().read_line(&mut user_input)?;
+
+    Ok(user_input.trim().to_string())
+}
+
+#[derive(Clone, Eq, PartialEq, PartialOrd, Hash, Debug)]
+enum PromptState {
+    Identical,
+    Write,
+    Skip,
+    AllWrite,
+    Quit,
+}
+
+fn file_collision_prompt(file: &Path, contents: &str, force: bool) -> PromptState {
+    if !file.exists() || force {
+        PromptState::Write
+    } else {
+        let original =
+            std::fs::read_to_string(file).expect("Internal error could not read file from disk");
+        if contents.trim() == original.trim() {
+            PromptState::Identical
+        } else {
+            match ask(&format!(
+                "Overwrite {}? (enter 'h' for help) [Ynaqdh]",
+                file.display()
+            )) {
+                Err(io_error) => {
+                    error!("Could not read input: {io_error}");
+                    std::process::exit(exit_code::UNSPECIFIED_ERROR);
+                }
+                Ok(out) => match out.to_lowercase().as_str() {
+                    "y" | "yes" | "" => PromptState::Write,
+                    "n" | "no" => PromptState::Skip,
+                    "a" | "all" => PromptState::AllWrite,
+                    "q" | "quit" => PromptState::Quit,
+                    "d" | "diff" => {
+                        let tempdir = tempfile::tempdir()
+                            .expect("Internal error, could not create temp file");
+                        let dir = tempdir.path();
+                        let tempfile = dir.join("new_contents.txt");
+                        std::fs::write(&tempfile, contents)
+                            .expect("Internal error, could not write to temp file");
+
+                        let out = Command::new("diff")
+                            .arg("-u")
+                            .args([file, &tempfile])
+                            .output();
+
+                        match out {
+                            Ok(out) => {
+                                println!("{}", std::str::from_utf8(&out.stdout).expect("Internal error, could not convert output to UTF8. Check file contents are valid UTF-8"));
+
+                                println!("Retrying...");
+                                file_collision_prompt(file, contents, force)
+                            }
+                            Err(io_error) => {
+                                error!(
+                                    "Could not diff contents with file: {} error:\n{io_error}",
+                                    file.display()
+                                );
+                                std::process::exit(exit_code::UNSPECIFIED_ERROR);
+                            }
+                        }
+                    }
+                    _ => {
+                        println!(
+                            r#"
+    Y - yes, overwrite
+    n - no, do not overwrite
+    a - all, overwrite this and all others
+    q - quit, abort
+    d - diff, show the differences between the old and the new
+    h - help, show this help
+                    "#
+                        );
+                        file_collision_prompt(file, contents, force)
+                    }
+                },
+            }
+        }
+    }
+}
+
 fn handle_libcnb_init(args: &InitArgs) {
+    let mut force_all = args.force;
     for template in &templates_for_init(args.clone()) {
         let BuildpackTemplate {
             target_path,
@@ -121,11 +215,29 @@ fn handle_libcnb_init(args: &InitArgs) {
         } = template;
 
         if let Some(parent) = target_path.parent().filter(|p| !p.exists()) {
-            std::fs::create_dir_all(parent).unwrap();
+            std::fs::create_dir_all(parent).expect("Internal error, could not create directory");
         };
 
-        info!("Writing {}", template.target_path.display());
-        std::fs::write(target_path, contents).unwrap();
+        let state = file_collision_prompt(target_path, contents, force_all);
+        match state {
+            PromptState::Identical => {
+                info!("Identical {}", template.target_path.display());
+            }
+            PromptState::Skip => {}
+            PromptState::Write | PromptState::AllWrite => {
+                info!("Writing {}", template.target_path.display());
+                std::fs::write(target_path, contents)
+                    .expect("Internal error, could not write contents to path");
+
+                if state == PromptState::AllWrite {
+                    force_all = true;
+                }
+            }
+            PromptState::Quit => {
+                info!("Aborting...");
+                std::process::exit(0);
+            }
+        }
     }
 
     let cmd = "cargo fmt --all";
@@ -334,20 +446,42 @@ fn calculate_dir_size(path: impl AsRef<Path>) -> io::Result<u64> {
 }
 
 fn run_cmd_in_dir(dir: &Path, command: &str) -> Output {
-    Command::new("bash")
-        .args(&["-c", &format!("cd {} && {}", dir.display(), command)])
-        .output()
-        .unwrap()
+    let command = format!("cd {} && {}", dir.display(), command);
+    let out = Command::new("bash")
+        .args(["-c", &format!("cd {} && {}", dir.display(), command)])
+        .output();
+
+    match out {
+        Ok(out) => out,
+        Err(io_error) => {
+            error!(
+                "Error running command: {} in dir: {} error:\n{}",
+                command,
+                dir.display(),
+                io_error
+            );
+            std::process::exit(exit_code::UNSPECIFIED_ERROR);
+        }
+    }
 }
 
 fn run_cmd_in_dir_checked(dir: &Path, command: &str) -> Output {
     let out = run_cmd_in_dir(dir, command);
 
     if !out.status.success() {
-        let stdout = std::str::from_utf8(&out.stdout).unwrap();
-        let stderr = std::str::from_utf8(&out.stderr).unwrap();
+        let stdout = std::str::from_utf8(&out.stdout)
+            .expect("Internal error, could not convert stdout to UTF8");
+        let stderr = std::str::from_utf8(&out.stderr)
+            .expect("Internal error, could not convert stderr to UTF8");
 
-        panic!("Command failed: {}\n{}\n{}", command, stdout, stderr);
+        error!(
+            "Command: {} in dir: {} failed:\n{}\n{}",
+            command,
+            dir.display(),
+            stdout,
+            stderr
+        );
+        std::process::exit(exit_code::UNSPECIFIED_ERROR);
     }
     out
 }
@@ -363,6 +497,7 @@ mod tests {
         let name_namespace: crate::cli::NameWithNamespace = "heroku/ruby".parse().unwrap();
         let copyright = String::from("David S. Pumpkins");
         let license = License::Bsd3;
+        let force = true;
 
         InitArgs {
             destination,
@@ -371,6 +506,7 @@ mod tests {
             license,
             copyright,
             conduct,
+            force,
         }
     }
 
