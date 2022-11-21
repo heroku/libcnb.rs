@@ -136,14 +136,17 @@ enum PromptState {
     Quit,
 }
 
-fn file_collision_prompt(file: &Path, contents: &str, force: bool) -> PromptState {
+fn file_collision_prompt(
+    file: &Path,
+    contents: &str,
+    force: bool,
+) -> Result<PromptState, io::Error> {
     if !file.exists() || force {
-        PromptState::Write
+        Ok(PromptState::Write)
     } else {
-        let original =
-            std::fs::read_to_string(file).expect("Internal error could not read file from disk");
+        let original = std::fs::read_to_string(file)?; // .expect("Internal error could not read file from disk");
         if contents.trim() == original.trim() {
-            PromptState::Identical
+            Ok(PromptState::Identical)
         } else {
             match ask(&format!(
                 "Overwrite {}? (enter 'h' for help) [Ynaqdh]",
@@ -154,38 +157,27 @@ fn file_collision_prompt(file: &Path, contents: &str, force: bool) -> PromptStat
                     std::process::exit(exit_code::UNSPECIFIED_ERROR);
                 }
                 Ok(out) => match out.to_lowercase().as_str() {
-                    "y" | "yes" | "" => PromptState::Write,
-                    "n" | "no" => PromptState::Skip,
-                    "a" | "all" => PromptState::AllWrite,
-                    "q" | "quit" => PromptState::Quit,
+                    "y" | "yes" | "" => Ok(PromptState::Write),
+                    "n" | "no" => Ok(PromptState::Skip),
+                    "a" | "all" => Ok(PromptState::AllWrite),
+                    "q" | "quit" => Ok(PromptState::Quit),
                     "d" | "diff" => {
                         let tempdir = tempfile::tempdir()
                             .expect("Internal error, could not create temp file");
                         let dir = tempdir.path();
                         let tempfile = dir.join("new_contents.txt");
-                        std::fs::write(&tempfile, contents)
-                            .expect("Internal error, could not write to temp file");
+                        std::fs::write(&tempfile, contents)?;
+                        // .expect("Internal error, could not write to temp file");
 
                         let out = Command::new("diff")
                             .arg("-u")
                             .args([file, &tempfile])
-                            .output();
+                            .output()?;
 
-                        match out {
-                            Ok(out) => {
-                                println!("{}", std::str::from_utf8(&out.stdout).expect("Internal error, could not convert output to UTF8. Check file contents are valid UTF-8"));
+                        println!("{}", std::str::from_utf8(&out.stdout).expect("Internal error, could not convert output to UTF8. Check file contents are valid UTF-8"));
 
-                                println!("Retrying...");
-                                file_collision_prompt(file, contents, force)
-                            }
-                            Err(io_error) => {
-                                error!(
-                                    "Could not diff contents with file: {} error:\n{io_error}",
-                                    file.display()
-                                );
-                                std::process::exit(exit_code::UNSPECIFIED_ERROR);
-                            }
-                        }
+                        println!("Retrying...");
+                        file_collision_prompt(file, contents, force)
                     }
                     _ => {
                         println!(
@@ -218,7 +210,13 @@ fn handle_libcnb_init(args: &InitArgs) {
             std::fs::create_dir_all(parent).expect("Internal error, could not create directory");
         };
 
-        let state = file_collision_prompt(target_path, contents, force_all);
+        let state = match file_collision_prompt(target_path, contents, force_all) {
+            Ok(state) => state,
+            Err(io_error) => {
+                error!("Something went wrong, could not read in user response: {io_error}");
+                std::process::exit(exit_code::UNSPECIFIED_ERROR);
+            }
+        };
         match state {
             PromptState::Identical => {
                 info!("Identical {}", template.target_path.display());
@@ -240,13 +238,19 @@ fn handle_libcnb_init(args: &InitArgs) {
         }
     }
 
-    let cmd = "cargo fmt --all";
-    info!("Running {}", cmd);
-    run_cmd_in_dir_checked(&args.destination, cmd);
-
-    let cmd = "git init --initial-branch=main --quiet .";
-    info!("Running {}", cmd);
-    run_cmd_in_dir_checked(&args.destination, cmd);
+    for command in &[
+        "cargo fmt --all",
+        "git init --initial-branch=main --quiet .",
+    ] {
+        info!("Running command: {}", command);
+        match run_cmd_in_dir_checked(&args.destination, command) {
+            Ok(_) => {}
+            Err(io_error) => {
+                error!("Something went wrong: {io_error}");
+                std::process::exit(exit_code::UNSPECIFIED_ERROR);
+            }
+        }
+    }
 }
 
 #[allow(clippy::too_many_lines)]
@@ -445,45 +449,32 @@ fn calculate_dir_size(path: impl AsRef<Path>) -> io::Result<u64> {
     Ok(size_in_bytes)
 }
 
-fn run_cmd_in_dir(dir: &Path, command: &str) -> Output {
+fn run_cmd_in_dir(dir: &Path, command: &str) -> Result<Output, io::Error> {
     let command = format!("cd {} && {}", dir.display(), command);
     let out = Command::new("bash")
         .args(["-c", &format!("cd {} && {}", dir.display(), command)])
-        .output();
+        .output()?;
 
-    match out {
-        Ok(out) => out,
-        Err(io_error) => {
-            error!(
-                "Error running command: {} in dir: {} error:\n{}",
-                command,
-                dir.display(),
-                io_error
-            );
-            std::process::exit(exit_code::UNSPECIFIED_ERROR);
-        }
-    }
+    Ok(out)
 }
 
-fn run_cmd_in_dir_checked(dir: &Path, command: &str) -> Output {
-    let out = run_cmd_in_dir(dir, command);
+fn run_cmd_in_dir_checked(dir: &Path, command: &str) -> Result<Output, io::Error> {
+    let out = run_cmd_in_dir(dir, command).unwrap();
 
-    if !out.status.success() {
-        let stdout = std::str::from_utf8(&out.stdout)
-            .expect("Internal error, could not convert stdout to UTF8");
-        let stderr = std::str::from_utf8(&out.stderr)
-            .expect("Internal error, could not convert stderr to UTF8");
+    if out.status.success() {
+        Ok(out)
+    } else {
+        let command_in_dir_failed =
+            format!("Command: {} in dir: {} failed", command, dir.display());
+        let stdout = std::str::from_utf8(&out.stdout).expect(&command_in_dir_failed);
+        let stderr = std::str::from_utf8(&out.stderr).expect(&command_in_dir_failed);
 
-        error!(
-            "Command: {} in dir: {} failed:\n{}\n{}",
-            command,
-            dir.display(),
-            stdout,
-            stderr
+        let foo = std::io::Error::new(
+            std::io::ErrorKind::Other,
+            format!("{}:\n{}\n{}", command_in_dir_failed, stdout, stderr),
         );
-        std::process::exit(exit_code::UNSPECIFIED_ERROR);
+        Err(foo)
     }
-    out
 }
 
 #[cfg(test)]
@@ -548,7 +539,8 @@ mod tests {
         let out = run_cmd_in_dir(
             &dir,
             "RUST_BACKTRACE=1 cargo test --all-features -- --include-ignored",
-        );
+        )
+        .unwrap();
         let stdout = std::str::from_utf8(&out.stdout).unwrap();
         let stderr = std::str::from_utf8(&out.stderr).unwrap();
         println!("{}\n{}", stdout, stderr);
@@ -558,7 +550,8 @@ mod tests {
         let out = run_cmd_in_dir(
             &dir,
             "cargo clippy --all-targets --all-features --locked -- --deny warnings",
-        );
+        )
+        .unwrap();
         let stdout = std::str::from_utf8(&out.stdout).unwrap();
         let stderr = std::str::from_utf8(&out.stderr).unwrap();
         println!("{}\n{}", stdout, stderr);
