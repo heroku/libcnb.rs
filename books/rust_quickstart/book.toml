@@ -1,0 +1,6 @@
+[book]
+authors = ["Contributors of libcnb.rs"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Rust Quick Start"
