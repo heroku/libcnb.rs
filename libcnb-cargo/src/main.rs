@@ -31,7 +31,7 @@ fn main() {
 
     match Cli::parse() {
         Cli::Libcnb(LibcnbSubcommand::Package(args)) => handle_libcnb_package(args),
-        Cli::Libcnb(LibcnbSubcommand::Init(args)) => handle_libcnb_init(&args),
+        Cli::Libcnb(LibcnbSubcommand::Init(args)) => err_to_exit(|| handle_libcnb_init(&args)),
     }
 }
 
@@ -198,7 +198,7 @@ fn file_collision_prompt(
     }
 }
 
-fn handle_libcnb_init(args: &InitArgs) {
+fn handle_libcnb_init(args: &InitArgs) -> Result<(), (String, i32)> {
     let mut force_all = args.force;
     for template in &templates_for_init(args.clone()) {
         let BuildpackTemplate {
@@ -207,16 +207,29 @@ fn handle_libcnb_init(args: &InitArgs) {
         } = template;
 
         if let Some(parent) = target_path.parent().filter(|p| !p.exists()) {
-            std::fs::create_dir_all(parent).expect("Internal error, could not create directory");
+            std::fs::create_dir_all(parent).map_err(|io_error| {
+                (
+                    format!(
+                        "Could not create directory: {}, error: {}",
+                        parent.display(),
+                        io_error
+                    ),
+                    exit_code::UNSPECIFIED_ERROR,
+                )
+            })?;
         };
 
-        let state = match file_collision_prompt(target_path, contents, force_all) {
-            Ok(state) => state,
-            Err(io_error) => {
-                error!("Something went wrong, could not read in user response: {io_error}");
-                std::process::exit(exit_code::UNSPECIFIED_ERROR);
-            }
-        };
+        let state =
+            file_collision_prompt(target_path, contents, force_all).map_err(|io_error| {
+                (
+                    format!(
+                        "Something went wrong, could not read in user response: {}",
+                        io_error
+                    ),
+                    exit_code::UNSPECIFIED_ERROR,
+                )
+            })?;
+
         match state {
             PromptState::Identical => {
                 info!("Identical {}", template.target_path.display());
@@ -233,7 +246,7 @@ fn handle_libcnb_init(args: &InitArgs) {
             }
             PromptState::Quit => {
                 info!("Aborting...");
-                std::process::exit(0);
+                return Err((String::from("Aborting..."), 0));
             }
         }
     }
@@ -243,12 +256,23 @@ fn handle_libcnb_init(args: &InitArgs) {
         "git init --initial-branch=main --quiet .",
     ] {
         info!("Running command: {}", command);
-        match run_cmd_in_dir_checked(&args.destination, command) {
-            Ok(_) => {}
-            Err(io_error) => {
-                error!("Something went wrong: {io_error}");
-                std::process::exit(exit_code::UNSPECIFIED_ERROR);
-            }
+        run_cmd_in_dir_checked(&args.destination, command).map_err(|io_error| {
+            (
+                format!("Something went wrong: {}", io_error),
+                exit_code::UNSPECIFIED_ERROR,
+            )
+        })?;
+    }
+    Ok(())
+}
+
+fn err_to_exit<G: Fn() -> Result<(), (String, i32)>>(f: G) {
+    let out = f();
+    match out {
+        Ok(_) => {}
+        Err((message, code)) => {
+            error!("{}", message);
+            std::process::exit(code);
         }
     }
 }
@@ -469,11 +493,10 @@ fn run_cmd_in_dir_checked(dir: &Path, command: &str) -> Result<Output, io::Error
         let stdout = std::str::from_utf8(&out.stdout).expect(&command_in_dir_failed);
         let stderr = std::str::from_utf8(&out.stderr).expect(&command_in_dir_failed);
 
-        let foo = std::io::Error::new(
+        Err(std::io::Error::new(
             std::io::ErrorKind::Other,
             format!("{}:\n{}\n{}", command_in_dir_failed, stdout, stderr),
-        );
-        Err(foo)
+        ))
     }
 }
 
@@ -531,7 +554,7 @@ mod tests {
     fn test_handle_libcnb_init() {
         let tempdir = tempfile::tempdir().unwrap();
         let dir = tempdir.into_path();
-        handle_libcnb_init(&default_init(dir.clone()));
+        handle_libcnb_init(&default_init(dir.clone())).unwrap();
 
         assert!(dir.join("CODE_OF_CONDUCT.md").exists());
         assert!(dir.join("cargo.toml").exists());
