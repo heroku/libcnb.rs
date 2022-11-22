@@ -536,7 +536,7 @@ mod tests {
             .find(|template| template.target_path == expected)
             .unwrap();
 
-        let expected = dir.join("cargo.toml");
+        let expected = dir.join("Cargo.toml");
         templates
             .iter()
             .find(|template| template.target_path == expected)
@@ -557,7 +557,7 @@ mod tests {
         handle_libcnb_init(&default_init(dir.clone())).unwrap();
 
         assert!(dir.join("CODE_OF_CONDUCT.md").exists());
-        assert!(dir.join("cargo.toml").exists());
+        assert!(dir.join("Cargo.toml").exists());
 
         let out = run_cmd_in_dir(
             &dir,
