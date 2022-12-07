@@ -7,6 +7,8 @@
 // This lint is too noisy and enforces a style that reduces readability in many cases.
 #![allow(clippy::module_name_repetitions)]
 
+#[cfg(feature = "command")]
+pub mod command;
 #[cfg(feature = "digest")]
 pub mod digest;
 #[cfg(feature = "download")]
@@ -21,3 +23,5 @@ pub mod log;
 pub mod tar;
 #[cfg(feature = "toml")]
 pub mod toml;
+#[cfg(feature = "write")]
+pub mod write;
