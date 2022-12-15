@@ -6,6 +6,8 @@ separate changelogs for each crate were used. If you need to refer to these old 
 
 ## [Unreleased]
 
+## [0.11.2] 2022-12-15
+
 ### Fixed
 
 - libcnb-test: `TestContext::download_sbom_files` now checks the exit code of the `pack sbom download` command it runs. ([#520](https://github.com/heroku/libcnb.rs/pull/520))
