@@ -15,7 +15,7 @@ include = ["src/**/*", "LICENSE", "README.md"]
 all-features = true
 
 [features]
-default = ["download", "digest", "error", "log", "tar", "toml", "fs"]
+default = ["command", "download", "digest", "error", "log", "tar", "toml", "fs", "write"]
 download = ["dep:ureq", "dep:thiserror"]
 digest = ["dep:sha2"]
 error = ["log", "dep:libcnb"]
@@ -23,8 +23,11 @@ log = ["dep:termcolor"]
 tar = ["dep:tar", "dep:flate2"]
 toml = ["dep:toml"]
 fs = ["dep:pathdiff"]
+command = ["write", "dep:crossbeam-utils"]
+write = []
 
 [dependencies]
+crossbeam-utils = { version = "0.8.2", optional = true }
 flate2 = { version = "1.0.24", optional = true }
 libcnb = { workspace = true, optional = true }
 pathdiff = { version = "0.2.1", optional = true }

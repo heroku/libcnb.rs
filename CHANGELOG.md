@@ -15,6 +15,10 @@ separate changelogs for each crate were used. If you need to refer to these old 
 - libcnb: Drop the use of the `stacker` crate when recursively removing layer directories. ([#517](https://github.com/heroku/libcnb.rs/pull/517))
 - libcnb-cargo: Updated to Clap v4. ([#511](https://github.com/heroku/libcnb.rs/pull/511))
 
+## Added
+
+- libherokubuildpack: Add `command` and `write` modules for working with `std::process::Command` output streams. ([#535](https://github.com/heroku/libcnb.rs/pull/535))
+
 ## [0.11.1] 2022-09-29
 
 ### Fixed
