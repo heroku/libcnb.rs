@@ -23,10 +23,11 @@ log = ["dep:termcolor"]
 tar = ["dep:tar", "dep:flate2"]
 toml = ["dep:toml"]
 fs = ["dep:pathdiff"]
-command = ["write", "dep:crossbeam"]
+command = ["write", "dep:crossbeam-utils"]
 write = []
 
 [dependencies]
+crossbeam-utils = { version = "0.8.2", optional = true }
 flate2 = { version = "1.0.24", optional = true }
 libcnb = { workspace = true, optional = true }
 pathdiff = { version = "0.2.1", optional = true }
@@ -36,7 +37,6 @@ termcolor = { version = "1.1.3", optional = true }
 thiserror = { version = "1.0.35", optional = true }
 toml = { version = "0.5.9", optional = true }
 ureq = { version = "2.5.0", optional = true }
-crossbeam = { version = "0.8.2", optional = true }
 
 [dev-dependencies]
 tempfile = "3.3.0"

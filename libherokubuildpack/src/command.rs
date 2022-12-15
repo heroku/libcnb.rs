@@ -1,5 +1,5 @@
 use crate::write::tee;
-use crossbeam::thread::ScopedJoinHandle;
+use crossbeam_utils::thread::ScopedJoinHandle;
 use std::io::Write;
 use std::{io, process, thread};
 use std::{mem, panic};
@@ -117,7 +117,7 @@ fn write_child_process_output<OW: Write + Send, EW: Write + Send>(
     // almost immediate join calls into account) and therefore requires that data used in a thread
     // lives forever. To avoid requiring 'static lifetimes for the writers, we use crossbeam's
     // scoped threads here. This enables writers that write, for example, to a mutable buffer.
-    unwind_panic(crossbeam::scope(|scope| {
+    unwind_panic(crossbeam_utils::thread::scope(|scope| {
         let stdout_copy_thread = mem::take(&mut child.stdout)
             .map(|mut stdout| scope.spawn(move |_| std::io::copy(&mut stdout, &mut stdout_writer)));
 
