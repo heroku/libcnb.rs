@@ -1,3 +1,4 @@
+use std::fmt::{Debug, Formatter};
 use std::io;
 use std::mem;
 use std::sync::Arc;
@@ -41,6 +42,7 @@ pub fn tee<A: io::Write, B: io::Write>(a: A, b: B) -> TeeWrite<A, B> {
 }
 
 /// A mapped writer that was created with the [`mapped`] or [`line_mapped`] function.
+#[derive(Clone)]
 pub struct MappedWrite<W: io::Write> {
     inner: W,
     marker_byte: u8,
@@ -49,6 +51,7 @@ pub struct MappedWrite<W: io::Write> {
 }
 
 /// A tee writer that was created with the [`tee`] function.
+#[derive(Debug, Clone)]
 pub struct TeeWrite<A: io::Write, B: io::Write> {
     inner_a: A,
     inner_b: B,
@@ -83,6 +86,16 @@ impl<W: io::Write> Drop for MappedWrite<W> {
     fn drop(&mut self) {
         // Drop implementations must not panic. We intentionally ignore the potential error here.
         let _result = self.map_and_write_current_buffer();
+    }
+}
+
+impl<W: io::Write + Debug> Debug for MappedWrite<W> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MappedWrite")
+            .field("inner", &self.inner)
+            .field("marker_byte", &self.marker_byte)
+            .field("buffer", &self.buffer)
+            .finish()
     }
 }
 
