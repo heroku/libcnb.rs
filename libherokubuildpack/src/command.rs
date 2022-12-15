@@ -127,7 +127,7 @@ fn write_child_process_output<OW: Write + Send, EW: Write + Send>(
         let stdout_copy_result = stdout_copy_thread.map_or_else(|| Ok(0), join_and_unwind_panic);
         let stderr_copy_result = stderr_copy_thread.map_or_else(|| Ok(0), join_and_unwind_panic);
 
-        // Return the first error from either Result or the child process value
+        // Return the first error from either Result, or the child process value
         stdout_copy_result.and(stderr_copy_result).map(|_| child)
     }))
 }

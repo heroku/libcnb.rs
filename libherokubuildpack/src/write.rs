@@ -3,7 +3,7 @@ use std::mem;
 use std::sync::Arc;
 
 /// Constructs a writer that buffers written data until given marker byte is encountered and
-/// then applies a given mapping function to the data before passing the result to the wrapped
+/// then applies the given mapping function to the data before passing the result to the wrapped
 /// writer.
 ///
 /// See the [`mappers`] module for a collection of commonly used mappers.
@@ -21,7 +21,7 @@ pub fn mapped<W: io::Write, F: (Fn(Vec<u8>) -> Vec<u8>) + Sync + Send + 'static>
 }
 
 /// Constructs a writer that buffers written data until an ASCII/UTF-8 newline byte (`0x0A`) is
-/// encountered and then applies a given mapping function to the data before passing the result to
+/// encountered and then applies the given mapping function to the data before passing the result to
 /// the wrapped writer.
 ///
 /// See the [`mappers`] module for a collection of commonly used mappers.
