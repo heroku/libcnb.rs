@@ -87,7 +87,7 @@ mod tests {
         let env_dir = tmpdir.path().join("env");
         fs::create_dir(&env_dir).unwrap();
         let dummy_dir = env_dir.join("foobar");
-        fs::create_dir(&dummy_dir).unwrap();
+        fs::create_dir(dummy_dir).unwrap();
         fs::write(env_dir.join("FOO"), "BAR").unwrap();
 
         let result = read_platform_env(tmpdir.path());
@@ -104,7 +104,7 @@ mod tests {
         let dummy_dir = env_dir.join("foobar");
         fs::create_dir(&dummy_dir).unwrap();
         let dst_symlink = env_dir.join("data");
-        std::os::unix::fs::symlink(&dummy_dir, &dst_symlink).unwrap();
+        std::os::unix::fs::symlink(&dummy_dir, dst_symlink).unwrap();
         fs::write(env_dir.join("FOO"), "BAR").unwrap();
 
         let result = read_platform_env(tmpdir.path());

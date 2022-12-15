@@ -263,7 +263,7 @@ fn delete_layer<P: AsRef<Path>>(
     let layer_toml = layers_dir.as_ref().join(format!("{layer_name}.toml"));
 
     default_on_not_found(remove_dir_recursively(&layer_dir))?;
-    default_on_not_found(fs::remove_file(&layer_toml))?;
+    default_on_not_found(fs::remove_file(layer_toml))?;
 
     Ok(())
 }
@@ -541,10 +541,7 @@ mod tests {
                 assert_eq!(path, execd_file);
             }
             other => {
-                panic!(
-                    "Expected WriteLayerError::MissingExecDFile, but got {:?}",
-                    other
-                );
+                panic!("Expected WriteLayerError::MissingExecDFile, but got {other:?}");
             }
         };
     }
@@ -877,7 +874,7 @@ mod tests {
         let layers_dir = temp_dir.path();
         let layer_dir = layers_dir.join(layer_name.as_str());
 
-        fs::create_dir_all(&layer_dir).unwrap();
+        fs::create_dir_all(layer_dir).unwrap();
         fs::write(
             layers_dir.join(format!("{layer_name}.toml")),
             r#"
@@ -910,7 +907,7 @@ mod tests {
         let layers_dir = temp_dir.path();
         let layer_dir = layers_dir.join(layer_name.as_str());
 
-        fs::create_dir_all(&layer_dir).unwrap();
+        fs::create_dir_all(layer_dir).unwrap();
         fs::write(
             layers_dir.join(format!("{layer_name}.toml")),
             r#"
@@ -940,7 +937,7 @@ mod tests {
         let layers_dir = temp_dir.path();
         let layer_dir = layers_dir.join(layer_name.as_str());
 
-        fs::create_dir_all(&layer_dir).unwrap();
+        fs::create_dir_all(layer_dir).unwrap();
 
         match super::read_layer::<GenericMetadata, _>(layers_dir, &layer_name) {
             Ok(Some(layer_data)) => {

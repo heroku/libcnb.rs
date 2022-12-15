@@ -45,7 +45,7 @@ pub trait Buildpack {
     /// (using its [`Debug`](std::fmt::Debug) implementation) to stderr.
     fn on_error(&self, error: crate::Error<Self::Error>) {
         eprintln!("Unhandled error:");
-        eprintln!("> {:?}", error);
+        eprintln!("> {error:?}");
         eprintln!("Buildpack will exit!");
     }
 }

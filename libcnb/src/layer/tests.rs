@@ -472,7 +472,7 @@ fn update_with_incompatible_metadata_replace() {
 
     // Create a layer by hand that has incompatible metadata
     let test_layer_dir = temp_dir.path().join("layers").join(layer_name.as_str());
-    fs::create_dir_all(&test_layer_dir).unwrap();
+    fs::create_dir_all(test_layer_dir).unwrap();
 
     let test_layer_toml = temp_dir
         .path()
@@ -480,7 +480,7 @@ fn update_with_incompatible_metadata_replace() {
         .join(format!("{layer_name}.toml"));
 
     fs::write(
-        &test_layer_toml,
+        test_layer_toml,
         r#"
 [metadata]
 v = "3.2.1"
@@ -562,7 +562,7 @@ fn update_with_incompatible_metadata_recreate() {
 
     // Create a layer by hand that has incompatible metadata
     let test_layer_dir = temp_dir.path().join("layers").join(layer_name.as_str());
-    fs::create_dir_all(&test_layer_dir).unwrap();
+    fs::create_dir_all(test_layer_dir).unwrap();
 
     let test_layer_toml = temp_dir
         .path()
@@ -570,7 +570,7 @@ fn update_with_incompatible_metadata_recreate() {
         .join(format!("{layer_name}.toml"));
 
     fs::write(
-        &test_layer_toml,
+        test_layer_toml,
         r#"
 [metadata]
 versi_on = "3.2.1"
@@ -641,7 +641,7 @@ fn error_handling_no_metadata_toml() {
     let layer_name = random_layer_name();
 
     let layer_dir = temp_dir.path().join("layers").join(layer_name.as_str());
-    fs::create_dir_all(&layer_dir).unwrap();
+    fs::create_dir_all(layer_dir).unwrap();
 
     let handle_layer_result = handle_layer(&context, layer_name, TestLayer::default()).unwrap();
 
@@ -671,7 +671,7 @@ fn error_handling_no_directory() {
         .join(format!("{layer_name}.toml"));
 
     fs::write(
-        &layer_toml_path,
+        layer_toml_path,
         r#"
 [metadata]
 version = "3.2.1"
