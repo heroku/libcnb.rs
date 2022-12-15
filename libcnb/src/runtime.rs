@@ -151,7 +151,7 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
 
 /// Build entry point for this framework.
 ///
-/// Exposed only to allow for advanced use-cases where detect is programmatically invoked.
+/// Exposed only to allow for advanced use-cases where build is programmatically invoked.
 #[doc(hidden)]
 pub fn libcnb_runtime_build<B: Buildpack>(
     buildpack: &B,
