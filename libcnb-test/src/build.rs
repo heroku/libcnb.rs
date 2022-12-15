@@ -43,7 +43,7 @@ pub(crate) fn package_crate_buildpack(
 
     assemble_buildpack_directory(
         buildpack_dir.path(),
-        &cargo_manifest_dir.join("buildpack.toml"),
+        cargo_manifest_dir.join("buildpack.toml"),
         &buildpack_binaries,
     )
     .map_err(PackageCrateBuildpackError::CannotAssembleBuildpackDirectory)?;

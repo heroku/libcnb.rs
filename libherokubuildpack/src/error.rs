@@ -63,7 +63,7 @@ where
     match error {
         libcnb::Error::BuildpackError(buildpack_error) => f(buildpack_error),
         libcnb_error => {
-            log_error("Internal Buildpack Error", format!("{}", libcnb_error));
+            log_error("Internal Buildpack Error", libcnb_error.to_string());
         }
     }
 }

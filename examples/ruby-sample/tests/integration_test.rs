@@ -83,7 +83,7 @@ where
     let mut buffer = vec![];
     stream.read_to_end(&mut buffer)?;
 
-    Ok(format!("{}", String::from_utf8_lossy(&buffer)))
+    Ok(String::from_utf8_lossy(&buffer).to_string())
 }
 
 const TEST_PORT: u16 = 12346;
