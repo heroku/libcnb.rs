@@ -1,0 +1,13 @@
+[package]
+name = "store"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+libcnb.workspace = true
+toml = "0.5.10"
+
+[dev-dependencies]
+libcnb-test.workspace = true

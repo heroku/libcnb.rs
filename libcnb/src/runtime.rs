@@ -6,7 +6,9 @@ use crate::error::Error;
 use crate::platform::Platform;
 use crate::sbom::cnb_sbom_path;
 use crate::toml_file::{read_toml_file, write_toml_file};
-use crate::{exit_code, LIBCNB_SUPPORTED_BUILDPACK_API};
+use crate::util::is_not_found_error_kind;
+use crate::{exit_code, TomlFileError, LIBCNB_SUPPORTED_BUILDPACK_API};
+use libcnb_data::store::Store;
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use std::ffi::OsStr;
@@ -165,11 +167,17 @@ pub fn libcnb_runtime_build<B: Buildpack>(
         .map_err(Error::CannotDetermineStackId)
         .and_then(|stack_id_string| stack_id_string.parse().map_err(Error::StackIdError))?;
 
-    let platform = B::Platform::from_path(&args.platform_dir_path)
+    let platform = Platform::from_path(&args.platform_dir_path)
         .map_err(Error::CannotCreatePlatformFromPath)?;
 
     let buildpack_plan =
         read_toml_file(&args.buildpack_plan_path).map_err(Error::CannotReadBuildpackPlan)?;
+
+    let store = match read_toml_file::<Store>(layers_dir.join("store.toml")) {
+        Err(TomlFileError::IoError(io_error)) if is_not_found_error_kind(&io_error) => Ok(None),
+        other => other.map(Some),
+    }
+    .map_err(Error::CannotReadStore)?;
 
     let build_result = buildpack.build(BuildContext {
         layers_dir: layers_dir.clone(),
@@ -179,6 +187,7 @@ pub fn libcnb_runtime_build<B: Buildpack>(
         buildpack_plan,
         buildpack_dir: read_buildpack_dir()?,
         buildpack_descriptor: read_buildpack_descriptor()?,
+        store,
     })?;
 
     match build_result.0 {

@@ -39,6 +39,9 @@ pub enum Error<E> {
     #[error("Cannot read buildpack descriptor (buildpack.toml): {0}")]
     CannotReadBuildpackDescriptor(TomlFileError),
 
+    #[error("Cannot read store (store.toml): {0}")]
+    CannotReadStore(TomlFileError),
+
     #[error("Cannot write build plan: {0}")]
     CannotWriteBuildPlan(TomlFileError),
 

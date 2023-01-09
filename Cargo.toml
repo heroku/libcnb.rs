@@ -11,7 +11,8 @@ members = [
     "libcnb-test",
     "libherokubuildpack",
     "test-buildpacks/readonly-layer-files",
-    "test-buildpacks/sbom"
+    "test-buildpacks/sbom",
+    "test-buildpacks/store",
 ]
 
 [workspace.package]
