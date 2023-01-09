@@ -6,6 +6,8 @@ separate changelogs for each crate were used. If you need to refer to these old 
 
 ## [Unreleased]
 
+## [0.11.3] 2023-01-09
+
 ### Added
 
 - libcnb: Add `store` field to `BuildContext`, exposing the contents of `store.toml` if present. ([#543](https://github.com/heroku/libcnb.rs/pull/543))
