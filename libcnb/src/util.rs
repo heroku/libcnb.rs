@@ -8,12 +8,14 @@ pub(crate) fn default_on_not_found<T: Default>(
     result: Result<T, std::io::Error>,
 ) -> Result<T, std::io::Error> {
     match result {
-        Err(io_error) => match io_error.kind() {
-            std::io::ErrorKind::NotFound => Ok(T::default()),
-            _ => Err(io_error),
-        },
+        Err(io_error) if is_not_found_error_kind(&io_error) => Ok(T::default()),
         other => other,
     }
+}
+
+/// Checks if the error kind of the given [`std::io::Error`]  is [`std::io::ErrorKind::NotFound`].
+pub(crate) fn is_not_found_error_kind(error: &std::io::Error) -> bool {
+    matches!(error.kind(), std::io::ErrorKind::NotFound)
 }
 
 /// Recursively removes the given path, similar to [`std::fs::remove_dir_all`].

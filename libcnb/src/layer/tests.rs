@@ -920,6 +920,7 @@ fn build_context(temp_dir: &TempDir) -> BuildContext<TestBuildpack> {
             stacks: vec![Stack::Any],
             metadata: GenericMetadata::default(),
         },
+        store: None,
     }
 }
 

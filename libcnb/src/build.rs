@@ -20,6 +20,7 @@ pub struct BuildContext<B: Buildpack + ?Sized> {
     pub platform: B::Platform,
     pub buildpack_plan: BuildpackPlan,
     pub buildpack_descriptor: SingleBuildpackDescriptor<B::Metadata>,
+    pub store: Option<Store>,
 }
 
 impl<B: Buildpack + ?Sized> BuildContext<B> {
@@ -193,8 +194,8 @@ impl BuildResultBuilder {
         self
     }
 
-    pub fn store(mut self, store: Store) -> Self {
-        self.store = Some(store);
+    pub fn store<S: Into<Store>>(mut self, store: S) -> Self {
+        self.store = Some(store.into());
         self
     }
 
