@@ -6,7 +6,7 @@ separate changelogs for each crate were used. If you need to refer to these old 
 
 ## [Unreleased]
 
-## [0.11.4] 2022-01-11
+## [0.11.4] 2023-01-11
 
 ### Added
 
