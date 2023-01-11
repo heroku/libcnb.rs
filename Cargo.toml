@@ -3,6 +3,7 @@ members = [
     "examples/basics",
     "examples/execd",
     "examples/ruby-sample",
+    "scripts/prepare",
     "libcnb",
     "libcnb-cargo",
     "libcnb-data",
