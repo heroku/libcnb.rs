@@ -16,7 +16,7 @@ fancy-regex = { version = "0.11.0", default-features = false }
 libcnb-proc-macros.workspace = true
 serde = { version = "1.0.145", features = ["derive"] }
 thiserror = "1.0.35"
-toml = "0.5.9"
+toml = "0.6.0"
 
 [dev-dependencies]
 serde_test = "1.0.145"
