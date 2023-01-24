@@ -28,12 +28,9 @@ impl Buildpack for TestBuildpack {
 
         BuildResultBuilder::new()
             .store(Store {
-                metadata: (toml! {
+                metadata: toml! {
                     pinned_language_runtime_version = "1.2.3"
-                })
-                .as_table()
-                .cloned()
-                .expect("TOML value created with macro wasn't of expected type table!"),
+                },
             })
             .build()
     }

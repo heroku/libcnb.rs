@@ -1,3 +1,4 @@
+use serde::ser::Error;
 use serde::Serialize;
 use std::collections::VecDeque;
 use toml::value::Table;
@@ -117,7 +118,7 @@ impl Require {
 
             Ok(())
         } else {
-            Err(toml::ser::Error::Custom(String::from(
+            Err(toml::ser::Error::custom(String::from(
                 "Could not be serialized as a TOML Table.",
             )))
         }

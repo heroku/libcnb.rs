@@ -7,7 +7,7 @@ publish = false
 
 [dependencies]
 libcnb.workspace = true
-toml = "0.5.10"
+toml.workspace = true
 
 [dev-dependencies]
 libcnb-test.workspace = true

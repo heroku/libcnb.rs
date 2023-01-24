@@ -18,7 +18,7 @@ use std::ops::Deref;
 ///     host = "localhost"
 /// };
 ///
-/// assert_eq!(toml_select_value(vec!["config", "net", "port"], &toml), Some(&toml::Value::from(12345)));
+/// assert_eq!(toml_select_value(vec!["config", "net", "port"], &toml.into()), Some(&toml::Value::from(12345)));
 /// ```
 pub fn toml_select_value<S: AsRef<str>, K: Deref<Target = [S]>>(
     keys: K,
@@ -54,7 +54,7 @@ mod test {
         };
 
         assert_eq!(
-            toml_select_value(vec!["now", "this"], &toml),
+            toml_select_value(vec!["now", "this"], &toml.into()),
             Some(&toml::Value::from("is podracing!"))
         );
     }
@@ -68,7 +68,7 @@ mod test {
         };
 
         assert_eq!(
-            toml_select_value(vec!["now", "this", "is"], &toml),
+            toml_select_value(vec!["now", "this", "is"], &toml.into()),
             Some(&toml::Value::from("podracing"))
         );
     }
@@ -84,7 +84,7 @@ mod test {
         };
 
         assert_eq!(
-            toml_select_value(vec!["now", "this", "is"], &toml),
+            toml_select_value(vec!["now", "this", "is"], &toml.into()),
             Some(&toml::Value::from("podracing"))
         );
     }
@@ -99,7 +99,10 @@ mod test {
             is = "podracing"
         };
 
-        assert_eq!(toml_select_value(vec!["now", "this", "was"], &toml), None);
+        assert_eq!(
+            toml_select_value(vec!["now", "this", "was"], &toml.into()),
+            None
+        );
     }
 
     #[test]
@@ -110,7 +113,7 @@ mod test {
         };
 
         assert_eq!(
-            toml_select_value(vec!["translations", "leet"], &toml),
+            toml_select_value(vec!["translations", "leet"], &toml.into()),
             Some(&toml::Value::from(1337))
         );
     }
@@ -125,7 +128,7 @@ mod test {
         hash_map.insert(String::from("foo"), String::from("bar"));
 
         assert_eq!(
-            toml_select_value::<&str, Vec<&str>>(vec![], &toml),
+            toml_select_value::<&str, Vec<&str>>(vec![], &toml.into()),
             Some(&toml::Value::from(hash_map))
         );
     }

@@ -8,7 +8,7 @@ use std::fmt::{Display, Formatter};
 /// This MUST be in the form `<X>.<Y>.<Z>` where `X`, `Y`, and `Z` are non-negative integers
 /// and must not contain leading zeros.
 #[derive(Deserialize, Debug, Eq, PartialEq)]
-#[serde(try_from = "&str")]
+#[serde(try_from = "String")]
 pub struct BuildpackVersion {
     pub major: u64,
     pub minor: u64,
@@ -26,10 +26,10 @@ impl BuildpackVersion {
     }
 }
 
-impl TryFrom<&str> for BuildpackVersion {
+impl TryFrom<String> for BuildpackVersion {
     type Error = BuildpackVersionError;
 
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
+    fn try_from(value: String) -> Result<Self, Self::Error> {
         // We're not using the `semver` crate, since semver versions also permit pre-release and
         // build metadata suffixes, which are not valid in buildpack versions.
         match value
@@ -47,7 +47,7 @@ impl TryFrom<&str> for BuildpackVersion {
             .as_slice()
         {
             &[major, minor, patch] => Ok(Self::new(major, minor, patch)),
-            _ => Err(Self::Error::InvalidBuildpackVersion(String::from(value))),
+            _ => Err(Self::Error::InvalidBuildpackVersion(value)),
         }
     }
 }

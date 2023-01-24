@@ -7,26 +7,27 @@ use std::fmt::{Display, Formatter};
 ///
 /// This MUST be in form `<major>.<minor>` or `<major>`, where `<major>` is equivalent to `<major>.0`.
 #[derive(Deserialize, Debug, Eq, PartialEq)]
-#[serde(try_from = "&str")]
+#[serde(try_from = "String")]
 pub struct BuildpackApi {
     pub major: u64,
     pub minor: u64,
 }
 
-impl TryFrom<&str> for BuildpackApi {
+impl TryFrom<String> for BuildpackApi {
     type Error = BuildpackApiError;
 
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
+    fn try_from(value: String) -> Result<Self, Self::Error> {
         // We're not using the `semver` crate, since it only supports non-range versions of form `X.Y.Z`.
         // If no minor version is specified, it defaults to `0`.
-        let (major, minor) = value.split_once('.').unwrap_or((value, "0"));
+        let (major, minor) = &value.split_once('.').unwrap_or((&value, "0"));
+
         Ok(Self {
             major: major
                 .parse()
-                .map_err(|_| Self::Error::InvalidBuildpackApi(String::from(value)))?,
+                .map_err(|_| Self::Error::InvalidBuildpackApi(value.clone()))?,
             minor: minor
                 .parse()
-                .map_err(|_| Self::Error::InvalidBuildpackApi(String::from(value)))?,
+                .map_err(|_| Self::Error::InvalidBuildpackApi(value.clone()))?,
         })
     }
 }
