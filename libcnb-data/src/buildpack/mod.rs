@@ -597,7 +597,7 @@ version = "0.0.1"
         let err = toml::from_str::<BuildpackDescriptor<GenericMetadata>>(toml_str).unwrap_err();
         assert_eq!(
             err.to_string(),
-            "data did not match any variant of untagged enum BuildpackDescriptor"
+            "data did not match any variant of untagged enum BuildpackDescriptor\n"
         );
 
         let err =
