@@ -24,7 +24,7 @@ tokio = "1.21.1"
 tokio-stream = "0.1.10"
 
 [dev-dependencies]
-indoc = "1.0.7"
+indoc = "2.0.0"
 ureq = { version = "2.5.0", default-features = false }
 
 [features]
