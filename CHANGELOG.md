@@ -6,6 +6,8 @@ separate changelogs for each crate were used. If you need to refer to these old 
 
 ## [Unreleased]
 
+### Changed
+
 - Update `toml` to `0.7.1`. If your buildpack interacts with TOML data directly, you probably want to bump 
 the `toml` version in your buildpack as well. ([#556](https://github.com/heroku/libcnb.rs/pull/556))
 
