@@ -90,6 +90,7 @@ impl<'a> TestContext<'a> {
                 .create_container(
                     Some(CreateContainerOptions {
                         name: container_name.clone(),
+                        ..CreateContainerOptions::default()
                     }),
                     Config {
                         image: Some(self.image_name.clone()),

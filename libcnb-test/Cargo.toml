@@ -12,7 +12,7 @@ readme = "README.md"
 include = ["src/**/*", "LICENSE", "README.md"]
 
 [dependencies]
-bollard = "0.13.0"
+bollard = "0.14.0"
 cargo_metadata = "0.15.0"
 fastrand = "1.8.0"
 fs_extra = "1.2.0"
