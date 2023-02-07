@@ -27,4 +27,4 @@ libcnb-data = { version = "0.11.4", path = "libcnb-data" }
 libcnb-package = { version = "0.11.4", path = "libcnb-package" }
 libcnb-proc-macros = { version = "0.11.4", path = "libcnb-proc-macros" }
 libcnb-test = { version = "0.11.4", path = "libcnb-test" }
-toml = { version = "0.6.0" }
+toml = { version = "0.7.1" }
