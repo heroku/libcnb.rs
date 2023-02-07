@@ -6,6 +6,8 @@ separate changelogs for each crate were used. If you need to refer to these old 
 
 ## [Unreleased]
 
+## [0.11.5] 2023-02-07
+
 ### Changed
 
 - Update `toml` to `0.7.1`. If your buildpack interacts with TOML data directly, you probably want to bump 
