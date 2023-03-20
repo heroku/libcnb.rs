@@ -33,7 +33,14 @@ pub(crate) fn remove_dir_recursively(dir: &Path) -> std::io::Result<()> {
         Permissions::from_mode(0o777)
     } else {
         let mut permissions = dir.symlink_metadata()?.permissions();
+
+        // `clippy::permissions_set_readonly_false` warns about making a file writable by everyone
+        // on UNIX systems when `set_readonly(false)` is used. We use it as a fallback for non
+        // UNIXes so disabling the lint is correct here. In addition, the file/directory that we
+        // make writable will be deleted afterwards.
+        #[allow(clippy::permissions_set_readonly_false)]
         permissions.set_readonly(false);
+
         permissions
     };
 
