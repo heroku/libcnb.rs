@@ -1,6 +1,7 @@
 use assert_cmd::Command;
 use fs_extra::dir::{copy, CopyOptions};
-use libcnb_package::read_buildpack_data;
+use libcnb_package::{read_buildpack_data, read_buildpackage_data};
+use std::fs::canonicalize;
 use std::path::{Path, PathBuf};
 use std::process::Output;
 use tempfile::{tempdir, TempDir};
@@ -33,7 +34,17 @@ fn package_single_meta_buildpack_in_monorepo_buildpack_project() {
     );
     validate_compiled_buildpack(&buildpack_project, "multiple-buildpacks/one");
     validate_compiled_buildpack(&buildpack_project, "multiple-buildpacks/two");
-    validate_meta_buildpack(&buildpack_project, "multiple-buildpacks/meta-one");
+    validate_meta_buildpack(
+        &buildpack_project,
+        "multiple-buildpacks/meta-one",
+        [
+            get_compiled_buildpack_directory(&buildpack_project, "multiple-buildpacks/one")
+                .to_string_lossy(),
+            get_compiled_buildpack_directory(&buildpack_project, "multiple-buildpacks/two")
+                .to_string_lossy(),
+            String::from("docker://docker.io/heroku/procfile-cnb:2.0.0").into(),
+        ],
+    );
 }
 
 #[test]
@@ -76,7 +87,17 @@ fn package_all_buildpacks_in_monorepo_buildpack_project() {
     );
     validate_compiled_buildpack(&buildpack_project, "multiple-buildpacks/one");
     validate_compiled_buildpack(&buildpack_project, "multiple-buildpacks/two");
-    validate_meta_buildpack(&buildpack_project, "multiple-buildpacks/meta-one");
+    validate_meta_buildpack(
+        &buildpack_project,
+        "multiple-buildpacks/meta-one",
+        [
+            get_compiled_buildpack_directory(&buildpack_project, "multiple-buildpacks/one")
+                .to_string_lossy(),
+            get_compiled_buildpack_directory(&buildpack_project, "multiple-buildpacks/two")
+                .to_string_lossy(),
+            String::from("docker://docker.io/heroku/procfile-cnb:2.0.0").into(),
+        ],
+    );
 }
 
 fn create_buildpack_project_from_fixture(buildpack_project_fixture: &str) -> (TempDir, PathBuf) {
@@ -123,12 +144,41 @@ fn validate_compiled_buildpack<PathRef: AsRef<Path>>(
     );
 }
 
-fn validate_meta_buildpack<PathRef: AsRef<Path>>(buildpack_project: PathRef, buildpack_id: &str) {
+fn validate_meta_buildpack<
+    PathRef: AsRef<Path>,
+    IntoStringIterator: IntoIterator<Item = IntoString>,
+    IntoString: Into<String>,
+>(
+    buildpack_project: PathRef,
+    buildpack_id: &str,
+    dependency_uris: IntoStringIterator,
+) {
     let target_compile_dir = get_compiled_buildpack_directory(buildpack_project, buildpack_id);
 
     assert!(target_compile_dir.exists());
     assert!(target_compile_dir.join("buildpack.toml").exists());
     assert!(target_compile_dir.join("package.toml").exists());
+
+    let buildpackage_data = read_buildpackage_data(target_compile_dir).unwrap();
+    let compiled_uris: Vec<_> = buildpackage_data
+        .buildpackage_descriptor
+        .dependencies
+        .iter()
+        .map(|buildpackage_uri| buildpackage_uri.uri.clone())
+        .collect();
+    let dependency_uris: Vec<_> = dependency_uris
+        .into_iter()
+        .map(|dependency_uri| {
+            let dependency_uri: String = dependency_uri.into();
+            if dependency_uri.starts_with('/') {
+                let absolute_path = canonicalize(PathBuf::from(dependency_uri)).unwrap();
+                String::from(absolute_path.to_string_lossy())
+            } else {
+                dependency_uri
+            }
+        })
+        .collect();
+    assert_eq!(compiled_uris, dependency_uris);
 }
 
 fn get_compiled_buildpack_directory<PathAsRef: AsRef<Path>>(

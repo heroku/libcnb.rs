@@ -11,6 +11,7 @@ use crate::cli::{Cli, LibcnbSubcommand, PackageArgs};
 use cargo_metadata::{Metadata, MetadataCommand};
 use clap::Parser;
 use glob::glob;
+use libcnb_data::buildpackage::{Buildpackage, BuildpackageUri};
 use libcnb_package::build::{build_buildpack_binaries, BuildBinariesError, BuildError};
 use libcnb_package::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
 use libcnb_package::{
@@ -31,8 +32,6 @@ use uriparse::RelativeReference;
 use assert_cmd as _;
 #[cfg(test)]
 use fs_extra as _;
-#[cfg(test)]
-use libcnb_data as _;
 #[cfg(test)]
 use tempfile as _;
 
@@ -61,19 +60,27 @@ fn run_package_command(args: &PackageArgs) {
     let buildpack_projects = get_buildpack_projects(&buildpack_workspace);
     let buildpack_projects_to_compile = get_buildpack_projects_to_compile(&buildpack_projects);
 
-    for buildpack_project in buildpack_projects_to_compile {
-        compile_buildpack_project_for_packaging(args, &buildpack_project);
+    for buildpack_project in &buildpack_projects_to_compile {
+        compile_buildpack_project_for_packaging(
+            args,
+            buildpack_project,
+            &buildpack_projects_to_compile,
+        );
     }
 }
 
 fn compile_buildpack_project_for_packaging(
     args: &PackageArgs,
     buildpack_project: &BuildpackProject,
+    buildpack_projects_to_compile: &[BuildpackProject],
 ) {
     if buildpack_project.source_dir.join("Cargo.toml").exists() {
         compile_single_buildpack_project_for_packaging(args, buildpack_project);
     } else {
-        compile_meta_buildpack_project_for_packaging(buildpack_project);
+        compile_meta_buildpack_project_for_packaging(
+            buildpack_project,
+            buildpack_projects_to_compile,
+        );
     }
     println!("{}", buildpack_project.target_dir.to_string_lossy());
 }
@@ -189,7 +196,10 @@ fn compile_single_buildpack_project_for_packaging(
     info!("Hint: To test your buildpack locally with pack, run: pack build my-image --buildpack {} --path /path/to/application", relative_output_path.to_string_lossy());
 }
 
-fn compile_meta_buildpack_project_for_packaging(buildpack_project: &BuildpackProject) {
+fn compile_meta_buildpack_project_for_packaging(
+    buildpack_project: &BuildpackProject,
+    buildpack_projects_to_compile: &[BuildpackProject],
+) {
     let relative_output_path =
         pathdiff::diff_paths(&buildpack_project.target_dir, &buildpack_project.source_dir)
             .unwrap_or_else(|| buildpack_project.target_dir.clone());
@@ -215,11 +225,70 @@ fn compile_meta_buildpack_project_for_packaging(buildpack_project: &BuildpackPro
         std::process::exit(exit_code::UNSPECIFIED_ERROR);
     }
 
-    if let Err(error) = fs::copy(
-        buildpack_project.source_dir.join("package.toml"),
+    let buildpackage_data =
+        if let Ok(buildpackage_data) = read_buildpackage_data(&buildpack_project.source_dir) {
+            buildpackage_data
+        } else {
+            error!(
+                "Could not read package.toml in {}",
+                buildpack_project.source_dir.to_string_lossy()
+            );
+            std::process::exit(exit_code::UNSPECIFIED_ERROR);
+        };
+
+    let dependencies = buildpackage_data
+        .buildpackage_descriptor
+        .dependencies
+        .into_iter()
+        .map(|dependency| {
+            if RelativeReference::try_from(dependency.uri.as_str()).is_ok() {
+                let absolute_path = if dependency.uri.starts_with('.') {
+                    absolutize(&buildpack_project.source_dir.join(&dependency.uri))
+                } else {
+                    absolutize(&PathBuf::from(&dependency.uri))
+                };
+
+                let local_buildpack_project = buildpack_projects_to_compile
+                    .iter()
+                    .find(|local_buildpack_project| local_buildpack_project.target_dir == absolute_path);
+
+                if let Some(local_buildpack_project) = local_buildpack_project {
+                    BuildpackageUri {
+                        uri: String::from(local_buildpack_project.target_dir.to_string_lossy())
+                    }
+                } else {
+                    error!(
+                        "The local buildpack dependency '{}' could not be found. Verify the path and correct it in {}",
+                        dependency.uri,
+                        buildpack_project.source_dir.join("package.toml").to_string_lossy()
+                    );
+                    std::process::exit(exit_code::UNSPECIFIED_ERROR);
+                }
+            } else {
+                dependency
+            }
+        })
+        .collect::<Vec<_>>();
+
+    let buildpackage = Buildpackage {
+        buildpack: buildpackage_data.buildpackage_descriptor.buildpack,
+        platform: buildpackage_data.buildpackage_descriptor.platform,
+        dependencies,
+    };
+
+    let buildpackage_content = match toml::to_string(&buildpackage) {
+        Ok(buildpackage_content) => buildpackage_content,
+        Err(error) => {
+            error!("Could not serialize package.toml content: {error}");
+            std::process::exit(exit_code::UNSPECIFIED_ERROR);
+        }
+    };
+
+    if let Err(error) = fs::write(
         buildpack_project.target_dir.join("package.toml"),
+        buildpackage_content,
     ) {
-        error!("Could not copy package.toml to target directory: {error}");
+        error!("Could not write package.toml to target directory: {error}");
         std::process::exit(exit_code::UNSPECIFIED_ERROR);
     }
 

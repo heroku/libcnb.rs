@@ -1,11 +1,11 @@
 use crate::buildpackage::PlatformOs::Linux;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 fn platform_default() -> Platform {
     Platform::default()
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Buildpackage {
     pub buildpack: BuildpackageUri,
@@ -15,20 +15,20 @@ pub struct Buildpackage {
     pub platform: Platform,
 }
 
-#[derive(Debug, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct BuildpackageUri {
     pub uri: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Platform {
     // TODO: this should be limited to (linux | windows)
     pub os: PlatformOs,
 }
 
-#[derive(Debug, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum PlatformOs {
     Linux,
