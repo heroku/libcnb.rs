@@ -20,7 +20,7 @@ fn package_single_meta_buildpack_in_monorepo_buildpack_project() {
     let (_tempdir, buildpack_project) =
         create_buildpack_project_from_fixture("multiple_buildpacks");
 
-    let output = package_project_for_release(&buildpack_project.join("meta-buildpacks/meta-one"));
+    let output = package_project_for_release(buildpack_project.join("meta-buildpacks/meta-one"));
 
     validate_stdout_include_compiled_directories(
         &buildpack_project,
@@ -41,7 +41,7 @@ fn package_single_buildpack_in_monorepo_buildpack_project() {
     let (_tempdir, buildpack_project) =
         create_buildpack_project_from_fixture("multiple_buildpacks");
 
-    let output = package_project_for_release(&buildpack_project.join("buildpacks/one"));
+    let output = package_project_for_release(buildpack_project.join("buildpacks/one"));
 
     validate_stdout_include_compiled_directories(
         &buildpack_project,
@@ -86,7 +86,7 @@ fn create_buildpack_project_from_fixture(buildpack_project_fixture: &str) -> (Te
         .join(buildpack_project_fixture);
     let target_directory = tempdir().unwrap();
     let copy_options = CopyOptions::new();
-    copy(&source_directory, &target_directory, &copy_options).unwrap();
+    copy(source_directory, &target_directory, &copy_options).unwrap();
     let buildpack_project = target_directory.path().join(buildpack_project_fixture);
     (target_directory, buildpack_project)
 }
@@ -96,8 +96,8 @@ fn package_project_for_release<PathRef: AsRef<Path>>(working_dir: PathRef) -> Ou
     cmd.args(["libcnb", "package", "--release"]);
     cmd.current_dir(working_dir);
     let output = cmd.unwrap();
-    println!("STDOUT:\n{}", String::from_utf8_lossy(&*output.stdout));
-    println!("STDERR:\n{}", String::from_utf8_lossy(&*output.stderr));
+    println!("STDOUT:\n{}", String::from_utf8_lossy(&output.stdout));
+    println!("STDERR:\n{}", String::from_utf8_lossy(&output.stderr));
     output
 }
 
@@ -139,7 +139,7 @@ fn get_compiled_buildpack_directory<PathAsRef: AsRef<Path>>(
         .as_ref()
         .join("target")
         .join("buildpack")
-        .join(buildpack_id.replace("/", "_"))
+        .join(buildpack_id.replace('/', "_"))
 }
 
 fn validate_stdout_include_compiled_directories<
@@ -151,9 +151,9 @@ fn validate_stdout_include_compiled_directories<
     output: &Output,
     buildpack_ids: IntoStringIterator,
 ) {
-    let stdout: Vec<_> = String::from_utf8_lossy(&*output.stdout)
+    let stdout: Vec<_> = String::from_utf8_lossy(&output.stdout)
         .lines()
-        .map(|line| PathBuf::from(line))
+        .map(PathBuf::from)
         .collect();
     let targets: Vec<_> = buildpack_ids
         .into_iter()

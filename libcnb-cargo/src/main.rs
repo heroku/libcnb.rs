@@ -42,17 +42,17 @@ struct BuildpackProject {
 fn main() {
     setup_logging();
     match Cli::parse() {
-        Cli::Libcnb(LibcnbSubcommand::Package(args)) => run_package_command(args),
+        Cli::Libcnb(LibcnbSubcommand::Package(args)) => run_package_command(&args),
     }
 }
 
-fn run_package_command(args: PackageArgs) {
+fn run_package_command(args: &PackageArgs) {
     let buildpack_workspace = get_buildpack_workspace();
     let buildpack_projects = get_buildpack_projects(&buildpack_workspace);
     let buildpack_projects_to_compile = get_buildpack_projects_to_compile(&buildpack_projects);
 
     for buildpack_project in buildpack_projects_to_compile {
-        compile_buildpack_project_for_packaging(&args, &buildpack_project);
+        compile_buildpack_project_for_packaging(args, &buildpack_project);
     }
 }
 
@@ -61,9 +61,9 @@ fn compile_buildpack_project_for_packaging(
     buildpack_project: &BuildpackProject,
 ) {
     if buildpack_project.source_dir.join("Cargo.toml").exists() {
-        compile_single_buildpack_project_for_packaging(&args, &buildpack_project);
+        compile_single_buildpack_project_for_packaging(args, buildpack_project);
     } else {
-        compile_meta_buildpack_project_for_packaging(&buildpack_project);
+        compile_meta_buildpack_project_for_packaging(buildpack_project);
     }
     println!("{}", buildpack_project.target_dir.to_string_lossy());
 }
@@ -80,8 +80,8 @@ fn compile_single_buildpack_project_for_packaging(
     };
     let target_triple = &args.target;
     let cargo_metadata = get_cargo_metadata(&buildpack_project.source_dir);
-    let package_dir = buildpack_project.source_dir.to_path_buf();
-    let output_path = buildpack_project.target_dir.to_path_buf();
+    let package_dir = buildpack_project.source_dir.clone();
+    let output_path = buildpack_project.target_dir.clone();
     let relative_output_path =
         pathdiff::diff_paths(&output_path, &package_dir).unwrap_or_else(|| output_path.clone());
 
@@ -89,7 +89,7 @@ fn compile_single_buildpack_project_for_packaging(
         vec![]
     } else {
         info!("Determining automatic cross-compile settings...");
-        match cross_compile_assistance(&target_triple) {
+        match cross_compile_assistance(target_triple) {
             CrossCompileAssistance::HelpText(help_text) => {
                 error!("{help_text}");
                 info!("To disable cross-compile assistance, pass --no-cross-compile-assistance.");
@@ -112,7 +112,7 @@ fn compile_single_buildpack_project_for_packaging(
         &cargo_metadata,
         cargo_profile,
         &cargo_build_env,
-        &target_triple,
+        target_triple,
     ) {
         Ok(binaries) => binaries,
         Err(build_error) => {
@@ -199,15 +199,15 @@ fn compile_meta_buildpack_project_for_packaging(buildpack_project: &BuildpackPro
 
     if let Err(error) = fs::copy(
         &buildpack_project.buildpack_data.buildpack_descriptor_path,
-        &buildpack_project.target_dir.join("buildpack.toml"),
+        buildpack_project.target_dir.join("buildpack.toml"),
     ) {
         error!("Could not copy buildpack.toml to target directory: {error}");
         std::process::exit(exit_code::UNSPECIFIED_ERROR);
     }
 
     if let Err(error) = fs::copy(
-        &buildpack_project.source_dir.join("package.toml"),
-        &buildpack_project.target_dir.join("package.toml"),
+        buildpack_project.source_dir.join("package.toml"),
+        buildpack_project.target_dir.join("package.toml"),
     ) {
         error!("Could not copy package.toml to target directory: {error}");
         std::process::exit(exit_code::UNSPECIFIED_ERROR);
@@ -277,11 +277,11 @@ fn get_buildpack_workspace() -> BuildpackWorkspace {
 }
 
 fn get_buildpack_projects(buildpack_workspace: &BuildpackWorkspace) -> Vec<BuildpackProject> {
-    let buildpack_dirs = find_buildpack_directories(&buildpack_workspace);
+    let buildpack_dirs = find_buildpack_directories(buildpack_workspace);
     let buildpack_metadatas: Vec<_> = buildpack_dirs.iter().map(get_buildpack_metadata).collect();
     let buildpack_target_dirs: Vec<_> = buildpack_metadatas
         .iter()
-        .map(|meta| get_buildpack_target_directory(&buildpack_workspace, &meta))
+        .map(|meta| get_buildpack_target_directory(buildpack_workspace, meta))
         .collect();
     buildpack_dirs
         .iter()
@@ -289,8 +289,8 @@ fn get_buildpack_projects(buildpack_workspace: &BuildpackWorkspace) -> Vec<Build
         .zip(buildpack_target_dirs.iter())
         .map(
             |((buildpack_dir, buildpack_metadata), buildpack_target_dir)| BuildpackProject {
-                source_dir: buildpack_dir.to_path_buf(),
-                target_dir: buildpack_target_dir.to_path_buf(),
+                source_dir: buildpack_dir.clone(),
+                target_dir: buildpack_target_dir.clone(),
                 buildpack_data: buildpack_metadata.clone(),
             },
         )
@@ -298,14 +298,14 @@ fn get_buildpack_projects(buildpack_workspace: &BuildpackWorkspace) -> Vec<Build
 }
 
 fn get_buildpack_projects_to_compile(
-    buildpack_projects: &Vec<BuildpackProject>,
+    buildpack_projects: &[BuildpackProject],
 ) -> Vec<BuildpackProject> {
     let current_dir = get_current_dir();
 
     let buildpack_projects_in_scope: Vec<_> = if current_dir.join("buildpack.toml").exists() {
         buildpack_projects
             .iter()
-            .filter(|buildpack_project| buildpack_project.source_dir.to_path_buf() == current_dir)
+            .filter(|buildpack_project| buildpack_project.source_dir.clone() == current_dir)
             .collect()
     } else {
         buildpack_projects.iter().collect()
@@ -316,7 +316,7 @@ fn get_buildpack_projects_to_compile(
 
     for buildpack_project in buildpack_projects_in_scope {
         for dependent_buildpack_project in
-            get_local_dependencies_for_buildpack(&buildpack_project, &buildpack_projects)
+            get_local_dependencies_for_buildpack(buildpack_project, buildpack_projects)
         {
             if !buildpack_projects_seen.contains(&dependent_buildpack_project.source_dir) {
                 buildpack_projects_seen.insert(dependent_buildpack_project.source_dir.clone());
@@ -335,7 +335,7 @@ fn get_buildpack_projects_to_compile(
 fn get_buildpack_metadata(buildpack_dir: &PathBuf) -> BuildpackData<Option<Value>> {
     info!("Reading buildpack metadata...");
 
-    let buildpack_data = match read_buildpack_data(&buildpack_dir) {
+    let buildpack_data = match read_buildpack_data(buildpack_dir) {
         Ok(buildpack_data) => buildpack_data,
         Err(error) => {
             match error {
@@ -367,7 +367,7 @@ fn get_buildpack_metadata(buildpack_dir: &PathBuf) -> BuildpackData<Option<Value
     buildpack_data
 }
 
-fn get_cargo_metadata(buildpack_dir: &PathBuf) -> Metadata {
+fn get_cargo_metadata(buildpack_dir: &Path) -> Metadata {
     match MetadataCommand::new()
         .manifest_path(&buildpack_dir.join("Cargo.toml"))
         .exec()
@@ -402,7 +402,7 @@ fn get_workspace_root() -> PathBuf {
     match locate_project.output() {
         Ok(output) => {
             let output = String::from_utf8_lossy(&output.stdout);
-            parent_dir(PathBuf::from(output.trim()))
+            parent_dir(&PathBuf::from(output.trim()))
         }
         Err(error) => {
             error!("Could not locate project root: {error}");
@@ -447,7 +447,7 @@ fn find_buildpack_directories(buildpack_workspace: &BuildpackWorkspace) -> Vec<P
     paths
         .filter_map(Result::ok)
         .filter(|path| !exclude_target_pattern.matches(&path.to_string_lossy()))
-        .map(|path| parent_dir(path))
+        .map(|path| parent_dir(&path))
         .collect()
 }
 
@@ -465,7 +465,7 @@ fn get_buildpack_target_directory(
 
 fn get_local_dependencies_for_buildpack(
     buildpack_project: &BuildpackProject,
-    buildpack_projects: &Vec<BuildpackProject>,
+    buildpack_projects: &[BuildpackProject],
 ) -> Vec<BuildpackProject> {
     let local_buildpack_uris = match read_buildpackage_data(&buildpack_project.source_dir) {
         Ok(buildpackage_data) => buildpackage_data
@@ -480,44 +480,40 @@ fn get_local_dependencies_for_buildpack(
     local_buildpack_uris
         .iter()
         .map(|local_buildpack_uri| {
-            let absolute_path = if local_buildpack_uri.uri.starts_with(".") {
-                absolutize(buildpack_project.source_dir.join(&local_buildpack_uri.uri))
+            let absolute_path = if local_buildpack_uri.uri.starts_with('.') {
+                absolutize(&buildpack_project.source_dir.join(&local_buildpack_uri.uri))
             } else {
-                absolutize(PathBuf::from(&local_buildpack_uri.uri))
+                absolutize(&PathBuf::from(&local_buildpack_uri.uri))
             };
 
-            match buildpack_projects
+            if let Some(local_buildpack_project) = buildpack_projects
                 .iter()
-                .find(|buildpack_project| buildpack_project.target_dir == absolute_path)
-            {
-                Some(local_buildpack_project) => local_buildpack_project.clone(),
-                None => {
-                    error!(
-                        "The local buildpack dependency '{}' could not be found. Verify the path and correct it in {}",
-                        local_buildpack_uri.uri,
-                        buildpack_project.source_dir.join("package.toml").to_string_lossy()
-                    );
-                    std::process::exit(exit_code::UNSPECIFIED_ERROR);
-                }
+                .find(|buildpack_project| buildpack_project.target_dir == absolute_path) { local_buildpack_project.clone()
+            } else {
+                error!(
+                    "The local buildpack dependency '{}' could not be found. Verify the path and correct it in {}",
+                    local_buildpack_uri.uri,
+                    buildpack_project.source_dir.join("package.toml").to_string_lossy()
+                );
+                std::process::exit(exit_code::UNSPECIFIED_ERROR);
             }
         })
         .collect()
 }
 
-fn parent_dir(path: PathBuf) -> PathBuf {
-    match path.parent() {
-        Some(parent) => parent.to_path_buf(),
-        None => {
-            error!(
-                "Could not get parent directory from {}",
-                path.to_string_lossy()
-            );
-            std::process::exit(exit_code::UNSPECIFIED_ERROR);
-        }
+fn parent_dir(path: &Path) -> PathBuf {
+    if let Some(parent) = path.parent() {
+        parent.to_path_buf()
+    } else {
+        error!(
+            "Could not get parent directory from {}",
+            path.to_string_lossy()
+        );
+        std::process::exit(exit_code::UNSPECIFIED_ERROR);
     }
 }
 
-fn absolutize(path: PathBuf) -> PathBuf {
+fn absolutize(path: &PathBuf) -> PathBuf {
     match path.absolutize() {
         Ok(abs_path) => abs_path.to_path_buf(),
         Err(error) => {
