@@ -6,7 +6,7 @@ use std::fmt::{Display, Formatter};
 /// The Buildpack API version.
 ///
 /// This MUST be in form `<major>.<minor>` or `<major>`, where `<major>` is equivalent to `<major>.0`.
-#[derive(Deserialize, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Debug, Eq, PartialEq, Clone)]
 #[serde(try_from = "String")]
 pub struct BuildpackApi {
     pub major: u64,

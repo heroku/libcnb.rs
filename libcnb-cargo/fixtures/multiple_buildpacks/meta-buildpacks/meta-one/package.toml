@@ -1,0 +1,14 @@
+[buildpack]
+uri = "."
+
+[[dependencies]]
+uri = "libcnb:multiple-buildpacks/one"
+
+[[dependencies]]
+uri = "libcnb:multiple-buildpacks/two"
+
+[[dependencies]]
+uri = "../../buildpacks/not_libcnb"
+
+[[dependencies]]
+uri = "docker://docker.io/heroku/procfile-cnb:2.0.0"

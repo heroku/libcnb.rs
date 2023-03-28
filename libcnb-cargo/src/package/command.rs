@@ -1,0 +1,372 @@
+use crate::cli::PackageArgs;
+use crate::package::error::Error;
+use cargo_metadata::MetadataCommand;
+use libcnb_data::buildpack::{BuildpackDescriptor, BuildpackId};
+use libcnb_data::buildpackage::Buildpackage;
+use libcnb_package::build::build_buildpack_binaries;
+use libcnb_package::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
+use libcnb_package::{
+    assemble_buildpack_directory, create_buildpack_package_graph, find_buildpack_dirs,
+    get_buildpack_package_dependencies, get_buildpack_target_dir, read_buildpack_package,
+    rewrite_buildpackage_local_dependencies,
+    rewrite_buildpackage_relative_path_dependencies_to_absolute, BuildpackPackage, CargoProfile,
+    FindBuildpackDirsOptions,
+};
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
+use std::process::Command;
+
+pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
+    eprintln!("🔍 Locating buildpacks...");
+
+    let current_dir = std::env::current_dir().map_err(Error::GetCurrentDir)?;
+
+    let workspace = get_cargo_workspace_root(&current_dir)?;
+
+    let workspace_target_dir = MetadataCommand::new()
+        .manifest_path(&workspace.join("Cargo.toml"))
+        .exec()
+        .map(|metadata| metadata.target_directory.into_std_path_buf())
+        .map_err(|e| Error::ReadingCargoMetadata {
+            path: workspace.clone(),
+            source: e,
+        })?;
+
+    let find_buildpack_dirs_options = FindBuildpackDirsOptions {
+        ignore: vec![workspace_target_dir.clone()],
+    };
+
+    let buildpack_packages = create_buildpack_package_graph(
+        find_buildpack_dirs(&workspace, &find_buildpack_dirs_options)?
+            .into_iter()
+            .map(|dir| read_buildpack_package(dir).map_err(std::convert::Into::into))
+            .collect::<Result<Vec<BuildpackPackage>>>()?,
+    )?;
+
+    let target_directories_index = buildpack_packages
+        .packages()
+        .into_iter()
+        .map(|buildpack_package| {
+            let id = buildpack_package.buildpack_id();
+            let target_dir = if contains_buildpack_binaries(&buildpack_package.path) {
+                buildpack_package.path.clone()
+            } else {
+                get_buildpack_target_dir(id, &workspace_target_dir, args.release)
+            };
+            (id, target_dir)
+        })
+        .collect::<HashMap<_, _>>();
+
+    let is_user_requested_buildpack: Box<dyn Fn(&&BuildpackPackage) -> bool> =
+        if current_dir.join("buildpack.toml").exists() {
+            Box::new(|buildpack| buildpack.path == current_dir)
+        } else {
+            Box::new(|_| true)
+        };
+
+    let buildpack_packages_requested = buildpack_packages
+        .packages()
+        .into_iter()
+        .filter(is_user_requested_buildpack)
+        .collect::<Vec<_>>();
+
+    if buildpack_packages_requested.is_empty() {
+        Err(Error::NoBuildpacksFound)?;
+    }
+
+    let build_order =
+        get_buildpack_package_dependencies(&buildpack_packages, &buildpack_packages_requested)?;
+
+    let lookup_target_dir = |buildpack_package: &BuildpackPackage| {
+        target_directories_index
+            .get(&buildpack_package.buildpack_id())
+            .ok_or(Error::TargetDirectoryLookup {
+                buildpack_id: buildpack_package.buildpack_id().clone(),
+            })
+            .map(std::clone::Clone::clone)
+    };
+
+    let mut current_count = 1;
+    let total_count = build_order.len() as u64;
+    for buildpack_package in &build_order {
+        eprintln!(
+            "📦 [{current_count}/{total_count}] Building {}",
+            buildpack_package.buildpack_id()
+        );
+        let target_dir = lookup_target_dir(buildpack_package)?;
+        match buildpack_package.buildpack_data.buildpack_descriptor {
+            BuildpackDescriptor::Single(_) => {
+                if contains_buildpack_binaries(&buildpack_package.path) {
+                    eprintln!("Not a libcnb buildpack, nothing to compile...");
+                } else {
+                    package_single_buildpack(buildpack_package, &target_dir, args)?;
+                }
+            }
+            BuildpackDescriptor::Meta(_) => {
+                package_meta_buildpack(buildpack_package, &target_dir, &target_directories_index)?;
+            }
+        }
+        current_count += 1;
+    }
+
+    eprint_pack_command_hint(
+        build_order
+            .into_iter()
+            .map(lookup_target_dir)
+            .collect::<Result<Vec<_>>>()?,
+    );
+
+    print_requested_buildpack_output_dirs(
+        buildpack_packages_requested
+            .into_iter()
+            .map(lookup_target_dir)
+            .collect::<Result<Vec<_>>>()?,
+    );
+
+    Ok(())
+}
+
+fn eprint_pack_command_hint(pack_directories: Vec<PathBuf>) {
+    eprintln!("✨ Packaging successfully finished!");
+    eprintln!();
+    eprintln!("💡 To test your buildpack locally with pack, run:");
+    eprintln!("pack build my-image-name \\");
+    for dir in pack_directories {
+        eprintln!("  --buildpack {} \\", dir.to_string_lossy());
+    }
+    eprintln!("  --path /path/to/application");
+    eprintln!();
+}
+
+fn print_requested_buildpack_output_dirs(output_directories: Vec<PathBuf>) {
+    let mut output_directories = output_directories
+        .into_iter()
+        .map(|dir| dir.to_string_lossy().to_string())
+        .collect::<Vec<_>>();
+    output_directories.sort();
+    for dir in output_directories {
+        println!("{dir}");
+    }
+}
+
+fn get_cargo_workspace_root(dir: &Path) -> Result<PathBuf> {
+    let cargo_bin = std::env::var("CARGO").map(PathBuf::from)?;
+
+    Command::new(cargo_bin)
+        .args(["locate-project", "--workspace", "--message-format", "plain"])
+        .current_dir(dir)
+        .output()
+        .map_err(|e| Error::GetWorkspaceCommand {
+            path: dir.to_path_buf(),
+            source: e,
+        })
+        .map(|output| {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            PathBuf::from(stdout.trim()).parent().map(Path::to_path_buf)
+        })
+        .transpose()
+        .ok_or(Error::GetWorkspaceDirectory {
+            path: dir.to_path_buf(),
+        })?
+}
+
+fn package_single_buildpack(
+    buildpack_package: &BuildpackPackage,
+    target_dir: &Path,
+    args: &PackageArgs,
+) -> Result<()> {
+    let cargo_profile = if args.release {
+        CargoProfile::Release
+    } else {
+        CargoProfile::Dev
+    };
+
+    let target_triple = &args.target;
+
+    let cargo_metadata = MetadataCommand::new()
+        .manifest_path(&buildpack_package.path.join("Cargo.toml"))
+        .exec()
+        .map_err(|e| Error::ReadingCargoMetadata {
+            path: buildpack_package.path.clone(),
+            source: e,
+        })?;
+
+    let cargo_build_env = if args.no_cross_compile_assistance {
+        vec![]
+    } else {
+        eprintln!("Determining automatic cross-compile settings...");
+        match cross_compile_assistance(target_triple) {
+            CrossCompileAssistance::Configuration { cargo_env } => cargo_env,
+
+            CrossCompileAssistance::NoAssistance => {
+                eprintln!("Could not determine automatic cross-compile settings for target triple {target_triple}.");
+                eprintln!("This is not an error, but without proper cross-compile settings in your Cargo manifest and locally installed toolchains, compilation might fail.");
+                eprintln!("To disable this warning, pass --no-cross-compile-assistance.");
+                vec![]
+            }
+
+            CrossCompileAssistance::HelpText(help_text) => {
+                Err(Error::CrossCompilationHelp { message: help_text })?
+            }
+        }
+    };
+
+    eprintln!("Building binaries ({target_triple})...");
+
+    let buildpack_binaries = build_buildpack_binaries(
+        &buildpack_package.path,
+        &cargo_metadata,
+        cargo_profile,
+        &cargo_build_env,
+        target_triple,
+    )?;
+
+    eprintln!("Writing buildpack directory...");
+
+    clean_target_directory(target_dir)?;
+
+    assemble_buildpack_directory(
+        target_dir,
+        &buildpack_package.buildpack_data.buildpack_descriptor_path,
+        &buildpack_binaries,
+    )
+    .map_err(|e| Error::IO {
+        message: "Could not assemble buildpack directory".to_string(),
+        path: target_dir.to_path_buf(),
+        source: e,
+    })?;
+
+    let buildpackage_content =
+        toml::to_string(&Buildpackage::default()).map_err(Error::SerializeBuildpackage)?;
+
+    std::fs::write(target_dir.join("package.toml"), buildpackage_content).map_err(|e| {
+        Error::IO {
+            message: "Failed to write package.toml to buildpack directory".to_string(),
+            path: target_dir.to_path_buf(),
+            source: e,
+        }
+    })?;
+
+    report_compiled_buildpack(&buildpack_package.path, target_dir)
+}
+
+fn package_meta_buildpack(
+    buildpack_package: &BuildpackPackage,
+    target_dir: &Path,
+    target_dirs_by_buildpack_id: &HashMap<&BuildpackId, PathBuf>,
+) -> Result<()> {
+    eprintln!("Writing buildpack directory...");
+
+    clean_target_directory(target_dir)?;
+
+    std::fs::create_dir_all(target_dir).map_err(|e| Error::IO {
+        message: "I/O error while creating buildpack directory".to_string(),
+        path: target_dir.to_path_buf(),
+        source: e,
+    })?;
+
+    std::fs::copy(
+        &buildpack_package.buildpack_data.buildpack_descriptor_path,
+        target_dir.join("buildpack.toml"),
+    )
+    .map_err(|e| Error::IO {
+        message: "I/O error while writing buildpack.toml to the buildpack directory".to_string(),
+        path: target_dir.to_path_buf(),
+        source: e,
+    })?;
+
+    let buildpackage_content = &buildpack_package
+        .buildpackage_data
+        .as_ref()
+        .map(|buildpackage_data| &buildpackage_data.buildpackage_descriptor)
+        .ok_or(Error::MissingBuildpackageData)
+        .and_then(|buildpackage| {
+            rewrite_buildpackage_local_dependencies(buildpackage, target_dirs_by_buildpack_id)
+                .map_err(std::convert::Into::into)
+        })
+        .and_then(|buildpackage| {
+            rewrite_buildpackage_relative_path_dependencies_to_absolute(
+                &buildpackage,
+                &buildpack_package.path,
+            )
+            .map_err(std::convert::Into::into)
+        })
+        .and_then(|buildpackage| {
+            toml::to_string(&buildpackage).map_err(Error::SerializeBuildpackage)
+        })?;
+
+    std::fs::write(target_dir.join("package.toml"), buildpackage_content).map_err(|e| {
+        Error::IO {
+            message: "Failed to write package.toml to buildpack directory".to_string(),
+            path: target_dir.to_path_buf(),
+            source: e,
+        }
+    })?;
+
+    report_compiled_buildpack(&buildpack_package.path, target_dir)
+}
+
+fn clean_target_directory(dir: &Path) -> Result<()> {
+    if dir.exists() {
+        std::fs::remove_dir_all(dir).map_err(|e| Error::IO {
+            message: "Could not remove existing buildpack target directory".to_string(),
+            path: dir.to_path_buf(),
+            source: e,
+        })?;
+    }
+    Ok(())
+}
+
+fn report_compiled_buildpack(source_dir: &Path, target_dir: &Path) -> Result<()> {
+    let size_in_bytes = calculate_dir_size(target_dir).map_err(|e| Error::IO {
+        message: "I/O error while calculating directory size".to_string(),
+        path: target_dir.to_path_buf(),
+        source: e,
+    })?;
+
+    // Precision will only be lost for sizes bigger than 52 bits (~4 Petabytes), and even
+    // then will only result in a less precise figure, so is not an issue.
+    #[allow(clippy::cast_precision_loss)]
+    let size_in_mb = size_in_bytes as f64 / (1024.0 * 1024.0);
+    let relative_output_path =
+        pathdiff::diff_paths(target_dir, source_dir).unwrap_or_else(|| source_dir.to_path_buf());
+
+    eprintln!(
+        "Successfully wrote buildpack directory: {} ({size_in_mb:.2} MiB)",
+        relative_output_path.to_string_lossy(),
+    );
+
+    Ok(())
+}
+
+/// Recursively calculate the size of a directory and its contents in bytes.
+// Not using `fs_extra::dir::get_size` since it doesn't handle symlinks correctly:
+// https://github.com/webdesus/fs_extra/issues/59
+fn calculate_dir_size(path: impl AsRef<Path>) -> std::io::Result<u64> {
+    let mut size_in_bytes = 0;
+
+    // The size of the directory entry (ie: its metadata only, not the directory contents).
+    size_in_bytes += path.as_ref().metadata()?.len();
+
+    for entry in std::fs::read_dir(&path)? {
+        let entry = entry?;
+        let metadata = entry.metadata()?;
+
+        if metadata.is_dir() {
+            size_in_bytes += calculate_dir_size(entry.path())?;
+        } else {
+            size_in_bytes += metadata.len();
+        }
+    }
+
+    Ok(size_in_bytes)
+}
+
+fn contains_buildpack_binaries(dir: &Path) -> bool {
+    ["bin/detect", "bin/build"]
+        .into_iter()
+        .map(|path| dir.join(path))
+        .all(|path| path.is_file())
+}
+
+type Result<T> = std::result::Result<T, Error>;
