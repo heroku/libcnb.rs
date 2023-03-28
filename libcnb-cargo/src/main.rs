@@ -26,6 +26,16 @@ use std::{env, fs, io};
 use toml::Value;
 use uriparse::RelativeReference;
 
+// Suppress warnings due to the `unused_crate_dependencies` lint not handling integration tests well.
+#[cfg(test)]
+use assert_cmd as _;
+#[cfg(test)]
+use fs_extra as _;
+#[cfg(test)]
+use libcnb_data as _;
+#[cfg(test)]
+use tempfile as _;
+
 #[derive(Debug, Clone)]
 struct BuildpackWorkspace {
     root: PathBuf,
