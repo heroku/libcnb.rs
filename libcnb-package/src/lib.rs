@@ -46,6 +46,11 @@ pub fn read_buildpack_data(
         })
 }
 
+/// Reads buildpackage data from the given project path.
+///
+/// # Errors
+///
+/// Will return `Err` if the buildpackage data could not be read successfully.
 pub fn read_buildpackage_data(
     project_path: impl AsRef<Path>,
 ) -> Result<BuildpackageData, BuildpackageDataError> {
