@@ -8,94 +8,82 @@ mod cli;
 mod exit_code;
 
 use crate::cli::{Cli, LibcnbSubcommand, PackageArgs};
-use cargo_metadata::MetadataCommand;
+use cargo_metadata::{Metadata, MetadataCommand};
 use clap::Parser;
+use glob::glob;
 use libcnb_package::build::{build_buildpack_binaries, BuildBinariesError, BuildError};
 use libcnb_package::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
 use libcnb_package::{
     assemble_buildpack_directory, default_buildpack_directory_name, read_buildpack_data,
-    BuildpackDataError, CargoProfile,
+    read_buildpackage_data, BuildpackData, BuildpackDataError, CargoProfile,
 };
 use log::{error, info, warn};
-use std::path::Path;
-use std::{fs, io};
+use path_absolutize::Absolutize;
+use std::collections::HashSet;
+use std::path::{Path, PathBuf};
+use std::process::Command;
+use std::{env, fs, io};
+use toml::Value;
+use uriparse::RelativeReference;
+
+#[derive(Debug, Clone)]
+struct BuildpackWorkspace {
+    root: PathBuf,
+    target_dir: PathBuf,
+}
+
+#[derive(Debug, Clone)]
+struct BuildpackProject {
+    source_dir: PathBuf,
+    target_dir: PathBuf,
+    buildpack_data: BuildpackData<Option<Value>>,
+}
 
 fn main() {
     setup_logging();
-
     match Cli::parse() {
-        Cli::Libcnb(LibcnbSubcommand::Package(args)) => handle_libcnb_package(args),
+        Cli::Libcnb(LibcnbSubcommand::Package(args)) => run_package_command(args),
     }
 }
 
+fn run_package_command(args: PackageArgs) {
+    let buildpack_workspace = get_buildpack_workspace();
+    let buildpack_projects = get_buildpack_projects(&buildpack_workspace);
+    let buildpack_projects_to_compile = get_buildpack_projects_to_compile(&buildpack_projects);
+
+    for buildpack_project in buildpack_projects_to_compile {
+        compile_buildpack_project_for_packaging(&args, &buildpack_project);
+    }
+}
+
+fn compile_buildpack_project_for_packaging(
+    args: &PackageArgs,
+    buildpack_project: &BuildpackProject,
+) {
+    if buildpack_project.source_dir.join("Cargo.toml").exists() {
+        compile_single_buildpack_project_for_packaging(&args, &buildpack_project);
+    } else {
+        compile_meta_buildpack_project_for_packaging(&buildpack_project);
+    }
+    println!("{}", buildpack_project.target_dir.to_string_lossy());
+}
+
 #[allow(clippy::too_many_lines)]
-fn handle_libcnb_package(args: PackageArgs) {
+fn compile_single_buildpack_project_for_packaging(
+    args: &PackageArgs,
+    buildpack_project: &BuildpackProject,
+) {
     let cargo_profile = if args.release {
         CargoProfile::Release
     } else {
         CargoProfile::Dev
     };
-
-    let target_triple = args.target;
-
-    let current_dir = match std::env::current_dir() {
-        Ok(current_dir) => current_dir,
-        Err(io_error) => {
-            error!("Could not determine current directory: {io_error}");
-            std::process::exit(exit_code::UNSPECIFIED_ERROR);
-        }
-    };
-
-    info!("Reading buildpack metadata...");
-    let buildpack_data = match read_buildpack_data(&current_dir) {
-        Ok(buildpack_data) => buildpack_data,
-        Err(error) => {
-            match error {
-                BuildpackDataError::IoError(io_error) => {
-                    error!("Unable to read buildpack metadata: {io_error}");
-                    error!("Hint: Verify that a readable file named \"buildpack.toml\" exists at the root of your project.");
-                }
-                BuildpackDataError::DeserializationError(deserialization_error) => {
-                    error!("Unable to deserialize buildpack metadata: {deserialization_error}");
-                    error!("Hint: Verify that your \"buildpack.toml\" is valid.");
-                }
-            }
-
-            std::process::exit(exit_code::UNSPECIFIED_ERROR);
-        }
-    };
-
-    info!(
-        "Found buildpack {} with version {}.",
-        buildpack_data.buildpack_descriptor.buildpack.id,
-        buildpack_data.buildpack_descriptor.buildpack.version
-    );
-
-    let cargo_metadata = match MetadataCommand::new()
-        .manifest_path(&current_dir.join("Cargo.toml"))
-        .exec()
-    {
-        Ok(cargo_metadata) => cargo_metadata,
-        Err(error) => {
-            error!("Could not obtain metadata from Cargo: {error}");
-            std::process::exit(exit_code::UNSPECIFIED_ERROR);
-        }
-    };
-
-    let output_path = cargo_metadata
-        .target_directory
-        .join("buildpack")
-        .join(match cargo_profile {
-            CargoProfile::Dev => "debug",
-            CargoProfile::Release => "release",
-        })
-        .join(default_buildpack_directory_name(
-            &buildpack_data.buildpack_descriptor,
-        ))
-        .into_std_path_buf();
-
+    let target_triple = &args.target;
+    let cargo_metadata = get_cargo_metadata(&buildpack_project.source_dir);
+    let package_dir = buildpack_project.source_dir.to_path_buf();
+    let output_path = buildpack_project.target_dir.to_path_buf();
     let relative_output_path =
-        pathdiff::diff_paths(&output_path, &current_dir).unwrap_or_else(|| output_path.clone());
+        pathdiff::diff_paths(&output_path, &package_dir).unwrap_or_else(|| output_path.clone());
 
     let cargo_build_env = if args.no_cross_compile_assistance {
         vec![]
@@ -120,7 +108,7 @@ fn handle_libcnb_package(args: PackageArgs) {
     info!("Building binaries ({target_triple})...");
 
     let buildpack_binaries = match build_buildpack_binaries(
-        &current_dir,
+        &package_dir,
         &cargo_metadata,
         cargo_profile,
         &cargo_build_env,
@@ -166,7 +154,7 @@ fn handle_libcnb_package(args: PackageArgs) {
 
     if let Err(io_error) = assemble_buildpack_directory(
         &output_path,
-        &buildpack_data.buildpack_descriptor_path,
+        &buildpack_project.buildpack_data.buildpack_descriptor_path,
         &buildpack_binaries,
     ) {
         error!("IO error while writing buildpack directory: {io_error}");
@@ -189,6 +177,58 @@ fn handle_libcnb_package(args: PackageArgs) {
     );
     info!("Packaging successfully finished!");
     info!("Hint: To test your buildpack locally with pack, run: pack build my-image --buildpack {} --path /path/to/application", relative_output_path.to_string_lossy());
+}
+
+fn compile_meta_buildpack_project_for_packaging(buildpack_project: &BuildpackProject) {
+    let relative_output_path =
+        pathdiff::diff_paths(&buildpack_project.target_dir, &buildpack_project.source_dir)
+            .unwrap_or_else(|| buildpack_project.target_dir.clone());
+
+    info!("Writing buildpack directory...");
+    if buildpack_project.target_dir.exists() {
+        if let Err(error) = fs::remove_dir_all(&buildpack_project.target_dir) {
+            error!("Could not remove buildpack directory: {error}");
+            std::process::exit(exit_code::UNSPECIFIED_ERROR);
+        };
+    }
+
+    if let Err(error) = fs::create_dir_all(&buildpack_project.target_dir) {
+        error!("Could not create packaged buildpack directory: {error}");
+        std::process::exit(exit_code::UNSPECIFIED_ERROR);
+    }
+
+    if let Err(error) = fs::copy(
+        &buildpack_project.buildpack_data.buildpack_descriptor_path,
+        &buildpack_project.target_dir.join("buildpack.toml"),
+    ) {
+        error!("Could not copy buildpack.toml to target directory: {error}");
+        std::process::exit(exit_code::UNSPECIFIED_ERROR);
+    }
+
+    if let Err(error) = fs::copy(
+        &buildpack_project.source_dir.join("package.toml"),
+        &buildpack_project.target_dir.join("package.toml"),
+    ) {
+        error!("Could not copy package.toml to target directory: {error}");
+        std::process::exit(exit_code::UNSPECIFIED_ERROR);
+    }
+
+    let size_in_bytes =
+        calculate_dir_size(&buildpack_project.target_dir).unwrap_or_else(|io_error| {
+            error!("IO error while calculating buildpack directory size: {io_error}");
+            std::process::exit(exit_code::UNSPECIFIED_ERROR);
+        });
+
+    // Precision will only be lost for sizes bigger than 52 bits (~4 Petabytes), and even
+    // then will only result in a less precise figure, so is not an issue.
+    #[allow(clippy::cast_precision_loss)]
+    let size_in_mb = size_in_bytes as f64 / (1024.0 * 1024.0);
+
+    info!(
+        "Successfully wrote buildpack directory: {} ({size_in_mb:.2} MiB)",
+        relative_output_path.to_string_lossy(),
+    );
+    info!("Packaging successfully finished!");
 }
 
 fn setup_logging() {
@@ -222,4 +262,270 @@ fn calculate_dir_size(path: impl AsRef<Path>) -> io::Result<u64> {
     }
 
     Ok(size_in_bytes)
+}
+
+fn get_buildpack_workspace() -> BuildpackWorkspace {
+    let workspace_root = get_workspace_root();
+    let workspace_cargo_metadata = get_cargo_metadata(&workspace_root);
+    let workspace_target_directory = workspace_cargo_metadata
+        .target_directory
+        .into_std_path_buf();
+    BuildpackWorkspace {
+        root: workspace_root,
+        target_dir: workspace_target_directory,
+    }
+}
+
+fn get_buildpack_projects(buildpack_workspace: &BuildpackWorkspace) -> Vec<BuildpackProject> {
+    let buildpack_dirs = find_buildpack_directories(&buildpack_workspace);
+    let buildpack_metadatas: Vec<_> = buildpack_dirs.iter().map(get_buildpack_metadata).collect();
+    let buildpack_target_dirs: Vec<_> = buildpack_metadatas
+        .iter()
+        .map(|meta| get_buildpack_target_directory(&buildpack_workspace, &meta))
+        .collect();
+    buildpack_dirs
+        .iter()
+        .zip(buildpack_metadatas.iter())
+        .zip(buildpack_target_dirs.iter())
+        .map(
+            |((buildpack_dir, buildpack_metadata), buildpack_target_dir)| BuildpackProject {
+                source_dir: buildpack_dir.to_path_buf(),
+                target_dir: buildpack_target_dir.to_path_buf(),
+                buildpack_data: buildpack_metadata.clone(),
+            },
+        )
+        .collect()
+}
+
+fn get_buildpack_projects_to_compile(
+    buildpack_projects: &Vec<BuildpackProject>,
+) -> Vec<BuildpackProject> {
+    let current_dir = get_current_dir();
+
+    let buildpack_projects_in_scope: Vec<_> = if current_dir.join("buildpack.toml").exists() {
+        buildpack_projects
+            .iter()
+            .filter(|buildpack_project| buildpack_project.source_dir.to_path_buf() == current_dir)
+            .collect()
+    } else {
+        buildpack_projects.iter().collect()
+    };
+
+    let mut buildpack_projects_seen: HashSet<PathBuf> = HashSet::new();
+    let mut buildpack_projects_to_compile: Vec<BuildpackProject> = vec![];
+
+    for buildpack_project in buildpack_projects_in_scope {
+        for dependent_buildpack_project in
+            get_local_dependencies_for_buildpack(&buildpack_project, &buildpack_projects)
+        {
+            if !buildpack_projects_seen.contains(&dependent_buildpack_project.source_dir) {
+                buildpack_projects_seen.insert(dependent_buildpack_project.source_dir.clone());
+                buildpack_projects_to_compile.push(dependent_buildpack_project.clone());
+            }
+        }
+        if !buildpack_projects_seen.contains(&buildpack_project.source_dir) {
+            buildpack_projects_seen.insert(buildpack_project.source_dir.clone());
+            buildpack_projects_to_compile.push(buildpack_project.clone());
+        }
+    }
+
+    buildpack_projects_to_compile
+}
+
+fn get_buildpack_metadata(buildpack_dir: &PathBuf) -> BuildpackData<Option<Value>> {
+    info!("Reading buildpack metadata...");
+
+    let buildpack_data = match read_buildpack_data(&buildpack_dir) {
+        Ok(buildpack_data) => buildpack_data,
+        Err(error) => {
+            match error {
+                BuildpackDataError::IoError(io_error) => {
+                    error!("Unable to read buildpack metadata: {io_error}");
+                    error!(
+                        "Hint: Verify that a readable file named \"buildpack.toml\" exists in {}.",
+                        buildpack_dir.to_string_lossy()
+                    );
+                }
+                BuildpackDataError::DeserializationError(deserialization_error) => {
+                    error!("Unable to deserialize buildpack metadata: {deserialization_error}");
+                    error!(
+                        "Hint: Verify that your \"buildpack.toml\" in {} is valid.",
+                        buildpack_dir.to_string_lossy()
+                    );
+                }
+            }
+            std::process::exit(exit_code::UNSPECIFIED_ERROR);
+        }
+    };
+
+    info!(
+        "Found buildpack {} with version {}.",
+        buildpack_data.buildpack_descriptor.buildpack.id,
+        buildpack_data.buildpack_descriptor.buildpack.version
+    );
+
+    buildpack_data
+}
+
+fn get_cargo_metadata(buildpack_dir: &PathBuf) -> Metadata {
+    match MetadataCommand::new()
+        .manifest_path(&buildpack_dir.join("Cargo.toml"))
+        .exec()
+    {
+        Ok(cargo_metadata) => cargo_metadata,
+        Err(error) => {
+            error!("Could not obtain metadata from Cargo: {error}");
+            std::process::exit(exit_code::UNSPECIFIED_ERROR);
+        }
+    }
+}
+
+fn get_current_dir() -> PathBuf {
+    match env::current_dir() {
+        Ok(current_dir) => current_dir,
+        Err(io_error) => {
+            error!("Could not determine current directory: {io_error}");
+            std::process::exit(exit_code::UNSPECIFIED_ERROR);
+        }
+    }
+}
+
+fn get_workspace_root() -> PathBuf {
+    let cargo = env::var("CARGO")
+        .map(PathBuf::from)
+        .ok()
+        .unwrap_or_else(|| PathBuf::from("cargo"));
+
+    let mut locate_project = Command::new(cargo);
+    locate_project.args(["locate-project", "--workspace", "--message-format", "plain"]);
+
+    match locate_project.output() {
+        Ok(output) => {
+            let output = String::from_utf8_lossy(&output.stdout);
+            parent_dir(PathBuf::from(output.trim()))
+        }
+        Err(error) => {
+            error!("Could not locate project root: {error}");
+            std::process::exit(exit_code::UNSPECIFIED_ERROR);
+        }
+    }
+}
+
+fn find_buildpack_directories(buildpack_workspace: &BuildpackWorkspace) -> Vec<PathBuf> {
+    let paths = match glob(
+        &buildpack_workspace
+            .root
+            .join("**/buildpack.toml")
+            .to_string_lossy(),
+    ) {
+        Ok(paths) => paths,
+        Err(error) => {
+            error!(
+                "Failed to glob buildpack.toml files in {}: {error}",
+                buildpack_workspace.root.to_string_lossy()
+            );
+            std::process::exit(exit_code::UNSPECIFIED_ERROR);
+        }
+    };
+
+    let exclude_target_pattern = match glob::Pattern::new(
+        &buildpack_workspace
+            .target_dir
+            .join("**/buildpack.toml")
+            .to_string_lossy(),
+    ) {
+        Ok(pattern) => pattern,
+        Err(error) => {
+            error!(
+                "Invalid glob pattern for {}: {error}",
+                buildpack_workspace.target_dir.to_string_lossy()
+            );
+            std::process::exit(exit_code::UNSPECIFIED_ERROR);
+        }
+    };
+
+    paths
+        .filter_map(Result::ok)
+        .filter(|path| !exclude_target_pattern.matches(&path.to_string_lossy()))
+        .map(|path| parent_dir(path))
+        .collect()
+}
+
+fn get_buildpack_target_directory(
+    buildpack_workspace: &BuildpackWorkspace,
+    buildpack_data: &BuildpackData<Option<Value>>,
+) -> PathBuf {
+    buildpack_workspace
+        .target_dir
+        .join("buildpack")
+        .join(default_buildpack_directory_name(
+            &buildpack_data.buildpack_descriptor,
+        ))
+}
+
+fn get_local_dependencies_for_buildpack(
+    buildpack_project: &BuildpackProject,
+    buildpack_projects: &Vec<BuildpackProject>,
+) -> Vec<BuildpackProject> {
+    let local_buildpack_uris = match read_buildpackage_data(&buildpack_project.source_dir) {
+        Ok(buildpackage_data) => buildpackage_data
+            .buildpackage_descriptor
+            .dependencies
+            .into_iter()
+            .filter(|dependency| RelativeReference::try_from(dependency.uri.as_str()).is_ok())
+            .collect::<Vec<_>>(),
+        Err(_) => vec![],
+    };
+
+    local_buildpack_uris
+        .iter()
+        .map(|local_buildpack_uri| {
+            let absolute_path = if local_buildpack_uri.uri.starts_with(".") {
+                absolutize(buildpack_project.source_dir.join(&local_buildpack_uri.uri))
+            } else {
+                absolutize(PathBuf::from(&local_buildpack_uri.uri))
+            };
+
+            match buildpack_projects
+                .iter()
+                .find(|buildpack_project| buildpack_project.target_dir == absolute_path)
+            {
+                Some(local_buildpack_project) => local_buildpack_project.clone(),
+                None => {
+                    error!(
+                        "The local buildpack dependency '{}' could not be found. Verify the path and correct it in {}",
+                        local_buildpack_uri.uri,
+                        buildpack_project.source_dir.join("package.toml").to_string_lossy()
+                    );
+                    std::process::exit(exit_code::UNSPECIFIED_ERROR);
+                }
+            }
+        })
+        .collect()
+}
+
+fn parent_dir(path: PathBuf) -> PathBuf {
+    match path.parent() {
+        Some(parent) => parent.to_path_buf(),
+        None => {
+            error!(
+                "Could not get parent directory from {}",
+                path.to_string_lossy()
+            );
+            std::process::exit(exit_code::UNSPECIFIED_ERROR);
+        }
+    }
+}
+
+fn absolutize(path: PathBuf) -> PathBuf {
+    match path.absolutize() {
+        Ok(abs_path) => abs_path.to_path_buf(),
+        Err(error) => {
+            error!(
+                "Could not get absolute path for {}: {error}",
+                path.to_string_lossy()
+            );
+            std::process::exit(exit_code::UNSPECIFIED_ERROR);
+        }
+    }
 }

@@ -28,3 +28,13 @@ libcnb-package.workspace = true
 log = "0.4.17"
 pathdiff = "0.2.1"
 stderrlog = { version = "0.5.3", default-features = false }
+glob = "0.3.1"
+uriparse = "0.6.4"
+path-absolutize = "3.0.14"
+toml.workspace = true
+
+[dev-dependencies]
+assert_cmd = "2.0.10"
+tempfile = "3.3.0"
+fs_extra = "1.3.0"
+libcnb-data.workspace = true

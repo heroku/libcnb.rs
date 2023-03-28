@@ -1,0 +1,8 @@
+api = "0.8"
+
+[buildpack]
+id = "multiple-buildpacks/one"
+version = "0.0.0"
+
+[[stacks]]
+id = "some-stack"

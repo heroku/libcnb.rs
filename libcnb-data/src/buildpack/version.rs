@@ -7,7 +7,7 @@ use std::fmt::{Display, Formatter};
 ///
 /// This MUST be in the form `<X>.<Y>.<Z>` where `X`, `Y`, and `Z` are non-negative integers
 /// and must not contain leading zeros.
-#[derive(Deserialize, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Debug, Eq, PartialEq, Clone)]
 #[serde(try_from = "String")]
 pub struct BuildpackVersion {
     pub major: u64,
