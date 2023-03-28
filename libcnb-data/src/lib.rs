@@ -8,13 +8,13 @@ pub mod build;
 pub mod build_plan;
 pub mod buildpack;
 pub mod buildpack_plan;
+pub mod buildpackage;
 pub mod exec_d;
 pub mod launch;
 pub mod layer;
 pub mod layer_content_metadata;
 pub mod sbom;
 pub mod store;
-pub mod buildpackage;
 
 mod newtypes;
 
