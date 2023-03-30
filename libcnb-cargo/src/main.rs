@@ -11,6 +11,7 @@ use crate::cli::{Cli, LibcnbSubcommand, PackageArgs};
 use cargo_metadata::{Metadata, MetadataCommand};
 use clap::Parser;
 use glob::glob;
+use libcnb_data::buildpack::BuildpackDescriptor;
 use libcnb_data::buildpackage::{Buildpackage, BuildpackageUri};
 use libcnb_package::build::{build_buildpack_binaries, BuildBinariesError, BuildError};
 use libcnb_package::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
@@ -32,7 +33,6 @@ use uriparse::RelativeReference;
 use assert_cmd as _;
 #[cfg(test)]
 use fs_extra as _;
-use libcnb_data::buildpack::BuildpackDescriptor;
 #[cfg(test)]
 use tempfile as _;
 
