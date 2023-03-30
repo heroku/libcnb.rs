@@ -9,10 +9,11 @@ pub mod config;
 pub mod cross_compile;
 
 use crate::build::BuildpackBinaries;
-use libcnb_data::buildpack::SingleBuildpackDescriptor;
+use libcnb_data::buildpack::BuildpackDescriptor;
 use libcnb_data::buildpackage::Buildpackage;
 use std::fs;
 use std::path::{Path, PathBuf};
+use toml::Table;
 
 /// The profile to use when invoking Cargo.
 ///
@@ -32,7 +33,7 @@ pub enum CargoProfile {
 /// Will return `Err` if the buildpack data could not be read successfully.
 pub fn read_buildpack_data(
     project_path: impl AsRef<Path>,
-) -> Result<BuildpackData<Option<toml::Value>>, BuildpackDataError> {
+) -> Result<BuildpackData<Option<Table>>, BuildpackDataError> {
     let buildpack_descriptor_path = project_path.as_ref().join("buildpack.toml");
 
     fs::read_to_string(&buildpack_descriptor_path)
@@ -76,7 +77,7 @@ pub enum BuildpackDataError {
 #[derive(Debug, Clone)]
 pub struct BuildpackData<BM> {
     pub buildpack_descriptor_path: PathBuf,
-    pub buildpack_descriptor: SingleBuildpackDescriptor<BM>,
+    pub buildpack_descriptor: BuildpackDescriptor<BM>,
 }
 
 #[derive(Debug)]
@@ -166,7 +167,11 @@ fn create_file_symlink<P: AsRef<Path>, Q: AsRef<Path>>(
 /// This function ensures the resulting name is valid and does not contain problematic characters
 /// such as `/`.
 pub fn default_buildpack_directory_name<BM>(
-    buildpack_descriptor: &SingleBuildpackDescriptor<BM>,
+    buildpack_descriptor: &BuildpackDescriptor<BM>,
 ) -> String {
-    buildpack_descriptor.buildpack.id.replace('/', "_")
+    let id = match buildpack_descriptor {
+        BuildpackDescriptor::Single(descriptor) => &descriptor.buildpack.id,
+        BuildpackDescriptor::Meta(descriptor) => &descriptor.buildpack.id,
+    };
+    id.replace('/', "_")
 }

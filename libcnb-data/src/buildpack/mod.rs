@@ -50,7 +50,7 @@ pub use version::*;
 ///     BuildpackDescriptor::Meta(buildpack) => println!("Found meta-buildpack: {}", buildpack.buildpack.id),
 /// };
 /// ```
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(untagged)]
 pub enum BuildpackDescriptor<BM> {
     Single(SingleBuildpackDescriptor<BM>),
@@ -138,7 +138,7 @@ pub struct SingleBuildpackDescriptor<BM> {
 /// let buildpack_descriptor = toml::from_str::<MetaBuildpackDescriptor<Option<toml::value::Table>>>(toml_str).unwrap();
 /// assert_eq!(buildpack_descriptor.buildpack.id, buildpack_id!("foo/bar"));
 /// ```
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct MetaBuildpackDescriptor<BM> {
     pub api: BuildpackApi,
@@ -176,13 +176,13 @@ pub struct License {
     pub uri: Option<String>,
 }
 
-#[derive(Deserialize, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Debug, Eq, PartialEq, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct Order {
     pub group: Vec<Group>,
 }
 
-#[derive(Deserialize, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Debug, Eq, PartialEq, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct Group {
     pub id: BuildpackId,

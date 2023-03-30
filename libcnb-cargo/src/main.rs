@@ -24,7 +24,7 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::{env, fs, io};
-use toml::Value;
+use toml::Table;
 use uriparse::RelativeReference;
 
 // Suppress warnings due to the `unused_crate_dependencies` lint not handling integration tests well.
@@ -32,6 +32,7 @@ use uriparse::RelativeReference;
 use assert_cmd as _;
 #[cfg(test)]
 use fs_extra as _;
+use libcnb_data::buildpack::BuildpackDescriptor;
 #[cfg(test)]
 use tempfile as _;
 
@@ -45,7 +46,7 @@ struct BuildpackWorkspace {
 struct BuildpackProject {
     source_dir: PathBuf,
     target_dir: PathBuf,
-    buildpack_data: BuildpackData<Option<Value>>,
+    buildpack_data: BuildpackData<Option<Table>>,
 }
 
 fn main() {
@@ -360,17 +361,17 @@ fn get_buildpack_projects(buildpack_workspace: &BuildpackWorkspace) -> Vec<Build
     let buildpack_metadatas: Vec<_> = buildpack_dirs.iter().map(get_buildpack_metadata).collect();
     let buildpack_target_dirs: Vec<_> = buildpack_metadatas
         .iter()
-        .map(|meta| get_buildpack_target_directory(buildpack_workspace, meta))
+        .map(|buildpack_data| get_buildpack_target_directory(buildpack_workspace, buildpack_data))
         .collect();
     buildpack_dirs
         .iter()
         .zip(buildpack_metadatas.iter())
         .zip(buildpack_target_dirs.iter())
         .map(
-            |((buildpack_dir, buildpack_metadata), buildpack_target_dir)| BuildpackProject {
+            |((buildpack_dir, buildpack_data), buildpack_target_dir)| BuildpackProject {
                 source_dir: buildpack_dir.clone(),
                 target_dir: buildpack_target_dir.clone(),
-                buildpack_data: buildpack_metadata.clone(),
+                buildpack_data: buildpack_data.clone(),
             },
         )
         .collect()
@@ -411,7 +412,7 @@ fn get_buildpack_projects_to_compile(
     buildpack_projects_to_compile
 }
 
-fn get_buildpack_metadata(buildpack_dir: &PathBuf) -> BuildpackData<Option<Value>> {
+fn get_buildpack_metadata(buildpack_dir: &PathBuf) -> BuildpackData<Option<Table>> {
     info!("Reading buildpack metadata...");
 
     let buildpack_data = match read_buildpack_data(buildpack_dir) {
@@ -437,11 +438,16 @@ fn get_buildpack_metadata(buildpack_dir: &PathBuf) -> BuildpackData<Option<Value
         }
     };
 
-    info!(
-        "Found buildpack {} with version {}.",
-        buildpack_data.buildpack_descriptor.buildpack.id,
-        buildpack_data.buildpack_descriptor.buildpack.version
-    );
+    let (id, version) = match &buildpack_data.buildpack_descriptor {
+        BuildpackDescriptor::Single(descriptor) => {
+            (&descriptor.buildpack.id, &descriptor.buildpack.version)
+        }
+        BuildpackDescriptor::Meta(descriptor) => {
+            (&descriptor.buildpack.id, &descriptor.buildpack.version)
+        }
+    };
+
+    info!("Found buildpack {} with version {}.", id, version);
 
     buildpack_data
 }
@@ -532,7 +538,7 @@ fn find_buildpack_directories(buildpack_workspace: &BuildpackWorkspace) -> Vec<P
 
 fn get_buildpack_target_directory(
     buildpack_workspace: &BuildpackWorkspace,
-    buildpack_data: &BuildpackData<Option<Value>>,
+    buildpack_data: &BuildpackData<Option<Table>>,
 ) -> PathBuf {
     buildpack_workspace
         .target_dir

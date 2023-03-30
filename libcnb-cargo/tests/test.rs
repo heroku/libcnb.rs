@@ -1,5 +1,6 @@
 use assert_cmd::Command;
 use fs_extra::dir::{copy, CopyOptions};
+use libcnb_data::buildpack::BuildpackDescriptor;
 use libcnb_package::{read_buildpack_data, read_buildpackage_data};
 use std::fs::canonicalize;
 use std::path::{Path, PathBuf};
@@ -133,15 +134,12 @@ fn validate_compiled_buildpack<PathRef: AsRef<Path>>(
     assert!(target_compile_dir.join("bin").join("build").exists());
     assert!(target_compile_dir.join("bin").join("detect").exists());
 
-    let buildpack_metadata = read_buildpack_data(&target_compile_dir).unwrap();
-    assert_eq!(
-        buildpack_metadata
-            .buildpack_descriptor
-            .buildpack
-            .id
-            .to_string(),
-        buildpack_id
-    );
+    let buildpack_data = read_buildpack_data(&target_compile_dir).unwrap();
+    let id = match buildpack_data.buildpack_descriptor {
+        BuildpackDescriptor::Single(descriptor) => descriptor.buildpack.id,
+        BuildpackDescriptor::Meta(descriptor) => descriptor.buildpack.id,
+    };
+    assert_eq!(id.to_string(), buildpack_id);
 }
 
 fn validate_meta_buildpack<
