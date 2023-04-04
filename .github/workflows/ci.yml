@@ -71,4 +71,4 @@ jobs:
         working-directory: ./examples/basics
       - name: Pack build using examples/basics
         # Uses a non-libc image to validate the static musl cross-compilation.
-        run: pack build example-basics --builder cnbs/sample-builder:alpine --buildpack target/buildpack/libcnb-examples_basics --path examples/
+        run: pack build example-basics --builder cnbs/sample-builder:alpine --buildpack target/buildpack/debug/libcnb-examples_basics --path examples/
