@@ -1,10 +1,11 @@
-use assert_cmd::Command;
 use fs_extra::dir::{copy, CopyOptions};
 use libcnb_data::buildpack::BuildpackDescriptor;
 use libcnb_package::{read_buildpack_data, read_buildpackage_data};
+use std::env;
 use std::fs::canonicalize;
+use std::io::Read;
 use std::path::{Path, PathBuf};
-use std::process::Output;
+use std::process::{Command, Output, Stdio};
 use tempfile::{tempdir, TempDir};
 
 #[test]
@@ -27,11 +28,7 @@ fn package_single_meta_buildpack_in_monorepo_buildpack_project() {
     validate_stdout_include_compiled_directories(
         &buildpack_project,
         &output,
-        [
-            "multiple-buildpacks/one",
-            "multiple-buildpacks/two",
-            "multiple-buildpacks/meta-one",
-        ],
+        ["multiple-buildpacks/meta-one"],
     );
     validate_compiled_buildpack(&buildpack_project, "multiple-buildpacks/one");
     validate_compiled_buildpack(&buildpack_project, "multiple-buildpacks/two");
@@ -102,7 +99,7 @@ fn package_all_buildpacks_in_monorepo_buildpack_project() {
 }
 
 fn create_buildpack_project_from_fixture(buildpack_project_fixture: &str) -> (TempDir, PathBuf) {
-    let source_directory = std::env::current_dir()
+    let source_directory = env::current_dir()
         .unwrap()
         .join("fixtures")
         .join(buildpack_project_fixture);
@@ -114,13 +111,57 @@ fn create_buildpack_project_from_fixture(buildpack_project_fixture: &str) -> (Te
 }
 
 fn package_project_for_release<PathRef: AsRef<Path>>(working_dir: PathRef) -> Output {
-    let mut cmd = Command::cargo_bin("cargo-libcnb").unwrap();
-    cmd.args(["libcnb", "package", "--release"]);
-    cmd.current_dir(working_dir);
-    let output = cmd.unwrap();
-    println!("STDOUT:\n{}", String::from_utf8_lossy(&output.stdout));
-    println!("STDERR:\n{}", String::from_utf8_lossy(&output.stderr));
-    output
+    let mut cmd = Command::new(cargo_bin("cargo-libcnb"))
+        .args(["libcnb", "package", "--release"])
+        .current_dir(working_dir)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+
+    let status = cmd.wait().unwrap();
+
+    let mut stdout = String::new();
+    cmd.stdout
+        .take()
+        .unwrap()
+        .read_to_string(&mut stdout)
+        .unwrap();
+    println!("STDOUT:\n{stdout}");
+
+    let mut stderr = String::new();
+    cmd.stderr
+        .take()
+        .unwrap()
+        .read_to_string(&mut stderr)
+        .unwrap();
+    println!("STDERR:\n{stderr}");
+
+    Output {
+        status,
+        stdout: stdout.as_bytes().to_vec(),
+        stderr: stderr.as_bytes().to_vec(),
+    }
+}
+
+fn cargo_bin(name: &str) -> PathBuf {
+    // borrowed from assert_cmd
+    let suffix = env::consts::EXE_SUFFIX;
+
+    let target_dir = env::current_exe()
+        .ok()
+        .map(|mut path| {
+            path.pop();
+            if path.ends_with("deps") {
+                path.pop();
+            }
+            path
+        })
+        .unwrap();
+
+    env::var_os(format!("CARGO_BIN_EXE_{name}"))
+        .map(|p| p.into())
+        .unwrap_or_else(|| target_dir.join(format!("{name}{suffix}")))
 }
 
 fn validate_compiled_buildpack<PathRef: AsRef<Path>>(

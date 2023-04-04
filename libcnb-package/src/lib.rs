@@ -86,7 +86,7 @@ pub enum BuildpackageDataError {
     DeserializationError(toml::de::Error),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BuildpackageData {
     pub buildpackage_descriptor_path: PathBuf,
     pub buildpackage_descriptor: Buildpackage,

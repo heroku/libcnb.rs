@@ -5,7 +5,7 @@ fn platform_default() -> Platform {
     Platform::default()
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct Buildpackage {
     pub buildpack: BuildpackageUri,
@@ -15,20 +15,20 @@ pub struct Buildpackage {
     pub platform: Platform,
 }
 
-#[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Eq, PartialEq, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct BuildpackageUri {
     pub uri: String,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct Platform {
     // TODO: this should be limited to (linux | windows)
     pub os: PlatformOs,
 }
 
-#[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Eq, PartialEq, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum PlatformOs {
     Linux,
