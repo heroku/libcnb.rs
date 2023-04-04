@@ -232,6 +232,7 @@ fn get_compiled_buildpack_directory<PathAsRef: AsRef<Path>>(
         .as_ref()
         .join("target")
         .join("buildpack")
+        .join("release")
         .join(buildpack_id.replace('/', "_"))
 }
 

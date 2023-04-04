@@ -66,7 +66,7 @@ fn main() {
 fn run_package_command(args: &PackageArgs) {
     eprintln!("{LOOKING_GLASS} Locating buildpacks...",);
     let buildpack_workspace = get_buildpack_workspace();
-    let buildpack_projects = get_buildpack_projects(&buildpack_workspace);
+    let buildpack_projects = get_buildpack_projects(&buildpack_workspace, args);
     let buildpack_projects_to_compile = get_buildpack_projects_to_compile(&buildpack_projects);
 
     let mut current_count = 1;
@@ -393,7 +393,10 @@ fn get_buildpack_workspace() -> BuildpackWorkspace {
 }
 
 #[allow(clippy::too_many_lines)]
-fn get_buildpack_projects(buildpack_workspace: &BuildpackWorkspace) -> Vec<BuildpackProject> {
+fn get_buildpack_projects(
+    buildpack_workspace: &BuildpackWorkspace,
+    args: &PackageArgs,
+) -> Vec<BuildpackProject> {
     let mut buildpack_projects: Vec<BuildpackProject> = vec![];
 
     for buildpack_dir in find_buildpack_directories(buildpack_workspace) {
@@ -433,14 +436,17 @@ fn get_buildpack_projects(buildpack_workspace: &BuildpackWorkspace) -> Vec<Build
             None
         };
 
-        let buildpack_target_dir =
-            if is_legacy_buildpack_project(&buildpack_dir) {
-                buildpack_dir.clone()
-            } else {
-                buildpack_workspace.target_dir.join("buildpack").join(
-                    default_buildpack_directory_name(&buildpack_data.buildpack_descriptor),
-                )
-            };
+        let buildpack_target_dir = if is_legacy_buildpack_project(&buildpack_dir) {
+            buildpack_dir.clone()
+        } else {
+            buildpack_workspace
+                .target_dir
+                .join("buildpack")
+                .join(if args.release { "release" } else { "debug" })
+                .join(default_buildpack_directory_name(
+                    &buildpack_data.buildpack_descriptor,
+                ))
+        };
 
         let id = match &buildpack_data.buildpack_descriptor {
             BuildpackDescriptor::Single(d) => d.buildpack.id.clone(),
