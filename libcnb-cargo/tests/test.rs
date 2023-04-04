@@ -9,6 +9,7 @@ use std::process::{Command, Output, Stdio};
 use tempfile::{tempdir, TempDir};
 
 #[test]
+#[ignore = "integration test"]
 fn package_buildpack_in_single_buildpack_project() {
     let (_tempdir, buildpack_project) = create_buildpack_project_from_fixture("single_buildpack");
 
@@ -19,6 +20,7 @@ fn package_buildpack_in_single_buildpack_project() {
 }
 
 #[test]
+#[ignore = "integration test"]
 fn package_single_meta_buildpack_in_monorepo_buildpack_project() {
     let (_tempdir, buildpack_project) =
         create_buildpack_project_from_fixture("multiple_buildpacks");
@@ -46,6 +48,7 @@ fn package_single_meta_buildpack_in_monorepo_buildpack_project() {
 }
 
 #[test]
+#[ignore = "integration test"]
 fn package_single_buildpack_in_monorepo_buildpack_project() {
     let (_tempdir, buildpack_project) =
         create_buildpack_project_from_fixture("multiple_buildpacks");
@@ -68,6 +71,7 @@ fn package_single_buildpack_in_monorepo_buildpack_project() {
 }
 
 #[test]
+#[ignore = "integration test"]
 fn package_all_buildpacks_in_monorepo_buildpack_project() {
     let (_tempdir, buildpack_project) =
         create_buildpack_project_from_fixture("multiple_buildpacks");
