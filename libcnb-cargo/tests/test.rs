@@ -207,7 +207,7 @@ fn validate_meta_buildpack<
         .buildpackage_descriptor
         .dependencies
         .iter()
-        .map(|buildpackage_uri| buildpackage_uri.uri.clone())
+        .map(|buildpackage_uri| buildpackage_uri.uri.to_string())
         .collect();
     let dependency_uris: Vec<_> = dependency_uris
         .into_iter()

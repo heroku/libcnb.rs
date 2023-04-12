@@ -18,7 +18,7 @@ use cargo_metadata::{Metadata, MetadataCommand};
 use clap::Parser;
 use glob::glob;
 use indoc::formatdoc;
-use libcnb_data::buildpack::{BuildpackDescriptor, BuildpackId};
+use libcnb_data::buildpack::{BuildpackDescriptor, BuildpackId, BuildpackIdError};
 use libcnb_data::buildpackage::{Buildpackage, BuildpackageDependency};
 use libcnb_package::build::{build_buildpack_binaries, BuildBinariesError, BuildError};
 use libcnb_package::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
@@ -32,7 +32,6 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::{env, fs, io};
 use toml::Table;
-use uriparse::URIReference;
 
 fn main() {
     match Cli::parse() {
@@ -274,24 +273,22 @@ fn compile_meta_buildpack_project_for_packaging(
         .buildpackage_descriptor
         .dependencies
         .iter()
-        .map(|buildpackage_uri| {
-            let uri = match URIReference::try_from(buildpackage_uri.uri.as_str()) {
-                Ok(uri) => uri,
-                Err(_) => fail_with_error(format!("Could not compile meta-buildpack at {} due to invalid URI `{}` in package.toml",
-                buildpack_project.source_dir.to_string_lossy(), buildpackage_uri.uri.as_str())),
-            };
-            if is_local_buildpack_uri(&uri) {
+        .map(|buildpackage_dependency| {
+            if is_local_buildpack_dependency(buildpackage_dependency) {
                 let local_dependency_target_dir =
-                    match find_local_buildpack_project(buildpack_projects_to_compile, &uri) {
-                        Some(project_dependency) => project_dependency.target_dir.to_string_lossy(),
-                        None => fail_with_error(format!("Attempting to compile meta-buildpack at `{}` because it depends on a local buildpack `{}` but no valid buildpack matching that id could be located in the project",
-                                                        buildpack_project.source_dir.to_string_lossy(), local_buildpack_uri_to_id(&uri)))
+                    match find_local_buildpack_project(buildpack_projects_to_compile, buildpackage_dependency) {
+                        Some(project_dependency) => project_dependency.target_dir.to_string_lossy().to_string(),
+                        None => fail_with_error(formatdoc! { "
+                            The meta-buildpack `{}` has a local dependency `{}` declared in package.toml but 
+                            no buildpack matching that id could be located in the project
+                        ", buildpack_project.source_dir.to_string_lossy(), buildpackage_dependency.uri.to_string() })
                     };
-                BuildpackageDependency {
-                    uri: local_dependency_target_dir.to_string(),
+                match BuildpackageDependency::try_from(local_dependency_target_dir.clone()) {
+                    Ok(buildpackage_dependency) => buildpackage_dependency,
+                    Err(_) => fail_with_error(format!("Could not convert {local_dependency_target_dir} into a BuildpackageDependency"))
                 }
             } else {
-                buildpackage_uri.clone()
+                buildpackage_dependency.clone()
             }
         })
         .collect();
@@ -423,30 +420,15 @@ fn get_buildpack_project(
     let mut local_dependencies: Vec<BuildpackId> = vec![];
 
     if let Some(buildpackage_data) = &buildpackage_data {
-        let mut parsed_uris: Vec<URIReference> = vec![];
-        let mut invalid_uris: Vec<String> = vec![];
         let mut invalid_local_buildpack_uris: Vec<String> = vec![];
 
-        for buildpackage_uri in &buildpackage_data.buildpackage_descriptor.dependencies {
-            if let Ok(uri) = URIReference::try_from(buildpackage_uri.uri.as_str()) {
-                parsed_uris.push(uri);
-            } else {
-                invalid_uris.push(buildpackage_uri.uri.clone());
-            }
-        }
-
-        if !invalid_uris.is_empty() {
-            return Err(BuildpackProjectError::InvalidBuildpackageDependencyUris(
-                buildpack_dir.clone(),
-                invalid_uris,
-            ));
-        }
-
-        for uri in parsed_uris {
-            if is_local_buildpack_uri(&uri) {
-                match local_buildpack_uri_to_id(&uri).parse::<BuildpackId>() {
+        for buildpackage_dependency in &buildpackage_data.buildpackage_descriptor.dependencies {
+            if is_local_buildpack_dependency(buildpackage_dependency) {
+                match local_buildpackage_dependency_to_id(buildpackage_dependency) {
                     Ok(local_buildpack_id) => local_dependencies.push(local_buildpack_id),
-                    Err(_) => invalid_local_buildpack_uris.push(String::from(&uri.to_string())),
+                    Err(_) => {
+                        invalid_local_buildpack_uris.push(buildpackage_dependency.uri.to_string());
+                    }
                 }
             }
         }
@@ -598,26 +580,33 @@ fn is_legacy_buildpack_project(buildpack_project_dir: &Path) -> bool {
     contains_buildpack_binaries && not_a_cargo_project
 }
 
-fn is_local_buildpack_uri(uri: &URIReference) -> bool {
-    match uri.scheme() {
+fn is_local_buildpack_dependency(buildpackage_dependency: &BuildpackageDependency) -> bool {
+    match buildpackage_dependency.uri.scheme() {
         Some(scheme) => scheme.as_str() == "libcnb",
         None => false,
     }
 }
 
-fn local_buildpack_uri_to_id(uri: &URIReference) -> BuildpackId {
-    match uri.path().to_string().parse() {
-        Ok(buildpack_id) => buildpack_id,
-        Err(_) => fail_with_error(format!("Invalid buildpack id: {}", uri.path())),
-    }
+fn local_buildpackage_dependency_to_id(
+    buildpackage_dependency: &BuildpackageDependency,
+) -> Result<BuildpackId, BuildpackIdError> {
+    buildpackage_dependency
+        .uri
+        .path()
+        .to_string()
+        .parse::<BuildpackId>()
 }
 
 fn find_local_buildpack_project<'a>(
     buildpack_projects: &'a [BuildpackProject],
-    uri: &URIReference,
+    buildpackage_dependency: &BuildpackageDependency,
 ) -> Option<&'a BuildpackProject> {
     buildpack_projects.iter().find(|buildpack_project| {
-        is_local_buildpack_uri(uri) && buildpack_project.id == local_buildpack_uri_to_id(uri)
+        is_local_buildpack_dependency(buildpackage_dependency)
+            && match local_buildpackage_dependency_to_id(buildpackage_dependency) {
+                Ok(buildpack_id) => buildpack_project.id == buildpack_id,
+                _ => false,
+            }
     })
 }
 
@@ -690,15 +679,6 @@ fn print_get_buildpack_project_warning(error: BuildpackProjectError) {
             ", &buildpack_dir.to_string_lossy(), error });
         }
 
-        BuildpackProjectError::InvalidBuildpackageDependencyUris(buildpack_dir, uris) => {
-            warn(formatdoc! { "
-                Ignoring buildpack project from {}
-    
-                To include this project, please fix the following invalid dependency URIs in the `package.toml` file:
-                {}
-            ", &buildpack_dir.to_string_lossy(), uris.iter().map(|uri| format!("• {uri}")).collect::<Vec<String>>().join("\n") });
-        }
-
         BuildpackProjectError::InvalidLocalBuildpackDependencyUris(buildpack_dir, uris) => {
             warn(formatdoc! { "
                 Ignoring buildpack project from {}
@@ -729,7 +709,6 @@ struct BuildpackProject {
 enum BuildpackProjectError {
     FailedToReadBuildpack(PathBuf, BuildpackDataError),
     FailedToReadBuildpackage(PathBuf, BuildpackageDataError),
-    InvalidBuildpackageDependencyUris(PathBuf, Vec<String>),
     InvalidLocalBuildpackDependencyUris(PathBuf, Vec<String>),
 }
 
