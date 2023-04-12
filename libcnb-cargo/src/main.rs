@@ -24,14 +24,15 @@ use libcnb_package::build::{build_buildpack_binaries, BuildBinariesError, BuildE
 use libcnb_package::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
 use libcnb_package::{
     assemble_buildpack_directory, default_buildpack_directory_name, read_buildpack_data,
-    read_buildpackage_data, BuildpackData, BuildpackageData, CargoProfile,
+    read_buildpackage_data, BuildpackData, BuildpackDataError, BuildpackageData,
+    BuildpackageDataError, CargoProfile,
 };
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::{env, fs, io};
 use toml::Table;
-use uriparse::URI;
+use uriparse::URIReference;
 
 fn main() {
     match Cli::parse() {
@@ -274,7 +275,7 @@ fn compile_meta_buildpack_project_for_packaging(
         .dependencies
         .iter()
         .map(|buildpackage_uri| {
-            let uri = match URI::try_from(buildpackage_uri.uri.as_str()) {
+            let uri = match URIReference::try_from(buildpackage_uri.uri.as_str()) {
                 Ok(uri) => uri,
                 Err(_) => fail_with_error(format!("Could not compile meta-buildpack at {} due to invalid URI `{}` in package.toml",
                 buildpack_project.source_dir.to_string_lossy(), buildpackage_uri.uri.as_str())),
@@ -377,51 +378,33 @@ fn get_buildpack_projects(
     buildpack_workspace: &BuildpackWorkspace,
     args: &PackageArgs,
 ) -> Vec<BuildpackProject> {
-    find_buildpack_directories(buildpack_workspace)
-        .iter()
-        .filter_map(|buildpack_dir| get_buildpack_project(buildpack_dir, buildpack_workspace, args))
-        .collect()
+    let mut buildpack_projects: Vec<BuildpackProject> = vec![];
+    for buildpack_dir in find_buildpack_directories(buildpack_workspace) {
+        match get_buildpack_project(&buildpack_dir, buildpack_workspace, args) {
+            Ok(buildpack_project) => buildpack_projects.push(buildpack_project),
+            Err(error) => print_get_buildpack_project_warning(error),
+        }
+    }
+    buildpack_projects
 }
 
 fn get_buildpack_project(
     buildpack_dir: &PathBuf,
     buildpack_workspace: &BuildpackWorkspace,
     args: &PackageArgs,
-) -> Option<BuildpackProject> {
-    let buildpack_data = match read_buildpack_data(buildpack_dir) {
-        Ok(buildpack_data) => buildpack_data,
-        Err(error) => {
-            warn(formatdoc! { "
-                    Ignoring buildpack project from {}
+) -> Result<BuildpackProject, GetBuildpackProjectError> {
+    let buildpack_data = read_buildpack_data(buildpack_dir).map_err(|error| {
+        GetBuildpackProjectError::InvalidBuildpack(buildpack_dir.clone(), error)
+    })?;
 
-                    To include this project, please verify that the `buildpack.toml` file:
-                    • is readable
-                    • contains valid buildpack metadata
-
-                    Error: {:#?}
-                ", &buildpack_dir.to_string_lossy(), error });
-            return None;
-        }
+    let buildpackage_data: Option<BuildpackageData> = if buildpack_dir.join("package.toml").exists()
+    {
+        Some(read_buildpackage_data(buildpack_dir).map_err(|error| {
+            GetBuildpackProjectError::InvalidBuildpackage(buildpack_dir.clone(), error)
+        })?)
+    } else {
+        None
     };
-
-    let mut buildpackage_data: Option<BuildpackageData> = None;
-    if buildpack_dir.join("package.toml").exists() {
-        buildpackage_data = match read_buildpackage_data(buildpack_dir) {
-            Ok(result) => Some(result),
-            Err(error) => {
-                warn(formatdoc! { "
-                        Ignoring buildpack project from {}
-
-                        To include this project, please verify that the `package.toml` file:
-                        • is readable
-                        • contains valid buildpackagage metadata
-
-                        Error: {:#?}
-                    ", &buildpack_dir.to_string_lossy(), error });
-                return None;
-            }
-        }
-    }
 
     let buildpack_target_dir = if is_legacy_buildpack_project(buildpack_dir) {
         buildpack_dir.clone()
@@ -440,12 +423,12 @@ fn get_buildpack_project(
     let mut local_dependencies: Vec<BuildpackId> = vec![];
 
     if let Some(buildpackage_data) = &buildpackage_data {
-        let mut parsed_uris: Vec<URI> = vec![];
+        let mut parsed_uris: Vec<URIReference> = vec![];
         let mut invalid_uris: Vec<String> = vec![];
         let mut invalid_local_buildpack_uris: Vec<String> = vec![];
 
         for buildpackage_uri in &buildpackage_data.buildpackage_descriptor.dependencies {
-            if let Ok(uri) = URI::try_from(buildpackage_uri.uri.as_str()) {
+            if let Ok(uri) = URIReference::try_from(buildpackage_uri.uri.as_str()) {
                 parsed_uris.push(uri);
             } else {
                 invalid_uris.push(buildpackage_uri.uri.clone());
@@ -453,14 +436,10 @@ fn get_buildpack_project(
         }
 
         if !invalid_uris.is_empty() {
-            let invalid_uris: Vec<_> = invalid_uris.iter().map(|uri| format!("• {uri}")).collect();
-            warn(formatdoc! { "
-                    Ignoring buildpack project from {}
-
-                    To include this project, please fix the following invalid URIs in the `package.toml` file:
-                    {}
-                ", &buildpack_dir.to_string_lossy(), invalid_uris.join("\n") });
-            return None;
+            return Err(GetBuildpackProjectError::InvalidBuildpackageDependencyUris(
+                buildpack_dir.clone(),
+                invalid_uris,
+            ));
         }
 
         for uri in parsed_uris {
@@ -473,21 +452,16 @@ fn get_buildpack_project(
         }
 
         if !invalid_local_buildpack_uris.is_empty() {
-            let invalid_buildpack_ids: Vec<_> = invalid_local_buildpack_uris
-                .iter()
-                .map(|id| format!("• {id}"))
-                .collect();
-            warn(formatdoc! { "
-                    Ignoring buildpack project from {}
-
-                    To include this project, please fix the following URIs with invalid Buildpack Ids in the `package.toml` file:
-                    {}
-                ", &buildpack_dir.to_string_lossy(), invalid_buildpack_ids.join("\n") });
-            return None;
+            return Err(
+                GetBuildpackProjectError::InvalidLocalBuildpackDependencyUris(
+                    buildpack_dir.clone(),
+                    invalid_local_buildpack_uris,
+                ),
+            );
         }
     };
 
-    Some(BuildpackProject {
+    Ok(BuildpackProject {
         id,
         local_dependencies,
         buildpack_data,
@@ -626,11 +600,14 @@ fn is_legacy_buildpack_project(buildpack_project_dir: &Path) -> bool {
     contains_buildpack_binaries && not_a_cargo_project
 }
 
-fn is_local_buildpack_uri(uri: &URI) -> bool {
-    &uri.scheme().to_string() == "libcnb"
+fn is_local_buildpack_uri(uri: &URIReference) -> bool {
+    match uri.scheme() {
+        Some(scheme) => scheme.to_string() == "libcnb",
+        None => false,
+    }
 }
 
-fn local_buildpack_uri_to_id(uri: &URI) -> BuildpackId {
+fn local_buildpack_uri_to_id(uri: &URIReference) -> BuildpackId {
     match uri.path().to_string().parse() {
         Ok(buildpack_id) => buildpack_id,
         Err(_) => fail_with_error(format!("Invalid buildpack id: {}", uri.path())),
@@ -639,7 +616,7 @@ fn local_buildpack_uri_to_id(uri: &URI) -> BuildpackId {
 
 fn find_local_buildpack_project<'a>(
     buildpack_projects: &'a [BuildpackProject],
-    uri: &URI,
+    uri: &URIReference,
 ) -> Option<&'a BuildpackProject> {
     buildpack_projects.iter().find(|buildpack_project| {
         is_local_buildpack_uri(uri) && buildpack_project.id == local_buildpack_uri_to_id(uri)
@@ -689,6 +666,48 @@ fn warn<IntoString: Into<String>>(warning: IntoString) {
     eprintln!("{WARNING} {}", warning.into());
 }
 
+fn print_get_buildpack_project_warning(error: GetBuildpackProjectError) {
+    match error {
+        GetBuildpackProjectError::InvalidBuildpack(buildpack_dir, error) => warn(formatdoc! { "
+            Ignoring buildpack project from {}
+
+            To include this project, please verify that the `buildpack.toml` file:
+            • is readable
+            • contains valid buildpack metadata
+
+            Error: {:#?}
+        ", &buildpack_dir.to_string_lossy(), error }),
+
+        GetBuildpackProjectError::InvalidBuildpackage(buildpack_dir, error) => warn(formatdoc! { "
+            Ignoring buildpack project from {}
+
+            To include this project, please verify that the `package.toml` file:
+            • is readable
+            • contains valid buildpackagage metadata
+
+            Error: {:#?}
+        ", &buildpack_dir.to_string_lossy(), error }),
+
+        GetBuildpackProjectError::InvalidBuildpackageDependencyUris(buildpack_dir, uris) => {
+            warn(formatdoc! { "
+            Ignoring buildpack project from {}
+
+            To include this project, please fix the following invalid dependency URIs in the `package.toml` file:
+            {}
+        ", &buildpack_dir.to_string_lossy(), uris.iter().map(|uri| format!("• {uri}")).collect::<Vec<String>>().join("\n") })
+        }
+
+        GetBuildpackProjectError::InvalidLocalBuildpackDependencyUris(buildpack_dir, uris) => {
+            warn(formatdoc! { "
+            Ignoring buildpack project from {}
+
+            To include this project, please fix the following URIs with invalid Buildpack Ids in the `package.toml` file:
+            {}
+        ", &buildpack_dir.to_string_lossy(), uris.iter().map(|id| format!("• {id}")).collect::<Vec<String>>().join("\n") })
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 struct BuildpackWorkspace {
     root: PathBuf,
@@ -703,6 +722,13 @@ struct BuildpackProject {
     buildpack_data: BuildpackData<Option<Table>>,
     buildpackage_data: Option<BuildpackageData>,
     local_dependencies: Vec<BuildpackId>,
+}
+
+enum GetBuildpackProjectError {
+    InvalidBuildpack(PathBuf, BuildpackDataError),
+    InvalidBuildpackage(PathBuf, BuildpackageDataError),
+    InvalidBuildpackageDependencyUris(PathBuf, Vec<String>),
+    InvalidLocalBuildpackDependencyUris(PathBuf, Vec<String>),
 }
 
 static LOOKING_GLASS: &str = "🔍 ";
