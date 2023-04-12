@@ -392,15 +392,15 @@ fn get_buildpack_project(
     buildpack_dir: &PathBuf,
     buildpack_workspace: &BuildpackWorkspace,
     args: &PackageArgs,
-) -> Result<BuildpackProject, GetBuildpackProjectError> {
+) -> Result<BuildpackProject, BuildpackProjectError> {
     let buildpack_data = read_buildpack_data(buildpack_dir).map_err(|error| {
-        GetBuildpackProjectError::InvalidBuildpack(buildpack_dir.clone(), error)
+        BuildpackProjectError::FailedToReadBuildpack(buildpack_dir.clone(), error)
     })?;
 
     let buildpackage_data: Option<BuildpackageData> = if buildpack_dir.join("package.toml").exists()
     {
         Some(read_buildpackage_data(buildpack_dir).map_err(|error| {
-            GetBuildpackProjectError::InvalidBuildpackage(buildpack_dir.clone(), error)
+            BuildpackProjectError::FailedToReadBuildpackage(buildpack_dir.clone(), error)
         })?)
     } else {
         None
@@ -436,7 +436,7 @@ fn get_buildpack_project(
         }
 
         if !invalid_uris.is_empty() {
-            return Err(GetBuildpackProjectError::InvalidBuildpackageDependencyUris(
+            return Err(BuildpackProjectError::InvalidBuildpackageDependencyUris(
                 buildpack_dir.clone(),
                 invalid_uris,
             ));
@@ -452,12 +452,10 @@ fn get_buildpack_project(
         }
 
         if !invalid_local_buildpack_uris.is_empty() {
-            return Err(
-                GetBuildpackProjectError::InvalidLocalBuildpackDependencyUris(
-                    buildpack_dir.clone(),
-                    invalid_local_buildpack_uris,
-                ),
-            );
+            return Err(BuildpackProjectError::InvalidLocalBuildpackDependencyUris(
+                buildpack_dir.clone(),
+                invalid_local_buildpack_uris,
+            ));
         }
     };
 
@@ -602,7 +600,7 @@ fn is_legacy_buildpack_project(buildpack_project_dir: &Path) -> bool {
 
 fn is_local_buildpack_uri(uri: &URIReference) -> bool {
     match uri.scheme() {
-        Some(scheme) => scheme.to_string() == "libcnb",
+        Some(scheme) => scheme.as_str() == "libcnb",
         None => false,
     }
 }
@@ -666,46 +664,50 @@ fn warn<IntoString: Into<String>>(warning: IntoString) {
     eprintln!("{WARNING} {}", warning.into());
 }
 
-fn print_get_buildpack_project_warning(error: GetBuildpackProjectError) {
+fn print_get_buildpack_project_warning(error: BuildpackProjectError) {
     match error {
-        GetBuildpackProjectError::InvalidBuildpack(buildpack_dir, error) => warn(formatdoc! { "
-            Ignoring buildpack project from {}
-
-            To include this project, please verify that the `buildpack.toml` file:
-            • is readable
-            • contains valid buildpack metadata
-
-            Error: {:#?}
-        ", &buildpack_dir.to_string_lossy(), error }),
-
-        GetBuildpackProjectError::InvalidBuildpackage(buildpack_dir, error) => warn(formatdoc! { "
-            Ignoring buildpack project from {}
-
-            To include this project, please verify that the `package.toml` file:
-            • is readable
-            • contains valid buildpackagage metadata
-
-            Error: {:#?}
-        ", &buildpack_dir.to_string_lossy(), error }),
-
-        GetBuildpackProjectError::InvalidBuildpackageDependencyUris(buildpack_dir, uris) => {
+        BuildpackProjectError::FailedToReadBuildpack(buildpack_dir, error) => {
             warn(formatdoc! { "
-            Ignoring buildpack project from {}
-
-            To include this project, please fix the following invalid dependency URIs in the `package.toml` file:
-            {}
-        ", &buildpack_dir.to_string_lossy(), uris.iter().map(|uri| format!("• {uri}")).collect::<Vec<String>>().join("\n") })
+                Ignoring buildpack project from {}
+    
+                To include this project, please verify that the `buildpack.toml` file:
+                • is readable
+                • contains valid buildpack metadata
+    
+                Error: {:#?}
+            ", &buildpack_dir.to_string_lossy(), error });
         }
 
-        GetBuildpackProjectError::InvalidLocalBuildpackDependencyUris(buildpack_dir, uris) => {
+        BuildpackProjectError::FailedToReadBuildpackage(buildpack_dir, error) => {
             warn(formatdoc! { "
-            Ignoring buildpack project from {}
-
-            To include this project, please fix the following URIs with invalid Buildpack Ids in the `package.toml` file:
-            {}
-        ", &buildpack_dir.to_string_lossy(), uris.iter().map(|id| format!("• {id}")).collect::<Vec<String>>().join("\n") })
+                Ignoring buildpack project from {}
+    
+                To include this project, please verify that the `package.toml` file:
+                • is readable
+                • contains valid buildpackagage metadata
+    
+                Error: {:#?}
+            ", &buildpack_dir.to_string_lossy(), error });
         }
-    }
+
+        BuildpackProjectError::InvalidBuildpackageDependencyUris(buildpack_dir, uris) => {
+            warn(formatdoc! { "
+                Ignoring buildpack project from {}
+    
+                To include this project, please fix the following invalid dependency URIs in the `package.toml` file:
+                {}
+            ", &buildpack_dir.to_string_lossy(), uris.iter().map(|uri| format!("• {uri}")).collect::<Vec<String>>().join("\n") });
+        }
+
+        BuildpackProjectError::InvalidLocalBuildpackDependencyUris(buildpack_dir, uris) => {
+            warn(formatdoc! { "
+                Ignoring buildpack project from {}
+    
+                To include this project, please fix the following URIs with invalid Buildpack Ids in the `package.toml` file:
+                {}
+            ", &buildpack_dir.to_string_lossy(), uris.iter().map(|id| format!("• {id}")).collect::<Vec<String>>().join("\n") });
+        }
+    };
 }
 
 #[derive(Debug, Clone)]
@@ -724,9 +726,9 @@ struct BuildpackProject {
     local_dependencies: Vec<BuildpackId>,
 }
 
-enum GetBuildpackProjectError {
-    InvalidBuildpack(PathBuf, BuildpackDataError),
-    InvalidBuildpackage(PathBuf, BuildpackageDataError),
+enum BuildpackProjectError {
+    FailedToReadBuildpack(PathBuf, BuildpackDataError),
+    FailedToReadBuildpackage(PathBuf, BuildpackageDataError),
     InvalidBuildpackageDependencyUris(PathBuf, Vec<String>),
     InvalidLocalBuildpackDependencyUris(PathBuf, Vec<String>),
 }
