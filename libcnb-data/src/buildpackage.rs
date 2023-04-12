@@ -8,24 +8,35 @@ fn platform_default() -> Platform {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct Buildpackage {
-    pub buildpack: BuildpackageUri,
+    pub buildpack: BuildpackageBuildpack,
     #[serde(default)]
-    pub dependencies: Vec<BuildpackageUri>,
+    pub dependencies: Vec<BuildpackageDependency>,
     #[serde(default = "platform_default")]
     pub platform: Platform,
 }
 
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct BuildpackageUri {
+pub struct BuildpackageBuildpack {
+    pub uri: String,
+}
+
+#[derive(Debug, Deserialize, Serialize, Eq, PartialEq, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct BuildpackageDependency {
     pub uri: String,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct Platform {
-    // TODO: this should be limited to (linux | windows)
     pub os: PlatformOs,
+}
+
+impl Platform {
+    fn default() -> Platform {
+        Platform { os: Linux }
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq, Clone)]
@@ -33,12 +44,6 @@ pub struct Platform {
 pub enum PlatformOs {
     Linux,
     Windows,
-}
-
-impl Platform {
-    fn default() -> Platform {
-        Platform { os: Linux }
-    }
 }
 
 #[cfg(test)]
@@ -65,10 +70,10 @@ uri = "."
 uri = "."
 
 [[dependencies]]
-uri = "dependency_1"
+uri = "libcnb:dependency_1"
 
 [[dependencies]]
-uri = "dependency_2"
+uri = "libcnb:dependency_2"
 
 [platform]
 os = "windows"
@@ -80,11 +85,11 @@ os = "windows"
         assert_eq!(
             buildpackage.dependencies,
             vec![
-                BuildpackageUri {
-                    uri: String::from("dependency_1")
+                BuildpackageDependency {
+                    uri: String::from("libcnb:dependency_1")
                 },
-                BuildpackageUri {
-                    uri: String::from("dependency_2")
+                BuildpackageDependency {
+                    uri: String::from("libcnb:dependency_2")
                 }
             ]
         );

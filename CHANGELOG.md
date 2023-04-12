@@ -5,7 +5,7 @@ separate changelogs for each crate were used. If you need to refer to these old 
 `HISTORICAL_CHANGELOG.md` in their respective crate directories.
 
 ## [Unreleased]
-- Changes to `libcnb package` command to support compiling buildpacks and meta-buildpacks from projects containing a single buildpack or multiple buildpacks in a monorepo.
+- Changes to `libcnb package` command to support compiling buildpacks and meta-buildpacks from projects containing a single buildpack or multiple buildpacks in a monorepo. ([#563](https://github.com/heroku/libcnb.rs/pull/563))
 
 ## [0.11.5] 2023-02-07
 
