@@ -370,7 +370,6 @@ fn get_buildpack_workspace() -> BuildpackWorkspace {
     }
 }
 
-#[allow(clippy::too_many_lines)]
 fn get_buildpack_projects(
     buildpack_workspace: &BuildpackWorkspace,
     args: &PackageArgs,
