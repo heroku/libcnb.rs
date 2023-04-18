@@ -1,5 +1,6 @@
 use crate::buildpackage::PlatformOs::Linux;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::path::PathBuf;
 use uriparse::URIReference;
 
 fn platform_default() -> Platform {
@@ -37,10 +38,11 @@ pub enum BuildpackageDependencyError {
     InvalidUri,
 }
 
-impl TryFrom<String> for BuildpackageDependency {
+impl TryFrom<PathBuf> for BuildpackageDependency {
     type Error = BuildpackageDependencyError;
 
-    fn try_from(value: String) -> Result<Self, Self::Error> {
+    fn try_from(value: PathBuf) -> Result<Self, Self::Error> {
+        let value = value.to_string_lossy().to_string();
         let uri = URIReference::try_from(value.as_str())
             .map_err(|_| BuildpackageDependencyError::InvalidUri)?;
         Ok(BuildpackageDependency {

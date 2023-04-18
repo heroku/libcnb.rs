@@ -9,7 +9,7 @@ pub mod config;
 pub mod cross_compile;
 
 use crate::build::BuildpackBinaries;
-use libcnb_data::buildpack::BuildpackDescriptor;
+use libcnb_data::buildpack::{BuildpackDescriptor, BuildpackId};
 use libcnb_data::buildpackage::Buildpackage;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -166,8 +166,7 @@ fn create_file_symlink<P: AsRef<Path>, Q: AsRef<Path>>(
 ///
 /// This function ensures the resulting name is valid and does not contain problematic characters
 /// such as `/`.
-pub fn default_buildpack_directory_name<BM>(
-    buildpack_descriptor: &BuildpackDescriptor<BM>,
-) -> String {
-    buildpack_descriptor.buildpack().id.replace('/', "_")
+#[must_use]
+pub fn default_buildpack_directory_name(buildpack_id: &BuildpackId) -> String {
+    buildpack_id.replace('/', "_")
 }
