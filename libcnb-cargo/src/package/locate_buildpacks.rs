@@ -4,6 +4,7 @@ use crate::package::locate_buildpacks::BuildpackDirectoryDependencyError::Invali
 use crate::package::locate_buildpacks::BuildpackDirectoryError::{
     FailedToReadBuildpack, FailedToReadBuildpackage, InvalidBuildpackDependencyUris,
 };
+use crate::package::PackageCommandError::{FailedToGlobWorkspaceDirectory, MissingParentDirectory};
 use crate::package::PackageableBuildpackDependency::{External, Local};
 use crate::package::{PackageCommandError, PackageableBuildpack, PackageableBuildpackDependency};
 use cargo_metadata::MetadataCommand;
@@ -25,38 +26,33 @@ pub(crate) fn locate_packageable_buildpacks(
     log("🔍 Locating buildpacks...");
     let buildpack_workspace = get_buildpack_workspace()?;
 
-    let paths = glob(
-        &buildpack_workspace
-            .root
-            .join("**/buildpack.toml")
-            .to_string_lossy(),
-    )
-    .expect("Valid glob pattern");
+    let (packageable_buildpacks, errors) = partition_result(
+        find_buildpack_dirs(&buildpack_workspace.root)?
+            .iter()
+            .filter(|buildpack_dir| !buildpack_dir.starts_with(&buildpack_workspace.target_dir))
+            .map(|buildpack_dir| {
+                to_packageable_buildpack(buildpack_dir, &buildpack_workspace, args)
+            }),
+    );
 
-    let exclude_target_pattern = glob::Pattern::new(
-        &buildpack_workspace
-            .target_dir
-            .join("**/buildpack.toml")
-            .to_string_lossy(),
-    )
-    .expect("Valid glob pattern");
+    errors.iter().for_each(report_buildpack_project_warning);
 
-    let (packageable_buildpacks, errors): (Vec<_>, Vec<_>) = paths
-        .filter_map(Result::ok)
-        .filter(|path| !exclude_target_pattern.matches(&path.to_string_lossy()))
-        .filter_map(|path| path.parent().map(ToOwned::to_owned))
-        .map(|buildpack_dir| to_packageable_buildpack(&buildpack_dir, &buildpack_workspace, args))
-        .partition(Result::is_ok);
+    Ok(packageable_buildpacks)
+}
 
-    errors
-        .into_iter()
-        .filter_map(Result::err)
-        .for_each(report_buildpack_project_warning);
-
-    Ok(packageable_buildpacks
-        .into_iter()
-        .filter_map(Result::ok)
-        .collect())
+fn find_buildpack_dirs(root: &Path) -> Result<Vec<PathBuf>, PackageCommandError> {
+    glob(&root.join("**/buildpack.toml").to_string_lossy())
+        .expect("Valid glob pattern")
+        .map(|glob_result| {
+            glob_result
+                .map_err(FailedToGlobWorkspaceDirectory)
+                .map(|path| {
+                    path.parent()
+                        .map(ToOwned::to_owned)
+                        .ok_or(MissingParentDirectory)
+                })?
+        })
+        .collect()
 }
 
 fn to_packageable_buildpack(
@@ -200,7 +196,18 @@ fn get_buildpack_target_dir(
         .join(default_buildpack_directory_name(buildpack_id))
 }
 
-fn report_buildpack_project_warning(error: BuildpackDirectoryError) {
+fn partition_result<T, E, I>(results: I) -> (Vec<T>, Vec<E>)
+where
+    I: IntoIterator<Item = Result<T, E>>,
+{
+    let partition: (Vec<_>, Vec<_>) = results.into_iter().partition(Result::is_ok);
+    (
+        partition.0.into_iter().filter_map(Result::ok).collect(),
+        partition.1.into_iter().filter_map(Result::err).collect(),
+    )
+}
+
+fn report_buildpack_project_warning(error: &BuildpackDirectoryError) {
     let warning = match error {
         FailedToReadBuildpack(buildpack_dir, error) => {
             formatdoc! { "

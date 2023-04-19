@@ -2,6 +2,7 @@ use crate::cli::PackageArgs;
 use crate::logging::fail_with_error;
 use crate::package::locate_buildpacks::locate_packageable_buildpacks;
 use crate::package::package_buildpacks::package_buildpacks;
+use glob::GlobError;
 use indoc::formatdoc;
 use libcnb_data::buildpack::BuildpackId;
 use libcnb_data::buildpackage::BuildpackageDependency;
@@ -36,6 +37,14 @@ pub(crate) fn run_package_command(args: &PackageArgs) {
 
 fn on_package_command_error(error: PackageCommandError) -> ! {
     let message = match error {
+        PackageCommandError::FailedToGlobWorkspaceDirectory(error) => {
+            format!("An unexpected error occurred while scanning for buildpacks in the workspace: {error}")
+        }
+
+        PackageCommandError::MissingParentDirectory => {
+            "An unexpected error occurred while getting the directory of a buildpack in the workspace".to_string()
+        }
+
         PackageCommandError::CouldNotObtainCargoMetadata(error) => {
             format!("Could not obtain metadata from Cargo: {error}")
         }
@@ -173,6 +182,8 @@ pub(crate) enum PackageableBuildpackDependency {
 }
 
 pub(crate) enum PackageCommandError {
+    FailedToGlobWorkspaceDirectory(GlobError),
+    MissingParentDirectory,
     CouldNotObtainCargoMetadata(cargo_metadata::Error),
     CouldNotLocateCargoWorkspace(std::io::Error),
     CouldNotGetCargoWorkspaceDirectory,

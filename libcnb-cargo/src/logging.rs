@@ -1,12 +1,12 @@
-pub(crate) fn log<IntoString: Into<String>>(message: IntoString) {
+pub(crate) fn log<S: Into<String>>(message: S) {
     eprintln!("{}", message.into());
 }
 
-pub(crate) fn warn<IntoString: Into<String>>(warning: IntoString) {
+pub(crate) fn warn<S: Into<String>>(warning: S) {
     eprintln!("⚠️ {}", warning.into());
 }
 
-pub(crate) fn fail_with_error<IntoString: Into<String>>(error: IntoString) -> ! {
+pub(crate) fn fail_with_error<S: Into<String>>(error: S) -> ! {
     eprintln!("❌ {}", error.into());
     std::process::exit(UNSPECIFIED_ERROR);
 }

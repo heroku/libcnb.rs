@@ -168,8 +168,8 @@ fn cargo_bin(name: &str) -> PathBuf {
         .unwrap_or_else(|| target_dir.join(format!("{name}{suffix}")))
 }
 
-fn validate_compiled_buildpack<PathRef: AsRef<Path>>(
-    buildpack_project: PathRef,
+fn validate_compiled_buildpack<P: AsRef<Path>>(
+    buildpack_project: P,
     buildpack_id: &str,
 ) {
     let target_compile_dir = get_compiled_buildpack_directory(buildpack_project, buildpack_id);
@@ -188,13 +188,13 @@ fn validate_compiled_buildpack<PathRef: AsRef<Path>>(
 }
 
 fn validate_meta_buildpack<
-    PathRef: AsRef<Path>,
-    IntoStringIterator: IntoIterator<Item = IntoString>,
-    IntoString: Into<String>,
+    P: AsRef<Path>,
+    I: IntoIterator<Item = S>,
+    S: Into<String>,
 >(
-    buildpack_project: PathRef,
+    buildpack_project: P,
     buildpack_id: &str,
-    dependency_uris: IntoStringIterator,
+    dependency_uris: I,
 ) {
     let target_compile_dir = get_compiled_buildpack_directory(buildpack_project, buildpack_id);
 
@@ -224,8 +224,8 @@ fn validate_meta_buildpack<
     assert_eq!(compiled_uris, dependency_uris);
 }
 
-fn get_compiled_buildpack_directory<PathAsRef: AsRef<Path>>(
-    buildpack_project: PathAsRef,
+fn get_compiled_buildpack_directory<P: AsRef<Path>>(
+    buildpack_project: P,
     buildpack_id: &str,
 ) -> PathBuf {
     buildpack_project
@@ -237,13 +237,13 @@ fn get_compiled_buildpack_directory<PathAsRef: AsRef<Path>>(
 }
 
 fn validate_stdout_include_compiled_directories<
-    PathAsRef: AsRef<Path>,
-    IntoStringIterator: IntoIterator<Item = IntoString>,
-    IntoString: Into<String>,
+    P: AsRef<Path>,
+    I: IntoIterator<Item = S>,
+    S: Into<String>,
 >(
-    buildpack_project: PathAsRef,
+    buildpack_project: P,
     output: &Output,
-    buildpack_ids: IntoStringIterator,
+    buildpack_ids: I,
 ) {
     let stdout: Vec<_> = String::from_utf8_lossy(&output.stdout)
         .lines()
