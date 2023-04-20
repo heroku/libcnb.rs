@@ -1,0 +1,3 @@
+# Component philosophy
+
+Status: Stub

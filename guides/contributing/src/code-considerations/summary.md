@@ -1,0 +1,3 @@
+# Code considerations
+
+Status: Stub

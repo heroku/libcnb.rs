@@ -1,0 +1,3 @@
+# Style guide
+
+Status: Stub

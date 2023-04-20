@@ -1,0 +1,3 @@
+# Sharing logic
+
+Status: Stub

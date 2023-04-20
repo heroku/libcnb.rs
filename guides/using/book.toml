@@ -1,0 +1,6 @@
+[book]
+authors = ["Richard Schneeman"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Libcnb.rs Buildpack Developers Guide"
