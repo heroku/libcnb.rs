@@ -56,10 +56,24 @@ impl Env {
         self
     }
 
-    /// Returns a cloned value corresponding to the given key.
+    /// Returns the value corresponding to the given key.
     #[must_use]
-    pub fn get(&self, key: impl AsRef<OsStr>) -> Option<OsString> {
-        self.inner.get(key.as_ref()).cloned()
+    pub fn get(&self, key: impl AsRef<OsStr>) -> Option<&OsString> {
+        self.inner.get(key.as_ref())
+    }
+
+    /// Returns the value corresponding to the given key, interpreted as Unicode data.
+    ///
+    /// Any non-Unicode sequences are replaced with
+    /// [`U+FFFD REPLACEMENT CHARACTER`][U+FFFD].
+    ///
+    /// [U+FFFD]: std::char::REPLACEMENT_CHARACTER
+    ///
+    /// See [`OsStr::to_string_lossy`] for more details.
+    #[must_use]
+    pub fn get_string_lossy(&self, key: impl AsRef<OsStr>) -> Option<String> {
+        self.get(key)
+            .map(|os_string| os_string.to_string_lossy().to_string())
     }
 
     /// Returns true if the environment contains a value for the specified key.
