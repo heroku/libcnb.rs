@@ -406,7 +406,7 @@ impl PartialOrd for ModificationBehavior {
 }
 
 /// The scope of an environment variable modification.
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Eq, PartialEq, Debug, Clone)]
 pub enum Scope {
     All,
     Build,
