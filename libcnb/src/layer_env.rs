@@ -75,7 +75,7 @@ use std::path::Path;
 /// let layer_env = LayerEnv::read_from_layer_dir(&layer_dir).unwrap();
 /// let env = layer_env.apply_to_empty(Scope::Launch);
 ///
-/// assert_eq!(env.get("PATH").unwrap(), layer_dir.join("bin"));
+/// assert_eq!(env.get("PATH").cloned().unwrap(), layer_dir.join("bin"));
 /// assert_eq!(env.get("CPATH"), None); // None, because CPATH is only added during build
 /// ```
 #[derive(Eq, PartialEq, Debug, Default, Clone)]
@@ -276,8 +276,8 @@ impl LayerEnv {
     /// let layer_env = LayerEnv::read_from_layer_dir(&layer_dir).unwrap();
     /// let env = layer_env.apply_to_empty(Scope::Launch);
     ///
-    /// assert_eq!(env.get("PATH").unwrap(), layer_dir.join("bin"));
-    /// assert_eq!(env.get("ZERO_WING").unwrap(), "ALL_YOUR_BASE_ARE_BELONG_TO_US");
+    /// assert_eq!(env.get("PATH").cloned().unwrap(), layer_dir.join("bin"));
+    /// assert_eq!(env.get("ZERO_WING").cloned().unwrap(), "ALL_YOUR_BASE_ARE_BELONG_TO_US");
     /// ```
     pub fn read_from_layer_dir(layer_dir: impl AsRef<Path>) -> Result<Self, std::io::Error> {
         let mut result_layer_env = Self::new();
@@ -438,7 +438,7 @@ impl LayerEnvDelta {
                     }
                 }
                 ModificationBehavior::Append => {
-                    let mut previous_value = result_env.get(name).unwrap_or_default();
+                    let mut previous_value = result_env.get(name).cloned().unwrap_or_default();
 
                     if previous_value.len() > 0 {
                         previous_value.push(self.delimiter_for(name));
@@ -449,7 +449,7 @@ impl LayerEnvDelta {
                     result_env.insert(name, previous_value);
                 }
                 ModificationBehavior::Prepend => {
-                    let previous_value = result_env.get(name).unwrap_or_default();
+                    let previous_value = result_env.get(name).cloned().unwrap_or_default();
 
                     let mut new_value = OsString::new();
                     new_value.push(value);
@@ -876,8 +876,8 @@ mod tests {
         let layer_env = LayerEnv::read_from_layer_dir(layer_dir).unwrap();
 
         let env = layer_env.apply_to_empty(Scope::Launch);
-        assert_eq!(env.get("PATH").unwrap(), layer_dir.join("bin"));
-        assert_eq!(env.get("LD_LIBRARY_PATH").unwrap(), layer_dir.join("lib"));
+        assert_eq!(env.get("PATH").unwrap(), &layer_dir.join("bin"));
+        assert_eq!(env.get("LD_LIBRARY_PATH").unwrap(), &layer_dir.join("lib"));
         assert_eq!(env.get("LIBRARY_PATH"), None);
         assert_eq!(env.get("CPATH"), None);
         assert_eq!(env.get("PKG_CONFIG_PATH"), None);
@@ -897,13 +897,13 @@ mod tests {
         let layer_env = LayerEnv::read_from_layer_dir(layer_dir).unwrap();
 
         let env = layer_env.apply_to_empty(Scope::Build);
-        assert_eq!(env.get("PATH").unwrap(), layer_dir.join("bin"));
-        assert_eq!(env.get("LD_LIBRARY_PATH").unwrap(), layer_dir.join("lib"));
-        assert_eq!(env.get("LIBRARY_PATH").unwrap(), layer_dir.join("lib"));
-        assert_eq!(env.get("CPATH").unwrap(), layer_dir.join("include"));
+        assert_eq!(env.get("PATH").unwrap(), &layer_dir.join("bin"));
+        assert_eq!(env.get("LD_LIBRARY_PATH").unwrap(), &layer_dir.join("lib"));
+        assert_eq!(env.get("LIBRARY_PATH").unwrap(), &layer_dir.join("lib"));
+        assert_eq!(env.get("CPATH").unwrap(), &layer_dir.join("include"));
         assert_eq!(
             env.get("PKG_CONFIG_PATH").unwrap(),
-            layer_dir.join("pkgconfig")
+            &layer_dir.join("pkgconfig")
         );
     }
 

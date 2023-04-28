@@ -77,8 +77,8 @@ mod tests {
         fs::write(env_dir.join("HELLO"), "World!").unwrap();
 
         let env = read_platform_env(tmpdir.path()).unwrap();
-        assert_eq!(env.get("FOO"), Some(OsString::from("BAR")));
-        assert_eq!(env.get("HELLO"), Some(OsString::from("World!")));
+        assert_eq!(env.get("FOO"), Some(&OsString::from("BAR")));
+        assert_eq!(env.get("HELLO"), Some(&OsString::from("World!")));
     }
 
     #[test]

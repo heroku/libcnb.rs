@@ -6,6 +6,14 @@ separate changelogs for each crate were used. If you need to refer to these old 
 
 ## [Unreleased]
 
+### Changed
+
+- `Env::get` now returns `Option<&OsString>` instead of `Option<OsString>`. This is more in line with expectations users have when dealing with a collection type. This is a breaking change, compile errors can be fixed by adding a [`Option::cloned`](https://doc.rust-lang.org/std/option/enum.Option.html#method.cloned-1) call after `Env::get` to get the old behaviour. In some cases, cloning might not be necessary, slightly improving the code that uses `Env::get`. ([#565](https://github.com/heroku/libcnb.rs/pull/565))
+
+### Added
+
+- `Env::get_string_lossy` as a convenience method to work with environment variables directly. Getting a value out of an `Env` and treating its contents as unicode is a common case. Using this new method can simplify buildpack code. ([#565](https://github.com/heroku/libcnb.rs/pull/565))
+
 ## [0.11.5] 2023-02-07
 
 ### Changed
