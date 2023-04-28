@@ -27,11 +27,11 @@ pub trait Buildpack {
     type Error: Debug;
 
     /// Detect logic for this buildpack. Directly corresponds to
-    /// [detect in the CNB buildpack interface](https://github.com/buildpacks/spec/blob/platform/v0.8/buildpack.md#detection).
+    /// [detect in the CNB buildpack interface](https://github.com/buildpacks/spec/blob/platform/v0.9/buildpack.md#detection).
     fn detect(&self, context: DetectContext<Self>) -> crate::Result<DetectResult, Self::Error>;
 
     /// Build logic for this buildpack. Directly corresponds to
-    /// [build in the CNB buildpack interface](https://github.com/buildpacks/spec/blob/platform/v0.8/buildpack.md#build).
+    /// [build in the CNB buildpack interface](https://github.com/buildpacks/spec/blob/platform/v0.9/buildpack.md#build).
     fn build(&self, context: BuildContext<Self>) -> crate::Result<BuildResult, Self::Error>;
 
     /// If an unhandled error occurred within the framework or the buildpack, this method will be
