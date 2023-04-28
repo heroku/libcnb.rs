@@ -23,7 +23,7 @@ pub struct Launch {
 ///
 /// let launch_toml = LaunchBuilder::new()
 ///     .process(
-///         ProcessBuilder::new(process_type!("web"), "bundle")
+///         ProcessBuilder::new(process_type!("web"), ["bundle"])
 ///             .args(vec!["exec", "ruby", "app.rb"])
 ///             .build(),
 ///     )
@@ -108,11 +108,9 @@ pub struct Label {
 #[serde(deny_unknown_fields)]
 pub struct Process {
     pub r#type: ProcessType,
-    pub command: String,
+    pub command: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub args: Vec<String>,
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub direct: bool,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub default: bool,
     #[serde(
@@ -175,7 +173,7 @@ pub struct ProcessBuilder {
 /// ```
 /// # use libcnb_data::process_type;
 /// # use libcnb_data::launch::ProcessBuilder;
-/// ProcessBuilder::new(process_type!("web"), "java")
+/// ProcessBuilder::new(process_type!("web"), ["java"])
 ///     .arg("-jar")
 ///     .arg("target/application-1.0.0.jar")
 ///     .default(true)
@@ -184,29 +182,27 @@ pub struct ProcessBuilder {
 impl ProcessBuilder {
     /// Constructs a new `ProcessBuilder` with the following defaults:
     ///
-    /// * No arguments to the process
-    /// * `direct` is `false`
+    /// * No additional, user-overridable, arguments to the command
     /// * `default` is `false`
     /// * `working_directory` will be `WorkingDirectory::App`.
-    pub fn new(r#type: ProcessType, command: impl Into<String>) -> Self {
+    pub fn new(r#type: ProcessType, command: impl IntoIterator<Item = impl Into<String>>) -> Self {
         Self {
             process: Process {
                 r#type,
-                command: command.into(),
+                command: command.into_iter().map(Into::into).collect(),
                 args: Vec::new(),
-                direct: false,
                 default: false,
                 working_directory: WorkingDirectory::App,
             },
         }
     }
 
-    /// Adds an argument to the process.
+    /// Adds a user-overridable argument to the process.
     ///
     /// Only one argument can be passed per use. So instead of:
     /// ```
     /// # use libcnb_data::process_type;
-    /// # libcnb_data::launch::ProcessBuilder::new(process_type!("web"), "command")
+    /// # libcnb_data::launch::ProcessBuilder::new(process_type!("web"), ["command"])
     /// .arg("-C /path/to/repo")
     /// # ;
     /// ```
@@ -215,7 +211,7 @@ impl ProcessBuilder {
     ///
     /// ```
     /// # use libcnb_data::process_type;
-    /// # libcnb_data::launch::ProcessBuilder::new(process_type!("web"), "command")
+    /// # libcnb_data::launch::ProcessBuilder::new(process_type!("web"), ["command"])
     /// .arg("-C")
     /// .arg("/path/to/repo")
     /// # ;
@@ -227,7 +223,7 @@ impl ProcessBuilder {
         self
     }
 
-    /// Adds multiple arguments to pass to the process.
+    /// Adds multiple, user-overridable, arguments to the process.
     ///
     /// To pass a single argument see [`arg`](Self::arg).
     pub fn args(&mut self, args: impl IntoIterator<Item = impl Into<String>>) -> &mut Self {
@@ -235,14 +231,6 @@ impl ProcessBuilder {
             self.arg(arg);
         }
 
-        self
-    }
-
-    /// Sets the `direct` flag on the process.
-    ///
-    /// If this is true, the lifecycle will launch the command directly, rather than via a shell.
-    pub fn direct(&mut self, value: bool) -> &mut Self {
-        self.process.direct = value;
         self
     }
 
@@ -329,19 +317,19 @@ mod tests {
     #[test]
     fn launch_builder_add_processes() {
         let launch = LaunchBuilder::new()
-            .process(ProcessBuilder::new(process_type!("web"), "web_command").build())
+            .process(ProcessBuilder::new(process_type!("web"), ["web_command"]).build())
             .processes(vec![
-                ProcessBuilder::new(process_type!("another"), "another_command").build(),
-                ProcessBuilder::new(process_type!("worker"), "worker_command").build(),
+                ProcessBuilder::new(process_type!("another"), ["another_command"]).build(),
+                ProcessBuilder::new(process_type!("worker"), ["worker_command"]).build(),
             ])
             .build();
 
         assert_eq!(
             launch.processes,
             vec![
-                ProcessBuilder::new(process_type!("web"), "web_command").build(),
-                ProcessBuilder::new(process_type!("another"), "another_command").build(),
-                ProcessBuilder::new(process_type!("worker"), "worker_command").build(),
+                ProcessBuilder::new(process_type!("web"), ["web_command"]).build(),
+                ProcessBuilder::new(process_type!("another"), ["another_command"]).build(),
+                ProcessBuilder::new(process_type!("worker"), ["worker_command"]).build(),
             ]
         );
     }
@@ -376,16 +364,15 @@ mod tests {
     fn process_with_default_values_deserialization() {
         let toml_str = r#"
 type = "web"
-command = "foo"
+command = ["foo"]
 "#;
 
         assert_eq!(
             toml::from_str::<Process>(toml_str),
             Ok(Process {
                 r#type: process_type!("web"),
-                command: String::from("foo"),
+                command: vec![String::from("foo")],
                 args: vec![],
-                direct: false,
                 default: false,
                 working_directory: WorkingDirectory::App
             })
@@ -394,20 +381,20 @@ command = "foo"
 
     #[test]
     fn process_with_default_values_serialization() {
-        let process = ProcessBuilder::new(process_type!("web"), "foo").build();
+        let process = ProcessBuilder::new(process_type!("web"), ["foo"]).build();
 
         let string = toml::to_string(&process).unwrap();
         assert_eq!(
             string,
             r#"type = "web"
-command = "foo"
+command = ["foo"]
 "#
         );
     }
 
     #[test]
     fn process_with_some_default_values_serialization() {
-        let process = ProcessBuilder::new(process_type!("web"), "foo")
+        let process = ProcessBuilder::new(process_type!("web"), ["foo"])
             .default(true)
             .working_directory(WorkingDirectory::Directory(PathBuf::from("dist")))
             .build();
@@ -416,7 +403,7 @@ command = "foo"
         assert_eq!(
             string,
             r#"type = "web"
-command = "foo"
+command = ["foo"]
 default = true
 working-directory = "dist"
 "#
@@ -425,15 +412,14 @@ working-directory = "dist"
 
     #[test]
     fn process_builder() {
-        let mut process_builder = ProcessBuilder::new(process_type!("web"), "java");
+        let mut process_builder = ProcessBuilder::new(process_type!("web"), ["java"]);
 
         assert_eq!(
             process_builder.build(),
             Process {
                 r#type: process_type!("web"),
-                command: String::from("java"),
+                command: vec![String::from("java")],
                 args: vec![],
-                direct: false,
                 default: false,
                 working_directory: WorkingDirectory::App
             }
@@ -445,23 +431,8 @@ working-directory = "dist"
             process_builder.build(),
             Process {
                 r#type: process_type!("web"),
-                command: String::from("java"),
+                command: vec![String::from("java")],
                 args: vec![],
-                direct: false,
-                default: true,
-                working_directory: WorkingDirectory::App
-            }
-        );
-
-        process_builder.direct(true);
-
-        assert_eq!(
-            process_builder.build(),
-            Process {
-                r#type: process_type!("web"),
-                command: String::from("java"),
-                args: vec![],
-                direct: true,
                 default: true,
                 working_directory: WorkingDirectory::App
             }
@@ -473,9 +444,8 @@ working-directory = "dist"
             process_builder.build(),
             Process {
                 r#type: process_type!("web"),
-                command: String::from("java"),
+                command: vec![String::from("java")],
                 args: vec![],
-                direct: true,
                 default: true,
                 working_directory: WorkingDirectory::Directory(PathBuf::from("dist"))
             }
@@ -485,21 +455,20 @@ working-directory = "dist"
     #[test]
     fn process_builder_args() {
         assert_eq!(
-            ProcessBuilder::new(process_type!("web"), "java")
+            ProcessBuilder::new(process_type!("web"), ["java"])
                 .arg("foo")
                 .args(vec!["baz", "eggs"])
                 .arg("bar")
                 .build(),
             Process {
                 r#type: process_type!("web"),
-                command: String::from("java"),
+                command: vec![String::from("java")],
                 args: vec![
                     String::from("foo"),
                     String::from("baz"),
                     String::from("eggs"),
                     String::from("bar"),
                 ],
-                direct: false,
                 default: false,
                 working_directory: WorkingDirectory::App
             }

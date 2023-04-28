@@ -1,4 +1,4 @@
-api = "0.8"
+api = "0.9"
 
 [buildpack]
 id = "libcnb-test-buildpacks/store"
