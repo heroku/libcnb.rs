@@ -6,6 +6,10 @@ separate changelogs for each crate were used. If you need to refer to these old 
 
 ## [Unreleased]
 
+## [0.12.0] 2023-04-28
+
+Highlight of this release is the bump to [Buildpack API 0.9](https://github.com/buildpacks/spec/releases/tag/buildpack%2Fv0.9). This release contains breaking changes, please refer to the items below for migration advice.
+
 ### Changed
 
 - libcnb.rs now targets [Buildpack API 0.9](https://github.com/buildpacks/spec/releases/tag/buildpack%2Fv0.9). Buildpacks need to upgrade the `api` key to `0.9` in their `buildpack.toml`. ([#567](https://github.com/heroku/libcnb.rs/pull/567))
