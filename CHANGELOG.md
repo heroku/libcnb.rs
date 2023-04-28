@@ -9,7 +9,7 @@ separate changelogs for each crate were used. If you need to refer to these old 
 ### Changed
 
 - libcnb.rs now targets [Buildpack API 0.9](https://github.com/buildpacks/spec/releases/tag/buildpack%2Fv0.9). Buildpacks need to upgrade the `api` key to `0.9` in their `buildpack.toml`. ([#567](https://github.com/heroku/libcnb.rs/pull/567))
-  - `Process` no longer supports the `direct` flag. All processes are now `direct`. ([#567](https://github.com/heroku/libcnb.rs/pull/567))
+  - `Process` no longer supports the `direct` flag. All processes are now `direct`. Processes that need to use bash can use bash explicitly in the command. ([#567](https://github.com/heroku/libcnb.rs/pull/567))
   - `Process::command` has been changed to a sequence of values where the first one is the executable and any additional values are arguments to the executable. The already existing `args` field behaves slightly different now as its contents can now be overridden by the user. See the [upstream CNB specification](https://github.com/buildpacks/spec/blob/buildpack/v0.9/buildpack.md#launchtoml-toml) for details. ([#567](https://github.com/heroku/libcnb.rs/pull/567))
 - `Env::get` now returns `Option<&OsString>` instead of `Option<OsString>`. This is more in line with expectations users have when dealing with a collection type. This is a breaking change, compile errors can be fixed by adding a [`Option::cloned`](https://doc.rust-lang.org/std/option/enum.Option.html#method.cloned-1) call after `Env::get` to get the old behaviour. In some cases, cloning might not be necessary, slightly improving the code that uses `Env::get`. ([#565](https://github.com/heroku/libcnb.rs/pull/565))
 
