@@ -13,6 +13,7 @@ separate changelogs for each crate were used. If you need to refer to these old 
 ### Added
 
 - `Env::get_string_lossy` as a convenience method to work with environment variables directly. Getting a value out of an `Env` and treating its contents as unicode is a common case. Using this new method can simplify buildpack code. ([#565](https://github.com/heroku/libcnb.rs/pull/565))
+- `Clone` implementation for `libcnb::layer_env::Scope`. ([#566](https://github.com/heroku/libcnb.rs/pull/566))
 
 ## [0.11.5] 2023-02-07
 
