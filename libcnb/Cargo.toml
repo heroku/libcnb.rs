@@ -21,5 +21,5 @@ thiserror = "1.0.35"
 toml.workspace = true
 
 [dev-dependencies]
-fastrand = "1.8.0"
+fastrand = "2.0.0"
 tempfile = "3.3.0"
