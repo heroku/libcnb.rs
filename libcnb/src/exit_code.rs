@@ -1,7 +1,7 @@
-///! libcnb exit code constants
-///
-/// Constants are prefixed with the phase they're valid for since their meaning can change between
-/// different CNB phases.
+//! libcnb exit code constants
+//!
+//! Constants are prefixed with the phase they're valid for since their meaning can change between
+//! different CNB phases.
 
 pub(crate) const GENERIC_SUCCESS: i32 = 0;
 pub(crate) const GENERIC_UNSPECIFIED_ERROR: i32 = 1;
