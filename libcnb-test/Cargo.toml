@@ -14,7 +14,7 @@ include = ["src/**/*", "LICENSE", "README.md"]
 [dependencies]
 bollard = "0.14.0"
 cargo_metadata = "0.15.0"
-fastrand = "1.8.0"
+fastrand = "2.0.0"
 fs_extra = "1.2.0"
 libcnb-data.workspace = true
 libcnb-package.workspace = true

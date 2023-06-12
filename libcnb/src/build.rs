@@ -147,7 +147,7 @@ pub(crate) enum InnerBuildResult {
 ///     .launch(
 ///         LaunchBuilder::new()
 ///             .process(
-///                 ProcessBuilder::new(process_type!("type"), "command")
+///                 ProcessBuilder::new(process_type!("type"), ["command"])
 ///                     .arg("-v")
 ///                     .build(),
 ///             )

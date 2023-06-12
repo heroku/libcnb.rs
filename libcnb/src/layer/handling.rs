@@ -857,13 +857,13 @@ mod tests {
 
         let applied_layer_env = layer_data.env.apply_to_empty(Scope::Build);
         assert_eq!(
-            applied_layer_env.get("PATH"),
+            applied_layer_env.get("PATH").cloned(),
             Some(layer_dir.join("bin").into())
         );
 
         assert_eq!(
             applied_layer_env.get("CUSTOM_ENV"),
-            Some(OsString::from("CUSTOM_ENV_VALUE"))
+            Some(&OsString::from("CUSTOM_ENV_VALUE"))
         );
     }
 
