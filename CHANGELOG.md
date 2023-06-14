@@ -6,6 +6,7 @@ separate changelogs for each crate were used. If you need to refer to these old 
 
 ## [Unreleased]
 - Changes to `libcnb package` command to support compiling buildpacks and meta-buildpacks from projects containing a single buildpack or multiple buildpacks in a monorepo. ([#575](https://github.com/heroku/libcnb.rs/pull/575))
+- Added `Buildpackage` struct to support `package.toml` files ([#575](https://github.com/heroku/libcnb.rs/pull/575))
 
 ## [0.12.0] 2023-04-28
 

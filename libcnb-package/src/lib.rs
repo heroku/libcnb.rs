@@ -32,7 +32,7 @@ pub enum CargoProfile {
 }
 
 /// A parsed buildpack descriptor and it's path.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct BuildpackData<BM> {
     pub buildpack_descriptor_path: PathBuf,
     pub buildpack_descriptor: BuildpackDescriptor<BM>,
@@ -49,7 +49,7 @@ pub struct BuildpackageData {
 pub type GenericMetadata = Option<Table>;
 
 /// A folder that can be packaged into a [Cloud Native Buildpack](https://buildpacks.io/)
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct BuildpackPackage<T = GenericMetadata> {
     pub path: PathBuf,
     pub buildpack_data: BuildpackData<T>,
@@ -616,14 +616,14 @@ mod tests {
         get_buildpack_target_dir, get_local_buildpackage_dependencies,
         rewrite_buildpackage_local_dependencies,
         rewrite_buildpackage_relative_path_dependencies_to_absolute, BuildpackData,
-        BuildpackPackage, BuildpackageData, GenericMetadata,
+        BuildpackPackage, BuildpackPackageGraph, BuildpackageData, GenericMetadata,
     };
     use libcnb_data::buildpack::{
         BuildpackDescriptor, BuildpackId, MetaBuildpackDescriptor, SingleBuildpackDescriptor,
     };
     use libcnb_data::buildpack_id;
     use libcnb_data::buildpackage::{
-        Buildpackage, BuildpackageBuildpack, BuildpackageDependency, Platform,
+        Buildpackage, BuildpackageBuildpackReference, BuildpackageDependency, Platform,
     };
     use std::collections::HashMap;
     use std::path::{Path, PathBuf};
@@ -690,29 +690,30 @@ mod tests {
             vec![buildpack_id!("a"), buildpack_id!("b")],
         );
 
-        let buildpack_packages =
-            create_buildpack_package_graph(vec![a.clone(), b.clone(), c.clone()]).unwrap();
+        let buildpack_packages = create_buildpack_package_graph(vec![a, b, c]).unwrap();
+
+        let a = get_node(&buildpack_packages, "a");
+        let b = get_node(&buildpack_packages, "b");
+        let c = get_node(&buildpack_packages, "c");
 
         assert_eq!(
-            to_ids(&get_buildpack_package_dependencies(&buildpack_packages, &[&a]).unwrap()),
-            to_ids(&[&a])
+            to_ids(&get_buildpack_package_dependencies(&buildpack_packages, &[a]).unwrap()),
+            to_ids(&[a])
         );
 
         assert_eq!(
-            to_ids(&get_buildpack_package_dependencies(&buildpack_packages, &[&b]).unwrap()),
-            to_ids(&[&b])
+            to_ids(&get_buildpack_package_dependencies(&buildpack_packages, &[b]).unwrap()),
+            to_ids(&[b])
         );
 
         assert_eq!(
-            to_ids(&get_buildpack_package_dependencies(&buildpack_packages, &[&c]).unwrap()),
-            to_ids(&[&a, &b, &c])
+            to_ids(&get_buildpack_package_dependencies(&buildpack_packages, &[c]).unwrap()),
+            to_ids(&[a, b, c])
         );
 
         assert_eq!(
-            to_ids(
-                &get_buildpack_package_dependencies(&buildpack_packages, &[&b, &c, &a]).unwrap()
-            ),
-            to_ids(&[&b, &a, &c])
+            to_ids(&get_buildpack_package_dependencies(&buildpack_packages, &[b, c, a]).unwrap()),
+            to_ids(&[b, a, c])
         );
     }
 
@@ -722,29 +723,30 @@ mod tests {
         let b = create_meta_buildpack_package(&buildpack_id!("b"), vec![buildpack_id!("a")]);
         let c = create_meta_buildpack_package(&buildpack_id!("c"), vec![buildpack_id!("b")]);
 
-        let buildpack_packages =
-            create_buildpack_package_graph(vec![a.clone(), b.clone(), c.clone()]).unwrap();
+        let buildpack_packages = create_buildpack_package_graph(vec![a, b, c]).unwrap();
+
+        let a = get_node(&buildpack_packages, "a");
+        let b = get_node(&buildpack_packages, "b");
+        let c = get_node(&buildpack_packages, "c");
 
         assert_eq!(
-            to_ids(&get_buildpack_package_dependencies(&buildpack_packages, &[&a]).unwrap()),
-            to_ids(&[&a])
+            to_ids(&get_buildpack_package_dependencies(&buildpack_packages, &[a]).unwrap()),
+            to_ids(&[a])
         );
 
         assert_eq!(
-            to_ids(&get_buildpack_package_dependencies(&buildpack_packages, &[&b]).unwrap()),
-            to_ids(&[&a, &b])
+            to_ids(&get_buildpack_package_dependencies(&buildpack_packages, &[b]).unwrap()),
+            to_ids(&[a, b])
         );
 
         assert_eq!(
-            to_ids(&get_buildpack_package_dependencies(&buildpack_packages, &[&c]).unwrap()),
-            to_ids(&[&a, &b, &c])
+            to_ids(&get_buildpack_package_dependencies(&buildpack_packages, &[c]).unwrap()),
+            to_ids(&[a, b, c])
         );
 
         assert_eq!(
-            to_ids(
-                &get_buildpack_package_dependencies(&buildpack_packages, &[&b, &c, &a]).unwrap()
-            ),
-            to_ids(&[&a, &b, &c])
+            to_ids(&get_buildpack_package_dependencies(&buildpack_packages, &[b, c, a]).unwrap()),
+            to_ids(&[a, b, c])
         );
     }
 
@@ -763,27 +765,22 @@ mod tests {
             vec![buildpack_id!("b"), buildpack_id!("c")],
         );
 
-        let buildpack_packages = create_buildpack_package_graph(vec![
-            a.clone(),
-            b.clone(),
-            c.clone(),
-            d.clone(),
-            e.clone(),
-        ])
-        .unwrap();
+        let buildpack_packages = create_buildpack_package_graph(vec![a, b, c, d, e]).unwrap();
+
+        let a = get_node(&buildpack_packages, "a");
+        let b = get_node(&buildpack_packages, "b");
+        let c = get_node(&buildpack_packages, "c");
+        let d = get_node(&buildpack_packages, "d");
+        let e = get_node(&buildpack_packages, "e");
 
         assert_eq!(
-            to_ids(
-                &get_buildpack_package_dependencies(&buildpack_packages, &[&d, &e, &a]).unwrap()
-            ),
-            to_ids(&[&a, &b, &d, &c, &e])
+            to_ids(&get_buildpack_package_dependencies(&buildpack_packages, &[d, e, a]).unwrap()),
+            to_ids(&[a, b, d, c, e])
         );
 
         assert_eq!(
-            to_ids(
-                &get_buildpack_package_dependencies(&buildpack_packages, &[&e, &d, &a]).unwrap()
-            ),
-            to_ids(&[&b, &c, &e, &a, &d])
+            to_ids(&get_buildpack_package_dependencies(&buildpack_packages, &[e, d, a]).unwrap()),
+            to_ids(&[b, c, e, a, d])
         );
     }
 
@@ -801,7 +798,7 @@ mod tests {
         S: Into<String>,
     {
         Buildpackage {
-            buildpack: BuildpackageBuildpack::try_from(".").unwrap(),
+            buildpack: BuildpackageBuildpackReference::try_from(".").unwrap(),
             dependencies: dependencies
                 .into_iter()
                 .map(|v| BuildpackageDependency::try_from(v.into().as_ref()).unwrap())
@@ -896,5 +893,18 @@ mod tests {
             .iter()
             .map(|v| v.buildpack_id().clone())
             .collect::<Vec<_>>()
+    }
+
+    fn get_node<'a>(
+        buildpack_packages: &'a BuildpackPackageGraph,
+        id: &str,
+    ) -> &'a BuildpackPackage {
+        let id = id.parse::<BuildpackId>().unwrap();
+        let index = buildpack_packages
+            .graph
+            .node_indices()
+            .find(|idx| buildpack_packages.graph[*idx].buildpack_id() == &id)
+            .unwrap();
+        &buildpack_packages.graph[index]
     }
 }

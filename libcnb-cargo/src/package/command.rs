@@ -16,6 +16,8 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+type Result<T> = std::result::Result<T, Error>;
+
 pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
     eprintln!("🔍 Locating buildpacks...");
 
@@ -27,7 +29,7 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
         .manifest_path(&workspace.join("Cargo.toml"))
         .exec()
         .map(|metadata| metadata.target_directory.into_std_path_buf())
-        .map_err(|e| Error::ReadingCargoMetadata {
+        .map_err(|e| Error::ReadCargoMetadata {
             path: workspace.clone(),
             source: e,
         })?;
@@ -57,17 +59,18 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
         })
         .collect::<HashMap<_, _>>();
 
-    let is_user_requested_buildpack: Box<dyn Fn(&&BuildpackPackage) -> bool> =
-        if current_dir.join("buildpack.toml").exists() {
-            Box::new(|buildpack| buildpack.path == current_dir)
-        } else {
-            Box::new(|_| true)
-        };
-
     let buildpack_packages_requested = buildpack_packages
         .packages()
         .into_iter()
-        .filter(is_user_requested_buildpack)
+        .filter(|buildpack_package| {
+            // If we're in a directory with a buildpack.toml file, we only want to build the
+            // buildpack from this directory. Otherwise, all of them.
+            if current_dir.join("buildpack.toml").exists() {
+                buildpack_package.path == current_dir
+            } else {
+                true
+            }
+        })
         .collect::<Vec<_>>();
 
     if buildpack_packages_requested.is_empty() {
@@ -87,7 +90,7 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
     };
 
     let mut current_count = 1;
-    let total_count = build_order.len() as u64;
+    let total_count = build_order.len();
     for buildpack_package in &build_order {
         eprintln!(
             "📦 [{current_count}/{total_count}] Building {}",
@@ -97,7 +100,7 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
         match buildpack_package.buildpack_data.buildpack_descriptor {
             BuildpackDescriptor::Single(_) => {
                 if contains_buildpack_binaries(&buildpack_package.path) {
-                    eprintln!("Not a libcnb buildpack, nothing to compile...");
+                    eprintln!("Not a libcnb.rs buildpack, nothing to compile...");
                 } else {
                     package_single_buildpack(buildpack_package, &target_dir, args)?;
                 }
@@ -124,6 +127,121 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
     );
 
     Ok(())
+}
+
+fn package_single_buildpack(
+    buildpack_package: &BuildpackPackage,
+    target_dir: &Path,
+    args: &PackageArgs,
+) -> Result<()> {
+    let cargo_profile = if args.release {
+        CargoProfile::Release
+    } else {
+        CargoProfile::Dev
+    };
+
+    let target_triple = &args.target;
+
+    let cargo_metadata = MetadataCommand::new()
+        .manifest_path(&buildpack_package.path.join("Cargo.toml"))
+        .exec()
+        .map_err(|e| Error::ReadCargoMetadata {
+            path: buildpack_package.path.clone(),
+            source: e,
+        })?;
+
+    let cargo_build_env = if args.no_cross_compile_assistance {
+        vec![]
+    } else {
+        eprintln!("Determining automatic cross-compile settings...");
+        match cross_compile_assistance(target_triple) {
+            CrossCompileAssistance::Configuration { cargo_env } => cargo_env,
+
+            CrossCompileAssistance::NoAssistance => {
+                eprintln!("Could not determine automatic cross-compile settings for target triple {target_triple}.");
+                eprintln!("This is not an error, but without proper cross-compile settings in your Cargo manifest and locally installed toolchains, compilation might fail.");
+                eprintln!("To disable this warning, pass --no-cross-compile-assistance.");
+                vec![]
+            }
+
+            CrossCompileAssistance::HelpText(help_text) => {
+                Err(Error::CrossCompilationHelp { message: help_text })?
+            }
+        }
+    };
+
+    eprintln!("Building binaries ({target_triple})...");
+
+    let buildpack_binaries = build_buildpack_binaries(
+        &buildpack_package.path,
+        &cargo_metadata,
+        cargo_profile,
+        &cargo_build_env,
+        target_triple,
+    )?;
+
+    eprintln!("Writing buildpack directory...");
+
+    clean_target_directory(target_dir)?;
+
+    assemble_buildpack_directory(
+        target_dir,
+        &buildpack_package.buildpack_data.buildpack_descriptor_path,
+        &buildpack_binaries,
+    )
+    .map_err(|e| Error::AssembleBuildpackDirectory(target_dir.to_path_buf(), e))?;
+
+    let buildpackage_content =
+        toml::to_string(&Buildpackage::default()).map_err(Error::SerializeBuildpackage)?;
+
+    std::fs::write(target_dir.join("package.toml"), buildpackage_content)
+        .map_err(|e| Error::WriteBuildpackage(target_dir.to_path_buf(), e))?;
+
+    eprint_compiled_buildpack_success(&buildpack_package.path, target_dir)
+}
+
+fn package_meta_buildpack(
+    buildpack_package: &BuildpackPackage,
+    target_dir: &Path,
+    target_dirs_by_buildpack_id: &HashMap<&BuildpackId, PathBuf>,
+) -> Result<()> {
+    eprintln!("Writing buildpack directory...");
+
+    clean_target_directory(target_dir)?;
+
+    std::fs::create_dir_all(target_dir)
+        .map_err(|e| Error::CreateBuildpackTargetDirectory(target_dir.to_path_buf(), e))?;
+
+    std::fs::copy(
+        &buildpack_package.buildpack_data.buildpack_descriptor_path,
+        target_dir.join("buildpack.toml"),
+    )
+    .map_err(|e| Error::WriteBuildpack(target_dir.to_path_buf(), e))?;
+
+    let buildpackage_content = &buildpack_package
+        .buildpackage_data
+        .as_ref()
+        .map(|buildpackage_data| &buildpackage_data.buildpackage_descriptor)
+        .ok_or(Error::MissingBuildpackageData)
+        .and_then(|buildpackage| {
+            rewrite_buildpackage_local_dependencies(buildpackage, target_dirs_by_buildpack_id)
+                .map_err(std::convert::Into::into)
+        })
+        .and_then(|buildpackage| {
+            rewrite_buildpackage_relative_path_dependencies_to_absolute(
+                &buildpackage,
+                &buildpack_package.path,
+            )
+            .map_err(std::convert::Into::into)
+        })
+        .and_then(|buildpackage| {
+            toml::to_string(&buildpackage).map_err(Error::SerializeBuildpackage)
+        })?;
+
+    std::fs::write(target_dir.join("package.toml"), buildpackage_content)
+        .map_err(|e| Error::WriteBuildpackage(target_dir.to_path_buf(), e))?;
+
+    eprint_compiled_buildpack_success(&buildpack_package.path, target_dir)
 }
 
 fn eprint_pack_command_hint(pack_directories: Vec<PathBuf>) {
@@ -170,159 +288,17 @@ fn get_cargo_workspace_root(dir: &Path) -> Result<PathBuf> {
         })?
 }
 
-fn package_single_buildpack(
-    buildpack_package: &BuildpackPackage,
-    target_dir: &Path,
-    args: &PackageArgs,
-) -> Result<()> {
-    let cargo_profile = if args.release {
-        CargoProfile::Release
-    } else {
-        CargoProfile::Dev
-    };
-
-    let target_triple = &args.target;
-
-    let cargo_metadata = MetadataCommand::new()
-        .manifest_path(&buildpack_package.path.join("Cargo.toml"))
-        .exec()
-        .map_err(|e| Error::ReadingCargoMetadata {
-            path: buildpack_package.path.clone(),
-            source: e,
-        })?;
-
-    let cargo_build_env = if args.no_cross_compile_assistance {
-        vec![]
-    } else {
-        eprintln!("Determining automatic cross-compile settings...");
-        match cross_compile_assistance(target_triple) {
-            CrossCompileAssistance::Configuration { cargo_env } => cargo_env,
-
-            CrossCompileAssistance::NoAssistance => {
-                eprintln!("Could not determine automatic cross-compile settings for target triple {target_triple}.");
-                eprintln!("This is not an error, but without proper cross-compile settings in your Cargo manifest and locally installed toolchains, compilation might fail.");
-                eprintln!("To disable this warning, pass --no-cross-compile-assistance.");
-                vec![]
-            }
-
-            CrossCompileAssistance::HelpText(help_text) => {
-                Err(Error::CrossCompilationHelp { message: help_text })?
-            }
-        }
-    };
-
-    eprintln!("Building binaries ({target_triple})...");
-
-    let buildpack_binaries = build_buildpack_binaries(
-        &buildpack_package.path,
-        &cargo_metadata,
-        cargo_profile,
-        &cargo_build_env,
-        target_triple,
-    )?;
-
-    eprintln!("Writing buildpack directory...");
-
-    clean_target_directory(target_dir)?;
-
-    assemble_buildpack_directory(
-        target_dir,
-        &buildpack_package.buildpack_data.buildpack_descriptor_path,
-        &buildpack_binaries,
-    )
-    .map_err(|e| Error::IO {
-        message: "Could not assemble buildpack directory".to_string(),
-        path: target_dir.to_path_buf(),
-        source: e,
-    })?;
-
-    let buildpackage_content =
-        toml::to_string(&Buildpackage::default()).map_err(Error::SerializeBuildpackage)?;
-
-    std::fs::write(target_dir.join("package.toml"), buildpackage_content).map_err(|e| {
-        Error::IO {
-            message: "Failed to write package.toml to buildpack directory".to_string(),
-            path: target_dir.to_path_buf(),
-            source: e,
-        }
-    })?;
-
-    report_compiled_buildpack(&buildpack_package.path, target_dir)
-}
-
-fn package_meta_buildpack(
-    buildpack_package: &BuildpackPackage,
-    target_dir: &Path,
-    target_dirs_by_buildpack_id: &HashMap<&BuildpackId, PathBuf>,
-) -> Result<()> {
-    eprintln!("Writing buildpack directory...");
-
-    clean_target_directory(target_dir)?;
-
-    std::fs::create_dir_all(target_dir).map_err(|e| Error::IO {
-        message: "I/O error while creating buildpack directory".to_string(),
-        path: target_dir.to_path_buf(),
-        source: e,
-    })?;
-
-    std::fs::copy(
-        &buildpack_package.buildpack_data.buildpack_descriptor_path,
-        target_dir.join("buildpack.toml"),
-    )
-    .map_err(|e| Error::IO {
-        message: "I/O error while writing buildpack.toml to the buildpack directory".to_string(),
-        path: target_dir.to_path_buf(),
-        source: e,
-    })?;
-
-    let buildpackage_content = &buildpack_package
-        .buildpackage_data
-        .as_ref()
-        .map(|buildpackage_data| &buildpackage_data.buildpackage_descriptor)
-        .ok_or(Error::MissingBuildpackageData)
-        .and_then(|buildpackage| {
-            rewrite_buildpackage_local_dependencies(buildpackage, target_dirs_by_buildpack_id)
-                .map_err(std::convert::Into::into)
-        })
-        .and_then(|buildpackage| {
-            rewrite_buildpackage_relative_path_dependencies_to_absolute(
-                &buildpackage,
-                &buildpack_package.path,
-            )
-            .map_err(std::convert::Into::into)
-        })
-        .and_then(|buildpackage| {
-            toml::to_string(&buildpackage).map_err(Error::SerializeBuildpackage)
-        })?;
-
-    std::fs::write(target_dir.join("package.toml"), buildpackage_content).map_err(|e| {
-        Error::IO {
-            message: "Failed to write package.toml to buildpack directory".to_string(),
-            path: target_dir.to_path_buf(),
-            source: e,
-        }
-    })?;
-
-    report_compiled_buildpack(&buildpack_package.path, target_dir)
-}
-
 fn clean_target_directory(dir: &Path) -> Result<()> {
     if dir.exists() {
-        std::fs::remove_dir_all(dir).map_err(|e| Error::IO {
-            message: "Could not remove existing buildpack target directory".to_string(),
-            path: dir.to_path_buf(),
-            source: e,
-        })?;
+        std::fs::remove_dir_all(dir)
+            .map_err(|e| Error::CleanBuildpackTargetDirectory(dir.to_path_buf(), e))?;
     }
     Ok(())
 }
 
-fn report_compiled_buildpack(source_dir: &Path, target_dir: &Path) -> Result<()> {
-    let size_in_bytes = calculate_dir_size(target_dir).map_err(|e| Error::IO {
-        message: "I/O error while calculating directory size".to_string(),
-        path: target_dir.to_path_buf(),
-        source: e,
-    })?;
+fn eprint_compiled_buildpack_success(source_dir: &Path, target_dir: &Path) -> Result<()> {
+    let size_in_bytes = calculate_dir_size(target_dir)
+        .map_err(|e| Error::CalculateDirectorySize(target_dir.to_path_buf(), e))?;
 
     // Precision will only be lost for sizes bigger than 52 bits (~4 Petabytes), and even
     // then will only result in a less precise figure, so is not an issue.
@@ -368,5 +344,3 @@ fn contains_buildpack_binaries(dir: &Path) -> bool {
         .map(|path| dir.join(path))
         .all(|path| path.is_file())
 }
-
-type Result<T> = std::result::Result<T, Error>;

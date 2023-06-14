@@ -12,7 +12,7 @@ struct StackUnchecked {
     pub mixins: Vec<String>,
 }
 
-#[derive(Deserialize, Debug, Eq, PartialEq, Clone)]
+#[derive(Deserialize, Debug, Eq, PartialEq)]
 #[serde(try_from = "StackUnchecked")]
 pub enum Stack {
     Any,

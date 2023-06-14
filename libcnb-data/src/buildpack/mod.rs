@@ -50,7 +50,7 @@ pub use version::*;
 ///     BuildpackDescriptor::Meta(buildpack) => println!("Found meta-buildpack: {}", buildpack.buildpack.id),
 /// };
 /// ```
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug)]
 #[serde(untagged)]
 pub enum BuildpackDescriptor<BM> {
     Single(SingleBuildpackDescriptor<BM>),
@@ -101,7 +101,7 @@ impl<BM> BuildpackDescriptor<BM> {
 /// assert_eq!(buildpack_descriptor.buildpack.id, buildpack_id!("foo/bar"));
 /// assert_eq!(buildpack_descriptor.stacks, vec![Stack::Any]);
 /// ```
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct SingleBuildpackDescriptor<BM> {
     pub api: BuildpackApi,
@@ -147,7 +147,7 @@ pub struct SingleBuildpackDescriptor<BM> {
 /// let buildpack_descriptor = toml::from_str::<MetaBuildpackDescriptor<Option<toml::value::Table>>>(toml_str).unwrap();
 /// assert_eq!(buildpack_descriptor.buildpack.id, buildpack_id!("foo/bar"));
 /// ```
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct MetaBuildpackDescriptor<BM> {
     pub api: BuildpackApi,
@@ -156,7 +156,7 @@ pub struct MetaBuildpackDescriptor<BM> {
     pub metadata: BM,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct Buildpack {
     pub id: BuildpackId,
@@ -178,20 +178,20 @@ pub struct Buildpack {
     pub sbom_formats: HashSet<SbomFormat>,
 }
 
-#[derive(Deserialize, Debug, Eq, PartialEq, Clone)]
+#[derive(Deserialize, Debug, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct License {
     pub r#type: Option<String>,
     pub uri: Option<String>,
 }
 
-#[derive(Deserialize, Debug, Eq, PartialEq, Clone)]
+#[derive(Deserialize, Debug, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct Order {
     pub group: Vec<Group>,
 }
 
-#[derive(Deserialize, Debug, Eq, PartialEq, Clone)]
+#[derive(Deserialize, Debug, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct Group {
     pub id: BuildpackId,

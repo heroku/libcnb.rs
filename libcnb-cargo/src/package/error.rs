@@ -9,13 +9,6 @@ use std::path::PathBuf;
 
 #[derive(Debug, thiserror::Error)]
 pub(crate) enum Error {
-    #[error("I/O Error - {message}\nPath: {path}\nError: {source}")]
-    IO {
-        message: String,
-        path: PathBuf,
-        source: std::io::Error,
-    },
-
     #[error("Failed to get current dir\nError: {0}")]
     GetCurrentDir(std::io::Error),
 
@@ -29,7 +22,7 @@ pub(crate) enum Error {
     },
 
     #[error("Could not read Cargo.toml metadata in `{path}`\nError: {source}")]
-    ReadingCargoMetadata {
+    ReadCargoMetadata {
         path: PathBuf,
         source: cargo_metadata::Error,
     },
@@ -50,7 +43,7 @@ pub(crate) enum Error {
     SerializeBuildpackage(toml::ser::Error),
 
     #[error("Error while finding buildpack directories\nLocation: {path}\nError: {source}")]
-    FindingBuildpackDirs {
+    FindBuildpackDirs {
         path: PathBuf,
         source: std::io::Error,
     },
@@ -71,25 +64,25 @@ pub(crate) enum Error {
     BinaryBuildMissingTarget { target: String },
 
     #[error("Failed to read buildpack data\nLocation: {path}\nError: {source}")]
-    ReadingBuildpackData {
+    ReadBuildpackData {
         path: PathBuf,
         source: std::io::Error,
     },
 
     #[error("Failed to parse buildpack data\nLocation: {path}\nError: {source}")]
-    ParsingBuildpackData {
+    ParseBuildpackData {
         path: PathBuf,
         source: toml::de::Error,
     },
 
     #[error("Failed to read buildpackage data\nLocation: {path}\nError: {source}")]
-    ReadingBuildpackageData {
+    ReadBuildpackageData {
         path: PathBuf,
         source: std::io::Error,
     },
 
     #[error("Failed to parse buildpackage data\nLocation: {path}\nError: {source}")]
-    ParsingBuildpackageData {
+    ParseBuildpackageData {
         path: PathBuf,
         source: toml::de::Error,
     },
@@ -114,6 +107,28 @@ pub(crate) enum Error {
 
     #[error("No buildpacks found!")]
     NoBuildpacksFound,
+
+    #[error("Could not assemble buildpack directory\nPath: {0}\nError: {1}")]
+    AssembleBuildpackDirectory(PathBuf, std::io::Error),
+
+    #[error(
+        "Failed to write package.toml to the target buildpack directory\nPath: {0}\nError: {1}"
+    )]
+    WriteBuildpackage(PathBuf, std::io::Error),
+
+    #[error("I/O error while creating target buildpack directory\nPath: {0}\nError: {1}")]
+    CreateBuildpackTargetDirectory(PathBuf, std::io::Error),
+
+    #[error(
+        "Failed to write buildpack.toml to the target buildpack directory\nPath: {0}\nError: {1}"
+    )]
+    WriteBuildpack(PathBuf, std::io::Error),
+
+    #[error("Could not remove existing buildpack target directory\nPath: {0}\nError: {1}")]
+    CleanBuildpackTargetDirectory(PathBuf, std::io::Error),
+
+    #[error("I/O error while calculating directory size\nPath: {0}\nError: {1}")]
+    CalculateDirectorySize(PathBuf, std::io::Error),
 }
 
 impl From<BuildBinariesError> for Error {
@@ -145,7 +160,7 @@ impl From<BuildBinariesError> for Error {
 impl From<FindBuildpackDirsError> for Error {
     fn from(value: FindBuildpackDirsError) -> Self {
         match value {
-            FindBuildpackDirsError::IO(path, error) => Error::FindingBuildpackDirs {
+            FindBuildpackDirsError::IO(path, error) => Error::FindBuildpackDirs {
                 path,
                 source: error,
             },
@@ -159,10 +174,10 @@ impl From<libcnb_package::ReadBuildpackPackageError> for Error {
             libcnb_package::ReadBuildpackPackageError::ReadBuildpackDataError(error) => match error
             {
                 libcnb_package::ReadBuildpackDataError::ReadingBuildpack { path, source } => {
-                    Error::ReadingBuildpackData { path, source }
+                    Error::ReadBuildpackData { path, source }
                 }
                 libcnb_package::ReadBuildpackDataError::ParsingBuildpack { path, source } => {
-                    Error::ParsingBuildpackData { path, source }
+                    Error::ParseBuildpackData { path, source }
                 }
             },
             libcnb_package::ReadBuildpackPackageError::ReadBuildpackageDataError(error) => {
@@ -170,11 +185,11 @@ impl From<libcnb_package::ReadBuildpackPackageError> for Error {
                     libcnb_package::ReadBuildpackageDataError::ReadingBuildpackage {
                         path,
                         source,
-                    } => Error::ReadingBuildpackageData { path, source },
+                    } => Error::ReadBuildpackageData { path, source },
                     libcnb_package::ReadBuildpackageDataError::ParsingBuildpackage {
                         path,
                         source,
-                    } => Error::ParsingBuildpackageData { path, source },
+                    } => Error::ParseBuildpackageData { path, source },
                 }
             }
         }
