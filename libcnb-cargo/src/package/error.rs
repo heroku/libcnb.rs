@@ -1,10 +1,13 @@
 use libcnb_data::buildpack::{BuildpackId, BuildpackIdError};
 use libcnb_package::build::{BuildBinariesError, BuildError};
-use libcnb_package::{
-    CreateBuildpackPackageGraphError, FindBuildpackDirsError, GetBuildpackPackageDependenciesError,
+use libcnb_package::buildpack_dependency::{
     RewriteBuildpackageLocalDependenciesError,
     RewriteBuildpackageRelativePathDependenciesToAbsoluteError,
 };
+use libcnb_package::buildpack_package_graph::{
+    CreateBuildpackPackageGraphError, GetBuildpackPackageDependenciesError,
+};
+use libcnb_package::FindBuildpackDirsError;
 use std::path::PathBuf;
 
 #[derive(Debug, thiserror::Error)]
@@ -168,10 +171,10 @@ impl From<FindBuildpackDirsError> for Error {
     }
 }
 
-impl From<libcnb_package::ReadBuildpackPackageError> for Error {
-    fn from(value: libcnb_package::ReadBuildpackPackageError) -> Self {
+impl From<libcnb_package::buildpack_package::ReadBuildpackPackageError> for Error {
+    fn from(value: libcnb_package::buildpack_package::ReadBuildpackPackageError) -> Self {
         match value {
-            libcnb_package::ReadBuildpackPackageError::ReadBuildpackDataError(error) => match error
+            libcnb_package::buildpack_package::ReadBuildpackPackageError::ReadBuildpackDataError(error) => match error
             {
                 libcnb_package::ReadBuildpackDataError::ReadingBuildpack { path, source } => {
                     Error::ReadBuildpackData { path, source }
@@ -180,7 +183,7 @@ impl From<libcnb_package::ReadBuildpackPackageError> for Error {
                     Error::ParseBuildpackData { path, source }
                 }
             },
-            libcnb_package::ReadBuildpackPackageError::ReadBuildpackageDataError(error) => {
+            libcnb_package::buildpack_package::ReadBuildpackPackageError::ReadBuildpackageDataError(error) => {
                 match error {
                     libcnb_package::ReadBuildpackageDataError::ReadingBuildpackage {
                         path,

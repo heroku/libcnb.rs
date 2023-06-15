@@ -4,12 +4,17 @@ use cargo_metadata::MetadataCommand;
 use libcnb_data::buildpack::{BuildpackDescriptor, BuildpackId};
 use libcnb_data::buildpackage::Buildpackage;
 use libcnb_package::build::build_buildpack_binaries;
+use libcnb_package::buildpack_dependency::{
+    rewrite_buildpackage_local_dependencies,
+    rewrite_buildpackage_relative_path_dependencies_to_absolute,
+};
+use libcnb_package::buildpack_package::{read_buildpack_package, BuildpackPackage};
+use libcnb_package::buildpack_package_graph::{
+    create_buildpack_package_graph, get_buildpack_package_dependencies,
+};
 use libcnb_package::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
 use libcnb_package::{
-    assemble_buildpack_directory, create_buildpack_package_graph, find_buildpack_dirs,
-    get_buildpack_package_dependencies, get_buildpack_target_dir, read_buildpack_package,
-    rewrite_buildpackage_local_dependencies,
-    rewrite_buildpackage_relative_path_dependencies_to_absolute, BuildpackPackage, CargoProfile,
+    assemble_buildpack_directory, find_buildpack_dirs, get_buildpack_target_dir, CargoProfile,
     FindBuildpackDirsOptions,
 };
 use std::collections::HashMap;

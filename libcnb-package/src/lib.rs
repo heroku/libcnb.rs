@@ -5,18 +5,16 @@
 #![allow(clippy::module_name_repetitions)]
 
 pub mod build;
+pub mod buildpack_dependency;
+pub mod buildpack_package;
+pub mod buildpack_package_graph;
 pub mod config;
 pub mod cross_compile;
 
 use crate::build::BuildpackBinaries;
-use libcnb_data::buildpack::{BuildpackDescriptor, BuildpackId, BuildpackIdError};
-use libcnb_data::buildpackage::{Buildpackage, BuildpackageDependency};
-use petgraph::graph::NodeIndex;
-use petgraph::visit::DfsPostOrder;
-use petgraph::Graph;
-use std::collections::HashMap;
+use libcnb_data::buildpack::{BuildpackDescriptor, BuildpackId};
+use libcnb_data::buildpackage::Buildpackage;
 use std::fs;
-use std::hash::BuildHasher;
 use std::path::{Path, PathBuf};
 use toml::Table;
 
@@ -31,68 +29,14 @@ pub enum CargoProfile {
     Release,
 }
 
+/// A convenient type alias to use with [`BuildpackPackage`] or [`BuildpackData`] when you don't required a specialized metadata representation.
+pub type GenericMetadata = Option<Table>;
+
 /// A parsed buildpack descriptor and it's path.
 #[derive(Debug)]
 pub struct BuildpackData<BM> {
     pub buildpack_descriptor_path: PathBuf,
     pub buildpack_descriptor: BuildpackDescriptor<BM>,
-}
-
-/// A parsed buildpackage descriptor and it's path.
-#[derive(Debug, Clone)]
-pub struct BuildpackageData {
-    pub buildpackage_descriptor_path: PathBuf,
-    pub buildpackage_descriptor: Buildpackage,
-}
-
-/// A convenient type alias to use with [`BuildpackPackage`] or [`BuildpackData`] when you don't required a specialized metadata representation.
-pub type GenericMetadata = Option<Table>;
-
-/// A folder that can be packaged into a [Cloud Native Buildpack](https://buildpacks.io/)
-#[derive(Debug)]
-pub struct BuildpackPackage<T = GenericMetadata> {
-    pub path: PathBuf,
-    pub buildpack_data: BuildpackData<T>,
-    pub buildpackage_data: Option<BuildpackageData>,
-}
-
-impl BuildpackPackage {
-    #[must_use]
-    pub fn buildpack_id(&self) -> &BuildpackId {
-        &self.buildpack_data.buildpack_descriptor.buildpack().id
-    }
-}
-
-/// A dependency graph of [`BuildpackPackage`]s
-pub struct BuildpackPackageGraph {
-    graph: Graph<BuildpackPackage, ()>,
-}
-
-impl BuildpackPackageGraph {
-    #[must_use]
-    pub fn packages(&self) -> Vec<&BuildpackPackage> {
-        self.graph
-            .node_indices()
-            .map(|idx| &self.graph[idx])
-            .collect::<Vec<_>>()
-    }
-}
-
-/// Buildpack dependency type
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub enum BuildpackDependency {
-    External(BuildpackageDependency),
-    Local(BuildpackId, BuildpackageDependency),
-}
-
-impl BuildpackDependency {
-    #[must_use]
-    pub fn get_local_buildpack_id(&self) -> Option<BuildpackId> {
-        match self {
-            BuildpackDependency::External(_) => None,
-            BuildpackDependency::Local(id, _) => Some(id.clone()),
-        }
-    }
 }
 
 /// Reads buildpack data from the given project path.
@@ -133,6 +77,13 @@ pub enum ReadBuildpackDataError {
         path: PathBuf,
         source: toml::de::Error,
     },
+}
+
+/// A parsed buildpackage descriptor and it's path.
+#[derive(Debug, Clone)]
+pub struct BuildpackageData {
+    pub buildpackage_descriptor_path: PathBuf,
+    pub buildpackage_descriptor: Buildpackage,
 }
 
 /// Reads buildpackage data from the given project path.
@@ -181,117 +132,6 @@ pub enum ReadBuildpackageDataError {
         path: PathBuf,
         source: toml::de::Error,
     },
-}
-
-/// Reads both the buildpack and buildpackage data from a given project path.
-///  
-/// # Errors
-///
-/// Will return an `Err` if either the buildpack or buildpackage data could not be read.
-pub fn read_buildpack_package<P: Into<PathBuf>>(
-    project_path: P,
-) -> Result<BuildpackPackage, ReadBuildpackPackageError> {
-    let path = project_path.into();
-    let buildpack_data =
-        read_buildpack_data(&path).map_err(ReadBuildpackPackageError::ReadBuildpackDataError)?;
-    let buildpackage_data = read_buildpackage_data(&path)
-        .map_err(ReadBuildpackPackageError::ReadBuildpackageDataError)?;
-    Ok(BuildpackPackage {
-        path,
-        buildpack_data,
-        buildpackage_data,
-    })
-}
-
-/// An error from [`read_buildpack_package`]
-#[derive(Debug)]
-pub enum ReadBuildpackPackageError {
-    ReadBuildpackDataError(ReadBuildpackDataError),
-    ReadBuildpackageDataError(ReadBuildpackageDataError),
-}
-
-/// Create a [`BuildpackPackageGraph`] from a list of [`BuildpackPackage`] values.
-///
-/// # Errors
-///
-/// Will return an `Err` if the constructed dependency graph is missing any local [`BuildpackPackage`] dependencies.
-pub fn create_buildpack_package_graph(
-    buildpack_packages: Vec<BuildpackPackage>,
-) -> Result<BuildpackPackageGraph, CreateBuildpackPackageGraphError> {
-    let mut graph = Graph::new();
-
-    for buildpack_package in buildpack_packages {
-        graph.add_node(buildpack_package);
-    }
-
-    for idx in graph.node_indices() {
-        let buildpack_package = &graph[idx];
-        let dependencies = buildpack_package
-            .buildpackage_data
-            .as_ref()
-            .map(|value| &value.buildpackage_descriptor)
-            .map_or(Ok(vec![]), get_local_buildpackage_dependencies)
-            .map_err(CreateBuildpackPackageGraphError::BuildpackIdError)?;
-        for dependency in dependencies {
-            let dependency_idx = lookup_buildpack_package_node_index(&graph, &dependency).ok_or(
-                CreateBuildpackPackageGraphError::BuildpackageLookup(dependency),
-            )?;
-            graph.add_edge(idx, dependency_idx, ());
-        }
-    }
-
-    Ok(BuildpackPackageGraph { graph })
-}
-
-/// An error from [`create_buildpack_package_graph`]
-#[derive(Debug)]
-pub enum CreateBuildpackPackageGraphError {
-    BuildpackIdError(BuildpackIdError),
-    BuildpackageLookup(BuildpackId),
-}
-
-/// Collects all the [`BuildpackPackage`] values found while traversing the given `buildpack_packages` graph
-/// using one or more `root_packages` values as starting points for the traversal. The returned list
-/// will contain the given `root_packages` values as well as all their dependencies in topological order.
-///
-/// # Errors
-///
-/// An `Err` will be returned if any [`BuildpackPackage`] located contains a reference to a [`BuildpackPackage`]
-/// that is not in the `buildpack_packages` graph.
-pub fn get_buildpack_package_dependencies<'a>(
-    buildpack_packages: &'a BuildpackPackageGraph,
-    root_packages: &[&BuildpackPackage],
-) -> Result<Vec<&'a BuildpackPackage>, GetBuildpackPackageDependenciesError> {
-    let graph = &buildpack_packages.graph;
-    let mut order: Vec<&BuildpackPackage> = vec![];
-    let mut dfs = DfsPostOrder::empty(&graph);
-    for root in root_packages {
-        let idx = lookup_buildpack_package_node_index(graph, root.buildpack_id()).ok_or(
-            GetBuildpackPackageDependenciesError::BuildpackPackageLookup(
-                root.buildpack_id().clone(),
-            ),
-        )?;
-        dfs.move_to(idx);
-        while let Some(visited) = dfs.next(&graph) {
-            order.push(&graph[visited]);
-        }
-    }
-    Ok(order)
-}
-
-/// An error from [`get_buildpack_package_dependencies`]
-#[derive(Debug)]
-pub enum GetBuildpackPackageDependenciesError {
-    BuildpackPackageLookup(BuildpackId),
-}
-
-fn lookup_buildpack_package_node_index(
-    graph: &Graph<BuildpackPackage, ()>,
-    buildpack_id: &BuildpackId,
-) -> Option<NodeIndex> {
-    graph
-        .node_indices()
-        .find(|idx| graph[*idx].buildpack_id() == buildpack_id)
 }
 
 /// Creates a buildpack directory and copies all buildpack assets to it.
@@ -373,165 +213,6 @@ pub fn default_buildpack_directory_name(buildpack_id: &BuildpackId) -> String {
     buildpack_id.replace('/', "_")
 }
 
-fn get_buildpack_dependencies(
-    buildpackage: &Buildpackage,
-) -> Result<Vec<BuildpackDependency>, BuildpackIdError> {
-    buildpackage
-        .dependencies
-        .iter()
-        .map(|dependency| {
-            buildpack_id_from_libcnb_dependency(dependency).map(|buildpack_id| {
-                buildpack_id.map_or_else(
-                    || BuildpackDependency::External(dependency.clone()),
-                    |value| BuildpackDependency::Local(value, dependency.clone()),
-                )
-            })
-        })
-        .collect::<Result<_, _>>()
-}
-
-fn buildpack_id_from_libcnb_dependency(
-    dependency: &BuildpackageDependency,
-) -> Result<Option<BuildpackId>, BuildpackIdError> {
-    Some(&dependency.uri)
-        .filter(|uri| {
-            uri.scheme()
-                .map_or(false, |scheme| scheme.as_str() == "libcnb")
-        })
-        .map(|uri| uri.path().to_string().parse())
-        .transpose()
-}
-
-/// Reads the dependency URIs from the given `buildpackage` and returns any local libcnb project
-/// references which should have the format `libcnb:{buildpack_id}`.
-///
-/// # Errors
-///
-/// Will return an `Err` if any of the local dependencies use an invalid [`BuildpackId`].
-pub fn get_local_buildpackage_dependencies(
-    buildpackage: &Buildpackage,
-) -> Result<Vec<BuildpackId>, BuildpackIdError> {
-    get_buildpack_dependencies(buildpackage).map(|dependencies| {
-        dependencies
-            .iter()
-            .filter_map(BuildpackDependency::get_local_buildpack_id)
-            .collect::<Vec<_>>()
-    })
-}
-
-/// Creates a new [`Buildpackage`] value by replacing each local libcnb dependency with the
-/// file path where the compiled dependency is located.
-///
-/// This assumes that each libcnb dependency has already been compiled and the given
-/// `buildpack_ids_to_target_dir` contains the correct mappings of path locations for each
-/// [`BuildpackId`].
-///
-/// # Errors
-///
-/// Will return an `Err` if:
-/// * the given `buildpackage` contains a local dependency with an invalid [`BuildpackId`]
-/// * there is no entry found in `buildpack_ids_to_target_dir` for a local dependency's [`BuildpackId`]
-/// * the target path for a local dependency is an invalid URI
-pub fn rewrite_buildpackage_local_dependencies<S: BuildHasher>(
-    buildpackage: &Buildpackage,
-    buildpack_ids_to_target_dir: &HashMap<&BuildpackId, PathBuf, S>,
-) -> Result<Buildpackage, RewriteBuildpackageLocalDependenciesError> {
-    let local_dependency_to_target_dir = |target_dir: &PathBuf| {
-        BuildpackageDependency::try_from(target_dir.clone()).map_err(|_| {
-            RewriteBuildpackageLocalDependenciesError::InvalidDependency(target_dir.clone())
-        })
-    };
-
-    get_buildpack_dependencies(buildpackage)
-        .map_err(RewriteBuildpackageLocalDependenciesError::GetBuildpackDependenciesError)
-        .and_then(|dependencies| {
-            dependencies
-                .into_iter()
-                .map(|dependency| match dependency {
-                    BuildpackDependency::External(buildpackage_dependency) => {
-                        Ok(buildpackage_dependency)
-                    }
-                    BuildpackDependency::Local(buildpack_id, _) => buildpack_ids_to_target_dir
-                        .get(&buildpack_id)
-                        .ok_or(
-                            RewriteBuildpackageLocalDependenciesError::TargetDirectoryLookup(
-                                buildpack_id,
-                            ),
-                        )
-                        .and_then(local_dependency_to_target_dir),
-                })
-                .collect()
-        })
-        .map(|dependencies| Buildpackage {
-            dependencies,
-            buildpack: buildpackage.buildpack.clone(),
-            platform: buildpackage.platform.clone(),
-        })
-}
-
-/// An error for [`rewrite_buildpackage_local_dependencies`]
-#[derive(Debug)]
-pub enum RewriteBuildpackageLocalDependenciesError {
-    TargetDirectoryLookup(BuildpackId),
-    InvalidDependency(PathBuf),
-    GetBuildpackDependenciesError(BuildpackIdError),
-}
-
-/// Creates a new [`Buildpackage`] value by replacing each relative URI with it's absolute path using
-/// the given `source_path`.
-///
-/// # Errors
-///
-/// Will return an `Err` if:
-/// * the given `buildpackage` contains a local dependency with an invalid [`BuildpackId`]
-/// * the constructed absolute path is an invalid URI
-pub fn rewrite_buildpackage_relative_path_dependencies_to_absolute(
-    buildpackage: &Buildpackage,
-    source_dir: &Path,
-) -> Result<Buildpackage, RewriteBuildpackageRelativePathDependenciesToAbsoluteError> {
-    let relative_dependency_to_absolute =
-        |source_dir: &Path, buildpackage_dependency: BuildpackageDependency| {
-            let absolute_path = source_dir.join(buildpackage_dependency.uri.path().to_string());
-            BuildpackageDependency::try_from(absolute_path.clone()).map_err(|_| {
-                RewriteBuildpackageRelativePathDependenciesToAbsoluteError::InvalidDependency(
-                    absolute_path,
-                )
-            })
-        };
-
-    get_buildpack_dependencies(buildpackage)
-        .map_err(RewriteBuildpackageRelativePathDependenciesToAbsoluteError::GetBuildpackDependenciesError)
-        .and_then(|dependencies| {
-            dependencies
-                .into_iter()
-                .map(|dependency| match dependency {
-                    BuildpackDependency::External(buildpackage_dependency) => {
-                        if buildpackage_dependency.uri.is_relative_path_reference() {
-                            relative_dependency_to_absolute(source_dir, buildpackage_dependency)
-                        } else {
-                            Ok(buildpackage_dependency)
-                        }
-                    }
-                    BuildpackDependency::Local(_, buildpackage_dependency) => {
-                        Ok(buildpackage_dependency)
-                    }
-                })
-                .collect()
-        })
-        .map(|dependencies| Buildpackage {
-            dependencies,
-            buildpack: buildpackage.buildpack.clone(),
-            platform: buildpackage.platform.clone(),
-        })
-}
-
-/// An error for [`rewrite_buildpackage_relative_path_dependencies_to_absolute`]
-#[derive(Debug)]
-pub enum RewriteBuildpackageRelativePathDependenciesToAbsoluteError {
-    InvalidDependency(PathBuf),
-    GetBuildpackDependenciesError(BuildpackIdError),
-}
-
 /// Recursively walks the file system from the given `start_dir` to locate any folders containing a
 /// `buildpack.toml` file.
 ///
@@ -611,61 +292,9 @@ pub fn get_buildpack_target_dir(
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        create_buildpack_package_graph, get_buildpack_package_dependencies,
-        get_buildpack_target_dir, get_local_buildpackage_dependencies,
-        rewrite_buildpackage_local_dependencies,
-        rewrite_buildpackage_relative_path_dependencies_to_absolute, BuildpackData,
-        BuildpackPackage, BuildpackPackageGraph, BuildpackageData, GenericMetadata,
-    };
-    use libcnb_data::buildpack::{
-        BuildpackDescriptor, BuildpackId, MetaBuildpackDescriptor, SingleBuildpackDescriptor,
-    };
+    use crate::get_buildpack_target_dir;
     use libcnb_data::buildpack_id;
-    use libcnb_data::buildpackage::{
-        Buildpackage, BuildpackageBuildpackReference, BuildpackageDependency, Platform,
-    };
-    use std::collections::HashMap;
-    use std::path::{Path, PathBuf};
-
-    #[test]
-    fn test_rewrite_buildpackage_relative_path_dependencies() {
-        let buildpackage = create_buildpackage();
-        let source_dir = PathBuf::from("/test/source/path");
-        let new_buildpackage =
-            rewrite_buildpackage_relative_path_dependencies_to_absolute(&buildpackage, &source_dir)
-                .unwrap();
-        assert_eq!(
-            new_buildpackage.dependencies[1].uri.to_string(),
-            "/test/source/path/../relative/path"
-        );
-    }
-
-    #[test]
-    fn test_rewrite_buildpackage_local_dependencies() {
-        let buildpackage = create_buildpackage();
-        let buildpack_id = buildpack_id!("buildpack-id");
-        let buildpack_ids_to_target_dir = HashMap::from([(
-            &buildpack_id,
-            PathBuf::from("/path/to/target/buildpacks/buildpack-id"),
-        )]);
-        let new_buildpackage =
-            rewrite_buildpackage_local_dependencies(&buildpackage, &buildpack_ids_to_target_dir)
-                .unwrap();
-        assert_eq!(
-            new_buildpackage.dependencies[0].uri.to_string(),
-            "/path/to/target/buildpacks/buildpack-id"
-        );
-    }
-
-    #[test]
-    fn test_get_local_buildpackage_dependencies() {
-        let buildpackage = create_buildpackage();
-        assert_eq!(
-            get_local_buildpackage_dependencies(&buildpackage).unwrap(),
-            vec![buildpack_id!("buildpack-id")]
-        );
-    }
+    use std::path::PathBuf;
 
     #[test]
     fn test_get_buildpack_target_dir() {
@@ -679,232 +308,5 @@ mod tests {
             get_buildpack_target_dir(&buildpack_id, &target_dir, true),
             PathBuf::from("/target/buildpack/release/some-org_with-buildpack")
         );
-    }
-
-    #[test]
-    fn test_get_buildpack_package_dependencies_one_level_deep() {
-        let a = create_buildpack_package(&buildpack_id!("a"));
-        let b = create_buildpack_package(&buildpack_id!("b"));
-        let c = create_meta_buildpack_package(
-            &buildpack_id!("c"),
-            vec![buildpack_id!("a"), buildpack_id!("b")],
-        );
-
-        let buildpack_packages = create_buildpack_package_graph(vec![a, b, c]).unwrap();
-
-        let a = get_node(&buildpack_packages, "a");
-        let b = get_node(&buildpack_packages, "b");
-        let c = get_node(&buildpack_packages, "c");
-
-        assert_eq!(
-            to_ids(&get_buildpack_package_dependencies(&buildpack_packages, &[a]).unwrap()),
-            to_ids(&[a])
-        );
-
-        assert_eq!(
-            to_ids(&get_buildpack_package_dependencies(&buildpack_packages, &[b]).unwrap()),
-            to_ids(&[b])
-        );
-
-        assert_eq!(
-            to_ids(&get_buildpack_package_dependencies(&buildpack_packages, &[c]).unwrap()),
-            to_ids(&[a, b, c])
-        );
-
-        assert_eq!(
-            to_ids(&get_buildpack_package_dependencies(&buildpack_packages, &[b, c, a]).unwrap()),
-            to_ids(&[b, a, c])
-        );
-    }
-
-    #[test]
-    fn test_get_buildpack_package_dependencies_two_levels_deep() {
-        let a = create_buildpack_package(&buildpack_id!("a"));
-        let b = create_meta_buildpack_package(&buildpack_id!("b"), vec![buildpack_id!("a")]);
-        let c = create_meta_buildpack_package(&buildpack_id!("c"), vec![buildpack_id!("b")]);
-
-        let buildpack_packages = create_buildpack_package_graph(vec![a, b, c]).unwrap();
-
-        let a = get_node(&buildpack_packages, "a");
-        let b = get_node(&buildpack_packages, "b");
-        let c = get_node(&buildpack_packages, "c");
-
-        assert_eq!(
-            to_ids(&get_buildpack_package_dependencies(&buildpack_packages, &[a]).unwrap()),
-            to_ids(&[a])
-        );
-
-        assert_eq!(
-            to_ids(&get_buildpack_package_dependencies(&buildpack_packages, &[b]).unwrap()),
-            to_ids(&[a, b])
-        );
-
-        assert_eq!(
-            to_ids(&get_buildpack_package_dependencies(&buildpack_packages, &[c]).unwrap()),
-            to_ids(&[a, b, c])
-        );
-
-        assert_eq!(
-            to_ids(&get_buildpack_package_dependencies(&buildpack_packages, &[b, c, a]).unwrap()),
-            to_ids(&[a, b, c])
-        );
-    }
-
-    #[test]
-    #[allow(clippy::many_single_char_names)]
-    fn test_get_buildpack_package_dependencies_with_overlap() {
-        let a = create_buildpack_package(&buildpack_id!("a"));
-        let b = create_buildpack_package(&buildpack_id!("b"));
-        let c = create_buildpack_package(&buildpack_id!("c"));
-        let d = create_meta_buildpack_package(
-            &buildpack_id!("d"),
-            vec![buildpack_id!("a"), buildpack_id!("b")],
-        );
-        let e = create_meta_buildpack_package(
-            &buildpack_id!("e"),
-            vec![buildpack_id!("b"), buildpack_id!("c")],
-        );
-
-        let buildpack_packages = create_buildpack_package_graph(vec![a, b, c, d, e]).unwrap();
-
-        let a = get_node(&buildpack_packages, "a");
-        let b = get_node(&buildpack_packages, "b");
-        let c = get_node(&buildpack_packages, "c");
-        let d = get_node(&buildpack_packages, "d");
-        let e = get_node(&buildpack_packages, "e");
-
-        assert_eq!(
-            to_ids(&get_buildpack_package_dependencies(&buildpack_packages, &[d, e, a]).unwrap()),
-            to_ids(&[a, b, d, c, e])
-        );
-
-        assert_eq!(
-            to_ids(&get_buildpack_package_dependencies(&buildpack_packages, &[e, d, a]).unwrap()),
-            to_ids(&[b, c, e, a, d])
-        );
-    }
-
-    fn create_buildpackage() -> Buildpackage {
-        create_buildpackage_with_dependencies(vec![
-            "libcnb:buildpack-id",
-            "../relative/path",
-            "/absolute/path",
-            "docker://docker.io/heroku/procfile-cnb:2.0.0",
-        ])
-    }
-
-    fn create_buildpackage_with_dependencies<S>(dependencies: Vec<S>) -> Buildpackage
-    where
-        S: Into<String>,
-    {
-        Buildpackage {
-            buildpack: BuildpackageBuildpackReference::try_from(".").unwrap(),
-            dependencies: dependencies
-                .into_iter()
-                .map(|v| BuildpackageDependency::try_from(v.into().as_ref()).unwrap())
-                .collect(),
-            platform: Platform::default(),
-        }
-    }
-
-    fn create_single_buildpack_data(
-        dir: &Path,
-        id: &BuildpackId,
-    ) -> BuildpackData<GenericMetadata> {
-        let toml_str = format!(
-            r#" 
-                api = "0.8" 
-                [buildpack] 
-                id = "{id}" 
-                version = "0.0.1" 
-                
-                [[stacks]]
-                id = "some-stack"
-            "#
-        );
-        BuildpackData {
-            buildpack_descriptor_path: dir.join("buildpack.toml"),
-            buildpack_descriptor: BuildpackDescriptor::Single(
-                toml::from_str::<SingleBuildpackDescriptor<GenericMetadata>>(&toml_str).unwrap(),
-            ),
-        }
-    }
-
-    fn create_buildpack_package(id: &BuildpackId) -> BuildpackPackage {
-        let path = PathBuf::from("/buildpacks/").join(id.to_string());
-        BuildpackPackage {
-            path: path.clone(),
-            buildpack_data: create_single_buildpack_data(&path, id),
-            buildpackage_data: None,
-        }
-    }
-
-    fn create_meta_buildpack_data(
-        dir: &Path,
-        id: &BuildpackId,
-        dependencies: &[BuildpackId],
-    ) -> BuildpackData<GenericMetadata> {
-        let toml_str = format!(
-            r#" 
-                api = "0.8" 
-                [buildpack] 
-                id = "{id}" 
-                version = "0.0.1" 
-                
-                [[order]]
-                {}
-            "#,
-            dependencies
-                .iter()
-                .map(|v| format!("[[order.group]]\nid = \"{v}\"\nversion = \"0.0.0\"\n"))
-                .collect::<Vec<String>>()
-                .join("\n")
-        );
-        BuildpackData {
-            buildpack_descriptor_path: dir.join("buildpack.toml"),
-            buildpack_descriptor: BuildpackDescriptor::Meta(
-                toml::from_str::<MetaBuildpackDescriptor<GenericMetadata>>(&toml_str).unwrap(),
-            ),
-        }
-    }
-
-    fn create_meta_buildpack_package(
-        id: &BuildpackId,
-        dependencies: Vec<BuildpackId>,
-    ) -> BuildpackPackage {
-        let path = PathBuf::from("/meta-buildpacks/").join(id.to_string());
-        BuildpackPackage {
-            path: path.clone(),
-            buildpack_data: create_meta_buildpack_data(&path, id, &dependencies),
-            buildpackage_data: Some(BuildpackageData {
-                buildpackage_descriptor_path: path.join("package.toml"),
-                buildpackage_descriptor: create_buildpackage_with_dependencies(
-                    dependencies
-                        .into_iter()
-                        .map(|v| format!("libcnb:{v}"))
-                        .collect(),
-                ),
-            }),
-        }
-    }
-
-    fn to_ids(buildpackage: &[&BuildpackPackage]) -> Vec<BuildpackId> {
-        buildpackage
-            .iter()
-            .map(|v| v.buildpack_id().clone())
-            .collect::<Vec<_>>()
-    }
-
-    fn get_node<'a>(
-        buildpack_packages: &'a BuildpackPackageGraph,
-        id: &str,
-    ) -> &'a BuildpackPackage {
-        let id = id.parse::<BuildpackId>().unwrap();
-        let index = buildpack_packages
-            .graph
-            .node_indices()
-            .find(|idx| buildpack_packages.graph[*idx].buildpack_id() == &id)
-            .unwrap();
-        &buildpack_packages.graph[index]
     }
 }
