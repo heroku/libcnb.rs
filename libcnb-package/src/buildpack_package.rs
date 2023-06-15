@@ -1,8 +1,11 @@
+use crate::buildpack_dependency::get_local_buildpackage_dependencies;
+use crate::buildpack_package_graph::TopoSort;
 use crate::{
     read_buildpack_data, read_buildpackage_data, BuildpackData, BuildpackageData, GenericMetadata,
     ReadBuildpackDataError, ReadBuildpackageDataError,
 };
-use libcnb_data::buildpack::BuildpackId;
+use libcnb_data::buildpack::{BuildpackId, BuildpackIdError};
+use std::convert::Infallible;
 use std::path::PathBuf;
 
 /// A folder that can be packaged into a [Cloud Native Buildpack](https://buildpacks.io/)
@@ -17,6 +20,23 @@ impl BuildpackPackage {
     #[must_use]
     pub fn buildpack_id(&self) -> &BuildpackId {
         &self.buildpack_data.buildpack_descriptor.buildpack().id
+    }
+}
+
+impl TopoSort<BuildpackId, BuildpackIdError> for BuildpackPackage {
+    fn id(&self) -> BuildpackId {
+        self.buildpack_data
+            .buildpack_descriptor
+            .buildpack()
+            .id
+            .clone()
+    }
+
+    fn deps(&self) -> Result<Vec<BuildpackId>, BuildpackIdError> {
+        self.buildpackage_data
+            .as_ref()
+            .map(|value| &value.buildpackage_descriptor)
+            .map_or(Ok(vec![]), get_local_buildpackage_dependencies)
     }
 }
 

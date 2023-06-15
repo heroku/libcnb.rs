@@ -8,6 +8,7 @@ use libcnb_package::buildpack_package_graph::{
     CreateBuildpackPackageGraphError, GetBuildpackPackageDependenciesError,
 };
 use libcnb_package::FindBuildpackDirsError;
+use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
 #[derive(Debug, thiserror::Error)]
@@ -199,8 +200,8 @@ impl From<libcnb_package::buildpack_package::ReadBuildpackPackageError> for Erro
     }
 }
 
-impl From<GetBuildpackPackageDependenciesError> for Error {
-    fn from(value: GetBuildpackPackageDependenciesError) -> Self {
+impl From<GetBuildpackPackageDependenciesError<BuildpackId>> for Error {
+    fn from(value: GetBuildpackPackageDependenciesError<BuildpackId>) -> Self {
         match value {
             GetBuildpackPackageDependenciesError::BuildpackPackageLookup(buildpack_id) => {
                 Error::BuildpackDependencyLookup(buildpack_id)
@@ -209,8 +210,8 @@ impl From<GetBuildpackPackageDependenciesError> for Error {
     }
 }
 
-impl From<CreateBuildpackPackageGraphError> for Error {
-    fn from(value: CreateBuildpackPackageGraphError) -> Self {
+impl From<CreateBuildpackPackageGraphError<BuildpackId, BuildpackIdError>> for Error {
+    fn from(value: CreateBuildpackPackageGraphError<BuildpackId, BuildpackIdError>) -> Self {
         match value {
             CreateBuildpackPackageGraphError::BuildpackIdError(error) => {
                 Error::BuildpackPackagesId(error)

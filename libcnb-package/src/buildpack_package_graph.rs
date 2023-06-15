@@ -5,14 +5,22 @@ use petgraph::graph::NodeIndex;
 use petgraph::visit::DfsPostOrder;
 use petgraph::Graph;
 
-/// A dependency graph of [`BuildpackPackage`]s
-pub struct BuildpackPackageGraph {
-    graph: Graph<BuildpackPackage, ()>,
+pub trait TopoSort<T, E>
+where
+    T: PartialEq,
+{
+    fn id(&self) -> T;
+    fn deps(&self) -> Result<Vec<T>, E>;
 }
 
-impl BuildpackPackageGraph {
+/// A dependency graph of [`BuildpackPackage`]s
+pub struct BuildpackPackageGraph<T> {
+    graph: Graph<T, ()>,
+}
+
+impl<T> BuildpackPackageGraph<T> {
     #[must_use]
-    pub fn packages(&self) -> Vec<&BuildpackPackage> {
+    pub fn packages(&self) -> Vec<&T> {
         self.graph
             .node_indices()
             .map(|idx| &self.graph[idx])
@@ -25,9 +33,13 @@ impl BuildpackPackageGraph {
 /// # Errors
 ///
 /// Will return an `Err` if the constructed dependency graph is missing any local [`BuildpackPackage`] dependencies.
-pub fn create_buildpack_package_graph(
-    buildpack_packages: Vec<BuildpackPackage>,
-) -> Result<BuildpackPackageGraph, CreateBuildpackPackageGraphError> {
+pub fn create_buildpack_package_graph<T, I, E>(
+    buildpack_packages: Vec<T>,
+) -> Result<BuildpackPackageGraph<T>, CreateBuildpackPackageGraphError<I, E>>
+where
+    T: TopoSort<I, E>,
+    I: PartialEq,
+{
     let mut graph = Graph::new();
 
     for buildpack_package in buildpack_packages {
@@ -36,13 +48,12 @@ pub fn create_buildpack_package_graph(
 
     for idx in graph.node_indices() {
         let buildpack_package = &graph[idx];
-        let dependencies = buildpack_package
-            .buildpackage_data
-            .as_ref()
-            .map(|value| &value.buildpackage_descriptor)
-            .map_or(Ok(vec![]), get_local_buildpackage_dependencies)
+
+        let depedencies = buildpack_package
+            .deps()
             .map_err(CreateBuildpackPackageGraphError::BuildpackIdError)?;
-        for dependency in dependencies {
+
+        for dependency in depedencies {
             let dependency_idx = lookup_buildpack_package_node_index(&graph, &dependency).ok_or(
                 CreateBuildpackPackageGraphError::BuildpackageLookup(dependency),
             )?;
@@ -55,9 +66,9 @@ pub fn create_buildpack_package_graph(
 
 /// An error from [`create_buildpack_package_graph`]
 #[derive(Debug)]
-pub enum CreateBuildpackPackageGraphError {
-    BuildpackIdError(BuildpackIdError),
-    BuildpackageLookup(BuildpackId),
+pub enum CreateBuildpackPackageGraphError<I, E> {
+    BuildpackIdError(E),
+    BuildpackageLookup(I),
 }
 
 /// Collects all the [`BuildpackPackage`] values found while traversing the given `buildpack_packages` graph
@@ -68,19 +79,20 @@ pub enum CreateBuildpackPackageGraphError {
 ///
 /// An `Err` will be returned if any [`BuildpackPackage`] located contains a reference to a [`BuildpackPackage`]
 /// that is not in the `buildpack_packages` graph.
-pub fn get_buildpack_package_dependencies<'a>(
-    buildpack_packages: &'a BuildpackPackageGraph,
-    root_packages: &[&BuildpackPackage],
-) -> Result<Vec<&'a BuildpackPackage>, GetBuildpackPackageDependenciesError> {
+pub fn get_buildpack_package_dependencies<'a, T, I, E>(
+    buildpack_packages: &'a BuildpackPackageGraph<T>,
+    root_packages: &[&T],
+) -> Result<Vec<&'a T>, GetBuildpackPackageDependenciesError<I>>
+where
+    T: TopoSort<I, E>,
+    I: PartialEq,
+{
     let graph = &buildpack_packages.graph;
-    let mut order: Vec<&BuildpackPackage> = vec![];
+    let mut order: Vec<&T> = vec![];
     let mut dfs = DfsPostOrder::empty(&graph);
     for root in root_packages {
-        let idx = lookup_buildpack_package_node_index(graph, root.buildpack_id()).ok_or(
-            GetBuildpackPackageDependenciesError::BuildpackPackageLookup(
-                root.buildpack_id().clone(),
-            ),
-        )?;
+        let idx = lookup_buildpack_package_node_index(graph, &root.id())
+            .ok_or(GetBuildpackPackageDependenciesError::BuildpackPackageLookup(root.id()))?;
         dfs.move_to(idx);
         while let Some(visited) = dfs.next(&graph) {
             order.push(&graph[visited]);
@@ -91,17 +103,16 @@ pub fn get_buildpack_package_dependencies<'a>(
 
 /// An error from [`get_buildpack_package_dependencies`]
 #[derive(Debug)]
-pub enum GetBuildpackPackageDependenciesError {
-    BuildpackPackageLookup(BuildpackId),
+pub enum GetBuildpackPackageDependenciesError<I> {
+    BuildpackPackageLookup(I),
 }
 
-fn lookup_buildpack_package_node_index(
-    graph: &Graph<BuildpackPackage, ()>,
-    buildpack_id: &BuildpackId,
-) -> Option<NodeIndex> {
-    graph
-        .node_indices()
-        .find(|idx| graph[*idx].buildpack_id() == buildpack_id)
+fn lookup_buildpack_package_node_index<T, I, E>(graph: &Graph<T, ()>, id: &I) -> Option<NodeIndex>
+where
+    T: TopoSort<I, E>,
+    I: PartialEq,
+{
+    graph.node_indices().find(|idx| graph[*idx].id() == *id)
 }
 
 #[cfg(test)]
@@ -231,7 +242,7 @@ mod tests {
     }
 
     fn get_node<'a>(
-        buildpack_packages: &'a BuildpackPackageGraph,
+        buildpack_packages: &'a BuildpackPackageGraph<BuildpackPackage>,
         id: &str,
     ) -> &'a BuildpackPackage {
         let id = id.parse::<BuildpackId>().unwrap();
@@ -257,12 +268,12 @@ mod tests {
         id: &BuildpackId,
     ) -> BuildpackData<GenericMetadata> {
         let toml_str = format!(
-            r#" 
-                api = "0.8" 
-                [buildpack] 
-                id = "{id}" 
-                version = "0.0.1" 
-                
+            r#"
+                api = "0.8"
+                [buildpack]
+                id = "{id}"
+                version = "0.0.1"
+
                 [[stacks]]
                 id = "some-stack"
             "#
@@ -301,12 +312,12 @@ mod tests {
         dependencies: &[BuildpackId],
     ) -> BuildpackData<GenericMetadata> {
         let toml_str = format!(
-            r#" 
-                api = "0.8" 
-                [buildpack] 
-                id = "{id}" 
-                version = "0.0.1" 
-                
+            r#"
+                api = "0.8"
+                [buildpack]
+                id = "{id}"
+                version = "0.0.1"
+
                 [[order]]
                 {}
             "#,
