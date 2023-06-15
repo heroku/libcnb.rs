@@ -5,7 +5,6 @@ use crate::{
     ReadBuildpackDataError, ReadBuildpackageDataError,
 };
 use libcnb_data::buildpack::{BuildpackId, BuildpackIdError};
-use std::convert::Infallible;
 use std::path::PathBuf;
 
 /// A folder that can be packaged into a [Cloud Native Buildpack](https://buildpacks.io/)
@@ -32,7 +31,7 @@ impl TopoSort<BuildpackId, BuildpackIdError> for BuildpackPackage {
             .clone()
     }
 
-    fn deps(&self) -> Result<Vec<BuildpackId>, BuildpackIdError> {
+    fn dependencies(&self) -> Result<Vec<BuildpackId>, BuildpackIdError> {
         self.buildpackage_data
             .as_ref()
             .map(|value| &value.buildpackage_descriptor)

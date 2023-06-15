@@ -8,7 +8,6 @@ use libcnb_package::buildpack_package_graph::{
     CreateBuildpackPackageGraphError, GetBuildpackPackageDependenciesError,
 };
 use libcnb_package::FindBuildpackDirsError;
-use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
 #[derive(Debug, thiserror::Error)]
