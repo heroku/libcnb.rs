@@ -18,7 +18,7 @@ where
     fn dependencies(&self) -> Result<Vec<T>, E>;
 }
 
-/// A dependency graph of [`BuildpackPackage`]s
+/// A dependency graph of [`crate::buildpack_package::BuildpackPackage`]s
 pub struct BuildpackPackageGraph<T> {
     graph: Graph<T, ()>,
 }
@@ -33,11 +33,11 @@ impl<T> BuildpackPackageGraph<T> {
     }
 }
 
-/// Create a [`BuildpackPackageGraph`] from a list of [`BuildpackPackage`] values.
+/// Create a [`BuildpackPackageGraph`] from a list of [`crate::buildpack_package::BuildpackPackage`] values.
 ///
 /// # Errors
 ///
-/// Will return an `Err` if the constructed dependency graph is missing any local [`BuildpackPackage`] dependencies.
+/// Will return an `Err` if the constructed dependency graph is missing any local [`crate::buildpack_package::BuildpackPackage`] dependencies.
 pub fn create_buildpack_package_graph<T, I, E>(
     buildpack_packages: Vec<T>,
 ) -> Result<BuildpackPackageGraph<T>, CreateBuildpackPackageGraphError<I, E>>
@@ -76,13 +76,13 @@ pub enum CreateBuildpackPackageGraphError<I, E> {
     BuildpackageLookup(I),
 }
 
-/// Collects all the [`BuildpackPackage`] values found while traversing the given `buildpack_packages` graph
+/// Collects all the [`crate::buildpack_package::BuildpackPackage`] values found while traversing the given `buildpack_packages` graph
 /// using one or more `root_packages` values as starting points for the traversal. The returned list
 /// will contain the given `root_packages` values as well as all their dependencies in topological order.
 ///
 /// # Errors
 ///
-/// An `Err` will be returned if any [`BuildpackPackage`] located contains a reference to a [`BuildpackPackage`]
+/// An `Err` will be returned if any [`crate::buildpack_package::BuildpackPackage`] located contains a reference to a [`crate::buildpack_package::BuildpackPackage`]
 /// that is not in the `buildpack_packages` graph.
 pub fn get_buildpack_package_dependencies<'a, T, I, E>(
     buildpack_packages: &'a BuildpackPackageGraph<T>,

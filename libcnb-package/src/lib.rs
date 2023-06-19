@@ -29,7 +29,7 @@ pub enum CargoProfile {
     Release,
 }
 
-/// A convenient type alias to use with [`BuildpackPackage`] or [`BuildpackData`] when you don't required a specialized metadata representation.
+/// A convenient type alias to use with [`buildpack_package::BuildpackPackage`] or [`BuildpackData`] when you don't required a specialized metadata representation.
 pub type GenericMetadata = Option<Table>;
 
 /// A parsed buildpack descriptor and it's path.
