@@ -54,11 +54,11 @@ where
     for idx in graph.node_indices() {
         let buildpack_package = &graph[idx];
 
-        let depedencies = buildpack_package
+        let dependencies = buildpack_package
             .dependencies()
             .map_err(CreateBuildpackPackageGraphError::BuildpackIdError)?;
 
-        for dependency in depedencies {
+        for dependency in dependencies {
             let dependency_idx = lookup_buildpack_package_node_index(&graph, &dependency).ok_or(
                 CreateBuildpackPackageGraphError::BuildpackageLookup(dependency),
             )?;
