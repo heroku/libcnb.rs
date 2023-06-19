@@ -219,36 +219,24 @@ pub fn default_buildpack_directory_name(buildpack_id: &BuildpackId) -> String {
 /// # Errors
 ///
 /// Will return an `Err` if any I/O errors happen while walking the file system.
-pub fn find_buildpack_dirs(
-    start_dir: &Path,
-    options: &FindBuildpackDirsOptions,
-) -> Result<Vec<PathBuf>, FindBuildpackDirsError> {
+pub fn find_buildpack_dirs(start_dir: &Path, ignore: &[PathBuf]) -> std::io::Result<Vec<PathBuf>> {
     fn find_buildpack_dirs_recursive(
         path: &Path,
-        options: &FindBuildpackDirsOptions,
+        ignore: &[PathBuf],
         accumulator: &mut Vec<PathBuf>,
-    ) -> Result<(), FindBuildpackDirsError> {
-        if options.ignore.contains(&path.to_path_buf()) {
+    ) -> std::io::Result<()> {
+        if ignore.contains(&path.to_path_buf()) {
             return Ok(());
         }
 
-        let metadata = path
-            .metadata()
-            .map_err(|e| FindBuildpackDirsError::IO(path.to_path_buf(), e))?;
-
+        let metadata = path.metadata()?;
         if metadata.is_dir() {
-            let entries = fs::read_dir(path)
-                .map_err(|e| FindBuildpackDirsError::IO(path.to_path_buf(), e))?;
-
+            let entries = fs::read_dir(path)?;
             for entry in entries {
-                let entry = entry.map_err(|e| FindBuildpackDirsError::IO(path.to_path_buf(), e))?;
-
-                let metadata = entry
-                    .metadata()
-                    .map_err(|e| FindBuildpackDirsError::IO(entry.path(), e))?;
-
+                let entry = entry?;
+                let metadata = entry.metadata()?;
                 if metadata.is_dir() {
-                    find_buildpack_dirs_recursive(&entry.path(), options, accumulator)?;
+                    find_buildpack_dirs_recursive(&entry.path(), ignore, accumulator)?;
                 } else if let Some(file_name) = entry.path().file_name() {
                     if file_name.to_string_lossy() == "buildpack.toml" {
                         accumulator.push(path.to_path_buf());
@@ -261,20 +249,8 @@ pub fn find_buildpack_dirs(
     }
 
     let mut buildpack_dirs: Vec<PathBuf> = vec![];
-    find_buildpack_dirs_recursive(start_dir, options, &mut buildpack_dirs)?;
+    find_buildpack_dirs_recursive(start_dir, ignore, &mut buildpack_dirs)?;
     Ok(buildpack_dirs)
-}
-
-/// Options for configuring [`find_buildpack_dirs`]
-#[derive(Debug, Default)]
-pub struct FindBuildpackDirsOptions {
-    pub ignore: Vec<PathBuf>,
-}
-
-/// An error for [`find_buildpack_dirs`]
-#[derive(Debug)]
-pub enum FindBuildpackDirsError {
-    IO(PathBuf, std::io::Error),
 }
 
 /// Provides a standard path to use for storing a compiled buildpack's artifacts.

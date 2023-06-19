@@ -15,7 +15,6 @@ use libcnb_package::buildpack_package_graph::{
 use libcnb_package::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
 use libcnb_package::{
     assemble_buildpack_directory, find_buildpack_dirs, get_buildpack_target_dir, CargoProfile,
-    FindBuildpackDirsOptions,
 };
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -39,12 +38,12 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
             source: e,
         })?;
 
-    let find_buildpack_dirs_options = FindBuildpackDirsOptions {
-        ignore: vec![workspace_target_dir.clone()],
-    };
-
     let buildpack_packages = create_buildpack_package_graph(
-        find_buildpack_dirs(&workspace, &find_buildpack_dirs_options)?
+        find_buildpack_dirs(&workspace, &[workspace_target_dir.clone()])
+            .map_err(|e| Error::FindBuildpackDirs {
+                path: workspace_target_dir.clone(),
+                source: e,
+            })?
             .into_iter()
             .map(|dir| read_buildpack_package(dir).map_err(std::convert::Into::into))
             .collect::<Result<Vec<BuildpackPackage>>>()?,

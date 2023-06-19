@@ -7,7 +7,6 @@ use libcnb_package::buildpack_dependency::{
 use libcnb_package::buildpack_package_graph::{
     CreateBuildpackPackageGraphError, GetBuildpackPackageDependenciesError,
 };
-use libcnb_package::FindBuildpackDirsError;
 use std::path::PathBuf;
 
 #[derive(Debug, thiserror::Error)]
@@ -156,17 +155,6 @@ impl From<BuildBinariesError> for Error {
             BuildBinariesError::MissingBuildpackTarget(target) => {
                 Error::BinaryBuildMissingTarget { target }
             }
-        }
-    }
-}
-
-impl From<FindBuildpackDirsError> for Error {
-    fn from(value: FindBuildpackDirsError) -> Self {
-        match value {
-            FindBuildpackDirsError::IO(path, error) => Error::FindBuildpackDirs {
-                path,
-                source: error,
-            },
         }
     }
 }
