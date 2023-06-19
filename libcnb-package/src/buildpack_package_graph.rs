@@ -1,9 +1,8 @@
-use petgraph::graph::NodeIndex;
 use petgraph::visit::DfsPostOrder;
 use petgraph::Graph;
 
 /// A trait to support topological sorting in [`BuildpackPackageGraph`]
-pub trait TopoSort<T, E>
+pub trait NodeWithDependencies<T, E>
 where
     T: PartialEq,
 {
@@ -39,29 +38,32 @@ impl<T> BuildpackPackageGraph<T> {
 ///
 /// Will return an `Err` if the constructed dependency graph is missing any local [`crate::buildpack_package::BuildpackPackage`] dependencies.
 pub fn create_buildpack_package_graph<T, I, E>(
-    buildpack_packages: Vec<T>,
+    nodes: Vec<T>,
 ) -> Result<BuildpackPackageGraph<T>, CreateBuildpackPackageGraphError<I, E>>
 where
-    T: TopoSort<I, E>,
+    T: NodeWithDependencies<I, E>,
     I: PartialEq,
 {
     let mut graph = Graph::new();
 
-    for buildpack_package in buildpack_packages {
-        graph.add_node(buildpack_package);
+    for node in nodes {
+        graph.add_node(node);
     }
 
     for idx in graph.node_indices() {
-        let buildpack_package = &graph[idx];
+        let node = &graph[idx];
 
-        let dependencies = buildpack_package
+        let dependencies = node
             .dependencies()
             .map_err(CreateBuildpackPackageGraphError::BuildpackIdError)?;
 
         for dependency in dependencies {
-            let dependency_idx = lookup_buildpack_package_node_index(&graph, &dependency).ok_or(
-                CreateBuildpackPackageGraphError::BuildpackageLookup(dependency),
-            )?;
+            let dependency_idx = graph
+                .node_indices()
+                .find(|idx| graph[*idx].id() == dependency)
+                .ok_or(CreateBuildpackPackageGraphError::BuildpackageLookup(
+                    dependency,
+                ))?;
             graph.add_edge(idx, dependency_idx, ());
         }
     }
@@ -86,18 +88,20 @@ pub enum CreateBuildpackPackageGraphError<I, E> {
 /// that is not in the `buildpack_packages` graph.
 pub fn get_buildpack_package_dependencies<'a, T, I, E>(
     buildpack_packages: &'a BuildpackPackageGraph<T>,
-    root_packages: &[&T],
+    root_nodes: &[&T],
 ) -> Result<Vec<&'a T>, GetBuildpackPackageDependenciesError<I>>
 where
-    T: TopoSort<I, E>,
+    T: NodeWithDependencies<I, E>,
     I: PartialEq,
 {
     let graph = &buildpack_packages.graph;
     let mut order: Vec<&T> = vec![];
     let mut dfs = DfsPostOrder::empty(&graph);
-    for root in root_packages {
-        let idx = lookup_buildpack_package_node_index(graph, &root.id())
-            .ok_or(GetBuildpackPackageDependenciesError::BuildpackPackageLookup(root.id()))?;
+    for root_node in root_nodes {
+        let idx = graph
+            .node_indices()
+            .find(|idx| graph[*idx].id() == root_node.id())
+            .ok_or(GetBuildpackPackageDependenciesError::BuildpackPackageLookup(root_node.id()))?;
         dfs.move_to(idx);
         while let Some(visited) = dfs.next(&graph) {
             order.push(&graph[visited]);
@@ -112,22 +116,14 @@ pub enum GetBuildpackPackageDependenciesError<I> {
     BuildpackPackageLookup(I),
 }
 
-fn lookup_buildpack_package_node_index<T, I, E>(graph: &Graph<T, ()>, id: &I) -> Option<NodeIndex>
-where
-    T: TopoSort<I, E>,
-    I: PartialEq,
-{
-    graph.node_indices().find(|idx| graph[*idx].id() == *id)
-}
-
 #[cfg(test)]
 mod tests {
     use crate::buildpack_package_graph::{
-        create_buildpack_package_graph, get_buildpack_package_dependencies, TopoSort,
+        create_buildpack_package_graph, get_buildpack_package_dependencies, NodeWithDependencies,
     };
     use std::convert::Infallible;
 
-    impl TopoSort<String, Infallible> for (&str, Vec<&str>) {
+    impl NodeWithDependencies<String, Infallible> for (&str, Vec<&str>) {
         fn id(&self) -> String {
             self.0.to_string()
         }
