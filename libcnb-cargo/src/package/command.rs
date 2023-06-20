@@ -9,10 +9,8 @@ use libcnb_package::buildpack_dependency::{
     rewrite_buildpackage_relative_path_dependencies_to_absolute,
 };
 use libcnb_package::buildpack_package::{read_buildpack_package, BuildpackPackage};
-use libcnb_package::buildpack_package_graph::{
-    create_buildpack_package_graph, get_buildpack_package_dependencies,
-};
 use libcnb_package::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
+use libcnb_package::dependency_graph::{create_dependency_graph, get_dependencies};
 use libcnb_package::{
     assemble_buildpack_directory, find_buildpack_dirs, get_buildpack_target_dir, CargoProfile,
 };
@@ -38,7 +36,7 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
             source: e,
         })?;
 
-    let buildpack_packages = create_buildpack_package_graph(
+    let buildpack_packages = create_dependency_graph(
         find_buildpack_dirs(&workspace, &[workspace_target_dir.clone()])
             .map_err(|e| Error::FindBuildpackDirs {
                 path: workspace_target_dir.clone(),
@@ -50,8 +48,7 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
     )?;
 
     let target_directories_index = buildpack_packages
-        .packages()
-        .into_iter()
+        .node_weights()
         .map(|buildpack_package| {
             let id = buildpack_package.buildpack_id();
             let target_dir = if contains_buildpack_binaries(&buildpack_package.path) {
@@ -64,8 +61,7 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
         .collect::<HashMap<_, _>>();
 
     let buildpack_packages_requested = buildpack_packages
-        .packages()
-        .into_iter()
+        .node_weights()
         .filter(|buildpack_package| {
             // If we're in a directory with a buildpack.toml file, we only want to build the
             // buildpack from this directory. Otherwise, all of them.
@@ -81,8 +77,7 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
         Err(Error::NoBuildpacksFound)?;
     }
 
-    let build_order =
-        get_buildpack_package_dependencies(&buildpack_packages, &buildpack_packages_requested)?;
+    let build_order = get_dependencies(&buildpack_packages, &buildpack_packages_requested)?;
 
     let lookup_target_dir = |buildpack_package: &BuildpackPackage| {
         target_directories_index

@@ -1,5 +1,5 @@
 use crate::buildpack_dependency::get_local_buildpackage_dependencies;
-use crate::buildpack_package_graph::NodeWithDependencies;
+use crate::dependency_graph::DependencyNode;
 use crate::{
     read_buildpack_data, read_buildpackage_data, BuildpackData, BuildpackageData, GenericMetadata,
     ReadBuildpackDataError, ReadBuildpackageDataError,
@@ -22,7 +22,7 @@ impl BuildpackPackage {
     }
 }
 
-impl NodeWithDependencies<BuildpackId, BuildpackIdError> for BuildpackPackage {
+impl DependencyNode<BuildpackId, BuildpackIdError> for BuildpackPackage {
     fn id(&self) -> BuildpackId {
         self.buildpack_data
             .buildpack_descriptor

@@ -4,9 +4,7 @@ use libcnb_package::buildpack_dependency::{
     RewriteBuildpackageLocalDependenciesError,
     RewriteBuildpackageRelativePathDependenciesToAbsoluteError,
 };
-use libcnb_package::buildpack_package_graph::{
-    CreateBuildpackPackageGraphError, GetBuildpackPackageDependenciesError,
-};
+use libcnb_package::dependency_graph::{CreateDependencyGraphError, GetDependenciesError};
 use std::path::PathBuf;
 
 #[derive(Debug, thiserror::Error)]
@@ -187,25 +185,21 @@ impl From<libcnb_package::buildpack_package::ReadBuildpackPackageError> for Erro
     }
 }
 
-impl From<GetBuildpackPackageDependenciesError<BuildpackId>> for Error {
-    fn from(value: GetBuildpackPackageDependenciesError<BuildpackId>) -> Self {
+impl From<GetDependenciesError<BuildpackId>> for Error {
+    fn from(value: GetDependenciesError<BuildpackId>) -> Self {
         match value {
-            GetBuildpackPackageDependenciesError::BuildpackPackageLookup(buildpack_id) => {
+            GetDependenciesError::MissingDependency(buildpack_id) => {
                 Error::BuildpackDependencyLookup(buildpack_id)
             }
         }
     }
 }
 
-impl From<CreateBuildpackPackageGraphError<BuildpackId, BuildpackIdError>> for Error {
-    fn from(value: CreateBuildpackPackageGraphError<BuildpackId, BuildpackIdError>) -> Self {
+impl From<CreateDependencyGraphError<BuildpackId, BuildpackIdError>> for Error {
+    fn from(value: CreateDependencyGraphError<BuildpackId, BuildpackIdError>) -> Self {
         match value {
-            CreateBuildpackPackageGraphError::BuildpackIdError(error) => {
-                Error::BuildpackPackagesId(error)
-            }
-            CreateBuildpackPackageGraphError::BuildpackageLookup(id) => {
-                Error::BuildpackPackagesLookup(id)
-            }
+            CreateDependencyGraphError::Dependencies(error) => Error::BuildpackPackagesId(error),
+            CreateDependencyGraphError::MissingDependency(id) => Error::BuildpackPackagesLookup(id),
         }
     }
 }

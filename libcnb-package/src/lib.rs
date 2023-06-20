@@ -7,9 +7,9 @@
 pub mod build;
 pub mod buildpack_dependency;
 pub mod buildpack_package;
-pub mod buildpack_package_graph;
 pub mod config;
 pub mod cross_compile;
+pub mod dependency_graph;
 
 use crate::build::BuildpackBinaries;
 use libcnb_data::buildpack::{BuildpackDescriptor, BuildpackId};
