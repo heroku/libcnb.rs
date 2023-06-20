@@ -8,19 +8,38 @@ separate changelogs for each crate were used. If you need to refer to these old 
 
 ### Changed
  
-- The `cargo libcnb package` command now supports compiling buildpacks and meta-buildpacks ([#575](https://github.com/heroku/libcnb.rs/pull/575)):
+- `libcnb-cargo`: The `cargo libcnb package` command now supports compiling buildpacks and meta-buildpacks ([#575](https://github.com/heroku/libcnb.rs/pull/575)):
   - When used in a buildpack directory it will compile only that buildpack.
   - When used in a workspace directory it will compile all buildpacks found in subdirectories.
-- Changed `default_buildpack_directory_name` in `libcnb_package` to accept a `BuildpackId` ([#575](https://github.com/heroku/libcnb.rs/pull/575))
+- `libcnb-package`: Changed `default_buildpack_directory_name` to accept a `BuildpackId` ([#575](https://github.com/heroku/libcnb.rs/pull/575))
   
 ### Added 
  
-- Serialization / deserialization [package.toml](https://buildpacks.io/docs/reference/config/package-config/) files supported with the `Buildpackage` struct. ([#575](https://github.com/heroku/libcnb.rs/pull/575))
-- Buildpacks can reference other buildpacks within a workspace by using `uri = "libcnb:{buildpack_id}"` as a dependency entry in the buildpack's [package.toml](https://buildpacks.io/docs/reference/config/package-config/) file. ([#575](https://github.com/heroku/libcnb.rs/pull/575))    
-- Added `read_buildpackage_data`, `find_buildpack_dirs`, `get_buildpack_target_dir` in `libcnb_package` to support packaging operations. ([#575](https://github.com/heroku/libcnb.rs/pull/575))
-- Added `BuildpackDependency`, `get_local_buildpackage_dependencies`, `rewrite_buildpackage_local_dependencies`, `rewrite_buildpackage_relative_path_dependencies_to_absolute` in `libcnb_package::buildpack_dependency` to support Buildpack dependency handling and packaging operations. ([#575](https://github.com/heroku/libcnb.rs/pull/575))
-- Added `BuildpackPackage`, `read_buildpack_package` in `libcnb_package::buildpack_package` to support libcnb.rs-based Rust packages. ([#575](https://github.com/heroku/libcnb.rs/pull/575))
-- Added `BuildpackPackageGraph`, `TopoSort`, `create_buildpack_package_graph`, `get_buildpack_package_dependencies` in `libcnb_package::buildpack_package_graph` to support dependency ordering and resolution in libcnb.rs-based Rust packages. ([#575](https://github.com/heroku/libcnb.rs/pull/575))
+- `libcnb-cargo`
+  - Buildpacks can reference other buildpacks within a workspace by using `uri = "libcnb:{buildpack_id}"` as a dependency entry in the buildpack's [package.toml](https://buildpacks.io/docs/reference/config/package-config/) file. ([#575](https://github.com/heroku/libcnb.rs/pull/575))
+- `libcnb-data`
+  - Serialization / deserialization of [package.toml](https://buildpacks.io/docs/reference/config/package-config/) files supported with the `Buildpackage` struct. ([#575](https://github.com/heroku/libcnb.rs/pull/575))
+- `libcnb-package`
+  - Added 
+    `read_buildpackage_data`, 
+    `find_buildpack_dirs`, 
+    `get_buildpack_target_dir` 
+    to support packaging operations. ([#575](https://github.com/heroku/libcnb.rs/pull/575))
+  - Added
+    `buildpack_dependency::BuildpackDependency`, 
+    `buildpack_dependency::get_local_buildpackage_dependencies`, 
+    `buildpack_dependency::rewrite_buildpackage_local_dependencies`, 
+    `buildpack_dependency::rewrite_buildpackage_relative_path_dependencies_to_absolute` 
+    to support Buildpack dependency handling and packaging operations. ([#575](https://github.com/heroku/libcnb.rs/pull/575))
+  - Added 
+    `buildpack_package::BuildpackPackage`, 
+    `buildpack_package::read_buildpack_package` 
+    to support libcnb.rs-based Rust packages. ([#575](https://github.com/heroku/libcnb.rs/pull/575))
+  - Added 
+    `dependency_graph::DependencyNode`, 
+    `dependency_graph::create_dependency_graph`, 
+    `dependency_graph::get_dependencies` 
+    to support dependency ordering and resolution in libcnb.rs-based Rust packages. ([#575](https://github.com/heroku/libcnb.rs/pull/575))
 
 ## [0.12.0] 2023-04-28
 

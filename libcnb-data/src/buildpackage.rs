@@ -145,6 +145,10 @@ pub enum PlatformOs {
     Windows,
 }
 
+// Even though `uriparse` has Serde support it only works if the value we are deserializing is an
+// map that contains URI fields like 'path', 'host', 'scheme', etc. The value from package.toml is
+// just a plain string so we need this custom deserializer that will parse the value into
+// a `URIReference`.
 fn deserialize_uri_reference<'de, D>(deserializer: D) -> Result<URIReference<'static>, D::Error>
 where
     D: Deserializer<'de>,
@@ -154,6 +158,9 @@ where
     Ok(uri.into_owned())
 }
 
+// The Serde support in `uriparse` wants to serialize our `URIReference` into a map of URI fields
+// like 'path', 'host', 'scheme', etc. This custom serializer is needed to ensure the value is
+// converted into a plain string value which is what is required for the package.toml format.
 fn serialize_uri_reference<S>(uri: &URIReference, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
