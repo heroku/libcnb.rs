@@ -6,6 +6,8 @@ separate changelogs for each crate were used. If you need to refer to these old 
 
 ## [Unreleased]
 
+## [0.13.0] 2023-06-21
+
 ### Changed
  
 - `libcnb-cargo`: The `cargo libcnb package` command now supports compiling buildpacks and meta-buildpacks ([#575](https://github.com/heroku/libcnb.rs/pull/575)):
