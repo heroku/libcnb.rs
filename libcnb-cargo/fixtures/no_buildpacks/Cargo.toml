@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "not_a_buildpack"
+]
+
+[workspace.package]
+version = "0.0.0"

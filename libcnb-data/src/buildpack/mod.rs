@@ -57,6 +57,15 @@ pub enum BuildpackDescriptor<BM> {
     Meta(MetaBuildpackDescriptor<BM>),
 }
 
+impl<BM> BuildpackDescriptor<BM> {
+    pub fn buildpack(&self) -> &Buildpack {
+        match self {
+            BuildpackDescriptor::Single(descriptor) => &descriptor.buildpack,
+            BuildpackDescriptor::Meta(descriptor) => &descriptor.buildpack,
+        }
+    }
+}
+
 /// Data structure for the Buildpack descriptor (buildpack.toml) of a single buildpack.
 ///
 /// Representation of [buildpack.toml](https://github.com/buildpacks/spec/blob/main/buildpack.md#buildpacktoml-toml)

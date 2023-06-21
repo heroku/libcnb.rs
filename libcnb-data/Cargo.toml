@@ -17,6 +17,7 @@ libcnb-proc-macros.workspace = true
 serde = { version = "1.0.145", features = ["derive"] }
 thiserror = "1.0.35"
 toml.workspace = true
+uriparse = "0.6.4"
 
 [dev-dependencies]
 serde_test = "1.0.145"
