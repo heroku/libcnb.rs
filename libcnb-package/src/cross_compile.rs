@@ -75,7 +75,7 @@ The easiest way to install 'musl-gcc' is to install the 'musl-tools' package:
                 ],
             },
             Err(_) => CrossCompileAssistance::HelpText(String::from(
-                r#"For cross-compilation from Linux to aarch64-unknown-linux-musl, a C compile and
+                r#"For cross-compilation from Linux to aarch64-unknown-linux-musl, a C compiler and
 linker for the target platform must installed on your computer.
 
 The easiest way to install the 'g++-aarch64-linux-gnu', 'libc6-dev-arm64-cross', and 'musl-tools' packages:
