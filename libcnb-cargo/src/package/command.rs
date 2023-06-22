@@ -54,7 +54,7 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
             let target_dir = if contains_buildpack_binaries(&buildpack_package.path) {
                 buildpack_package.path.clone()
             } else {
-                get_buildpack_target_dir(id, &workspace_target_dir, args.release)
+                get_buildpack_target_dir(id, &workspace_target_dir, args.release, &args.target)
             };
             (id, target_dir)
         })
