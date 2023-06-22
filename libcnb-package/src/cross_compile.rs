@@ -59,6 +59,31 @@ The easiest way to install 'musl-gcc' is to install the 'musl-tools' package:
 - https://packages.debian.org/bullseye/musl-tools"#,
             )),
         }
+    } else if target_triple.as_ref() == AARCH64_UNKNOWN_LINUX_MUSL && cfg!(target_os = "linux") {
+        let gcc_binary_path = "aarch64-linux-gnu-gcc";
+        match which(gcc_binary_path) {
+            Ok(_) => CrossCompileAssistance::Configuration {
+                cargo_env: vec![
+                    (
+                        OsString::from("CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER"),
+                        OsString::from(gcc_binary_path),
+                    ),
+                    (
+                        OsString::from("CC_aarch64_unknown_linux_musl"),
+                        OsString::from(gcc_binary_path),
+                    ),
+                ],
+            },
+            Err(_) => CrossCompileAssistance::HelpText(String::from(
+                r#"For cross-compilation from Linux to aarch64-unknown-linux-musl, a C compiler and
+linker for the target platform must installed on your computer.
+
+The easiest way to install the 'g++-aarch64-linux-gnu', 'libc6-dev-arm64-cross', and 'musl-tools' packages:
+- https://packages.ubuntu.com/focal/g++-aarch64-linux-gnu
+- https://packages.ubuntu.com/focal/musl-tools
+- https://packages.ubuntu.com/focal/libc6-dev-arm64-cross"#,
+            )),
+        }
     } else {
         CrossCompileAssistance::NoAssistance
     }
@@ -76,4 +101,5 @@ pub enum CrossCompileAssistance {
     },
 }
 
+const AARCH64_UNKNOWN_LINUX_MUSL: &str = "aarch64-unknown-linux-musl";
 const X86_64_UNKNOWN_LINUX_MUSL: &str = "x86_64-unknown-linux-musl";

@@ -6,6 +6,8 @@ separate changelogs for each crate were used. If you need to refer to these old 
 
 ## [Unreleased]
 
+- libcnb-package: Add cross-compilation assistance for Linux aarch64-unknown-linux-musl
+
 ## [0.13.0] 2023-06-21
 
 The highlight of this release is the `cargo libcnb package` changes to support compilation of both buildpacks and meta-buildpacks.
