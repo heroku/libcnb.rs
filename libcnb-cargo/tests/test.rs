@@ -11,7 +11,7 @@ use tempfile::{tempdir, TempDir};
 #[test]
 #[ignore = "integration test"]
 fn package_buildpack_in_single_buildpack_project() {
-    let packaging_test = BuildpackPackagingTest::new("single_buildpack");
+    let packaging_test = BuildpackPackagingTest::new("single_buildpack", X86_64_UNKNOWN_LINUX_MUSL);
     let output = packaging_test.run_libcnb_package();
     assert_eq!(
         output.stdout.trim(),
@@ -23,7 +23,8 @@ fn package_buildpack_in_single_buildpack_project() {
 #[test]
 #[ignore = "integration test"]
 fn package_single_meta_buildpack_in_monorepo_buildpack_project() {
-    let packaging_test = BuildpackPackagingTest::new("multiple_buildpacks");
+    let packaging_test =
+        BuildpackPackagingTest::new("multiple_buildpacks", X86_64_UNKNOWN_LINUX_MUSL);
     let output = packaging_test.run_libcnb_package_from("meta-buildpacks/meta-one");
     assert_eq!(
         output.stdout.trim(),
@@ -50,7 +51,8 @@ fn package_single_meta_buildpack_in_monorepo_buildpack_project() {
 #[test]
 #[ignore = "integration test"]
 fn package_single_buildpack_in_monorepo_buildpack_project() {
-    let packaging_test = BuildpackPackagingTest::new("multiple_buildpacks");
+    let packaging_test =
+        BuildpackPackagingTest::new("multiple_buildpacks", X86_64_UNKNOWN_LINUX_MUSL);
     let output = packaging_test.run_libcnb_package_from("buildpacks/one");
     assert_eq!(
         output.stdout.trim(),
@@ -68,7 +70,8 @@ fn package_single_buildpack_in_monorepo_buildpack_project() {
 #[test]
 #[ignore = "integration test"]
 fn package_all_buildpacks_in_monorepo_buildpack_project() {
-    let packaging_test = BuildpackPackagingTest::new("multiple_buildpacks");
+    let packaging_test =
+        BuildpackPackagingTest::new("multiple_buildpacks", X86_64_UNKNOWN_LINUX_MUSL);
     let output = packaging_test.run_libcnb_package();
     assert_eq!(
         output.stdout.trim(),
@@ -105,7 +108,8 @@ fn package_all_buildpacks_in_monorepo_buildpack_project() {
 #[test]
 #[ignore = "integration test"]
 fn package_non_libcnb_buildpack_in_meta_buildpack_project() {
-    let packaging_test = BuildpackPackagingTest::new("multiple_buildpacks");
+    let packaging_test =
+        BuildpackPackagingTest::new("multiple_buildpacks", X86_64_UNKNOWN_LINUX_MUSL);
     let output = packaging_test.run_libcnb_package_from("buildpacks/not_libcnb");
     assert_eq!(
         output.stdout.trim(),
@@ -130,7 +134,7 @@ fn package_non_libcnb_buildpack_in_meta_buildpack_project() {
 #[test]
 #[ignore = "integration test"]
 fn package_command_error_when_run_in_project_with_no_buildpacks() {
-    let packaging_test = BuildpackPackagingTest::new("no_buildpacks");
+    let packaging_test = BuildpackPackagingTest::new("no_buildpacks", X86_64_UNKNOWN_LINUX_MUSL);
     let output = packaging_test.run_libcnb_package();
     assert_ne!(output.code, Some(0));
     assert_eq!(
@@ -190,6 +194,7 @@ struct BuildpackPackagingTest {
     fixture_name: String,
     temp_dir: TempDir,
     release_build: bool,
+    target_triple: String,
 }
 
 struct TestOutput {
@@ -199,7 +204,7 @@ struct TestOutput {
 }
 
 impl BuildpackPackagingTest {
-    fn new(fixture_name: &str) -> Self {
+    fn new(fixture_name: &str, target_triple: &str) -> Self {
         let source_directory = env::current_dir()
             .unwrap()
             .join("fixtures")
@@ -211,6 +216,7 @@ impl BuildpackPackagingTest {
             fixture_name: fixture_name.to_string(),
             temp_dir: target_directory,
             release_build: true,
+            target_triple: String::from(target_triple),
         }
     }
 
@@ -235,6 +241,7 @@ impl BuildpackPackagingTest {
             &buildpack_id,
             &self.dir().join("target"),
             self.release_build,
+            &self.target_triple,
         )
     }
 
@@ -296,3 +303,5 @@ impl BuildpackPackagingTest {
         }
     }
 }
+
+const X86_64_UNKNOWN_LINUX_MUSL: &str = "x86_64-unknown-linux-musl";

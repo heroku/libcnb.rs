@@ -259,9 +259,11 @@ pub fn get_buildpack_target_dir(
     buildpack_id: &BuildpackId,
     target_dir: &Path,
     is_release: bool,
+    target_triple: &str,
 ) -> PathBuf {
     target_dir
         .join("buildpack")
+        .join(target_triple)
         .join(if is_release { "release" } else { "debug" })
         .join(default_buildpack_directory_name(buildpack_id))
 }
@@ -276,13 +278,19 @@ mod tests {
     fn test_get_buildpack_target_dir() {
         let buildpack_id = buildpack_id!("some-org/with-buildpack");
         let target_dir = PathBuf::from("/target");
+        let target_triple = "x86_64-unknown-linux-musl";
+
         assert_eq!(
-            get_buildpack_target_dir(&buildpack_id, &target_dir, false),
-            PathBuf::from("/target/buildpack/debug/some-org_with-buildpack")
+            get_buildpack_target_dir(&buildpack_id, &target_dir, false, target_triple),
+            PathBuf::from(
+                "/target/buildpack/x86_64-unknown-linux-musl/debug/some-org_with-buildpack"
+            )
         );
         assert_eq!(
-            get_buildpack_target_dir(&buildpack_id, &target_dir, true),
-            PathBuf::from("/target/buildpack/release/some-org_with-buildpack")
+            get_buildpack_target_dir(&buildpack_id, &target_dir, true, target_triple),
+            PathBuf::from(
+                "/target/buildpack/x86_64-unknown-linux-musl/release/some-org_with-buildpack"
+            )
         );
     }
 }

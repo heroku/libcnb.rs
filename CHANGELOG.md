@@ -7,6 +7,8 @@ separate changelogs for each crate were used. If you need to refer to these old 
 ## [Unreleased]
 
 - `libcnb-package`: Add cross-compilation assistance for Linux `aarch64-unknown-linux-musl`. ([#577](https://github.com/heroku/libcnb.rs/pull/577))
+- `libcnb-package`: buildpack target directory now contains the target triple. Users that implicitly rely on the output directory need to adapt. The output of `cargo 
+libcnb package` will refer to the new locations. ([#580](https://github.com/heroku/libcnb.rs/pull/580))
 
 ## [0.13.0] 2023-06-21
 
