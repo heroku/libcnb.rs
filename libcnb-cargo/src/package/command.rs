@@ -12,7 +12,7 @@ use libcnb_package::buildpack_package::{read_buildpack_package, BuildpackPackage
 use libcnb_package::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
 use libcnb_package::dependency_graph::{create_dependency_graph, get_dependencies};
 use libcnb_package::{
-    assemble_buildpack_directory, find_buildpack_dirs, get_buildpack_target_dir, CargoProfile,
+    assemble_buildpack_directory, find_buildpack_dirs, get_buildpack_package_dir, CargoProfile,
 };
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -25,21 +25,30 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
 
     let current_dir = std::env::current_dir().map_err(Error::GetCurrentDir)?;
 
-    let workspace = get_cargo_workspace_root(&current_dir)?;
+    let workspace_root_path = get_cargo_workspace_root(&current_dir)?;
 
-    let workspace_target_dir = MetadataCommand::new()
-        .manifest_path(&workspace.join("Cargo.toml"))
+    let cargo_metadata = MetadataCommand::new()
+        .manifest_path(&workspace_root_path.join("Cargo.toml"))
         .exec()
-        .map(|metadata| metadata.target_directory.into_std_path_buf())
         .map_err(|e| Error::ReadCargoMetadata {
-            path: workspace.clone(),
+            path: workspace_root_path.clone(),
             source: e,
         })?;
 
+    let package_dir = args.package_dir.clone().unwrap_or_else(|| {
+        cargo_metadata
+            .workspace_root
+            .into_std_path_buf()
+            .join("libcnb-packaged")
+    });
+
+    std::fs::create_dir_all(&package_dir)
+        .map_err(|e| Error::CreatePackageDirectory(package_dir.clone(), e))?;
+
     let buildpack_packages = create_dependency_graph(
-        find_buildpack_dirs(&workspace, &[workspace_target_dir.clone()])
+        find_buildpack_dirs(&workspace_root_path, &[package_dir.clone()])
             .map_err(|e| Error::FindBuildpackDirs {
-                path: workspace_target_dir.clone(),
+                path: workspace_root_path,
                 source: e,
             })?
             .into_iter()
@@ -54,7 +63,7 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
             let target_dir = if contains_buildpack_binaries(&buildpack_package.path) {
                 buildpack_package.path.clone()
             } else {
-                get_buildpack_target_dir(id, &workspace_target_dir, args.release, &args.target)
+                get_buildpack_package_dir(id, &package_dir, args.release, &args.target)
             };
             (id, target_dir)
         })

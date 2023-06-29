@@ -255,14 +255,13 @@ pub fn find_buildpack_dirs(start_dir: &Path, ignore: &[PathBuf]) -> std::io::Res
 
 /// Provides a standard path to use for storing a compiled buildpack's artifacts.
 #[must_use]
-pub fn get_buildpack_target_dir(
+pub fn get_buildpack_package_dir(
     buildpack_id: &BuildpackId,
-    target_dir: &Path,
+    package_dir: &Path,
     is_release: bool,
     target_triple: &str,
 ) -> PathBuf {
-    target_dir
-        .join("buildpack")
+    package_dir
         .join(target_triple)
         .join(if is_release { "release" } else { "debug" })
         .join(default_buildpack_directory_name(buildpack_id))
@@ -270,27 +269,23 @@ pub fn get_buildpack_target_dir(
 
 #[cfg(test)]
 mod tests {
-    use crate::get_buildpack_target_dir;
+    use crate::get_buildpack_package_dir;
     use libcnb_data::buildpack_id;
     use std::path::PathBuf;
 
     #[test]
     fn test_get_buildpack_target_dir() {
         let buildpack_id = buildpack_id!("some-org/with-buildpack");
-        let target_dir = PathBuf::from("/target");
+        let package_dir = PathBuf::from("/package");
         let target_triple = "x86_64-unknown-linux-musl";
 
         assert_eq!(
-            get_buildpack_target_dir(&buildpack_id, &target_dir, false, target_triple),
-            PathBuf::from(
-                "/target/buildpack/x86_64-unknown-linux-musl/debug/some-org_with-buildpack"
-            )
+            get_buildpack_package_dir(&buildpack_id, &package_dir, false, target_triple),
+            PathBuf::from("/package/x86_64-unknown-linux-musl/debug/some-org_with-buildpack")
         );
         assert_eq!(
-            get_buildpack_target_dir(&buildpack_id, &target_dir, true, target_triple),
-            PathBuf::from(
-                "/target/buildpack/x86_64-unknown-linux-musl/release/some-org_with-buildpack"
-            )
+            get_buildpack_package_dir(&buildpack_id, &package_dir, true, target_triple),
+            PathBuf::from("/package/x86_64-unknown-linux-musl/release/some-org_with-buildpack")
         );
     }
 }
