@@ -156,15 +156,18 @@ impl TestRunner {
             };
         }
 
-        let output = run_pack_command(pack_command, &config.expected_pack_result);
-
-        let test_context = TestContext {
-            pack_stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
-            pack_stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+        let mut test_context = TestContext {
+            pack_stdout: String::new(),
+            pack_stderr: String::new(),
             image_name,
             config: config.clone(),
             runner: self,
         };
+
+        let output = run_pack_command(pack_command, &config.expected_pack_result);
+
+        test_context.pack_stdout = String::from_utf8_lossy(&output.stdout).into_owned();
+        test_context.pack_stderr = String::from_utf8_lossy(&output.stderr).into_owned();
 
         f(test_context);
     }
