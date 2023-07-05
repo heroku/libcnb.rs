@@ -6,9 +6,15 @@ separate changelogs for each crate were used. If you need to refer to these old 
 
 ## [Unreleased]
 
+### Added
+
 - `libcnb-package`: Add cross-compilation assistance for Linux `aarch64-unknown-linux-musl`. ([#577](https://github.com/heroku/libcnb.rs/pull/577))
+
+### Changed
+
 - `libcnb-package`: buildpack target directory now contains the target triple. Users that implicitly rely on the output directory need to adapt. The output of `cargo 
 libcnb package` will refer to the new locations. ([#580](https://github.com/heroku/libcnb.rs/pull/580))
+- Bump minimum external dependency versions. ([#587](https://github.com/heroku/libcnb.rs/pull/587))
 
 ## [0.13.0] 2023-06-21
 
@@ -20,9 +26,9 @@ The highlight of this release is the `cargo libcnb package` changes to support c
   - When used in a buildpack directory it will compile only that buildpack.
   - When used in a workspace directory it will compile all buildpacks found in subdirectories.
 - `libcnb-package`: Changed `default_buildpack_directory_name` to accept a `BuildpackId` ([#575](https://github.com/heroku/libcnb.rs/pull/575))
-  
-### Added 
- 
+
+### Added
+
 - `libcnb-cargo`
   - Buildpacks can reference other buildpacks within a workspace by using `uri = "libcnb:{buildpack_id}"` as a dependency entry in the buildpack's [package.toml](https://buildpacks.io/docs/reference/config/package-config/) file. ([#575](https://github.com/heroku/libcnb.rs/pull/575))
 - `libcnb-data`
