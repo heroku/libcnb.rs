@@ -12,6 +12,7 @@ separate changelogs for each crate were used. If you need to refer to these old 
 
 ### Changed
 
+- `libcnb-test`: ensures that an image created during a test run will be cleaned up when `.expected_pack_result(PackResult::Failure)` is used but the result is  `PackResult::Success`. ([#588](https://github.com/heroku/libcnb.rs/pull/588))
 - `libcnb-package`: buildpack target directory now contains the target triple. Users that implicitly rely on the output directory need to adapt. The output of `cargo 
 libcnb package` will refer to the new locations. ([#580](https://github.com/heroku/libcnb.rs/pull/580))
 - Bump minimum external dependency versions. ([#587](https://github.com/heroku/libcnb.rs/pull/587))
