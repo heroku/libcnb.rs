@@ -6,13 +6,13 @@ rust-version.workspace = true
 publish = false
 
 [dependencies]
-flate2 = "1.0.24"
+flate2 = "1.0.26"
 libcnb.workspace = true
-serde = "1.0.145"
-sha2 = "0.10.6"
+serde = "1.0.166"
+sha2 = "0.10.7"
 tar = "0.4.38"
-tempfile = "3.3.0"
-ureq = "2.5.0"
+tempfile = "3.6.0"
+ureq = "2.7.1"
 
 [dev-dependencies]
 libcnb-test.workspace = true
