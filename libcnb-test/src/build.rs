@@ -53,11 +53,8 @@ pub(crate) fn package_buildpack(
 
     let workspace_dir = find_cargo_workspace(&buildpack_dir).unwrap();
 
-    let output_dir =
-        tempdir().map_err(PackageCrateBuildpackError::CannotCreateBuildpackTempDirectory)?;
-
     let buildpack_dirs =
-        find_buildpack_dirs(&workspace_dir, &[output_dir.path().to_path_buf()]).unwrap();
+        find_buildpack_dirs(&workspace_dir, &[workspace_dir.join("target")]).unwrap();
 
     let buildpack_packages = buildpack_dirs
         .into_iter()
@@ -75,8 +72,11 @@ pub(crate) fn package_buildpack(
     let build_order =
         get_dependencies(&buildpack_packages_graph, &buildpack_packages_requested).unwrap();
 
+    let root_output_dir =
+        tempdir().map_err(PackageCrateBuildpackError::CannotCreateBuildpackTempDirectory)?;
+
     let buildpack_output_directory_locator = BuildpackOutputDirectoryLocator::new(
-        output_dir.path().to_path_buf(),
+        root_output_dir.path().to_path_buf(),
         cargo_profile,
         target_triple.as_ref().to_string(),
     );
