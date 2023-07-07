@@ -23,6 +23,7 @@ pub struct TestContext<'a> {
 
     pub(crate) image_name: String,
     pub(crate) runner: &'a TestRunner,
+    pub(crate) buildpack_images: Vec<String>,
 }
 
 impl<'a> TestContext<'a> {
@@ -247,19 +248,23 @@ impl<'a> TestContext<'a> {
 
 impl<'a> Drop for TestContext<'a> {
     fn drop(&mut self) {
-        // We do not care if image removal succeeded or not. Panicking here would result in
-        // SIGILL since this function might be called in a Tokio runtime.
-        let _image_delete_result =
-            self.runner
+        let mut images = vec![&self.image_name];
+        images.extend(&self.buildpack_images);
+        for image in images {
+            // We do not care if image removal succeeded or not. Panicking here would result in
+            // SIGILL since this function might be called in a Tokio runtime.
+            let _ = self
+                .runner
                 .tokio_runtime
                 .block_on(self.runner.docker.remove_image(
-                    &self.image_name,
+                    image,
                     Some(RemoveImageOptions {
                         force: true,
                         ..RemoveImageOptions::default()
                     }),
                     None,
                 ));
+        }
     }
 }
 

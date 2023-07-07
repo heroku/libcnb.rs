@@ -1,7 +1,6 @@
+use crate::output::BuildpackOutputDirectoryLocator;
 use libcnb_data::buildpack::{BuildpackId, BuildpackIdError};
 use libcnb_data::buildpackage::{Buildpackage, BuildpackageDependency};
-use std::collections::HashMap;
-use std::hash::BuildHasher;
 use std::path::{Path, PathBuf};
 
 /// Buildpack dependency type
@@ -80,9 +79,9 @@ pub fn get_local_buildpackage_dependencies(
 /// * the given `buildpackage` contains a local dependency with an invalid [`BuildpackId`]
 /// * there is no entry found in `buildpack_ids_to_target_dir` for a local dependency's [`BuildpackId`]
 /// * the target path for a local dependency is an invalid URI
-pub fn rewrite_buildpackage_local_dependencies<S: BuildHasher>(
+pub fn rewrite_buildpackage_local_dependencies(
     buildpackage: &Buildpackage,
-    buildpack_ids_to_target_dir: &HashMap<&BuildpackId, PathBuf, S>,
+    buildpack_output_directory_locator: &BuildpackOutputDirectoryLocator,
 ) -> Result<Buildpackage, RewriteBuildpackageLocalDependenciesError> {
     let local_dependency_to_target_dir = |target_dir: &PathBuf| {
         BuildpackageDependency::try_from(target_dir.clone()).map_err(|_| {
@@ -99,14 +98,10 @@ pub fn rewrite_buildpackage_local_dependencies<S: BuildHasher>(
                     BuildpackDependency::External(buildpackage_dependency) => {
                         Ok(buildpackage_dependency)
                     }
-                    BuildpackDependency::Local(buildpack_id, _) => buildpack_ids_to_target_dir
-                        .get(&buildpack_id)
-                        .ok_or(
-                            RewriteBuildpackageLocalDependenciesError::TargetDirectoryLookup(
-                                buildpack_id,
-                            ),
-                        )
-                        .and_then(local_dependency_to_target_dir),
+                    BuildpackDependency::Local(buildpack_id, _) => {
+                        let output_dir = buildpack_output_directory_locator.get(&buildpack_id);
+                        local_dependency_to_target_dir(&output_dir)
+                    }
                 })
                 .collect()
         })
@@ -186,11 +181,12 @@ mod tests {
         get_local_buildpackage_dependencies, rewrite_buildpackage_local_dependencies,
         rewrite_buildpackage_relative_path_dependencies_to_absolute,
     };
+    use crate::output::BuildpackOutputDirectoryLocator;
+    use crate::CargoProfile;
     use libcnb_data::buildpack_id;
     use libcnb_data::buildpackage::{
         Buildpackage, BuildpackageBuildpackReference, BuildpackageDependency, Platform,
     };
-    use std::collections::HashMap;
     use std::path::PathBuf;
 
     #[test]
@@ -209,17 +205,19 @@ mod tests {
     #[test]
     fn test_rewrite_buildpackage_local_dependencies() {
         let buildpackage = create_buildpackage();
-        let buildpack_id = buildpack_id!("buildpack-id");
-        let buildpack_ids_to_target_dir = HashMap::from([(
-            &buildpack_id,
-            PathBuf::from("/path/to/target/buildpacks/buildpack-id"),
-        )]);
-        let new_buildpackage =
-            rewrite_buildpackage_local_dependencies(&buildpackage, &buildpack_ids_to_target_dir)
-                .unwrap();
+        let buildpack_output_directory_locator = BuildpackOutputDirectoryLocator::new(
+            PathBuf::from("/path/to/target"),
+            CargoProfile::Dev,
+            "arch".to_string(),
+        );
+        let new_buildpackage = rewrite_buildpackage_local_dependencies(
+            &buildpackage,
+            &buildpack_output_directory_locator,
+        )
+        .unwrap();
         assert_eq!(
             new_buildpackage.dependencies[0].uri.to_string(),
-            "/path/to/target/buildpacks/buildpack-id"
+            "/path/to/target/buildpack/arch/debug/buildpack-id"
         );
     }
 

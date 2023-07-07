@@ -101,6 +101,15 @@ impl TestRunner {
     ) {
         let config = config.borrow();
 
+        let mut test_context = TestContext {
+            pack_stdout: String::new(),
+            pack_stderr: String::new(),
+            image_name,
+            config: config.clone(),
+            runner: self,
+            buildpack_images: vec![],
+        };
+
         let app_dir = {
             let normalized_app_dir_path = if config.app_dir.is_relative() {
                 env::var("CARGO_MANIFEST_DIR")
@@ -131,16 +140,8 @@ impl TestRunner {
             }
         };
 
-        let temp_crate_buildpack_dir =
-            config
-                .buildpacks
-                .contains(&BuildpackReference::Crate)
-                .then(|| {
-                    build::package_crate_buildpack(config.cargo_profile, &config.target_triple)
-                        .expect("Could not package current crate as buildpack")
-                });
-
-        let mut pack_command = PackBuildCommand::new(&config.builder_name, &app_dir, &image_name);
+        let mut pack_command =
+            PackBuildCommand::new(&config.builder_name, &app_dir, &test_context.image_name);
 
         config.env.iter().for_each(|(key, value)| {
             pack_command.env(key, value);
@@ -149,22 +150,29 @@ impl TestRunner {
         for buildpack in &config.buildpacks {
             match buildpack {
                 BuildpackReference::Crate => {
-                    pack_command.buildpack(temp_crate_buildpack_dir.as_ref()
-                        .expect("Test references crate buildpack, but crate wasn't packaged as a buildpack. This is an internal libcnb-test error, please report any occurrences."))
+                    let buildpack_image =
+                        build::package_crate_buildpack(config.cargo_profile, &config.target_triple)
+                            .unwrap();
+                    pack_command.buildpack(buildpack_image.clone());
+                    test_context.buildpack_images.push(buildpack_image);
                 }
-                BuildpackReference::Other(id) => pack_command.buildpack(id.clone()),
+                BuildpackReference::Local(path) => {
+                    let buildpack_image =
+                        build::package_buildpack(path, config.cargo_profile, &config.target_triple)
+                            .unwrap();
+                    pack_command.buildpack(buildpack_image.clone());
+                    test_context.buildpack_images.push(buildpack_image);
+                }
+                BuildpackReference::Other(id) => {
+                    pack_command.buildpack(id.clone());
+                }
             };
         }
 
         let output = run_pack_command(pack_command, &config.expected_pack_result);
 
-        let test_context = TestContext {
-            pack_stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
-            pack_stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
-            image_name,
-            config: config.clone(),
-            runner: self,
-        };
+        test_context.pack_stdout = String::from_utf8_lossy(&output.stdout).into_owned();
+        test_context.pack_stderr = String::from_utf8_lossy(&output.stderr).into_owned();
 
         f(test_context);
     }

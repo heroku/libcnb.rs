@@ -1,6 +1,6 @@
 use crate::config::{config_from_metadata, ConfigError};
 use crate::CargoProfile;
-use cargo_metadata::Metadata;
+use cargo_metadata::{Metadata, MetadataCommand};
 use std::collections::HashMap;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
@@ -19,18 +19,25 @@ use std::process::{Command, ExitStatus};
 /// read or the configured main buildpack binary does not exist.
 pub fn build_buildpack_binaries(
     project_path: impl AsRef<Path>,
-    cargo_metadata: &Metadata,
     cargo_profile: CargoProfile,
     cargo_env: &[(OsString, OsString)],
     target_triple: impl AsRef<str>,
 ) -> Result<BuildpackBinaries, BuildBinariesError> {
-    let binary_target_names = binary_target_names(cargo_metadata);
-    let config = config_from_metadata(cargo_metadata).map_err(BuildBinariesError::ConfigError)?;
+    let cargo_path = project_path.as_ref().join("Cargo.toml");
+
+    let cargo_metadata = MetadataCommand::new()
+        .manifest_path(cargo_path.clone())
+        .exec()
+        .map_err(|e| BuildBinariesError::ReadCargoMetadata(cargo_path, e))?;
+
+    let binary_target_names = binary_target_names(&cargo_metadata);
+
+    let config = config_from_metadata(&cargo_metadata).map_err(BuildBinariesError::ConfigError)?;
 
     let buildpack_target_binary_path = if binary_target_names.contains(&config.buildpack_target) {
         build_binary(
             project_path.as_ref(),
-            cargo_metadata,
+            &cargo_metadata,
             cargo_profile,
             cargo_env.to_owned(),
             target_triple.as_ref(),
@@ -52,7 +59,7 @@ pub fn build_buildpack_binaries(
             additional_binary_target_name.clone(),
             build_binary(
                 project_path.as_ref(),
-                cargo_metadata,
+                &cargo_metadata,
                 cargo_profile,
                 cargo_env.to_owned(),
                 target_triple.as_ref(),
@@ -169,6 +176,7 @@ pub enum BuildError {
 
 #[derive(Debug)]
 pub enum BuildBinariesError {
+    ReadCargoMetadata(PathBuf, cargo_metadata::Error),
     ConfigError(ConfigError),
     BuildError(String, BuildError),
     MissingBuildpackTarget(String),

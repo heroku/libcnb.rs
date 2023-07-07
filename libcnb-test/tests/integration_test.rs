@@ -303,6 +303,47 @@ fn app_dir_invalid_path_checked_before_applying_preprocessor() {
     );
 }
 
+#[test]
+#[ignore = "integration test"]
+fn basic_build_with_local_reference_to_single_buildpack() {
+    TestRunner::default().build(
+        BuildConfig::new("heroku/builder:22", "test-fixtures/procfile").buildpacks(vec![
+            BuildpackReference::Local(PathBuf::from("../libcnb-cargo/fixtures/single_buildpack")),
+        ]),
+        |context| {
+            assert_empty!(context.pack_stderr);
+            assert_contains!(
+                context.pack_stdout,
+                indoc! {"
+                    Single buildpack
+                "}
+            );
+        },
+    );
+}
+
+#[test]
+#[ignore = "integration test"]
+fn basic_build_with_local_reference_to_meta_buildpack() {
+    TestRunner::default().build(
+        BuildConfig::new("heroku/builder:22", "test-fixtures/procfile").buildpacks(vec![
+            BuildpackReference::Local(PathBuf::from(
+                "../libcnb-cargo/fixtures/multiple_buildpacks/meta-buildpacks/meta-two",
+            )),
+        ]),
+        |context| {
+            assert_empty!(context.pack_stderr);
+            assert_contains!(
+                context.pack_stdout,
+                indoc! {"
+                    One buildpack
+                    Two buildpack
+                "}
+            );
+        },
+    );
+}
+
 // We're referencing the procfile buildpack via Docker URL to pin the version for the tests. This also
 // prevents issues when the builder contains multiple heroku/procfile versions. We don't use CNB
 // registry URLs since, as of August 2022, pack fails when another pack instance is resolving such

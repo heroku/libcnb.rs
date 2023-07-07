@@ -5,4 +5,4 @@ id = "multiple-buildpacks/one"
 version = "0.0.0"
 
 [[stacks]]
-id = "some-stack"
+id = "*"

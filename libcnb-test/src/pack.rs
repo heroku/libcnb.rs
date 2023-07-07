@@ -213,6 +213,66 @@ pub(crate) fn run_pack_command<C: Into<Command>>(
     output
 }
 
+#[derive(Clone, Debug)]
+pub(crate) enum BuildpackPackageFormat {
+    Image,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct PackBuildpackPackageCommand {
+    name: String,
+    config: PathBuf,
+    format: BuildpackPackageFormat,
+}
+
+impl PackBuildpackPackageCommand {
+    pub fn new(name: impl Into<String>, config: impl Into<PathBuf>) -> Self {
+        Self {
+            name: name.into(),
+            config: config.into(),
+            format: BuildpackPackageFormat::Image,
+        }
+    }
+}
+
+impl From<PackBuildpackPackageCommand> for Command {
+    fn from(value: PackBuildpackPackageCommand) -> Self {
+        let mut command = Self::new("pack");
+
+        let args = vec![
+            String::from("buildpack"),
+            String::from("package"),
+            value.name,
+            String::from("--config"),
+            value.config.to_string_lossy().to_string(),
+            format!(
+                "--format={}",
+                match value.format {
+                    BuildpackPackageFormat::Image => String::from("image"),
+                }
+            ),
+        ];
+
+        command.args(args);
+
+        command
+    }
+}
+
+pub(crate) fn run_buildpack_package_command<C: Into<Command>>(command: C) {
+    let output = command.into()
+        .output()
+        .unwrap_or_else(|io_error| {
+            if io_error.kind() == std::io::ErrorKind::NotFound {
+                panic!("External `pack` command not found. Install Pack CLI and ensure it is on PATH: https://buildpacks.io/docs/install-pack");
+            } else {
+                panic!("Could not spawn external `pack` process: {io_error}");
+            };
+        });
+
+    println!("{}", String::from_utf8_lossy(&output.stderr));
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

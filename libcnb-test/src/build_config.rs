@@ -251,6 +251,8 @@ pub enum BuildpackReference {
     Crate,
     /// References another buildpack by id, local directory or tarball.
     Other(String),
+
+    Local(PathBuf),
 }
 
 /// Result of a pack execution.

@@ -1,0 +1,31 @@
+api = "0.8"
+
+[buildpack]
+id = "multiple-buildpacks/meta-two"
+name = "Meta-buildpack Test"
+version = "0.0.0"
+homepage = "https://example.com"
+description = "Official test example"
+keywords = ["test"]
+
+[[buildpack.licenses]]
+type = "BSD-3-Clause"
+
+[[order]]
+
+[[order.group]]
+id = "multiple-buildpacks/one"
+version = "0.0.0"
+
+[[order.group]]
+id = "multiple-buildpacks/two"
+version = "0.0.0"
+
+[[order.group]]
+id = "heroku/procfile"
+version = "2.0.0"
+optional = true
+
+[metadata]
+[metadata.extra]
+some_key = "some_value"

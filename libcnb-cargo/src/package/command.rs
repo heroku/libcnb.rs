@@ -1,66 +1,51 @@
 use crate::cli::PackageArgs;
 use crate::package::error::Error;
 use cargo_metadata::MetadataCommand;
-use libcnb_data::buildpack::{BuildpackDescriptor, BuildpackId};
-use libcnb_data::buildpackage::Buildpackage;
+use libcnb_data::buildpack::BuildpackDescriptor;
 use libcnb_package::build::build_buildpack_binaries;
-use libcnb_package::buildpack_dependency::{
-    rewrite_buildpackage_local_dependencies,
-    rewrite_buildpackage_relative_path_dependencies_to_absolute,
-};
 use libcnb_package::buildpack_package::{read_buildpack_package, BuildpackPackage};
 use libcnb_package::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
-use libcnb_package::dependency_graph::{create_dependency_graph, get_dependencies};
-use libcnb_package::{
-    assemble_buildpack_directory, find_buildpack_dirs, get_buildpack_target_dir, CargoProfile,
+use libcnb_package::dependency_graph::{create_dependency_graph, get_dependencies, DependencyNode};
+use libcnb_package::output::{
+    assemble_meta_buildpack_directory, assemble_single_buildpack_directory,
+    BuildpackOutputDirectoryLocator,
 };
-use std::collections::HashMap;
+use libcnb_package::{find_buildpack_dirs, find_cargo_workspace, CargoProfile};
+use std::ffi::OsString;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 type Result<T> = std::result::Result<T, Error>;
 
 pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
+    let target_triple = args.target.clone();
+
+    let cargo_build_env = get_cargo_build_env(&target_triple, args.no_cross_compile_assistance)?;
+
+    let cargo_profile = if args.release {
+        CargoProfile::Release
+    } else {
+        CargoProfile::Dev
+    };
+
     eprintln!("🔍 Locating buildpacks...");
 
     let current_dir = std::env::current_dir().map_err(Error::GetCurrentDir)?;
 
-    let workspace = get_cargo_workspace_root(&current_dir)?;
+    let workspace_dir = find_cargo_workspace(&current_dir)?;
 
-    let workspace_target_dir = MetadataCommand::new()
-        .manifest_path(&workspace.join("Cargo.toml"))
-        .exec()
-        .map(|metadata| metadata.target_directory.into_std_path_buf())
-        .map_err(|e| Error::ReadCargoMetadata {
-            path: workspace.clone(),
-            source: e,
-        })?;
+    let output_dir = get_buildpack_output_dir(&workspace_dir)?;
 
-    let buildpack_packages = create_dependency_graph(
-        find_buildpack_dirs(&workspace, &[workspace_target_dir.clone()])
-            .map_err(|e| Error::FindBuildpackDirs {
-                path: workspace_target_dir.clone(),
-                source: e,
-            })?
-            .into_iter()
-            .map(|dir| read_buildpack_package(dir).map_err(std::convert::Into::into))
-            .collect::<Result<Vec<BuildpackPackage>>>()?,
-    )?;
+    let buildpack_dirs = find_buildpack_dirs(&workspace_dir, &[output_dir.clone()])
+        .map_err(|e| Error::FindBuildpackDirs(workspace_dir, e))?;
 
-    let target_directories_index = buildpack_packages
-        .node_weights()
-        .map(|buildpack_package| {
-            let id = buildpack_package.buildpack_id();
-            let target_dir = if contains_buildpack_binaries(&buildpack_package.path) {
-                buildpack_package.path.clone()
-            } else {
-                get_buildpack_target_dir(id, &workspace_target_dir, args.release, &args.target)
-            };
-            (id, target_dir)
-        })
-        .collect::<HashMap<_, _>>();
+    let buildpack_packages = buildpack_dirs
+        .into_iter()
+        .map(read_buildpack_package)
+        .collect::<std::result::Result<Vec<_>, _>>()?;
 
-    let buildpack_packages_requested = buildpack_packages
+    let buildpack_packages_graph = create_dependency_graph(buildpack_packages)?;
+
+    let buildpack_packages_requested = buildpack_packages_graph
         .node_weights()
         .filter(|buildpack_package| {
             // If we're in a directory with a buildpack.toml file, we only want to build the
@@ -77,15 +62,17 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
         Err(Error::NoBuildpacksFound)?;
     }
 
-    let build_order = get_dependencies(&buildpack_packages, &buildpack_packages_requested)?;
+    let build_order = get_dependencies(&buildpack_packages_graph, &buildpack_packages_requested)?;
+
+    let buildpack_output_directory_locator =
+        BuildpackOutputDirectoryLocator::new(output_dir, cargo_profile, target_triple.clone());
 
     let lookup_target_dir = |buildpack_package: &BuildpackPackage| {
-        target_directories_index
-            .get(&buildpack_package.buildpack_id())
-            .ok_or(Error::TargetDirectoryLookup {
-                buildpack_id: buildpack_package.buildpack_id().clone(),
-            })
-            .map(std::clone::Clone::clone)
+        if contains_buildpack_binaries(&buildpack_package.path) {
+            buildpack_package.path.clone()
+        } else {
+            buildpack_output_directory_locator.get(&buildpack_package.id())
+        }
     };
 
     let mut current_count = 1;
@@ -95,17 +82,27 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
             "📦 [{current_count}/{total_count}] Building {}",
             buildpack_package.buildpack_id()
         );
-        let target_dir = lookup_target_dir(buildpack_package)?;
+        let target_dir = lookup_target_dir(buildpack_package);
         match buildpack_package.buildpack_data.buildpack_descriptor {
             BuildpackDescriptor::Single(_) => {
                 if contains_buildpack_binaries(&buildpack_package.path) {
                     eprintln!("Not a libcnb.rs buildpack, nothing to compile...");
                 } else {
-                    package_single_buildpack(buildpack_package, &target_dir, args)?;
+                    package_single_buildpack(
+                        buildpack_package,
+                        &target_dir,
+                        cargo_profile,
+                        &cargo_build_env,
+                        &target_triple,
+                    )?;
                 }
             }
             BuildpackDescriptor::Meta(_) => {
-                package_meta_buildpack(buildpack_package, &target_dir, &target_directories_index)?;
+                package_meta_buildpack(
+                    buildpack_package,
+                    &target_dir,
+                    &buildpack_output_directory_locator,
+                )?;
             }
         }
         current_count += 1;
@@ -115,14 +112,14 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
         build_order
             .into_iter()
             .map(lookup_target_dir)
-            .collect::<Result<Vec<_>>>()?,
+            .collect::<Vec<_>>(),
     );
 
     print_requested_buildpack_output_dirs(
         buildpack_packages_requested
             .into_iter()
             .map(lookup_target_dir)
-            .collect::<Result<Vec<_>>>()?,
+            .collect::<Vec<_>>(),
     );
 
     Ok(())
@@ -131,116 +128,75 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
 fn package_single_buildpack(
     buildpack_package: &BuildpackPackage,
     target_dir: &Path,
-    args: &PackageArgs,
+    cargo_profile: CargoProfile,
+    cargo_build_env: &[(OsString, OsString)],
+    target_triple: &str,
 ) -> Result<()> {
-    let cargo_profile = if args.release {
-        CargoProfile::Release
-    } else {
-        CargoProfile::Dev
-    };
-
-    let target_triple = &args.target;
-
-    let cargo_metadata = MetadataCommand::new()
-        .manifest_path(&buildpack_package.path.join("Cargo.toml"))
-        .exec()
-        .map_err(|e| Error::ReadCargoMetadata {
-            path: buildpack_package.path.clone(),
-            source: e,
-        })?;
-
-    let cargo_build_env = if args.no_cross_compile_assistance {
-        vec![]
-    } else {
-        eprintln!("Determining automatic cross-compile settings...");
-        match cross_compile_assistance(target_triple) {
-            CrossCompileAssistance::Configuration { cargo_env } => cargo_env,
-
-            CrossCompileAssistance::NoAssistance => {
-                eprintln!("Could not determine automatic cross-compile settings for target triple {target_triple}.");
-                eprintln!("This is not an error, but without proper cross-compile settings in your Cargo manifest and locally installed toolchains, compilation might fail.");
-                eprintln!("To disable this warning, pass --no-cross-compile-assistance.");
-                vec![]
-            }
-
-            CrossCompileAssistance::HelpText(help_text) => {
-                Err(Error::CrossCompilationHelp { message: help_text })?
-            }
-        }
-    };
-
     eprintln!("Building binaries ({target_triple})...");
-
     let buildpack_binaries = build_buildpack_binaries(
         &buildpack_package.path,
-        &cargo_metadata,
         cargo_profile,
-        &cargo_build_env,
+        cargo_build_env,
         target_triple,
     )?;
 
     eprintln!("Writing buildpack directory...");
-
     clean_target_directory(target_dir)?;
-
-    assemble_buildpack_directory(
+    assemble_single_buildpack_directory(
         target_dir,
         &buildpack_package.buildpack_data.buildpack_descriptor_path,
+        buildpack_package
+            .buildpackage_data
+            .as_ref()
+            .map(|data| &data.buildpackage_descriptor),
         &buildpack_binaries,
-    )
-    .map_err(|e| Error::AssembleBuildpackDirectory(target_dir.to_path_buf(), e))?;
-
-    let buildpackage_content =
-        toml::to_string(&Buildpackage::default()).map_err(Error::SerializeBuildpackage)?;
-
-    std::fs::write(target_dir.join("package.toml"), buildpackage_content)
-        .map_err(|e| Error::WriteBuildpackage(target_dir.to_path_buf(), e))?;
-
+    )?;
     eprint_compiled_buildpack_success(&buildpack_package.path, target_dir)
 }
 
 fn package_meta_buildpack(
     buildpack_package: &BuildpackPackage,
     target_dir: &Path,
-    target_dirs_by_buildpack_id: &HashMap<&BuildpackId, PathBuf>,
+    buildpack_output_directory_locator: &BuildpackOutputDirectoryLocator,
 ) -> Result<()> {
     eprintln!("Writing buildpack directory...");
-
     clean_target_directory(target_dir)?;
-
-    std::fs::create_dir_all(target_dir)
-        .map_err(|e| Error::CreateBuildpackTargetDirectory(target_dir.to_path_buf(), e))?;
-
-    std::fs::copy(
+    assemble_meta_buildpack_directory(
+        target_dir,
+        &buildpack_package.path,
         &buildpack_package.buildpack_data.buildpack_descriptor_path,
-        target_dir.join("buildpack.toml"),
-    )
-    .map_err(|e| Error::WriteBuildpack(target_dir.to_path_buf(), e))?;
-
-    let buildpackage_content = &buildpack_package
-        .buildpackage_data
-        .as_ref()
-        .map(|buildpackage_data| &buildpackage_data.buildpackage_descriptor)
-        .ok_or(Error::MissingBuildpackageData)
-        .and_then(|buildpackage| {
-            rewrite_buildpackage_local_dependencies(buildpackage, target_dirs_by_buildpack_id)
-                .map_err(std::convert::Into::into)
-        })
-        .and_then(|buildpackage| {
-            rewrite_buildpackage_relative_path_dependencies_to_absolute(
-                &buildpackage,
-                &buildpack_package.path,
-            )
-            .map_err(std::convert::Into::into)
-        })
-        .and_then(|buildpackage| {
-            toml::to_string(&buildpackage).map_err(Error::SerializeBuildpackage)
-        })?;
-
-    std::fs::write(target_dir.join("package.toml"), buildpackage_content)
-        .map_err(|e| Error::WriteBuildpackage(target_dir.to_path_buf(), e))?;
-
+        buildpack_package
+            .buildpackage_data
+            .as_ref()
+            .map(|data| &data.buildpackage_descriptor),
+        buildpack_output_directory_locator,
+    )?;
     eprint_compiled_buildpack_success(&buildpack_package.path, target_dir)
+}
+
+fn get_cargo_build_env(
+    target_triple: &str,
+    no_cross_compile_assistance: bool,
+) -> Result<Vec<(OsString, OsString)>> {
+    if no_cross_compile_assistance {
+        Ok(vec![])
+    } else {
+        eprintln!("Determining automatic cross-compile settings...");
+        match cross_compile_assistance(target_triple) {
+            CrossCompileAssistance::Configuration { cargo_env } => Ok(cargo_env),
+
+            CrossCompileAssistance::NoAssistance => {
+                eprintln!("Could not determine automatic cross-compile settings for target triple {target_triple}.");
+                eprintln!("This is not an error, but without proper cross-compile settings in your Cargo manifest and locally installed toolchains, compilation might fail.");
+                eprintln!("To disable this warning, pass --no-cross-compile-assistance.");
+                Ok(vec![])
+            }
+
+            CrossCompileAssistance::HelpText(help_text) => {
+                Err(Error::CrossCompilationHelp(help_text))?
+            }
+        }
+    }
 }
 
 fn eprint_pack_command_hint(pack_directories: Vec<PathBuf>) {
@@ -264,27 +220,6 @@ fn print_requested_buildpack_output_dirs(output_directories: Vec<PathBuf>) {
     for dir in output_directories {
         println!("{dir}");
     }
-}
-
-fn get_cargo_workspace_root(dir: &Path) -> Result<PathBuf> {
-    let cargo_bin = std::env::var("CARGO").map(PathBuf::from)?;
-
-    Command::new(cargo_bin)
-        .args(["locate-project", "--workspace", "--message-format", "plain"])
-        .current_dir(dir)
-        .output()
-        .map_err(|e| Error::GetWorkspaceCommand {
-            path: dir.to_path_buf(),
-            source: e,
-        })
-        .map(|output| {
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            PathBuf::from(stdout.trim()).parent().map(Path::to_path_buf)
-        })
-        .transpose()
-        .ok_or(Error::GetWorkspaceDirectory {
-            path: dir.to_path_buf(),
-        })?
 }
 
 fn clean_target_directory(dir: &Path) -> Result<()> {
@@ -342,4 +277,12 @@ fn contains_buildpack_binaries(dir: &Path) -> bool {
         .into_iter()
         .map(|path| dir.join(path))
         .all(|path| path.is_file())
+}
+
+fn get_buildpack_output_dir(workspace_dir: &Path) -> Result<PathBuf> {
+    MetadataCommand::new()
+        .manifest_path(&workspace_dir.join("Cargo.toml"))
+        .exec()
+        .map(|metadata| metadata.target_directory.into_std_path_buf())
+        .map_err(|e| Error::GetBuildpackOutputDir(workspace_dir.to_path_buf(), e))
 }
