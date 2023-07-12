@@ -6,7 +6,7 @@ rust-version.workspace = true
 publish = false
 
 [dependencies]
-flate2 = "1.0.26"
+flate2 = { version = "1.0.26", default-features = false, features = ["zlib"] }
 libcnb.workspace = true
 serde = "1.0.166"
 sha2 = "0.10.7"
