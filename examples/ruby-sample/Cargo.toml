@@ -10,9 +10,9 @@ flate2 = "1.0.26"
 libcnb.workspace = true
 serde = "1.0.166"
 sha2 = "0.10.7"
-tar = "0.4.38"
+tar = { version = "0.4.38", default-features = false }
 tempfile = "3.6.0"
-ureq = "2.7.1"
+ureq = { version = "2.7.1", default-features = false, features = ["tls"] }
 
 [dev-dependencies]
 libcnb-test.workspace = true
