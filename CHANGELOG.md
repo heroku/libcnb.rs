@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
 - `libherokubuildpack`: Add `env::DefaultEnvLayer` and `env::ConfigureEnvLayer` structs for setting environment variables ([#598](https://github.com/heroku/libcnb.rs/pull/598))
 
 ## [0.17.0] - 2023-12-06

@@ -18,10 +18,10 @@ all-features = true
 workspace = true
 
 [features]
-default = ["command", "download", "digest", "error", "env", "log", "tar", "toml", "fs", "write"]
+default = ["command", "download", "digest", "error", "env_layer", "log", "tar", "toml", "fs", "write"]
 download = ["dep:ureq", "dep:thiserror"]
 digest = ["dep:sha2"]
-env = ["dep:libcnb"]
+env_layer = ["dep:libcnb"]
 error = ["log", "dep:libcnb"]
 log = ["dep:termcolor"]
 tar = ["dep:tar", "dep:flate2"]

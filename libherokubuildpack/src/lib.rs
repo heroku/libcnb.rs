@@ -6,8 +6,8 @@ pub mod command;
 pub mod digest;
 #[cfg(feature = "download")]
 pub mod download;
-#[cfg(feature = "env")]
-pub mod env;
+#[cfg(feature = "env_layer")]
+pub mod env_layer;
 #[cfg(feature = "error")]
 pub mod error;
 #[cfg(feature = "fs")]
