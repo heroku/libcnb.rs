@@ -6,6 +6,36 @@ separate changelogs for each crate were used. If you need to refer to these old 
 
 ## [Unreleased]
 
+The main feature added here is support in `libcnb-test` for expanded testing on local buildpacks. Previously it
+was possible to test a single (local) buildpack with `BuildpackReference::Crate` for development testing as well as
+external (remote) buildpacks with `BuildpackReference::Other(String)`. This support has been expanded to allow 
+testing of any local buildpack (including meta-buildpacks) with `BuildpackReference::Local(PathBuf)`. This should make 
+developing and testing changes across multiple buildpacks easier on the buildpack author.
+
+### Added
+
+- `libcnb-package`
+  - Added `find_cargo_workspace` which provides a convenient starting point for locating buildpacks for packaging and testing purposes. ([#590](https://github.com/heroku/libcnb.rs/pull/590))
+  - Added the `BuildpackOutputDirectoryLocator` which contains information on how compiled buildpack directories are structured and provides a `.get(buildpack_id)` method which produces the output path for a buildpack. ([#590](https://github.com/heroku/libcnb.rs/pull/590))
+  - Added `output::assemble_single_buildpack_directory` and `output::assemble_meta_buildpack_directory` which construct buildpack output directories with all their required files during packaging. ([#590](https://github.com/heroku/libcnb.rs/pull/590))
+
+### Changed
+
+- `libcnb-package`
+  - Changed the `ReadBuildpackDataError` and `ReadBuildpackageDataError` enums from struct to tuple format to be consistent with other error enums in the package. ([#590](https://github.com/heroku/libcnb.rs/pull/590)) 
+  - Changed `build::build_buildpack_binaries` to drop the `cargo_metadata` argument since it can read that directly from the given `project_path`. ([#590](https://github.com/heroku/libcnb.rs/pull/590))
+  - Changed `build::BuildBinariesError` to include the error variant `ReadCargoMetadata(PathBuf, cargo_metadata::Error)`. ([#590](https://github.com/heroku/libcnb.rs/pull/590))
+  - Changed `buildpack_dependency::rewrite_buildpackage_local_dependencies` to accept a `&BuildpackOutputDirectoryLocator` instead of `&HashMap<&BuildpackId, PathBuf>`. ([#590](https://github.com/heroku/libcnb.rs/pull/590))
+  - Moved `default_buildpack_directory_name` to `output::default_buildpack_directory_name`. ([#590](https://github.com/heroku/libcnb.rs/pull/590))
+- `libcnb-test`
+  - Change `BuildpackReference` to include the `Local(PathBuf)` variant for referencing buildpacks on the local file-system. ([#590](https://github.com/heroku/libcnb.rs/pull/590))
+
+### Removed
+
+- `libcnb-package`
+  - `get_buildpack_target_dir` has been removed in favor of `BuildpackOutputDirectoryLocator` for building output paths to compiled buildpacks. ([#590](https://github.com/heroku/libcnb.rs/pull/590))
+  - `assemble_buildpack_directory` has been removed in favor of `output::assemble_single_buildpack_directory` and `output::assemble_meta_buildpack_directory`. ([#590](https://github.com/heroku/libcnb.rs/pull/590))
+
 ### Added
 
 - `libcnb-package`: Add cross-compilation assistance for Linux `aarch64-unknown-linux-musl`. ([#577](https://github.com/heroku/libcnb.rs/pull/577))
