@@ -152,14 +152,14 @@ impl TestRunner {
                 BuildpackReference::Crate => {
                     let buildpack_image =
                         build::package_crate_buildpack(config.cargo_profile, &config.target_triple)
-                            .unwrap();
+                            .expect("Test references crate buildpack, but crate wasn't packaged as a buildpack. This is an internal libcnb-test error, please report any occurrences.");
                     pack_command.buildpack(buildpack_image.clone());
                     test_context.buildpack_images.push(buildpack_image);
                 }
                 BuildpackReference::Local(path) => {
                     let buildpack_image =
                         build::package_buildpack(path, config.cargo_profile, &config.target_triple)
-                            .unwrap();
+                            .unwrap_or_else(|_| panic!("Test references buildpack at {}, but this directory wasn't packaged as a buildpack. This is an internal libcnb-test error, please report any occurrences.", path.display()));
                     pack_command.buildpack(buildpack_image.clone());
                     test_context.buildpack_images.push(buildpack_image);
                 }

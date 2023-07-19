@@ -151,8 +151,17 @@ pub fn assemble_single_buildpack_directory(
     Ok(())
 }
 
-/// TODO
-/// ## Errors
+/// Creates a meta-buildpack directory and copies all required meta-buildpack assets to it.
+///
+/// This function will not validate if the buildpack descriptor at the given path is valid and will
+/// use it as-is.
+///
+/// It will also rewrite all package.toml references that use the `libcnb:{buildpack_id}` format as
+/// well as relative file references to use absolute paths.
+///
+/// # Errors
+///
+/// Will return `Err` if the meta-buildpack directory could not be assembled.
 pub fn assemble_meta_buildpack_directory(
     destination_path: impl AsRef<Path>,
     buildpack_source_dir: impl AsRef<Path>,
@@ -215,29 +224,38 @@ fn create_file_symlink<P: AsRef<Path>, Q: AsRef<Path>>(
     std::os::windows::fs::symlink_file(original.as_ref(), link.as_ref())
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use crate::get_buildpack_target_dir;
-//     use libcnb_data::buildpack_id;
-//     use std::path::PathBuf;
-//
-//     #[test]
-//     fn test_get_buildpack_target_dir() {
-//         let buildpack_id = buildpack_id!("some-org/with-buildpack");
-//         let target_dir = PathBuf::from("/target");
-//         let target_triple = "x86_64-unknown-linux-musl";
-//
-//         assert_eq!(
-//             get_buildpack_target_dir(&buildpack_id, &target_dir, false, target_triple),
-//             PathBuf::from(
-//                 "/target/buildpack/x86_64-unknown-linux-musl/debug/some-org_with-buildpack"
-//             )
-//         );
-//         assert_eq!(
-//             get_buildpack_target_dir(&buildpack_id, &target_dir, true, target_triple),
-//             PathBuf::from(
-//                 "/target/buildpack/x86_64-unknown-linux-musl/release/some-org_with-buildpack"
-//             )
-//         );
-//     }
-// }
+#[cfg(test)]
+mod tests {
+    use crate::output::BuildpackOutputDirectoryLocator;
+    use crate::CargoProfile;
+    use libcnb_data::buildpack_id;
+    use std::path::PathBuf;
+
+    #[test]
+    fn test_get_buildpack_output_directory_locator() {
+        let buildpack_id = buildpack_id!("some-org/with-buildpack");
+
+        assert_eq!(
+            BuildpackOutputDirectoryLocator {
+                cargo_profile: CargoProfile::Dev,
+                target_triple: "x86_64-unknown-linux-musl".to_string(),
+                root_dir: PathBuf::from("/target")
+            }
+            .get(&buildpack_id),
+            PathBuf::from(
+                "/target/buildpack/x86_64-unknown-linux-musl/debug/some-org_with-buildpack"
+            )
+        );
+        assert_eq!(
+            BuildpackOutputDirectoryLocator {
+                cargo_profile: CargoProfile::Release,
+                target_triple: "x86_64-unknown-linux-musl".to_string(),
+                root_dir: PathBuf::from("/target")
+            }
+            .get(&buildpack_id),
+            PathBuf::from(
+                "/target/buildpack/x86_64-unknown-linux-musl/release/some-org_with-buildpack"
+            )
+        );
+    }
+}

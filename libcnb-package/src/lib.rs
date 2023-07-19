@@ -158,8 +158,12 @@ pub fn find_buildpack_dirs(start_dir: &Path, ignore: &[PathBuf]) -> std::io::Res
     Ok(buildpack_dirs)
 }
 
-/// TODO
+/// Returns the path of the root workspace directory for a Rust Cargo project. This is often a useful
+/// starting point for detecting buildpacks with [`find_buildpack_dirs`].
+///
 /// ## Errors
+///
+/// Will return an `Err` if the root workspace directory cannot be located.
 pub fn find_cargo_workspace(dir_in_workspace: &Path) -> Result<PathBuf, FindCargoWorkspaceError> {
     let cargo_bin = std::env::var("CARGO")
         .map(PathBuf::from)

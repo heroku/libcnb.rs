@@ -83,6 +83,7 @@ fn package_all_buildpacks_in_monorepo_buildpack_project() {
                 .to_string_lossy()
                 .to_string(),
             packaging_test.target_dir_name(buildpack_id!("multiple-buildpacks/meta-one")),
+            packaging_test.target_dir_name(buildpack_id!("multiple-buildpacks/meta-two")),
             packaging_test.target_dir_name(buildpack_id!("multiple-buildpacks/one")),
             packaging_test.target_dir_name(buildpack_id!("multiple-buildpacks/two")),
         ]
@@ -101,6 +102,15 @@ fn package_all_buildpacks_in_monorepo_buildpack_project() {
                 .join("meta-buildpacks/meta-one/../../buildpacks/not_libcnb")
                 .to_string_lossy()
                 .to_string(),
+            String::from("docker://docker.io/heroku/procfile-cnb:2.0.0"),
+        ],
+    );
+    assert_compiled_meta_buildpack(
+        &packaging_test,
+        buildpack_id!("multiple-buildpacks/meta-two"),
+        vec![
+            packaging_test.target_dir_name(buildpack_id!("multiple-buildpacks/one")),
+            packaging_test.target_dir_name(buildpack_id!("multiple-buildpacks/two")),
             String::from("docker://docker.io/heroku/procfile-cnb:2.0.0"),
         ],
     );

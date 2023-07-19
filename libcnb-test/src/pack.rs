@@ -260,7 +260,7 @@ impl From<PackBuildpackPackageCommand> for Command {
 }
 
 pub(crate) fn run_buildpack_package_command<C: Into<Command>>(command: C) {
-    let output = command.into()
+    command.into()
         .output()
         .unwrap_or_else(|io_error| {
             if io_error.kind() == std::io::ErrorKind::NotFound {
@@ -269,8 +269,6 @@ pub(crate) fn run_buildpack_package_command<C: Into<Command>>(command: C) {
                 panic!("Could not spawn external `pack` process: {io_error}");
             };
         });
-
-    println!("{}", String::from_utf8_lossy(&output.stderr));
 }
 
 #[cfg(test)]
