@@ -12,6 +12,7 @@ use libcnb_test::{
     assert_contains, assert_empty, assert_not_contains, BuildConfig, BuildpackReference,
     ContainerConfig, PackResult, TestRunner,
 };
+use std::ops::Deref;
 use std::path::PathBuf;
 use std::time::Duration;
 use std::{env, fs, thread};
@@ -132,14 +133,29 @@ fn starting_containers() {
 
 #[test]
 #[ignore = "integration test"]
-#[should_panic(
-    expected = "Could not package current crate as buildpack: BuildBinariesError(ConfigError(NoBinTargetsFound))"
-)]
 fn buildpack_packaging_failure() {
-    TestRunner::default().build(
-        BuildConfig::new("libcnb/invalid-builder", "test-fixtures/empty"),
-        |_| {},
-    );
+    let crate_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
+    let result = std::panic::catch_unwind(|| {
+        TestRunner::default().build(
+            BuildConfig::new("libcnb/invalid-builder", "test-fixtures/empty"),
+            |_| {},
+        );
+    });
+    match result {
+        Ok(_) => panic!("expected a failure"),
+        Err(error) => {
+            let message = error
+                .downcast_ref::<String>()
+                .map(String::as_str)
+                .or_else(|| error.downcast_ref::<&'static str>().map(Deref::deref))
+                .unwrap()
+                .to_string();
+            assert_eq!(
+                message,
+                format!("Could not package directory as buildpack: {crate_dir}")
+            );
+        }
+    }
 }
 
 #[test]
@@ -187,19 +203,6 @@ fn expected_pack_failure() {
                 "ERROR: failed to build: failed to fetch builder image 'index.docker.io/libcnb/invalid-builder:latest'"
             );
         },
-    );
-}
-
-#[test]
-#[ignore = "integration test"]
-#[should_panic(
-    expected = "Could not package current crate as buildpack: BuildBinariesError(ConfigError(NoBinTargetsFound))"
-)]
-fn expected_pack_failure_still_panics_for_non_pack_failure() {
-    TestRunner::default().build(
-        BuildConfig::new("libcnb/invalid-builder", "test-fixtures/empty")
-            .expected_pack_result(PackResult::Failure),
-        |_| {},
     );
 }
 

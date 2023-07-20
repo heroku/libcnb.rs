@@ -85,6 +85,12 @@ pub(crate) fn package_buildpack(
         .filter(|buildpack_package| buildpack_package.path == buildpack_dir)
         .collect::<Vec<_>>();
 
+    assert!(
+        !buildpack_packages_requested.is_empty(),
+        "Could not package directory as buildpack: {}",
+        buildpack_dir.display()
+    );
+
     let build_order = get_dependencies(&buildpack_packages_graph, &buildpack_packages_requested)
         .map_err(PackageBuildpackError::GetDependencies)?;
 
