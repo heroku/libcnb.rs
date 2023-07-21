@@ -123,7 +123,7 @@ fn starting_web_server_container() {
                     .env("PORT", TEST_PORT.to_string())
                     .expose_port(TEST_PORT),
                 |container| {
-                    let address_on_host = container.address_for_port(TEST_PORT).unwrap();
+                    let address_on_host = container.address_for_port(TEST_PORT);
                     let url = format!("http://{}:{}", address_on_host.ip(), address_on_host.port());
 
                     // Give the server time to start.
