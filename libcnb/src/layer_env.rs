@@ -35,7 +35,7 @@ use std::path::Path;
 ///
 /// To apply a `LayerEnv` delta to a given `Env`, use [`LayerEnv::apply`] like so:
 /// ```
-/// use libcnb::layer_env::{LayerEnv, Scope, ModificationBehavior};
+/// use libcnb::layer_env::{LayerEnv, ModificationBehavior, Scope};
 /// use libcnb::Env;
 ///
 /// let mut layer_env = LayerEnv::new();
@@ -63,8 +63,8 @@ use std::path::Path;
 /// from disk:
 /// ```
 /// use libcnb::layer_env::{LayerEnv, Scope};
-/// use tempfile::tempdir;
 /// use std::fs;
+/// use tempfile::tempdir;
 ///
 /// // Create a bogus layer directory
 /// let temp_dir = tempdir().unwrap();
@@ -120,7 +120,7 @@ impl LayerEnv {
     ///
     /// # Example:
     /// ```
-    /// use libcnb::layer_env::{LayerEnv, Scope, ModificationBehavior};
+    /// use libcnb::layer_env::{LayerEnv, ModificationBehavior, Scope};
     /// use libcnb::Env;
     ///
     /// let mut layer_env = LayerEnv::new();
@@ -171,7 +171,7 @@ impl LayerEnv {
     ///
     /// # Example:
     /// ```
-    /// use libcnb::layer_env::{LayerEnv, Scope, ModificationBehavior};
+    /// use libcnb::layer_env::{LayerEnv, ModificationBehavior, Scope};
     ///
     /// let mut layer_env = LayerEnv::new();
     /// layer_env.insert(Scope::All, ModificationBehavior::Default, "VAR", "hello");
@@ -224,18 +224,8 @@ impl LayerEnv {
     ///
     /// something_that_needs_layer_env(
     ///     LayerEnv::new()
-    ///         .chainable_insert(
-    ///             Scope::All,
-    ///             ModificationBehavior::Default,
-    ///             "VAR",
-    ///             "hello",
-    ///         )
-    ///         .chainable_insert(
-    ///             Scope::All,
-    ///             ModificationBehavior::Append,
-    ///             "VAR2",
-    ///             "bar",
-    ///         ),
+    ///         .chainable_insert(Scope::All, ModificationBehavior::Default, "VAR", "hello")
+    ///         .chainable_insert(Scope::All, ModificationBehavior::Append, "VAR2", "bar"),
     /// );
     /// ```
     #[must_use]
@@ -261,8 +251,8 @@ impl LayerEnv {
     /// # Example:
     /// ```
     /// use libcnb::layer_env::{LayerEnv, Scope};
-    /// use tempfile::tempdir;
     /// use std::fs;
+    /// use tempfile::tempdir;
     ///
     /// // Create a bogus layer directory
     /// let temp_dir = tempdir().unwrap();
@@ -271,13 +261,20 @@ impl LayerEnv {
     ///
     /// let layer_env_dir = layer_dir.join("env");
     /// fs::create_dir_all(&layer_env_dir).unwrap();
-    /// fs::write(layer_env_dir.join("ZERO_WING.default"), "ALL_YOUR_BASE_ARE_BELONG_TO_US").unwrap();
+    /// fs::write(
+    ///     layer_env_dir.join("ZERO_WING.default"),
+    ///     "ALL_YOUR_BASE_ARE_BELONG_TO_US",
+    /// )
+    /// .unwrap();
     ///
     /// let layer_env = LayerEnv::read_from_layer_dir(&layer_dir).unwrap();
     /// let env = layer_env.apply_to_empty(Scope::Launch);
     ///
     /// assert_eq!(env.get("PATH").cloned().unwrap(), layer_dir.join("bin"));
-    /// assert_eq!(env.get("ZERO_WING").cloned().unwrap(), "ALL_YOUR_BASE_ARE_BELONG_TO_US");
+    /// assert_eq!(
+    ///     env.get("ZERO_WING").cloned().unwrap(),
+    ///     "ALL_YOUR_BASE_ARE_BELONG_TO_US"
+    /// );
     /// ```
     pub fn read_from_layer_dir(layer_dir: impl AsRef<Path>) -> Result<Self, std::io::Error> {
         let mut result_layer_env = Self::new();
@@ -338,19 +335,30 @@ impl LayerEnv {
     ///
     /// Example:
     /// ```
-    /// use libcnb::layer_env::{LayerEnv, Scope, ModificationBehavior};
-    /// use tempfile::tempdir;
+    /// use libcnb::layer_env::{LayerEnv, ModificationBehavior, Scope};
     /// use std::fs;
+    /// use tempfile::tempdir;
     ///
     /// let mut layer_env = LayerEnv::new();
     /// layer_env.insert(Scope::Build, ModificationBehavior::Default, "FOO", "bar");
-    /// layer_env.insert(Scope::All, ModificationBehavior::Append, "PATH", "some-path");
+    /// layer_env.insert(
+    ///     Scope::All,
+    ///     ModificationBehavior::Append,
+    ///     "PATH",
+    ///     "some-path",
+    /// );
     ///
     /// let temp_dir = tempdir().unwrap();
     /// layer_env.write_to_layer_dir(&temp_dir).unwrap();
     ///
-    /// assert_eq!(fs::read_to_string(temp_dir.path().join("env.build").join("FOO.default")).unwrap(), "bar");
-    /// assert_eq!(fs::read_to_string(temp_dir.path().join("env").join("PATH.append")).unwrap(), "some-path");
+    /// assert_eq!(
+    ///     fs::read_to_string(temp_dir.path().join("env.build").join("FOO.default")).unwrap(),
+    ///     "bar"
+    /// );
+    /// assert_eq!(
+    ///     fs::read_to_string(temp_dir.path().join("env").join("PATH.append")).unwrap(),
+    ///     "some-path"
+    /// );
     /// ```
     pub fn write_to_layer_dir(&self, layer_dir: impl AsRef<Path>) -> std::io::Result<()> {
         self.all.write_to_env_dir(layer_dir.as_ref().join("env"))?;

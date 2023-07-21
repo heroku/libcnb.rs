@@ -230,11 +230,11 @@ impl<M> LayerResultBuilder<M> {
     /// # Example
     ///
     /// ```no_run
-    /// use std::path::PathBuf;
+    /// use libcnb::data::sbom::SbomFormat;
     /// use libcnb::generic::GenericMetadata;
     /// use libcnb::layer::LayerResultBuilder;
     /// use libcnb::sbom::Sbom;
-    /// use libcnb::data::sbom::SbomFormat;
+    /// use std::path::PathBuf;
     ///
     /// # fn wrapper() -> std::io::Result<libcnb::layer::LayerResult<GenericMetadata>> {
     /// LayerResultBuilder::new(GenericMetadata::default())

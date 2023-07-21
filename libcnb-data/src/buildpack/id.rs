@@ -8,8 +8,8 @@ libcnb_newtype!(
     ///
     /// # Examples:
     /// ```
-    /// use libcnb_data::buildpack_id;
     /// use libcnb_data::buildpack::BuildpackId;
+    /// use libcnb_data::buildpack_id;
     ///
     /// let buildpack_id: BuildpackId = buildpack_id!("heroku/java");
     /// ```

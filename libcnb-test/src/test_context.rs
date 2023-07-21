@@ -132,7 +132,8 @@ impl<'a> TestContext<'a> {
     ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
     ///     |context| {
     ///         // ...
-    ///         let command_output = context.run_shell_command("for i in {1..3}; do echo \"${i}\"; done");
+    ///         let command_output =
+    ///             context.run_shell_command("for i in {1..3}; do echo \"${i}\"; done");
     ///         assert_eq!(command_output.stdout, "1\n2\n3\n");
     ///     },
     /// );
@@ -178,9 +179,9 @@ impl<'a> TestContext<'a> {
     ///
     /// # Example
     /// ```no_run
+    /// use libcnb_data::buildpack_id;
     /// use libcnb_data::sbom::SbomFormat;
     /// use libcnb_test::{BuildConfig, ContainerConfig, SbomType, TestRunner};
-    /// use libcnb_data::buildpack_id;
     ///
     /// TestRunner::default().build(
     ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app"),

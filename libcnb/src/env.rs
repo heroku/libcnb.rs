@@ -7,8 +7,8 @@ use std::ffi::{OsStr, OsString};
 ///
 /// # Examples
 /// ```
-/// use std::process::Command;
 /// use libcnb::Env;
+/// use std::process::Command;
 ///
 /// let mut env = Env::new();
 /// env.insert("FOO", "BAR");

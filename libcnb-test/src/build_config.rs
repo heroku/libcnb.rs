@@ -179,9 +179,11 @@ impl BuildConfig {
     /// use libcnb_test::{BuildConfig, TestRunner};
     ///
     /// TestRunner::default().build(
-    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app").app_dir_preprocessor(|app_dir| {
-    ///         std::fs::remove_file(app_dir.join("Procfile")).unwrap();
-    ///     }),
+    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app").app_dir_preprocessor(
+    ///         |app_dir| {
+    ///             std::fs::remove_file(app_dir.join("Procfile")).unwrap();
+    ///         },
+    ///     ),
     ///     |context| {
     ///         // ...
     ///     },

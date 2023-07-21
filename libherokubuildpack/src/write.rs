@@ -152,17 +152,14 @@ pub mod mappers {
     ///
     /// # Example
     /// ```no_run
+    /// use libherokubuildpack::command::CommandExt;
     /// use libherokubuildpack::write::line_mapped;
     /// use libherokubuildpack::write::mappers::add_prefix;
-    /// use libherokubuildpack::command::CommandExt;
     /// use std::process::Command;
     ///
     /// Command::new("date")
     ///     .spawn_and_write_streams(
-    ///         line_mapped(
-    ///             std::io::stdout(),
-    ///             add_prefix("date stdout> "),
-    ///         ),
+    ///         line_mapped(std::io::stdout(), add_prefix("date stdout> ")),
     ///         std::io::stderr(),
     ///     )
     ///     .and_then(|mut child| child.wait())
@@ -182,9 +179,9 @@ pub mod mappers {
     ///
     /// # Example
     /// ```no_run
+    /// use libherokubuildpack::command::CommandExt;
     /// use libherokubuildpack::write::line_mapped;
     /// use libherokubuildpack::write::mappers::map_utf8_lossy;
-    /// use libherokubuildpack::command::CommandExt;
     /// use std::process::Command;
     ///
     /// Command::new("date")

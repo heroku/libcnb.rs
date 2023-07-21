@@ -8,8 +8,8 @@ libcnb_newtype!(
     ///
     /// # Examples:
     /// ```
-    /// use libcnb_data::stack_id;
     /// use libcnb_data::buildpack::StackId;
+    /// use libcnb_data::stack_id;
     ///
     /// let stack_id: StackId = stack_id!("heroku-20");
     /// ```
