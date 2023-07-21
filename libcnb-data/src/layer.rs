@@ -8,8 +8,8 @@ libcnb_newtype!(
     ///
     /// # Examples:
     /// ```
-    /// use libcnb_data::layer_name;
     /// use libcnb_data::layer::LayerName;
+    /// use libcnb_data::layer_name;
     ///
     /// let layer_name: LayerName = layer_name!("foobar");
     /// ```

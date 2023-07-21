@@ -17,7 +17,12 @@ use syn::Token;
 /// doesn't match but it might work for other use-cases as well.
 ///
 /// ```
-/// libcnb_proc_macros::verify_regex!("^A-Z+$", "foobar", println!("It did match!"), println!("It did not match!"));
+/// libcnb_proc_macros::verify_regex!(
+///     "^A-Z+$",
+///     "foobar",
+///     println!("It did match!"),
+///     println!("It did not match!")
+/// );
 /// ```
 #[proc_macro]
 pub fn verify_regex(input: TokenStream) -> TokenStream {

@@ -17,7 +17,10 @@ use sha2::{Digest, Sha256};
 ///
 /// write(&temp_file, "Hello World!").unwrap();
 /// let sha256_sum = sha256(&temp_file).unwrap();
-/// assert_eq!(sha256_sum, "7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069");
+/// assert_eq!(
+///     sha256_sum,
+///     "7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069"
+/// );
 /// ```
 pub fn sha256(path: impl AsRef<Path>) -> Result<String, std::io::Error> {
     let mut file = fs::File::open(path.as_ref())?;

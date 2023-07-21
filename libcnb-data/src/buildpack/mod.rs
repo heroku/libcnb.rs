@@ -44,10 +44,16 @@ pub use version::*;
 /// id = "*"
 /// "#;
 ///
-/// let buildpack_descriptor = toml::from_str::<BuildpackDescriptor<Option<toml::value::Table>>>(toml_str).expect("buildpack.toml did not match a known type!");
+/// let buildpack_descriptor =
+///     toml::from_str::<BuildpackDescriptor<Option<toml::value::Table>>>(toml_str)
+///         .expect("buildpack.toml did not match a known type!");
 /// match buildpack_descriptor {
-///     BuildpackDescriptor::Single(buildpack) => println!("Found buildpack: {}", buildpack.buildpack.id),
-///     BuildpackDescriptor::Meta(buildpack) => println!("Found meta-buildpack: {}", buildpack.buildpack.id),
+///     BuildpackDescriptor::Single(buildpack) => {
+///         println!("Found buildpack: {}", buildpack.buildpack.id);
+///     }
+///     BuildpackDescriptor::Meta(buildpack) => {
+///         println!("Found meta-buildpack: {}", buildpack.buildpack.id);
+///     }
 /// };
 /// ```
 #[derive(Deserialize, Debug)]
@@ -75,8 +81,8 @@ impl<BM> BuildpackDescriptor<BM> {
 ///
 /// # Example:
 /// ```
-/// use libcnb_data::buildpack_id;
 /// use libcnb_data::buildpack::{SingleBuildpackDescriptor, Stack};
+/// use libcnb_data::buildpack_id;
 ///
 /// let toml_str = r#"
 /// api = "0.9"
@@ -97,7 +103,8 @@ impl<BM> BuildpackDescriptor<BM> {
 /// id = "*"
 /// "#;
 ///
-/// let buildpack_descriptor = toml::from_str::<SingleBuildpackDescriptor<Option<toml::value::Table>>>(toml_str).unwrap();
+/// let buildpack_descriptor =
+///     toml::from_str::<SingleBuildpackDescriptor<Option<toml::value::Table>>>(toml_str).unwrap();
 /// assert_eq!(buildpack_descriptor.buildpack.id, buildpack_id!("foo/bar"));
 /// assert_eq!(buildpack_descriptor.stacks, vec![Stack::Any]);
 /// ```
@@ -119,8 +126,8 @@ pub struct SingleBuildpackDescriptor<BM> {
 ///
 /// # Example:
 /// ```
-/// use libcnb_data::buildpack_id;
 /// use libcnb_data::buildpack::MetaBuildpackDescriptor;
+/// use libcnb_data::buildpack_id;
 ///
 /// let toml_str = r#"
 /// api = "0.9"
@@ -144,7 +151,8 @@ pub struct SingleBuildpackDescriptor<BM> {
 /// version = "0.0.1"
 /// "#;
 ///
-/// let buildpack_descriptor = toml::from_str::<MetaBuildpackDescriptor<Option<toml::value::Table>>>(toml_str).unwrap();
+/// let buildpack_descriptor =
+///     toml::from_str::<MetaBuildpackDescriptor<Option<toml::value::Table>>>(toml_str).unwrap();
 /// assert_eq!(buildpack_descriptor.buildpack.id, buildpack_id!("foo/bar"));
 /// ```
 #[derive(Deserialize, Debug)]

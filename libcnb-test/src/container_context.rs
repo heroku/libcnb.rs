@@ -111,7 +111,9 @@ impl<'a> ContainerContext<'a> {
     ///     |context| {
     ///         // ...
     ///         context.start_container(
-    ///             ContainerConfig::new().env("PORT", "12345").expose_port(12345),
+    ///             ContainerConfig::new()
+    ///                 .env("PORT", "12345")
+    ///                 .expose_port(12345),
     ///             |container| {
     ///                 let address_on_host = container.address_for_port(12345).unwrap();
     ///                 // ...

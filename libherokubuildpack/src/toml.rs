@@ -8,17 +8,20 @@ use std::ops::Deref;
 ///
 /// Example:
 /// ```
-/// use toml::toml;
 /// use libherokubuildpack::toml::toml_select_value;
+/// use toml::toml;
 ///
-/// let toml = toml!{
+/// let toml = toml! {
 ///     [config]
 ///     [config.net]
 ///     port = 12345
 ///     host = "localhost"
 /// };
 ///
-/// assert_eq!(toml_select_value(vec!["config", "net", "port"], &toml.into()), Some(&toml::Value::from(12345)));
+/// assert_eq!(
+///     toml_select_value(vec!["config", "net", "port"], &toml.into()),
+///     Some(&toml::Value::from(12345))
+/// );
 /// ```
 pub fn toml_select_value<S: AsRef<str>, K: Deref<Target = [S]>>(
     keys: K,

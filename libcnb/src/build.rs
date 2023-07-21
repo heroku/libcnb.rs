@@ -136,10 +136,10 @@ pub(crate) enum InnerBuildResult {
 ///
 /// # Examples:
 /// ```
-/// use libcnb::build::{BuildResultBuilder, BuildResult};
+/// use libcnb::build::{BuildResult, BuildResultBuilder};
 /// use libcnb::data::launch::LaunchBuilder;
-/// use libcnb::data::process_type;
 /// use libcnb::data::launch::ProcessBuilder;
+/// use libcnb::data::process_type;
 ///
 /// let simple: Result<BuildResult, ()> = BuildResultBuilder::new().build();
 ///

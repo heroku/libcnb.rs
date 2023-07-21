@@ -59,7 +59,10 @@ const LIBCNB_SUPPORTED_BUILDPACK_API: data::buildpack::BuildpackApi =
 ///     type Metadata = GenericMetadata;
 ///     type Error = GenericError;
 ///
-///     fn detect(&self, context: DetectContext<Self>) -> libcnb::Result<DetectResult, Self::Error> {
+///     fn detect(
+///         &self,
+///         context: DetectContext<Self>,
+///     ) -> libcnb::Result<DetectResult, Self::Error> {
 ///         DetectResultBuilder::pass().build()
 ///     }
 ///

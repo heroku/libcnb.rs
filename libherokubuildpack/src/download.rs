@@ -14,15 +14,18 @@ pub enum DownloadError {
 ///
 /// # Examples
 /// ```
-/// use libherokubuildpack::download::download_file;
 /// use libherokubuildpack::digest::sha256;
+/// use libherokubuildpack::download::download_file;
 /// use tempfile::tempdir;
 ///
 /// let temp_dir = tempdir().unwrap();
 /// let temp_file = temp_dir.path().join("result.bin");
 ///
 /// download_file("https://example.com/", &temp_file).unwrap();
-/// assert_eq!(sha256(&temp_file).unwrap(), "ea8fac7c65fb589b0d53560f5251f74f9e9b243478dcb6b3ea79b5e36449c8d9");
+/// assert_eq!(
+///     sha256(&temp_file).unwrap(),
+///     "ea8fac7c65fb589b0d53560f5251f74f9e9b243478dcb6b3ea79b5e36449c8d9"
+/// );
 /// ```
 pub fn download_file(
     uri: impl AsRef<str>,
