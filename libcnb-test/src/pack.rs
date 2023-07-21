@@ -87,48 +87,42 @@ impl From<PackBuildCommand> for Command {
     fn from(pack_build_command: PackBuildCommand) -> Self {
         let mut command = Self::new("pack");
 
-        let mut args = vec![
-            String::from("build"),
-            pack_build_command.image_name,
-            String::from("--builder"),
-            pack_build_command.builder,
-            String::from("--path"),
-            pack_build_command.path.to_string_lossy().to_string(),
-            String::from("--pull-policy"),
+        command.args([
+            "build",
+            &pack_build_command.image_name,
+            "--builder",
+            &pack_build_command.builder,
+            "--path",
+            &pack_build_command.path.to_string_lossy(),
+            "--pull-policy",
             match pack_build_command.pull_policy {
-                PullPolicy::Always => "always".to_string(),
-                PullPolicy::IfNotPresent => "if-not-present".to_string(),
-                PullPolicy::Never => "never".to_string(),
+                PullPolicy::Always => "always",
+                PullPolicy::IfNotPresent => "if-not-present",
+                PullPolicy::Never => "never",
             },
-        ];
+        ]);
 
         for buildpack in pack_build_command.buildpacks {
-            args.push(String::from("--buildpack"));
-
-            match buildpack {
-                BuildpackReference::Id(id) => {
-                    args.push(id);
-                }
-                BuildpackReference::Path(path_buf) => {
-                    args.push(path_buf.to_string_lossy().to_string());
-                }
-            }
+            command.args([
+                "--buildpack",
+                &match buildpack {
+                    BuildpackReference::Id(id) => id,
+                    BuildpackReference::Path(path_buf) => path_buf.to_string_lossy().to_string(),
+                },
+            ]);
         }
 
         for (env_key, env_value) in &pack_build_command.env {
-            args.push(String::from("--env"));
-            args.push(format!("{env_key}={env_value}"));
+            command.args(["--env", &format!("{env_key}={env_value}")]);
         }
 
         if pack_build_command.trust_builder {
-            args.push(String::from("--trust-builder"));
+            command.arg("--trust-builder");
         }
 
         if pack_build_command.verbose {
-            args.push(String::from("--verbose"));
+            command.arg("--verbose");
         }
-
-        command.args(args);
 
         command
     }
@@ -159,18 +153,11 @@ impl From<PackSbomDownloadCommand> for Command {
     fn from(pack_command: PackSbomDownloadCommand) -> Self {
         let mut command = Self::new("pack");
 
-        let mut args = vec![
-            String::from("sbom"),
-            String::from("download"),
-            pack_command.image_name,
-        ];
+        command.args(["sbom", "download", &pack_command.image_name]);
 
         if let Some(output_dir) = pack_command.output_dir {
-            args.push(String::from("--output-dir"));
-            args.push(String::from(output_dir.to_string_lossy()));
+            command.args(["--output-dir", &output_dir.to_string_lossy()]);
         }
-
-        command.args(args);
 
         command
     }
