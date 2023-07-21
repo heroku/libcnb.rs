@@ -113,15 +113,20 @@ impl<'a> ContainerContext<'a> {
     ///         context.start_container(
     ///             ContainerConfig::new().env("PORT", "12345").expose_port(12345),
     ///             |container| {
-    ///                 let address_on_host = container.address_for_port(12345).unwrap();
+    ///                 let address_on_host = container.address_for_port(12345);
     ///                 // ...
     ///             },
     ///         );
     ///     },
     /// );
     /// ```
+    ///
+    /// # Panics
+    ///
+    /// Will panic if there was an error obtaining the container port mapping, or the specified port
+    /// was not exposed using [`ContainerConfig::expose_port`](crate::ContainerConfig::expose_port).
     #[must_use]
-    pub fn address_for_port(&self, port: u16) -> Option<SocketAddr> {
+    pub fn address_for_port(&self, port: u16) -> SocketAddr {
         self.test_context.runner.tokio_runtime.block_on(async {
             self.test_context
                 .runner
@@ -137,6 +142,7 @@ impl<'a> ContainerContext<'a> {
                         .get(&port)
                         .copied()
                 })
+                .expect("Could not find specified port in container port mapping")
         })
     }
 

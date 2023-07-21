@@ -35,7 +35,7 @@ fn basic() {
 
                 assert_eq!(
                     call_test_fixture_service(
-                        container.address_for_port(TEST_PORT).unwrap(),
+                        container.address_for_port(TEST_PORT),
                         "Hello World!"
                     )
                     .unwrap(),
