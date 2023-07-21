@@ -1,6 +1,6 @@
 use bollard::container::Config;
 use bollard::models::{HostConfig, PortBinding, PortMap};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::net::{AddrParseError, SocketAddr};
 use std::num::ParseIntError;
 
@@ -67,7 +67,9 @@ fn parse_port_map_entry(
 /// Create a new Bollard container config with the given exposed ports.
 ///
 /// The exposed ports will be forwarded to random ports on the host.
-pub(crate) fn port_mapped_container_config(ports: &[u16]) -> bollard::container::Config<String> {
+pub(crate) fn port_mapped_container_config(
+    ports: &HashSet<u16>,
+) -> bollard::container::Config<String> {
     Config {
         host_config: Some(HostConfig {
             port_bindings: Some(
@@ -174,7 +176,7 @@ mod tests {
 
     #[test]
     fn port_mapped_container_config_simple() {
-        let config = port_mapped_container_config(&[80, 443, 22]);
+        let config = port_mapped_container_config(&HashSet::from([80, 443, 22]));
 
         assert_eq!(
             config.exposed_ports,

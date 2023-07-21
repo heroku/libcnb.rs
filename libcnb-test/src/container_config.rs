@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 /// Config used when starting a container.
 ///
@@ -28,7 +28,7 @@ pub struct ContainerConfig {
     pub(crate) entrypoint: Option<Vec<String>>,
     pub(crate) command: Option<Vec<String>>,
     pub(crate) env: HashMap<String, String>,
-    pub(crate) exposed_ports: Vec<u16>,
+    pub(crate) exposed_ports: HashSet<u16>,
 }
 
 impl ContainerConfig {
@@ -136,7 +136,7 @@ impl ContainerConfig {
     /// );
     /// ```
     pub fn expose_port(&mut self, port: u16) -> &mut Self {
-        self.exposed_ports.push(port);
+        self.exposed_ports.insert(port);
         self
     }
 
