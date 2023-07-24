@@ -226,7 +226,7 @@ pub(crate) struct PackBuildpackPackageCommand {
 }
 
 impl PackBuildpackPackageCommand {
-    pub fn new(name: impl Into<String>, config: impl Into<PathBuf>) -> Self {
+    pub(crate) fn new(name: impl Into<String>, config: impl Into<PathBuf>) -> Self {
         Self {
             name: name.into(),
             config: config.into(),
