@@ -79,7 +79,7 @@ pub(crate) fn port_mapped_container_config(
                         (
                             format!("{port}/tcp"),
                             Some(vec![PortBinding {
-                                host_ip: None,
+                                host_ip: Some(String::from("127.0.0.1")),
                                 host_port: None,
                             }]),
                         )
@@ -205,21 +205,21 @@ mod tests {
                 (
                     String::from("80/tcp"),
                     Some(vec![PortBinding {
-                        host_ip: None,
+                        host_ip: Some(String::from("127.0.0.1")),
                         host_port: None,
                     }]),
                 ),
                 (
                     String::from("443/tcp"),
                     Some(vec![PortBinding {
-                        host_ip: None,
+                        host_ip: Some(String::from("127.0.0.1")),
                         host_port: None,
                     }]),
                 ),
                 (
                     String::from("22/tcp"),
                     Some(vec![PortBinding {
-                        host_ip: None,
+                        host_ip: Some(String::from("127.0.0.1")),
                         host_port: None,
                     }]),
                 )

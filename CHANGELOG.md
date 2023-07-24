@@ -18,6 +18,10 @@ libcnb package` will refer to the new locations. ([#580](https://github.com/hero
 - `libherokubuildpack`: Switch the `flate2` decompression backend from `miniz_oxide` to `zlib`. ([#593](https://github.com/heroku/libcnb.rs/pull/593))
 - Bump minimum external dependency versions. ([#587](https://github.com/heroku/libcnb.rs/pull/587))
 
+### Fixed
+
+- `libcnb-test`: `ContainerContext::expose_port` now only exposes the port to localhost. ([#610](https://github.com/heroku/libcnb.rs/pull/610))
+
 ## [0.13.0] 2023-06-21
 
 The highlight of this release is the `cargo libcnb package` changes to support compilation of both buildpacks and meta-buildpacks.
