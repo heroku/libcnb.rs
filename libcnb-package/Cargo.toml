@@ -12,7 +12,7 @@ readme = "README.md"
 include = ["src/**/*", "LICENSE", "README.md"]
 
 [dependencies]
-cargo_metadata = "0.15.4"
+cargo_metadata = "0.17.0"
 libcnb-data.workspace = true
 petgraph = { version = "0.6.3", default-features = false }
 toml.workspace = true
