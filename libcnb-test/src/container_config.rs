@@ -27,7 +27,7 @@ use std::collections::{HashMap, HashSet};
 /// ```
 #[derive(Default)]
 pub struct ContainerConfig {
-    pub(crate) entrypoint: Option<Vec<String>>,
+    pub(crate) entrypoint: Option<String>,
     pub(crate) command: Option<Vec<String>>,
     pub(crate) env: HashMap<String, String>,
     pub(crate) exposed_ports: HashSet<u16>,
@@ -76,17 +76,14 @@ impl ContainerConfig {
     ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
     ///     |context| {
     ///         // ...
-    ///         context.start_container(ContainerConfig::new().entrypoint(["worker"]), |container| {
+    ///         context.start_container(ContainerConfig::new().entrypoint("worker"), |container| {
     ///             // ...
     ///         });
     ///     },
     /// );
     /// ```
-    pub fn entrypoint<I: IntoIterator<Item = S>, S: Into<String>>(
-        &mut self,
-        entrypoint: I,
-    ) -> &mut Self {
-        self.entrypoint = Some(entrypoint.into_iter().map(S::into).collect());
+    pub fn entrypoint(&mut self, entrypoint: impl Into<String>) -> &mut Self {
+        self.entrypoint = Some(entrypoint.into());
         self
     }
 

@@ -310,7 +310,7 @@ fn starting_containers() {
             );
 
             // Overriding the default entrypoint, but using the default command.
-            context.start_container(ContainerConfig::new().entrypoint(["worker"]), |container| {
+            context.start_container(ContainerConfig::new().entrypoint("worker"), |container| {
                 let all_log_output = container.logs_wait();
                 assert_empty!(all_log_output.stderr);
                 assert_eq!(all_log_output.stdout, "this is the worker process!\n");
@@ -319,7 +319,7 @@ fn starting_containers() {
             // Overriding both the entrypoint and command.
             context.start_container(
                 ContainerConfig::new()
-                    .entrypoint(["echo-args"])
+                    .entrypoint("echo-args")
                     .command(["$GREETING", "$DESIGNATION"])
                     .envs([("GREETING", "Hello"), ("DESIGNATION", "World")]),
                 |container| {
@@ -339,16 +339,20 @@ fn starting_containers() {
 
 #[test]
 #[ignore = "integration test"]
-#[should_panic(
-    expected = "unable to start container process: exec: \\\"nonexistent-command\\\": executable file not found in $PATH"
-)]
+#[should_panic(expected = "Error starting container:
+
+docker command failed with exit code 127!
+
+## stderr:
+
+docker: Error response from daemon:")]
 fn start_container_spawn_failure() {
     TestRunner::default().build(
         BuildConfig::new("heroku/builder:22", "test-fixtures/procfile")
             .buildpacks([BuildpackReference::Other(String::from(PROCFILE_URL))]),
         |context| {
             context.start_container(
-                ContainerConfig::new().entrypoint(["nonexistent-command"]),
+                ContainerConfig::new().entrypoint("nonexistent-command"),
                 |_| {
                     unreachable!("The test should fail before the ContainerContext is invoked.");
                 },
@@ -359,7 +363,13 @@ fn start_container_spawn_failure() {
 
 #[test]
 #[ignore = "integration test"]
-#[should_panic(expected = "is not running")]
+#[should_panic(expected = "Error performing docker exec:
+
+docker command failed with exit code 1!
+
+## stderr:
+
+Error response from daemon:")]
 fn shell_exec_when_container_has_crashed() {
     TestRunner::default().build(
         BuildConfig::new("heroku/builder:22", "test-fixtures/procfile")
@@ -367,7 +377,7 @@ fn shell_exec_when_container_has_crashed() {
         |context| {
             context.start_container(
                 ContainerConfig::new()
-                    .entrypoint(["launcher"])
+                    .entrypoint("launcher")
                     .command(["exit 1"]),
                 |container| {
                     thread::sleep(Duration::from_secs(1));
@@ -380,8 +390,18 @@ fn shell_exec_when_container_has_crashed() {
 
 #[test]
 #[ignore = "integration test"]
-// TODO: This test should panic: https://github.com/heroku/libcnb.rs/issues/446
-// #[should_panic(expected = "TODO")]
+#[should_panic(expected = "Error performing docker exec:
+
+docker command failed with exit code 1!
+
+## stderr:
+
+some stderr
+
+## stdout:
+
+some stdout
+")]
 fn shell_exec_nonzero_exit_status() {
     TestRunner::default().build(
         BuildConfig::new("heroku/builder:22", "test-fixtures/procfile")
@@ -397,8 +417,18 @@ fn shell_exec_nonzero_exit_status() {
 
 #[test]
 #[ignore = "integration test"]
-// TODO: This test should panic: https://github.com/heroku/libcnb.rs/issues/446
-// #[should_panic(expected = "TODO")]
+#[should_panic(expected = "Error running container:
+
+docker command failed with exit code 1!
+
+## stderr:
+
+some stderr
+
+## stdout:
+
+some stdout
+")]
 fn run_shell_command_nonzero_exit_status() {
     TestRunner::default().build(
         BuildConfig::new("heroku/builder:22", "test-fixtures/procfile")
@@ -418,7 +448,7 @@ fn logs_work_after_container_crashed() {
         |context| {
             context.start_container(
                 ContainerConfig::new()
-                    .entrypoint(["launcher"])
+                    .entrypoint("launcher")
                     .command(["echo 'some stdout'; echo 'some stderr' >&2; exit 1"]),
                 |container| {
                     thread::sleep(Duration::from_secs(1));
@@ -448,7 +478,13 @@ fn expose_port_invalid_port() {
 
 #[test]
 #[ignore = "integration test"]
-#[should_panic(expected = "Could not find specified port in container port mapping")]
+#[should_panic(expected = "Error obtaining container port mapping:
+
+docker command failed with exit code 1!
+
+## stderr:
+
+Error: No public port '12345")]
 fn address_for_port_when_port_not_exposed() {
     TestRunner::default().build(
         BuildConfig::new("heroku/builder:22", "test-fixtures/procfile")
@@ -464,7 +500,13 @@ fn address_for_port_when_port_not_exposed() {
 #[test]
 #[ignore = "integration test"]
 // TODO: Improve the UX here: https://github.com/heroku/libcnb.rs/issues/482
-#[should_panic(expected = "Could not find specified port in container port mapping")]
+#[should_panic(expected = "Error obtaining container port mapping:
+
+docker command failed with exit code 1!
+
+## stderr:
+
+Error: No public port '12345")]
 fn address_for_port_when_container_crashed() {
     TestRunner::default().build(
         BuildConfig::new("heroku/builder:22", "test-fixtures/procfile")
@@ -472,7 +514,7 @@ fn address_for_port_when_container_crashed() {
         |context| {
             context.start_container(
                 ContainerConfig::new()
-                    .entrypoint(["launcher"])
+                    .entrypoint("launcher")
                     .command(["exit 1"])
                     .expose_port(TEST_PORT),
                 |container| {

@@ -1,10 +1,6 @@
+use crate::docker::{DockerRemoveImageCommand, DockerRunCommand};
 use crate::pack::PackSbomDownloadCommand;
-use crate::{
-    container_port_mapping, util, BuildConfig, ContainerConfig, ContainerContext, LogOutput,
-    TestRunner,
-};
-use bollard::container::{Config, CreateContainerOptions, StartContainerOptions};
-use bollard::image::RemoveImageOptions;
+use crate::{util, BuildConfig, ContainerConfig, ContainerContext, LogOutput, TestRunner};
 use libcnb_data::buildpack::BuildpackId;
 use libcnb_data::layer::LayerName;
 use libcnb_data::sbom::SbomFormat;
@@ -46,7 +42,7 @@ impl<'a> TestContext<'a> {
     ///
     ///         // Start the container using the specified process-type:
     ///         // https://buildpacks.io/docs/app-developer-guide/run-an-app/#non-default-process-type
-    ///         context.start_container(ContainerConfig::new().entrypoint(["worker"]), |container| {
+    ///         context.start_container(ContainerConfig::new().entrypoint("worker"), |container| {
     ///             // ...
     ///         });
     ///
@@ -54,7 +50,7 @@ impl<'a> TestContext<'a> {
     ///         // https://buildpacks.io/docs/app-developer-guide/run-an-app/#non-default-process-type-with-additional-arguments
     ///         context.start_container(
     ///             ContainerConfig::new()
-    ///                 .entrypoint(["another-process"])
+    ///                 .entrypoint("another-process")
     ///                 .command(["--additional-arg"]),
     ///             |container| {
     ///                 // ...
@@ -67,7 +63,7 @@ impl<'a> TestContext<'a> {
     ///         // otherwise use the convenience function `TestContext::run_shell_command` instead.
     ///         context.start_container(
     ///             ContainerConfig::new()
-    ///                 .entrypoint(["launcher"])
+    ///                 .entrypoint("launcher")
     ///                 .command(["for i in {1..3}; do echo \"${i}\"; done"]),
     ///             |container| {
     ///                 // ...
@@ -90,38 +86,30 @@ impl<'a> TestContext<'a> {
         let config = config.borrow();
         let container_name = util::random_docker_identifier();
 
-        self.runner.tokio_runtime.block_on(async {
-            self.runner
-                .docker
-                .create_container(
-                    Some(CreateContainerOptions {
-                        name: container_name.clone(),
-                        ..CreateContainerOptions::default()
-                    }),
-                    Config {
-                        image: Some(self.image_name.clone()),
-                        env: Some(config.env.iter().map(|(k, v)| format!("{k}={v}")).collect()),
-                        entrypoint: config.entrypoint.clone(),
-                        cmd: config.command.clone(),
-                        ..container_port_mapping::port_mapped_container_config(
-                            &config.exposed_ports,
-                        )
-                    },
-                )
-                .await
-                .expect("Could not create container");
+        let mut docker_run_command = DockerRunCommand::new(&self.image_name, &container_name);
+        docker_run_command.detach(true);
+        docker_run_command.platform(self.determine_container_platform());
 
-            self.runner
-                .docker
-                .start_container(&container_name, None::<StartContainerOptions<String>>)
-                .await
-                .expect("Could not start container");
+        if let Some(entrypoint) = &config.entrypoint {
+            docker_run_command.entrypoint(entrypoint);
+        }
+
+        if let Some(command) = &config.command {
+            docker_run_command.command(command);
+        }
+
+        config.env.iter().for_each(|(key, value)| {
+            docker_run_command.env(key, value);
         });
 
-        f(ContainerContext {
-            container_name,
-            test_context: self,
+        config.exposed_ports.iter().for_each(|port| {
+            docker_run_command.expose_port(*port);
         });
+
+        util::run_command(docker_run_command)
+            .unwrap_or_else(|command_err| panic!("Error starting container:\n\n{command_err}"));
+
+        f(ContainerContext { container_name });
     }
 
     /// Run the provided shell command.
@@ -145,7 +133,7 @@ impl<'a> TestContext<'a> {
     /// );
     /// ```
     ///
-    /// This is a convenience function for running shell commands inside the image, and is equivalent to:
+    /// This is a convenience function for running shell commands inside the image, that is roughly equivalent to:
     /// ```no_run
     /// use libcnb_test::{BuildConfig, ContainerConfig, TestRunner};
     ///
@@ -155,7 +143,7 @@ impl<'a> TestContext<'a> {
     ///         // ...
     ///         context.start_container(
     ///             ContainerConfig::new()
-    ///                 .entrypoint(["launcher"])
+    ///                 .entrypoint("launcher")
     ///                 .command(["for i in {1..3}; do echo \"${i}\"; done"]),
     ///             |container| {
     ///                 let log_output = container.logs_wait();
@@ -166,23 +154,38 @@ impl<'a> TestContext<'a> {
     /// );
     /// ```
     ///
+    /// However, in addition to requiring less boilerplate, `run_shell_command` is also able
+    /// to validate the exit status of the container, so should be used instead of `start_container`
+    /// where possible.
+    ///
     /// # Panics
     ///
-    /// Panics if there was an error starting the container.
-    ///
-    /// Note: Does not currently panic if the command exits with a non-zero status code due to:
-    /// <https://github.com/heroku/libcnb.rs/issues/446>
+    /// Panics if there was an error starting the container, or the command exited with a non-zero
+    /// exit code.
     pub fn run_shell_command(&self, command: impl Into<String>) -> LogOutput {
-        let mut log_output = LogOutput::default();
-        self.start_container(
-            ContainerConfig::new()
-                .entrypoint(vec![util::CNB_LAUNCHER_BINARY])
-                .command(&[command.into()]),
-            |context| {
-                log_output = context.logs_wait();
-            },
-        );
-        log_output
+        let mut docker_run_command =
+            DockerRunCommand::new(&self.image_name, util::random_docker_identifier());
+        docker_run_command
+            .remove(true)
+            .platform(self.determine_container_platform())
+            .entrypoint(util::CNB_LAUNCHER_BINARY)
+            .command([command.into()]);
+
+        util::run_command(docker_run_command)
+            .unwrap_or_else(|command_err| panic!("Error running container:\n\n{command_err}"))
+    }
+
+    // We set an explicit platform when starting containers to prevent the Docker CLI's
+    // "no specific platform was requested" warning from cluttering the captured logs.
+    fn determine_container_platform(&self) -> &str {
+        match self.config.target_triple.as_str() {
+            "aarch64-unknown-linux-musl" => "linux/arm64",
+            "x86_64-unknown-linux-musl" => "linux/amd64",
+            _ => unimplemented!(
+                "Unable to determine container platform from target triple '{}'. Please file a GitHub issue.",
+                self.config.target_triple
+            ),
+        }
     }
 
     /// Downloads SBOM files from the built image into a temporary directory.
@@ -267,19 +270,8 @@ impl<'a> TestContext<'a> {
 
 impl<'a> Drop for TestContext<'a> {
     fn drop(&mut self) {
-        // We do not care if image removal succeeded or not. Panicking here would result in
-        // SIGILL since this function might be called in a Tokio runtime.
-        let _image_delete_result =
-            self.runner
-                .tokio_runtime
-                .block_on(self.runner.docker.remove_image(
-                    &self.image_name,
-                    Some(RemoveImageOptions {
-                        force: true,
-                        ..RemoveImageOptions::default()
-                    }),
-                    None,
-                ));
+        util::run_command(DockerRemoveImageCommand::new(&self.image_name))
+            .unwrap_or_else(|command_err| panic!("Error removing Docker image:\n\n{command_err}"));
     }
 }
 
