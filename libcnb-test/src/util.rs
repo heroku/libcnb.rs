@@ -9,7 +9,7 @@ pub(crate) fn random_docker_identifier() -> String {
     format!(
         "libcnbtest_{}",
         repeat_with(fastrand::lowercase)
-            .take(30)
+            .take(12)
             .collect::<String>()
     )
 }
