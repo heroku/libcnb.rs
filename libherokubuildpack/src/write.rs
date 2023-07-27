@@ -95,6 +95,7 @@ impl<W: io::Write + Debug> Debug for MappedWrite<W> {
             .field("inner", &self.inner)
             .field("marker_byte", &self.marker_byte)
             .field("buffer", &self.buffer)
+            .field("mapping_fn", &"Fn()")
             .finish()
     }
 }

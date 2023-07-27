@@ -38,6 +38,10 @@ impl<'a> ContainerContext<'a> {
     ///     },
     /// );
     /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if there was an error retrieving the logs from the container.
     #[must_use]
     pub fn logs_now(&self) -> LogOutput {
         self.logs_internal(bollard::container::LogsOptions {
@@ -72,6 +76,10 @@ impl<'a> ContainerContext<'a> {
     ///     },
     /// );
     /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if there was an error retrieving the logs from the container.
     #[must_use]
     pub fn logs_wait(&self) -> LogOutput {
         self.logs_internal(bollard::container::LogsOptions {
@@ -165,6 +173,14 @@ impl<'a> ContainerContext<'a> {
     ///     },
     /// );
     /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if it was not possible to exec into the container, or if there was an error
+    /// retrieving the logs from the exec command.
+    ///
+    /// Note: Does not currently panic if the command exits with a non-zero status code due to:
+    /// <https://github.com/heroku/libcnb.rs/issues/446>
     pub fn shell_exec(&self, command: impl AsRef<str>) -> LogOutput {
         self.test_context.runner.tokio_runtime.block_on(async {
             let create_exec_result = self

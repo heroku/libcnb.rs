@@ -12,8 +12,7 @@ pub fn cross_compile_assistance(target_triple: impl AsRef<str>) -> CrossCompileA
         // There is more than just one binary name here since we also support the binary name for
         // an older version cross_compile_assistance which suggested installing a different
         // toolchain.
-        let possible_gcc_binary_names =
-            vec!["x86_64-unknown-linux-musl-gcc", "x86_64-linux-musl-gcc"];
+        let possible_gcc_binary_names = ["x86_64-unknown-linux-musl-gcc", "x86_64-linux-musl-gcc"];
 
         possible_gcc_binary_names
             .iter()

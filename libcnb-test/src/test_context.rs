@@ -76,6 +76,12 @@ impl<'a> TestContext<'a> {
     ///     },
     /// );
     /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if there was an error starting the container, such as when the specified entrypoint/command cannot be found.
+    ///
+    /// Note: Does not panic if the container exits after starting (including if it crashes and exits non-zero).
     pub fn start_container<C: Borrow<ContainerConfig>, F: FnOnce(ContainerContext)>(
         &self,
         config: C,
@@ -159,6 +165,13 @@ impl<'a> TestContext<'a> {
     ///     },
     /// );
     /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if there was an error starting the container.
+    ///
+    /// Note: Does not currently panic if the command exits with a non-zero status code due to:
+    /// <https://github.com/heroku/libcnb.rs/issues/446>
     pub fn run_shell_command(&self, command: impl Into<String>) -> LogOutput {
         let mut log_output = LogOutput::default();
         self.start_container(
@@ -198,6 +211,11 @@ impl<'a> TestContext<'a> {
     ///     },
     /// );
     /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if there was an error creating the temporary directory used to store the
+    /// SBOM files, or if the Pack CLI command used to download the SBOM files failed.
     pub fn download_sbom_files<R, F: Fn(SbomFiles) -> R>(&self, f: F) -> R {
         let temp_dir = tempdir().expect("Could not create temporary directory for SBOM files");
 
