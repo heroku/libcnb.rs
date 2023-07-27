@@ -4,6 +4,10 @@ use std::io::BufWriter;
 use std::io::Write;
 
 /// Writes the output of a CNB exec.d program in a spec compliant way.
+///
+/// # Panics
+///
+/// Panics if there was an error serializing the TOML output or writing to FD 3.
 pub fn write_exec_d_program_output<O: Into<ExecDProgramOutput>>(o: O) {
     // Allow compilation of exec.d programs under windows, but fail at runtime:
     #[cfg(target_family = "windows")]
