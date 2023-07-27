@@ -1,0 +1,6 @@
+{
+  "rust-analyzer.check.command": "clippy",
+  "rust-analyzer.imports.granularity.enforce": true,
+  "rust-analyzer.imports.granularity.group": "module",
+  "rust-analyzer.imports.prefix": "crate",
+}
