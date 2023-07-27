@@ -1,5 +1,8 @@
-use crate::pack::{run_pack_command, PackBuildCommand};
-use crate::{app, build, util, BuildConfig, BuildpackReference, TestContext};
+use crate::pack::PackBuildCommand;
+use crate::util::CommandError;
+use crate::{
+    app, build, util, BuildConfig, BuildpackReference, LogOutput, PackResult, TestContext,
+};
 use bollard::Docker;
 use std::borrow::Borrow;
 use std::env;
@@ -156,11 +159,25 @@ impl TestRunner {
             };
         }
 
-        let output = run_pack_command(pack_command, &config.expected_pack_result);
+        let output = match (
+            &config.expected_pack_result,
+            util::run_command(pack_command),
+        ) {
+            (PackResult::Success, Ok(output)) => output,
+            (PackResult::Failure, Err(CommandError::NonZeroExitCode { stdout, stderr, .. })) => {
+                LogOutput { stdout, stderr }
+            }
+            (PackResult::Failure, Ok(LogOutput { stdout, stderr })) => {
+                panic!("The pack build was expected to fail, but did not:\n\n## stderr:\n\n{stderr}\n## stdout:\n\n{stdout}\n");
+            }
+            (_, Err(command_err)) => {
+                panic!("Error performing pack build:\n\n{command_err}");
+            }
+        };
 
         let test_context = TestContext {
-            pack_stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
-            pack_stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+            pack_stdout: output.stdout,
+            pack_stderr: output.stderr,
             image_name,
             config: config.clone(),
             runner: self,

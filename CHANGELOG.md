@@ -15,6 +15,7 @@ separate changelogs for each crate were used. If you need to refer to these old 
 - `libcnb-test`:
   - `ContainerContext::address_for_port` now returns `SocketAddr` directly instead of `Option<SocketAddr>`. ([#605](https://github.com/heroku/libcnb.rs/pull/605))
   - `LogOutput` no longer exposes `stdout_raw` and `stderr_raw`. ([#607](https://github.com/heroku/libcnb.rs/pull/607))
+  - Improved wording of panic error messages. ([#619](https://github.com/heroku/libcnb.rs/pull/619))
 - `libcnb-package`: buildpack target directory now contains the target triple. Users that implicitly rely on the output directory need to adapt. The output of `cargo libcnb package` will refer to the new locations. ([#580](https://github.com/heroku/libcnb.rs/pull/580))
 - `libherokubuildpack`: Switch the `flate2` decompression backend from `miniz_oxide` to `zlib`. ([#593](https://github.com/heroku/libcnb.rs/pull/593))
 - Bump minimum external dependency versions. ([#587](https://github.com/heroku/libcnb.rs/pull/587))

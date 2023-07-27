@@ -1,6 +1,6 @@
 use tokio_stream::{Stream, StreamExt};
 
-/// Container log output.
+/// Log output from a command.
 #[derive(Debug, Default)]
 pub struct LogOutput {
     pub stdout: String,

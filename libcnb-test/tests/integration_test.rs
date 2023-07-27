@@ -77,12 +77,12 @@ fn buildpack_packaging_failure() {
 
 #[test]
 #[ignore = "integration test"]
-#[should_panic(expected = "pack command unexpectedly failed with exit-code 1!
+#[should_panic(expected = "Error performing pack build:
 
-pack stdout:
+pack command failed with exit code 1!
 
+## stderr:
 
-pack stderr:
 ERROR: failed to build: failed to fetch builder image 'index.docker.io/libcnb/invalid-builder:latest'")]
 fn unexpected_pack_failure() {
     TestRunner::default().build(
@@ -95,9 +95,14 @@ fn unexpected_pack_failure() {
 
 #[test]
 #[ignore = "integration test"]
-#[should_panic(expected = "pack command unexpectedly succeeded with exit-code 0!
+#[should_panic(expected = "The pack build was expected to fail, but did not:
 
-pack stdout:
+## stderr:
+
+
+## stdout:
+
+===> ANALYZING
 ")]
 fn unexpected_pack_success() {
     TestRunner::default().build(
@@ -242,7 +247,13 @@ fn app_dir_invalid_path_checked_before_applying_preprocessor() {
 
 #[test]
 #[ignore = "integration test"]
-#[should_panic(expected = "cannot be found: not found")]
+#[should_panic(expected = "Error downloading SBOM files:
+
+pack command failed with exit code 1!
+
+## stderr:
+
+ERROR: image 'libcnbtest_")]
 fn download_sbom_files_failure() {
     TestRunner::default().build(
         BuildConfig::new("heroku/builder:22", "test-fixtures/empty")
