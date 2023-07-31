@@ -1,7 +1,7 @@
-use crate::pack::{run_pack_command, PackSbomDownloadCommand};
+use crate::pack::PackSbomDownloadCommand;
 use crate::{
     container_port_mapping, util, BuildConfig, ContainerConfig, ContainerContext, LogOutput,
-    PackResult, TestRunner,
+    TestRunner,
 };
 use bollard::container::{Config, CreateContainerOptions, StartContainerOptions};
 use bollard::image::RemoveImageOptions;
@@ -222,7 +222,8 @@ impl<'a> TestContext<'a> {
         let mut command = PackSbomDownloadCommand::new(&self.image_name);
         command.output_dir(temp_dir.path());
 
-        run_pack_command(command, &PackResult::Success);
+        util::run_command(command)
+            .unwrap_or_else(|command_err| panic!("Error downloading SBOM files:\n\n{command_err}"));
 
         f(SbomFiles {
             sbom_files_directory: temp_dir.path().into(),
