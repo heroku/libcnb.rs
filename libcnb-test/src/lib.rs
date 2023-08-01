@@ -10,7 +10,7 @@ mod build;
 mod build_config;
 mod container_config;
 mod container_context;
-mod container_port_mapping;
+mod docker;
 mod log;
 mod macros;
 mod pack;

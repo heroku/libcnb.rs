@@ -14,15 +14,20 @@ separate changelogs for each crate were used. If you need to refer to these old 
 
 - `libcnb-test`:
   - `ContainerContext::address_for_port` now returns `SocketAddr` directly instead of `Option<SocketAddr>`. ([#605](https://github.com/heroku/libcnb.rs/pull/605))
+  - Docker commands are now run using the Docker CLI instead of Bollard and the Docker daemon API. ([#620](https://github.com/heroku/libcnb.rs/pull/620))
+  - `ContainerConfig::entrypoint` now accepts a String rather than a vector of strings. Any arguments to the entrypoint should be moved to `ContainerConfig::command`. ([#620](https://github.com/heroku/libcnb.rs/pull/620))
+  - `TestRunner::new` has been removed, since its only purpose was for advanced configuration that's no longer applicable. Use `TestRunner::default` instead. ([#620](https://github.com/heroku/libcnb.rs/pull/620))
   - `LogOutput` no longer exposes `stdout_raw` and `stderr_raw`. ([#607](https://github.com/heroku/libcnb.rs/pull/607))
-  - Improved wording of panic error messages. ([#619](https://github.com/heroku/libcnb.rs/pull/619))
+  - Improved wording of panic error messages. ([#619](https://github.com/heroku/libcnb.rs/pull/619) and [#620](https://github.com/heroku/libcnb.rs/pull/620))
 - `libcnb-package`: buildpack target directory now contains the target triple. Users that implicitly rely on the output directory need to adapt. The output of `cargo libcnb package` will refer to the new locations. ([#580](https://github.com/heroku/libcnb.rs/pull/580))
 - `libherokubuildpack`: Switch the `flate2` decompression backend from `miniz_oxide` to `zlib`. ([#593](https://github.com/heroku/libcnb.rs/pull/593))
 - Bump minimum external dependency versions. ([#587](https://github.com/heroku/libcnb.rs/pull/587))
 
 ### Fixed
 
-- `libcnb-test`: `ContainerContext::expose_port` now only exposes the port to localhost. ([#610](https://github.com/heroku/libcnb.rs/pull/610))
+- `libcnb-test`:
+  - `TestContext::run_shell_command` and `ContainerContext::shell_exec` now validate the exit code of the spawned commands and panic if they are non-zero. ([#620](https://github.com/heroku/libcnb.rs/pull/620))
+  - `ContainerContext::expose_port` now only exposes the port to localhost. ([#610](https://github.com/heroku/libcnb.rs/pull/610))
 
 ## [0.13.0] 2023-06-21
 

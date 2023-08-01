@@ -3,10 +3,8 @@ use crate::util::CommandError;
 use crate::{
     app, build, util, BuildConfig, BuildpackReference, LogOutput, PackResult, TestContext,
 };
-use bollard::Docker;
 use std::borrow::Borrow;
 use std::env;
-use std::env::VarError;
 use std::path::PathBuf;
 
 /// Runner for libcnb integration tests.
@@ -23,53 +21,10 @@ use std::path::PathBuf;
 ///     },
 /// )
 /// ```
-pub struct TestRunner {
-    pub(crate) docker: Docker,
-    pub(crate) tokio_runtime: tokio::runtime::Runtime,
-}
-
-impl Default for TestRunner {
-    fn default() -> Self {
-        let tokio_runtime =
-            tokio::runtime::Runtime::new().expect("Could not create internal Tokio runtime");
-
-        let docker = match env::var("DOCKER_HOST") {
-            #[cfg(target_family = "unix")]
-            Ok(docker_host) if docker_host.starts_with("unix://") => {
-                Docker::connect_with_unix_defaults()
-            }
-            Ok(docker_host)
-            if docker_host.starts_with("tcp://") || docker_host.starts_with("https://") =>
-                {
-                    #[cfg(not(feature = "remote-docker"))]
-                    panic!("Cannot connect to DOCKER_HOST '{docker_host}' since it requires TLS. Please use a local Docker daemon instead (recommended), or else enable the experimental `remote-docker` feature.");
-                    #[cfg(feature = "remote-docker")]
-                    Docker::connect_with_ssl_defaults()
-                }
-            Ok(docker_host) => panic!("Cannot connect to unsupported DOCKER_HOST '{docker_host}'"),
-            Err(VarError::NotPresent) => Docker::connect_with_local_defaults(),
-            Err(VarError::NotUnicode(_)) => {
-                panic!("DOCKER_HOST environment variable is not unicode encoded!")
-            }
-        }
-            .expect("Could not connect to local Docker daemon");
-
-        Self::new(tokio_runtime, docker)
-    }
-}
+#[derive(Default)]
+pub struct TestRunner {}
 
 impl TestRunner {
-    /// Creates a new runner that uses the given Tokio runtime and Docker connection.
-    ///
-    /// This function is meant for advanced use-cases where fine control over the Tokio runtime
-    /// and/or Docker connection is required. For the common use-cases, use `Runner::default`.
-    pub fn new(tokio_runtime: tokio::runtime::Runtime, docker: Docker) -> Self {
-        Self {
-            docker,
-            tokio_runtime,
-        }
-    }
-
     /// Starts a new integration test build.
     ///
     /// This function copies the application to a temporary directory (if necessary), cross-compiles the current

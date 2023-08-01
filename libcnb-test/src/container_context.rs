@@ -1,19 +1,17 @@
+use crate::docker::{
+    DockerExecCommand, DockerLogsCommand, DockerPortCommand, DockerRemoveContainerCommand,
+};
 use crate::log::LogOutput;
-use crate::{container_port_mapping, util};
-use crate::{log, TestContext};
-use bollard::container::RemoveContainerOptions;
-use bollard::exec::{CreateExecOptions, StartExecResults};
-use serde::Serialize;
+use crate::util;
 use std::net::SocketAddr;
 
 /// Context of a launched container.
-pub struct ContainerContext<'a> {
+pub struct ContainerContext {
     /// The randomly generated name of this container.
     pub container_name: String,
-    pub(crate) test_context: &'a TestContext<'a>,
 }
 
-impl<'a> ContainerContext<'a> {
+impl ContainerContext {
     /// Gets the container's log output until the current point in time.
     ///
     /// Note: This method will only return logs until the current point in time. It will not
@@ -44,12 +42,8 @@ impl<'a> ContainerContext<'a> {
     /// Panics if there was an error retrieving the logs from the container.
     #[must_use]
     pub fn logs_now(&self) -> LogOutput {
-        self.logs_internal(bollard::container::LogsOptions {
-            stdout: true,
-            stderr: true,
-            tail: "all",
-            ..bollard::container::LogsOptions::default()
-        })
+        util::run_command(DockerLogsCommand::new(&self.container_name))
+            .unwrap_or_else(|command_err| panic!("Error fetching container logs:\n\n{command_err}"))
     }
 
     /// Gets the container's log output until the container stops.
@@ -82,30 +76,10 @@ impl<'a> ContainerContext<'a> {
     /// Panics if there was an error retrieving the logs from the container.
     #[must_use]
     pub fn logs_wait(&self) -> LogOutput {
-        self.logs_internal(bollard::container::LogsOptions {
-            follow: true,
-            stdout: true,
-            stderr: true,
-            tail: "all",
-            ..bollard::container::LogsOptions::default()
-        })
-    }
-
-    #[must_use]
-    fn logs_internal<T: Into<String> + Serialize>(
-        &self,
-        logs_options: bollard::container::LogsOptions<T>,
-    ) -> LogOutput {
-        self.test_context
-            .runner
-            .tokio_runtime
-            .block_on(log::consume_container_log_output(
-                self.test_context
-                    .runner
-                    .docker
-                    .logs(&self.container_name, Some(logs_options)),
-            ))
-            .expect("Could not consume container log output")
+        let mut docker_logs_command = DockerLogsCommand::new(&self.container_name);
+        docker_logs_command.follow(true);
+        util::run_command(docker_logs_command)
+            .unwrap_or_else(|command_err| panic!("Error fetching container logs:\n\n{command_err}"))
     }
 
     /// Returns the local address of an exposed container port.
@@ -137,23 +111,15 @@ impl<'a> ContainerContext<'a> {
     /// was not exposed using [`ContainerConfig::expose_port`](crate::ContainerConfig::expose_port).
     #[must_use]
     pub fn address_for_port(&self, port: u16) -> SocketAddr {
-        self.test_context.runner.tokio_runtime.block_on(async {
-            self.test_context
-                .runner
-                .docker
-                .inspect_container(&self.container_name, None)
-                .await
-                .expect("Could not inspect container")
-                .network_settings
-                .and_then(|network_settings| network_settings.ports)
-                .and_then(|ports| {
-                    container_port_mapping::parse_port_map(&ports)
-                        .expect("Could not parse container port mapping")
-                        .get(&port)
-                        .copied()
-                })
-                .expect("Could not find specified port in container port mapping")
-        })
+        let docker_port_command = DockerPortCommand::new(&self.container_name, port);
+        util::run_command(docker_port_command)
+            .unwrap_or_else(|command_err| {
+                panic!("Error obtaining container port mapping:\n\n{command_err}")
+            })
+            .stdout
+            .trim()
+            .parse()
+            .expect("Couldn't parse `docker port` output")
     }
 
     /// Executes a shell command inside an already running container.
@@ -176,60 +142,22 @@ impl<'a> ContainerContext<'a> {
     ///
     /// # Panics
     ///
-    /// Panics if it was not possible to exec into the container, or if there was an error
-    /// retrieving the logs from the exec command.
-    ///
-    /// Note: Does not currently panic if the command exits with a non-zero status code due to:
-    /// <https://github.com/heroku/libcnb.rs/issues/446>
+    /// Panics if it was not possible to exec into the container, or if the command
+    /// exited with a non-zero exit code.
     pub fn shell_exec(&self, command: impl AsRef<str>) -> LogOutput {
-        self.test_context.runner.tokio_runtime.block_on(async {
-            let create_exec_result = self
-                .test_context
-                .runner
-                .docker
-                .create_exec(
-                    &self.container_name,
-                    CreateExecOptions {
-                        cmd: Some(vec![util::CNB_LAUNCHER_BINARY, command.as_ref()]),
-                        attach_stdout: Some(true),
-                        ..CreateExecOptions::default()
-                    },
-                )
-                .await
-                .expect("Could not create container exec instance");
-
-            let start_exec_result = self
-                .test_context
-                .runner
-                .docker
-                .start_exec(&create_exec_result.id, None)
-                .await
-                .expect("Could not start container exec instance");
-
-            match start_exec_result {
-                StartExecResults::Attached { output, .. } => {
-                    log::consume_container_log_output(output)
-                        .await
-                        .expect("Could not consume container log output")
-                }
-                StartExecResults::Detached => LogOutput::default(),
-            }
-        })
+        let docker_exec_command = DockerExecCommand::new(
+            &self.container_name,
+            [util::CNB_LAUNCHER_BINARY, command.as_ref()],
+        );
+        util::run_command(docker_exec_command)
+            .unwrap_or_else(|command_err| panic!("Error performing docker exec:\n\n{command_err}"))
     }
 }
 
-impl<'a> Drop for ContainerContext<'a> {
+impl Drop for ContainerContext {
     fn drop(&mut self) {
-        // We do not care if container removal succeeded or not. Panicking here would result in
-        // SIGILL since this function might be called in a Tokio runtime.
-        let _remove_container_result = self.test_context.runner.tokio_runtime.block_on(
-            self.test_context.runner.docker.remove_container(
-                &self.container_name,
-                Some(RemoveContainerOptions {
-                    force: true,
-                    ..RemoveContainerOptions::default()
-                }),
-            ),
+        util::run_command(DockerRemoveContainerCommand::new(&self.container_name)).unwrap_or_else(
+            |command_err| panic!("Error removing Docker container:\n\n{command_err}"),
         );
     }
 }
