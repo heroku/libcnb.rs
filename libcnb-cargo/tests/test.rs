@@ -1,7 +1,8 @@
 use fs_extra::dir::{copy, CopyOptions};
 use libcnb_data::buildpack::{BuildpackDescriptor, BuildpackId};
 use libcnb_data::buildpack_id;
-use libcnb_package::{get_buildpack_target_dir, read_buildpack_data, read_buildpackage_data};
+use libcnb_package::output::BuildpackOutputDirectoryLocator;
+use libcnb_package::{read_buildpack_data, read_buildpackage_data, CargoProfile};
 use std::env;
 use std::io::Read;
 use std::path::PathBuf;
@@ -139,7 +140,7 @@ fn package_command_error_when_run_in_project_with_no_buildpacks() {
     assert_ne!(output.code, Some(0));
     assert_eq!(
         output.stderr,
-        "🔍 Locating buildpacks...\n❌ No buildpacks found!\n"
+        "Determining automatic cross-compile settings...\n🔍 Locating buildpacks...\n❌ No buildpacks found!\n"
     );
 }
 
@@ -237,12 +238,18 @@ impl BuildpackPackagingTest {
     }
 
     fn target_dir(&self, buildpack_id: BuildpackId) -> PathBuf {
-        get_buildpack_target_dir(
-            &buildpack_id,
-            &self.dir().join("target"),
-            self.release_build,
-            &self.target_triple,
-        )
+        let root_dir = self.dir().join("target");
+        let cargo_profile = if self.release_build {
+            CargoProfile::Release
+        } else {
+            CargoProfile::Dev
+        };
+        let locator = BuildpackOutputDirectoryLocator::new(
+            root_dir,
+            cargo_profile,
+            self.target_triple.clone(),
+        );
+        locator.get(&buildpack_id)
     }
 
     fn run_libcnb_package(&self) -> TestOutput {
