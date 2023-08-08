@@ -67,12 +67,9 @@ fn rebuild() {
     expected = "Could not package current crate as buildpack: BuildBinariesError(ConfigError(NoBinTargetsFound))"
 )]
 fn buildpack_packaging_failure() {
-    TestRunner::default().build(
-        BuildConfig::new("libcnb/invalid-builder", "test-fixtures/empty"),
-        |_| {
-            unreachable!("The test should panic prior to the TestContext being invoked.");
-        },
-    );
+    TestRunner::default().build(BuildConfig::new("invalid!", "test-fixtures/empty"), |_| {
+        unreachable!("The test should panic prior to the TestContext being invoked.");
+    });
 }
 
 #[test]
@@ -83,10 +80,10 @@ pack command failed with exit code 1!
 
 ## stderr:
 
-ERROR: failed to build: failed to fetch builder image 'index.docker.io/libcnb/invalid-builder:latest'")]
+ERROR: failed to build: invalid builder 'invalid!'")]
 fn unexpected_pack_failure() {
     TestRunner::default().build(
-        BuildConfig::new("libcnb/invalid-builder", "test-fixtures/empty").buildpacks(Vec::new()),
+        BuildConfig::new("invalid!", "test-fixtures/empty").buildpacks(Vec::new()),
         |_| {
             unreachable!("The test should panic prior to the TestContext being invoked.");
         },
@@ -119,14 +116,14 @@ fn unexpected_pack_success() {
 #[ignore = "integration test"]
 fn expected_pack_failure() {
     TestRunner::default().build(
-        BuildConfig::new("libcnb/invalid-builder", "test-fixtures/empty")
+        BuildConfig::new("invalid!", "test-fixtures/empty")
             .buildpacks(Vec::new())
             .expected_pack_result(PackResult::Failure),
         |context| {
             assert_empty!(context.pack_stdout);
             assert_contains!(
                 context.pack_stderr,
-                "ERROR: failed to build: failed to fetch builder image 'index.docker.io/libcnb/invalid-builder:latest'"
+                "ERROR: failed to build: invalid builder 'invalid!'"
             );
         },
     );
@@ -139,7 +136,7 @@ fn expected_pack_failure() {
 )]
 fn expected_pack_failure_still_panics_for_non_pack_failure() {
     TestRunner::default().build(
-        BuildConfig::new("libcnb/invalid-builder", "test-fixtures/empty")
+        BuildConfig::new("invalid!", "test-fixtures/empty")
             .expected_pack_result(PackResult::Failure),
         |_| {},
     );
