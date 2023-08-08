@@ -19,6 +19,7 @@ separate changelogs for each crate were used. If you need to refer to these old 
   - `TestRunner::new` has been removed, since its only purpose was for advanced configuration that's no longer applicable. Use `TestRunner::default` instead. ([#620](https://github.com/heroku/libcnb.rs/pull/620))
   - `LogOutput` no longer exposes `stdout_raw` and `stderr_raw`. ([#607](https://github.com/heroku/libcnb.rs/pull/607))
   - Improved wording of panic error messages. ([#619](https://github.com/heroku/libcnb.rs/pull/619) and [#620](https://github.com/heroku/libcnb.rs/pull/620))
+  - If a test with an expected result of `PackResult::Failure` unexpectedly succeeds, the built app image is now correctly cleaned up. ([#625](https://github.com/heroku/libcnb.rs/pull/625))
 - `libcnb-package`: buildpack target directory now contains the target triple. Users that implicitly rely on the output directory need to adapt. The output of `cargo libcnb package` will refer to the new locations. ([#580](https://github.com/heroku/libcnb.rs/pull/580))
 - `libherokubuildpack`: Switch the `flate2` decompression backend from `miniz_oxide` to `zlib`. ([#593](https://github.com/heroku/libcnb.rs/pull/593))
 - Bump minimum external dependency versions. ([#587](https://github.com/heroku/libcnb.rs/pull/587))

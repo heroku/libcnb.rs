@@ -1,3 +1,4 @@
+use crate::docker::DockerRemoveImageCommand;
 use crate::pack::PackBuildCommand;
 use crate::util::CommandError;
 use crate::{
@@ -114,15 +115,21 @@ impl TestRunner {
             };
         }
 
-        let output = match (
-            &config.expected_pack_result,
-            util::run_command(pack_command),
-        ) {
+        let pack_result = util::run_command(pack_command);
+
+        let output = match (&config.expected_pack_result, pack_result) {
             (PackResult::Success, Ok(output)) => output,
             (PackResult::Failure, Err(CommandError::NonZeroExitCode { stdout, stderr, .. })) => {
                 LogOutput { stdout, stderr }
             }
             (PackResult::Failure, Ok(LogOutput { stdout, stderr })) => {
+                // Ordinarily the Docker image created by `pack build` will either be cleaned up by
+                // `TestContext::Drop` later on, or will not have been created in the first place,
+                // if the `pack build` was not successful. However, in the case of an unexpectedly
+                // successful `pack build` we have to clean this image up manually before `panic`ing.
+                util::run_command(DockerRemoveImageCommand::new(image_name)).unwrap_or_else(
+                    |command_err| panic!("Error removing Docker image:\n\n{command_err}"),
+                );
                 panic!("The pack build was expected to fail, but did not:\n\n## stderr:\n\n{stderr}\n## stdout:\n\n{stdout}\n");
             }
             (_, Err(command_err)) => {
