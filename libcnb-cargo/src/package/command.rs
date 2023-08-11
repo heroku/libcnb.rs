@@ -34,7 +34,6 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
 
     let buildpack_packages = buildpack_dirs
         .into_iter()
-        .into_iter()
         .map(read_buildpack_package)
         .collect::<std::result::Result<Vec<_>, _>>()?;
 
