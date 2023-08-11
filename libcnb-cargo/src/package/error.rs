@@ -4,8 +4,10 @@ use libcnb_package::buildpack_dependency::{
     RewriteBuildpackageLocalDependenciesError,
     RewriteBuildpackageRelativePathDependenciesToAbsoluteError,
 };
+use libcnb_package::buildpack_package::ReadBuildpackPackageError;
 use libcnb_package::dependency_graph::{CreateDependencyGraphError, GetDependenciesError};
 use libcnb_package::FindCargoWorkspaceError;
+use libcnb_package::{ReadBuildpackDataError, ReadBuildpackageDataError};
 use std::path::PathBuf;
 use std::process::ExitStatus;
 
@@ -47,11 +49,8 @@ pub(crate) enum Error {
     #[error("There was a problem with the build configuration")]
     BinaryConfig,
 
-    #[error("I/O error while executing Cargo for target {target}\nError: {source}")]
-    BinaryBuildExecution {
-        target: String,
-        source: std::io::Error,
-    },
+    #[error("I/O error while executing Cargo for target {0}\nError: {1}")]
+    BinaryBuildExecution(String, std::io::Error),
 
     #[error("Unexpected Cargo exit status for target {0}\nExit Status: {}\nExamine Cargo output for details and potential compilation errors.", .exit_code_or_unknown(.1))]
     BinaryBuildExitStatus(String, ExitStatus),
@@ -59,29 +58,17 @@ pub(crate) enum Error {
     #[error("Configured buildpack target name {target} could not be found!")]
     BinaryBuildMissingTarget { target: String },
 
-    #[error("Failed to read buildpack data\nLocation: {path}\nError: {source}")]
-    ReadBuildpackData {
-        path: PathBuf,
-        source: std::io::Error,
-    },
+    #[error("Failed to read buildpack data\nLocation: {0}\nError: {1}")]
+    ReadBuildpackData(PathBuf, std::io::Error),
 
-    #[error("Failed to parse buildpack data\nLocation: {path}\nError: {source}")]
-    ParseBuildpackData {
-        path: PathBuf,
-        source: toml::de::Error,
-    },
+    #[error("Failed to parse buildpack data\nLocation: {0}\nError: {1}")]
+    ParseBuildpackData(PathBuf, toml::de::Error),
 
-    #[error("Failed to read buildpackage data\nLocation: {path}\nError: {source}")]
-    ReadBuildpackageData {
-        path: PathBuf,
-        source: std::io::Error,
-    },
+    #[error("Failed to read buildpackage data\nLocation: {0}\nError: {1}")]
+    ReadBuildpackageData(PathBuf, std::io::Error),
 
-    #[error("Failed to parse buildpackage data\nLocation: {path}\nError: {source}")]
-    ParseBuildpackageData {
-        path: PathBuf,
-        source: toml::de::Error,
-    },
+    #[error("Failed to parse buildpackage data\nLocation: {0}\nError: {1}")]
+    ParseBuildpackageData(PathBuf, toml::de::Error),
 
     #[error("Failed to lookup buildpack dependency with id `{0}`")]
     BuildpackDependencyLookup(BuildpackId),
@@ -142,7 +129,7 @@ impl From<BuildBinariesError> for Error {
             BuildBinariesError::ConfigError(_) => Error::BinaryConfig,
 
             BuildBinariesError::BuildError(target, BuildError::IoError(source)) => {
-                Error::BinaryBuildExecution { target, source }
+                Error::BinaryBuildExecution(target, source)
             }
 
             BuildBinariesError::BuildError(
@@ -157,29 +144,36 @@ impl From<BuildBinariesError> for Error {
     }
 }
 
-impl From<libcnb_package::buildpack_package::ReadBuildpackPackageError> for Error {
-    fn from(value: libcnb_package::buildpack_package::ReadBuildpackPackageError) -> Self {
+impl From<ReadBuildpackPackageError> for Error {
+    fn from(value: ReadBuildpackPackageError) -> Self {
         match value {
-            libcnb_package::buildpack_package::ReadBuildpackPackageError::ReadBuildpackDataError(error) => match error
-            {
-                libcnb_package::ReadBuildpackDataError::ReadingBuildpack { path, source } => {
-                    Error::ReadBuildpackData { path, source }
-                }
-                libcnb_package::ReadBuildpackDataError::ParsingBuildpack { path, source } => {
-                    Error::ParseBuildpackData { path, source }
-                }
-            },
-            libcnb_package::buildpack_package::ReadBuildpackPackageError::ReadBuildpackageDataError(error) => {
-                match error {
-                    libcnb_package::ReadBuildpackageDataError::ReadingBuildpackage {
-                        path,
-                        source,
-                    } => Error::ReadBuildpackageData { path, source },
-                    libcnb_package::ReadBuildpackageDataError::ParsingBuildpackage {
-                        path,
-                        source,
-                    } => Error::ParseBuildpackageData { path, source },
-                }
+            ReadBuildpackPackageError::ReadBuildpackDataError(error) => error.into(),
+            ReadBuildpackPackageError::ReadBuildpackageDataError(error) => error.into(),
+        }
+    }
+}
+
+impl From<ReadBuildpackDataError> for Error {
+    fn from(value: ReadBuildpackDataError) -> Self {
+        match value {
+            ReadBuildpackDataError::ReadingBuildpack(path, source) => {
+                Error::ReadBuildpackData(path, source)
+            }
+            ReadBuildpackDataError::ParsingBuildpack(path, source) => {
+                Error::ParseBuildpackData(path, source)
+            }
+        }
+    }
+}
+
+impl From<ReadBuildpackageDataError> for Error {
+    fn from(value: ReadBuildpackageDataError) -> Self {
+        match value {
+            ReadBuildpackageDataError::ReadingBuildpackage(path, source) => {
+                Error::ReadBuildpackageData(path, source)
+            }
+            ReadBuildpackageDataError::ParsingBuildpackage(path, source) => {
+                Error::ParseBuildpackageData(path, source)
             }
         }
     }

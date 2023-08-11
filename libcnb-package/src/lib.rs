@@ -51,14 +51,10 @@ pub fn read_buildpack_data(
     let dir = project_path.as_ref();
     let buildpack_descriptor_path = dir.join("buildpack.toml");
     fs::read_to_string(&buildpack_descriptor_path)
-        .map_err(|e| ReadBuildpackDataError::ReadingBuildpack {
-            path: buildpack_descriptor_path.clone(),
-            source: e,
-        })
+        .map_err(|e| ReadBuildpackDataError::ReadingBuildpack(buildpack_descriptor_path.clone(), e))
         .and_then(|file_contents| {
-            toml::from_str(&file_contents).map_err(|e| ReadBuildpackDataError::ParsingBuildpack {
-                path: buildpack_descriptor_path.clone(),
-                source: e,
+            toml::from_str(&file_contents).map_err(|e| {
+                ReadBuildpackDataError::ParsingBuildpack(buildpack_descriptor_path.clone(), e)
             })
         })
         .map(|buildpack_descriptor| BuildpackData {
@@ -70,14 +66,8 @@ pub fn read_buildpack_data(
 /// An error from [`read_buildpack_data`]
 #[derive(Debug)]
 pub enum ReadBuildpackDataError {
-    ReadingBuildpack {
-        path: PathBuf,
-        source: std::io::Error,
-    },
-    ParsingBuildpack {
-        path: PathBuf,
-        source: toml::de::Error,
-    },
+    ReadingBuildpack(PathBuf, std::io::Error),
+    ParsingBuildpack(PathBuf, toml::de::Error),
 }
 
 /// A parsed buildpackage descriptor and it's path.
@@ -102,16 +92,15 @@ pub fn read_buildpackage_data(
     }
 
     fs::read_to_string(&buildpackage_descriptor_path)
-        .map_err(|e| ReadBuildpackageDataError::ReadingBuildpackage {
-            path: buildpackage_descriptor_path.clone(),
-            source: e,
+        .map_err(|e| {
+            ReadBuildpackageDataError::ReadingBuildpackage(buildpackage_descriptor_path.clone(), e)
         })
         .and_then(|file_contents| {
             toml::from_str(&file_contents).map_err(|e| {
-                ReadBuildpackageDataError::ParsingBuildpackage {
-                    path: buildpackage_descriptor_path.clone(),
-                    source: e,
-                }
+                ReadBuildpackageDataError::ParsingBuildpackage(
+                    buildpackage_descriptor_path.clone(),
+                    e,
+                )
             })
         })
         .map(|buildpackage_descriptor| {
@@ -125,14 +114,8 @@ pub fn read_buildpackage_data(
 /// An error from [`read_buildpackage_data`]
 #[derive(Debug)]
 pub enum ReadBuildpackageDataError {
-    ReadingBuildpackage {
-        path: PathBuf,
-        source: std::io::Error,
-    },
-    ParsingBuildpackage {
-        path: PathBuf,
-        source: toml::de::Error,
-    },
+    ReadingBuildpackage(PathBuf, std::io::Error),
+    ParsingBuildpackage(PathBuf, toml::de::Error),
 }
 
 /// Creates a buildpack directory and copies all buildpack assets to it.
