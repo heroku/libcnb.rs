@@ -11,6 +11,7 @@ separate changelogs for each crate were used. If you need to refer to these old 
 - `libcnb-package`: 
   - Add cross-compilation assistance for Linux `aarch64-unknown-linux-musl`. ([#577](https://github.com/heroku/libcnb.rs/pull/577))
   - Added the `output::BuildpackOutputDirectoryLocator` struct which contains information on how compiled buildpack directories are structured and provides a `.get(buildpack_id)` method which produces the output path for a buildpack. ([#632](https://github.com/heroku/libcnb.rs/pull/632))
+  - Added `output::assemble_single_buildpack_directory` and `output::assemble_meta_buildpack_directory` which construct buildpack output directories with all their required files during packaging. ([#632](https://github.com/heroku/libcnb.rs/pull/632)) 
 
 ### Changed
 
@@ -25,6 +26,8 @@ separate changelogs for each crate were used. If you need to refer to these old 
   - buildpack target directory now contains the target triple. Users that implicitly rely on the output directory need to adapt. The output of `cargo libcnb package` will refer to the new locations. ([#580](https://github.com/heroku/libcnb.rs/pull/580))
   - Changed `buildpack_dependency::rewrite_buildpackage_local_dependencies` to accept a `&BuildpackOutputDirectoryLocator` instead of `&HashMap<&BuildpackId, PathBuf>`. ([#632](https://github.com/heroku/libcnb.rs/pull/632))
   - Moved `default_buildpack_directory_name` to `output::default_buildpack_directory_name`. ([#632](https://github.com/heroku/libcnb.rs/pull/632))
+  - Changed `build::build_buildpack_binaries` to drop the cargo_metadata argument since it can read that directly from the given project_path. ([#632](https://github.com/heroku/libcnb.rs/pull/632))
+  - Changed `build::BuildBinariesError` to include the error variant `ReadCargoMetadata(PathBuf, cargo_metadata::Error)`. ([#632](https://github.com/heroku/libcnb.rs/pull/632))
 - `libherokubuildpack`: Switch the `flate2` decompression backend from `miniz_oxide` to `zlib`. ([#593](https://github.com/heroku/libcnb.rs/pull/593))
 - Bump minimum external dependency versions. ([#587](https://github.com/heroku/libcnb.rs/pull/587))
 
@@ -32,7 +35,8 @@ separate changelogs for each crate were used. If you need to refer to these old 
 
 - `libcnb-package`:
   - `get_buildpack_target_dir` has been removed in favor of `output::BuildpackOutputDirectoryLocator` for building output paths to compiled buildpacks. ([#632](https://github.com/heroku/libcnb.rs/pull/632))
-
+  - `assemble_buildpack_directory` has been removed in favor of `output::assemble_single_buildpack_directory` and `output::assemble_meta_buildpack_directory`. ([#632](https://github.com/heroku/libcnb.rs/pull/632))
+ 
 ### Fixed
 
 - `libcnb-test`:
