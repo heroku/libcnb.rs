@@ -12,11 +12,11 @@ use libcnb_package::buildpack_package::{read_buildpack_package, BuildpackPackage
 use libcnb_package::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
 use libcnb_package::dependency_graph::{create_dependency_graph, get_dependencies};
 use libcnb_package::{
-    assemble_buildpack_directory, find_buildpack_dirs, get_buildpack_target_dir, CargoProfile,
+    assemble_buildpack_directory, find_buildpack_dirs, find_cargo_workspace,
+    get_buildpack_target_dir, CargoProfile,
 };
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 type Result<T> = std::result::Result<T, Error>;
 
@@ -25,42 +25,35 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
 
     let current_dir = std::env::current_dir().map_err(Error::GetCurrentDir)?;
 
-    let workspace = get_cargo_workspace_root(&current_dir)?;
+    let workspace_dir = find_cargo_workspace(&current_dir)?;
 
-    let workspace_target_dir = MetadataCommand::new()
-        .manifest_path(&workspace.join("Cargo.toml"))
-        .exec()
-        .map(|metadata| metadata.target_directory.into_std_path_buf())
-        .map_err(|e| Error::ReadCargoMetadata {
-            path: workspace.clone(),
-            source: e,
-        })?;
+    let output_dir = get_buildpack_output_dir(&workspace_dir)?;
 
-    let buildpack_packages = create_dependency_graph(
-        find_buildpack_dirs(&workspace, &[workspace_target_dir.clone()])
-            .map_err(|e| Error::FindBuildpackDirs {
-                path: workspace_target_dir.clone(),
-                source: e,
-            })?
-            .into_iter()
-            .map(|dir| read_buildpack_package(dir).map_err(std::convert::Into::into))
-            .collect::<Result<Vec<BuildpackPackage>>>()?,
-    )?;
+    let buildpack_dirs = find_buildpack_dirs(&workspace_dir, &[output_dir.clone()])
+        .map_err(|e| Error::FindBuildpackDirs(workspace_dir.clone(), e))?;
 
-    let target_directories_index = buildpack_packages
+    let buildpack_packages = buildpack_dirs
+        .into_iter()
+        .into_iter()
+        .map(read_buildpack_package)
+        .collect::<std::result::Result<Vec<_>, _>>()?;
+
+    let buildpack_packages_graph = create_dependency_graph(buildpack_packages)?;
+
+    let target_directories_index = buildpack_packages_graph
         .node_weights()
         .map(|buildpack_package| {
             let id = buildpack_package.buildpack_id();
             let target_dir = if contains_buildpack_binaries(&buildpack_package.path) {
                 buildpack_package.path.clone()
             } else {
-                get_buildpack_target_dir(id, &workspace_target_dir, args.release, &args.target)
+                get_buildpack_target_dir(id, &output_dir, args.release, &args.target)
             };
             (id, target_dir)
         })
         .collect::<HashMap<_, _>>();
 
-    let buildpack_packages_requested = buildpack_packages
+    let buildpack_packages_requested = buildpack_packages_graph
         .node_weights()
         .filter(|buildpack_package| {
             // If we're in a directory with a buildpack.toml file, we only want to build the
@@ -77,7 +70,7 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
         Err(Error::NoBuildpacksFound)?;
     }
 
-    let build_order = get_dependencies(&buildpack_packages, &buildpack_packages_requested)?;
+    let build_order = get_dependencies(&buildpack_packages_graph, &buildpack_packages_requested)?;
 
     let lookup_target_dir = |buildpack_package: &BuildpackPackage| {
         target_directories_index
@@ -266,27 +259,6 @@ fn print_requested_buildpack_output_dirs(output_directories: Vec<PathBuf>) {
     }
 }
 
-fn get_cargo_workspace_root(dir: &Path) -> Result<PathBuf> {
-    let cargo_bin = std::env::var("CARGO").map(PathBuf::from)?;
-
-    Command::new(cargo_bin)
-        .args(["locate-project", "--workspace", "--message-format", "plain"])
-        .current_dir(dir)
-        .output()
-        .map_err(|e| Error::GetWorkspaceCommand {
-            path: dir.to_path_buf(),
-            source: e,
-        })
-        .map(|output| {
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            PathBuf::from(stdout.trim()).parent().map(Path::to_path_buf)
-        })
-        .transpose()
-        .ok_or(Error::GetWorkspaceDirectory {
-            path: dir.to_path_buf(),
-        })?
-}
-
 fn clean_target_directory(dir: &Path) -> Result<()> {
     if dir.exists() {
         std::fs::remove_dir_all(dir)
@@ -342,4 +314,12 @@ fn contains_buildpack_binaries(dir: &Path) -> bool {
         .into_iter()
         .map(|path| dir.join(path))
         .all(|path| path.is_file())
+}
+
+fn get_buildpack_output_dir(workspace_dir: &Path) -> Result<PathBuf> {
+    MetadataCommand::new()
+        .manifest_path(&workspace_dir.join("Cargo.toml"))
+        .exec()
+        .map(|metadata| metadata.target_directory.into_std_path_buf())
+        .map_err(|e| Error::GetBuildpackOutputDir(workspace_dir.to_path_buf(), e))
 }

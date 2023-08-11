@@ -16,6 +16,7 @@ use libcnb_data::buildpack::{BuildpackDescriptor, BuildpackId};
 use libcnb_data::buildpackage::Buildpackage;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use toml::Table;
 
 /// The profile to use when invoking Cargo.
@@ -266,6 +267,50 @@ pub fn get_buildpack_target_dir(
         .join(target_triple)
         .join(if is_release { "release" } else { "debug" })
         .join(default_buildpack_directory_name(buildpack_id))
+}
+
+/// Returns the path of the root workspace directory for a Rust Cargo project. This is often a useful
+/// starting point for detecting buildpacks with [`find_buildpack_dirs`].
+///
+/// ## Errors
+///
+/// Will return an `Err` if the root workspace directory cannot be located due to:
+/// - no `CARGO` environment variable with the path to the `cargo` binary
+/// - executing this function with a directory that is not within a Cargo project
+/// - any other file or system error that might occur
+pub fn find_cargo_workspace(dir_in_workspace: &Path) -> Result<PathBuf, FindCargoWorkspaceError> {
+    let cargo_bin = std::env::var("CARGO")
+        .map(PathBuf::from)
+        .map_err(FindCargoWorkspaceError::GetCargoEnv)?;
+
+    let output = Command::new(cargo_bin)
+        .args(["locate-project", "--workspace", "--message-format", "plain"])
+        .current_dir(dir_in_workspace)
+        .output()
+        .map_err(FindCargoWorkspaceError::SpawnCommand)?;
+
+    let status = output.status;
+
+    output
+        .status
+        .success()
+        .then_some(output)
+        .ok_or(FindCargoWorkspaceError::CommandFailure(status))
+        .and_then(|output| {
+            let root_cargo_toml = PathBuf::from(String::from_utf8_lossy(&output.stdout).trim());
+            root_cargo_toml
+                .parent()
+                .map(Path::to_path_buf)
+                .ok_or(FindCargoWorkspaceError::GetParentDirectory(root_cargo_toml))
+        })
+}
+
+#[derive(Debug)]
+pub enum FindCargoWorkspaceError {
+    GetCargoEnv(std::env::VarError),
+    SpawnCommand(std::io::Error),
+    CommandFailure(std::process::ExitStatus),
+    GetParentDirectory(PathBuf),
 }
 
 #[cfg(test)]
