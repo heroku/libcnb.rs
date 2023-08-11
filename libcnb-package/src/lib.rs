@@ -12,7 +12,6 @@ pub mod cross_compile;
 pub mod dependency_graph;
 pub mod output;
 
-use crate::build::BuildpackBinaries;
 use libcnb_data::buildpack::BuildpackDescriptor;
 use libcnb_data::buildpackage::Buildpackage;
 use std::fs;
@@ -133,76 +132,6 @@ pub enum ReadBuildpackageDataError {
         path: PathBuf,
         source: toml::de::Error,
     },
-}
-
-/// Creates a buildpack directory and copies all buildpack assets to it.
-///
-/// Assembly of the directory follows the constraints set by the libcnb framework. For example,
-/// the buildpack binary is only copied once and symlinks are used to refer to it when the CNB
-/// spec requires different file(name)s.
-///
-/// This function will not validate if the buildpack descriptor at the given path is valid and will
-/// use it as-is.
-///
-/// # Errors
-///
-/// Will return `Err` if the buildpack directory could not be assembled.
-pub fn assemble_buildpack_directory(
-    destination_path: impl AsRef<Path>,
-    buildpack_descriptor_path: impl AsRef<Path>,
-    buildpack_binaries: &BuildpackBinaries,
-) -> std::io::Result<()> {
-    fs::create_dir_all(destination_path.as_ref())?;
-
-    fs::copy(
-        buildpack_descriptor_path.as_ref(),
-        destination_path.as_ref().join("buildpack.toml"),
-    )?;
-
-    let bin_path = destination_path.as_ref().join("bin");
-    fs::create_dir_all(&bin_path)?;
-
-    fs::copy(
-        &buildpack_binaries.buildpack_target_binary_path,
-        bin_path.join("build"),
-    )?;
-
-    create_file_symlink("build", bin_path.join("detect"))?;
-
-    if !buildpack_binaries.additional_target_binary_paths.is_empty() {
-        let additional_binaries_dir = destination_path
-            .as_ref()
-            .join(".libcnb-cargo")
-            .join("additional-bin");
-
-        fs::create_dir_all(&additional_binaries_dir)?;
-
-        for (binary_target_name, binary_path) in &buildpack_binaries.additional_target_binary_paths
-        {
-            fs::copy(
-                binary_path,
-                additional_binaries_dir.join(binary_target_name),
-            )?;
-        }
-    }
-
-    Ok(())
-}
-
-#[cfg(target_family = "unix")]
-fn create_file_symlink<P: AsRef<Path>, Q: AsRef<Path>>(
-    original: P,
-    link: Q,
-) -> std::io::Result<()> {
-    std::os::unix::fs::symlink(original.as_ref(), link.as_ref())
-}
-
-#[cfg(target_family = "windows")]
-fn create_file_symlink<P: AsRef<Path>, Q: AsRef<Path>>(
-    original: P,
-    link: Q,
-) -> std::io::Result<()> {
-    std::os::windows::fs::symlink_file(original.as_ref(), link.as_ref())
 }
 
 /// Recursively walks the file system from the given `start_dir` to locate any folders containing a

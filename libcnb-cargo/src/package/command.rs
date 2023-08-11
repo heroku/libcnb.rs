@@ -2,17 +2,15 @@ use crate::cli::PackageArgs;
 use crate::package::error::Error;
 use cargo_metadata::MetadataCommand;
 use libcnb_data::buildpack::BuildpackDescriptor;
-use libcnb_data::buildpackage::Buildpackage;
 use libcnb_package::build::build_buildpack_binaries;
-use libcnb_package::buildpack_dependency::{
-    rewrite_buildpackage_local_dependencies,
-    rewrite_buildpackage_relative_path_dependencies_to_absolute,
-};
 use libcnb_package::buildpack_package::{read_buildpack_package, BuildpackPackage};
 use libcnb_package::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
 use libcnb_package::dependency_graph::{create_dependency_graph, get_dependencies};
-use libcnb_package::output::BuildpackOutputDirectoryLocator;
-use libcnb_package::{assemble_buildpack_directory, find_buildpack_dirs, CargoProfile};
+use libcnb_package::output::{
+    assemble_meta_buildpack_directory, assemble_single_buildpack_directory,
+    BuildpackOutputDirectoryLocator,
+};
+use libcnb_package::{find_buildpack_dirs, CargoProfile};
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -38,10 +36,7 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
         .manifest_path(&workspace.join("Cargo.toml"))
         .exec()
         .map(|metadata| metadata.target_directory.into_std_path_buf())
-        .map_err(|e| Error::ReadCargoMetadata {
-            path: workspace.clone(),
-            source: e,
-        })?;
+        .map_err(|e| Error::ReadCargoMetadata(workspace.clone(), e))?;
 
     let buildpack_packages = create_dependency_graph(
         find_buildpack_dirs(&workspace, &[workspace_target_dir.clone()])
@@ -144,43 +139,17 @@ fn package_single_buildpack(
     target_triple: &str,
     no_cross_compile_assistance: bool,
 ) -> Result<()> {
-    let cargo_metadata = MetadataCommand::new()
-        .manifest_path(&buildpack_package.path.join("Cargo.toml"))
-        .exec()
-        .map_err(|e| Error::ReadCargoMetadata {
-            path: buildpack_package.path.clone(),
-            source: e,
-        })?;
-
     let cargo_build_env = get_cargo_build_env(target_triple, no_cross_compile_assistance)?;
-
     eprintln!("Building binaries ({target_triple})...");
-
     let buildpack_binaries = build_buildpack_binaries(
         &buildpack_package.path,
-        &cargo_metadata,
         cargo_profile,
         &cargo_build_env,
         target_triple,
     )?;
-
     eprintln!("Writing buildpack directory...");
-
     clean_target_directory(target_dir)?;
-
-    assemble_buildpack_directory(
-        target_dir,
-        &buildpack_package.buildpack_data.buildpack_descriptor_path,
-        &buildpack_binaries,
-    )
-    .map_err(|e| Error::AssembleBuildpackDirectory(target_dir.to_path_buf(), e))?;
-
-    let buildpackage_content =
-        toml::to_string(&Buildpackage::default()).map_err(Error::SerializeBuildpackage)?;
-
-    std::fs::write(target_dir.join("package.toml"), buildpackage_content)
-        .map_err(|e| Error::WriteBuildpackage(target_dir.to_path_buf(), e))?;
-
+    assemble_single_buildpack_directory(target_dir, buildpack_package, &buildpack_binaries)?;
     eprint_compiled_buildpack_success(&buildpack_package.path, target_dir)
 }
 
@@ -190,44 +159,12 @@ fn package_meta_buildpack(
     buildpack_output_directory_locator: &BuildpackOutputDirectoryLocator,
 ) -> Result<()> {
     eprintln!("Writing buildpack directory...");
-
     clean_target_directory(target_dir)?;
-
-    std::fs::create_dir_all(target_dir)
-        .map_err(|e| Error::CreateBuildpackTargetDirectory(target_dir.to_path_buf(), e))?;
-
-    std::fs::copy(
-        &buildpack_package.buildpack_data.buildpack_descriptor_path,
-        target_dir.join("buildpack.toml"),
-    )
-    .map_err(|e| Error::WriteBuildpack(target_dir.to_path_buf(), e))?;
-
-    let buildpackage_content = &buildpack_package
-        .buildpackage_data
-        .as_ref()
-        .map(|buildpackage_data| &buildpackage_data.buildpackage_descriptor)
-        .ok_or(Error::MissingBuildpackageData)
-        .and_then(|buildpackage| {
-            rewrite_buildpackage_local_dependencies(
-                buildpackage,
-                buildpack_output_directory_locator,
-            )
-            .map_err(std::convert::Into::into)
-        })
-        .and_then(|buildpackage| {
-            rewrite_buildpackage_relative_path_dependencies_to_absolute(
-                &buildpackage,
-                &buildpack_package.path,
-            )
-            .map_err(std::convert::Into::into)
-        })
-        .and_then(|buildpackage| {
-            toml::to_string(&buildpackage).map_err(Error::SerializeBuildpackage)
-        })?;
-
-    std::fs::write(target_dir.join("package.toml"), buildpackage_content)
-        .map_err(|e| Error::WriteBuildpackage(target_dir.to_path_buf(), e))?;
-
+    assemble_meta_buildpack_directory(
+        target_dir,
+        buildpack_package,
+        buildpack_output_directory_locator,
+    )?;
     eprint_compiled_buildpack_success(&buildpack_package.path, target_dir)
 }
 

@@ -5,6 +5,7 @@ use libcnb_package::buildpack_dependency::{
     RewriteBuildpackageRelativePathDependenciesToAbsoluteError,
 };
 use libcnb_package::dependency_graph::{CreateDependencyGraphError, GetDependenciesError};
+use libcnb_package::output::AssembleBuildpackDirectoryError;
 use std::path::PathBuf;
 
 #[derive(Debug, thiserror::Error)]
@@ -21,20 +22,14 @@ pub(crate) enum Error {
         source: std::io::Error,
     },
 
-    #[error("Could not read Cargo.toml metadata in `{path}`\nError: {source}")]
-    ReadCargoMetadata {
-        path: PathBuf,
-        source: cargo_metadata::Error,
-    },
+    #[error("Could not read Cargo.toml metadata in `{0}`\nError: {1}")]
+    ReadCargoMetadata(PathBuf, cargo_metadata::Error),
 
     #[error("{0}")]
     CrossCompilationHelp(String),
 
     #[error("No environment variable named `CARGO` is set")]
     GetCargoBin(#[from] std::env::VarError),
-
-    #[error("Meta-buildpack is missing expected package.toml file")]
-    MissingBuildpackageData,
 
     #[error("Failed to serialize package.toml\nError: {0}")]
     SerializeBuildpackage(toml::ser::Error),
@@ -102,16 +97,10 @@ pub(crate) enum Error {
     #[error("No buildpacks found!")]
     NoBuildpacksFound,
 
-    #[error("Could not assemble buildpack directory\nPath: {0}\nError: {1}")]
-    AssembleBuildpackDirectory(PathBuf, std::io::Error),
-
     #[error(
         "Failed to write package.toml to the target buildpack directory\nPath: {0}\nError: {1}"
     )]
     WriteBuildpackage(PathBuf, std::io::Error),
-
-    #[error("I/O error while creating target buildpack directory\nPath: {0}\nError: {1}")]
-    CreateBuildpackTargetDirectory(PathBuf, std::io::Error),
 
     #[error(
         "Failed to write buildpack.toml to the target buildpack directory\nPath: {0}\nError: {1}"
@@ -123,6 +112,24 @@ pub(crate) enum Error {
 
     #[error("I/O error while calculating directory size\nPath: {0}\nError: {1}")]
     CalculateDirectorySize(PathBuf, std::io::Error),
+
+    #[error("Could not create buildpack directory\nPath: {0}\nError: {1}")]
+    CreateBuildpackDestinationDirectory(PathBuf, std::io::Error),
+
+    #[error("Could not create buildpack bin directory\nPath: {0}\nError: {1}")]
+    CreateBinDirectory(PathBuf, std::io::Error),
+
+    #[error("Could not write `build` binary to destination\nPath: {0}\nError: {1}")]
+    WriteBuildBinary(PathBuf, std::io::Error),
+
+    #[error("Could not write `detect` binary to destination\nPath: {0}\nError: {1}")]
+    WriteDetectBinary(PathBuf, std::io::Error),
+
+    #[error("Could not create buildpack additional binary directory\nPath: {0}\nError: {1}")]
+    CreateAdditionalBinariesDirectory(PathBuf, std::io::Error),
+
+    #[error("Could not write additional binary to destination\nPath: {0}\nError: {1}")]
+    WriteAdditionalBinary(PathBuf, std::io::Error),
 }
 
 impl From<BuildBinariesError> for Error {
@@ -146,6 +153,10 @@ impl From<BuildBinariesError> for Error {
 
             BuildBinariesError::MissingBuildpackTarget(target) => {
                 Error::BinaryBuildMissingTarget { target }
+            }
+
+            BuildBinariesError::ReadCargoMetadata(path, error) => {
+                Error::ReadCargoMetadata(path, error)
             }
         }
     }
@@ -216,6 +227,42 @@ impl From<RewriteBuildpackageRelativePathDependenciesToAbsoluteError> for Error 
         match value {
             RewriteBuildpackageRelativePathDependenciesToAbsoluteError::InvalidDependency(path) => Error::InvalidPathDependency(path),
             RewriteBuildpackageRelativePathDependenciesToAbsoluteError::GetBuildpackDependenciesError(error) => Error::GetBuildpackDependencies(error)
+        }
+    }
+}
+
+impl From<AssembleBuildpackDirectoryError> for Error {
+    fn from(value: AssembleBuildpackDirectoryError) -> Self {
+        match value {
+            AssembleBuildpackDirectoryError::CreateBuildpackDestinationDirectory(path, error) => {
+                Error::CreateBuildpackDestinationDirectory(path, error)
+            }
+            AssembleBuildpackDirectoryError::WriteBuildpack(path, error) => {
+                Error::WriteBuildpack(path, error)
+            }
+            AssembleBuildpackDirectoryError::SerializeBuildpackage(error) => {
+                Error::SerializeBuildpackage(error)
+            }
+            AssembleBuildpackDirectoryError::WriteBuildpackage(path, error) => {
+                Error::WriteBuildpackage(path, error)
+            }
+            AssembleBuildpackDirectoryError::CreateBinDirectory(path, error) => {
+                Error::CreateBinDirectory(path, error)
+            }
+            AssembleBuildpackDirectoryError::WriteBuildBinary(path, error) => {
+                Error::WriteBuildBinary(path, error)
+            }
+            AssembleBuildpackDirectoryError::WriteDetectBinary(path, error) => {
+                Error::WriteDetectBinary(path, error)
+            }
+            AssembleBuildpackDirectoryError::CreateAdditionalBinariesDirectory(path, error) => {
+                Error::CreateAdditionalBinariesDirectory(path, error)
+            }
+            AssembleBuildpackDirectoryError::WriteAdditionalBinary(path, error) => {
+                Error::WriteAdditionalBinary(path, error)
+            }
+            AssembleBuildpackDirectoryError::RewriteLocalDependencies(error) => error.into(),
+            AssembleBuildpackDirectoryError::RewriteRelativePathDependencies(error) => error.into(),
         }
     }
 }
