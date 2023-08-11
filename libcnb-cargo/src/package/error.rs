@@ -27,11 +27,8 @@ pub(crate) enum Error {
         source: cargo_metadata::Error,
     },
 
-    #[error("Could not determine a target directory for buildpack with id `{buildpack_id}`")]
-    TargetDirectoryLookup { buildpack_id: BuildpackId },
-
-    #[error("{message}")]
-    CrossCompilationHelp { message: String },
+    #[error("{0}")]
+    CrossCompilationHelp(String),
 
     #[error("No environment variable named `CARGO` is set")]
     GetCargoBin(#[from] std::env::VarError),
@@ -95,9 +92,6 @@ pub(crate) enum Error {
 
     #[error("Failed to locate buildpack with id `{0}`")]
     BuildpackPackagesLookup(BuildpackId),
-
-    #[error("Failed to lookup target directory for dependency with id `{0}`")]
-    RewriteLocalDependencyTargetDirectoryLookup(BuildpackId),
 
     #[error("Could not convert path into buildpackage file uri: {0}")]
     InvalidPathDependency(PathBuf),
@@ -207,9 +201,6 @@ impl From<CreateDependencyGraphError<BuildpackId, BuildpackIdError>> for Error {
 impl From<RewriteBuildpackageLocalDependenciesError> for Error {
     fn from(value: RewriteBuildpackageLocalDependenciesError) -> Self {
         match value {
-            RewriteBuildpackageLocalDependenciesError::TargetDirectoryLookup(id) => {
-                Error::RewriteLocalDependencyTargetDirectoryLookup(id)
-            }
             RewriteBuildpackageLocalDependenciesError::InvalidDependency(path) => {
                 Error::InvalidPathDependency(path)
             }

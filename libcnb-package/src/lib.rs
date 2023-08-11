@@ -10,9 +10,10 @@ pub mod buildpack_package;
 pub mod config;
 pub mod cross_compile;
 pub mod dependency_graph;
+pub mod output;
 
 use crate::build::BuildpackBinaries;
-use libcnb_data::buildpack::{BuildpackDescriptor, BuildpackId};
+use libcnb_data::buildpack::BuildpackDescriptor;
 use libcnb_data::buildpackage::Buildpackage;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -204,15 +205,6 @@ fn create_file_symlink<P: AsRef<Path>, Q: AsRef<Path>>(
     std::os::windows::fs::symlink_file(original.as_ref(), link.as_ref())
 }
 
-/// Construct a good default filename for a buildpack directory.
-///
-/// This function ensures the resulting name is valid and does not contain problematic characters
-/// such as `/`.
-#[must_use]
-pub fn default_buildpack_directory_name(buildpack_id: &BuildpackId) -> String {
-    buildpack_id.replace('/', "_")
-}
-
 /// Recursively walks the file system from the given `start_dir` to locate any folders containing a
 /// `buildpack.toml` file.
 ///
@@ -251,46 +243,4 @@ pub fn find_buildpack_dirs(start_dir: &Path, ignore: &[PathBuf]) -> std::io::Res
     let mut buildpack_dirs: Vec<PathBuf> = vec![];
     find_buildpack_dirs_recursive(start_dir, ignore, &mut buildpack_dirs)?;
     Ok(buildpack_dirs)
-}
-
-/// Provides a standard path to use for storing a compiled buildpack's artifacts.
-#[must_use]
-pub fn get_buildpack_target_dir(
-    buildpack_id: &BuildpackId,
-    target_dir: &Path,
-    is_release: bool,
-    target_triple: &str,
-) -> PathBuf {
-    target_dir
-        .join("buildpack")
-        .join(target_triple)
-        .join(if is_release { "release" } else { "debug" })
-        .join(default_buildpack_directory_name(buildpack_id))
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::get_buildpack_target_dir;
-    use libcnb_data::buildpack_id;
-    use std::path::PathBuf;
-
-    #[test]
-    fn test_get_buildpack_target_dir() {
-        let buildpack_id = buildpack_id!("some-org/with-buildpack");
-        let target_dir = PathBuf::from("/target");
-        let target_triple = "x86_64-unknown-linux-musl";
-
-        assert_eq!(
-            get_buildpack_target_dir(&buildpack_id, &target_dir, false, target_triple),
-            PathBuf::from(
-                "/target/buildpack/x86_64-unknown-linux-musl/debug/some-org_with-buildpack"
-            )
-        );
-        assert_eq!(
-            get_buildpack_target_dir(&buildpack_id, &target_dir, true, target_triple),
-            PathBuf::from(
-                "/target/buildpack/x86_64-unknown-linux-musl/release/some-org_with-buildpack"
-            )
-        );
-    }
 }
