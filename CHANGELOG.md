@@ -21,7 +21,7 @@ separate changelogs for each crate were used. If you need to refer to these old 
   - Improved wording of panic error messages. ([#619](https://github.com/heroku/libcnb.rs/pull/619) and [#620](https://github.com/heroku/libcnb.rs/pull/620))
 - `libcnb-package`: 
   - buildpack target directory now contains the target triple. Users that implicitly rely on the output directory need to adapt. The output of `cargo libcnb package` will refer to the new locations. ([#580](https://github.com/heroku/libcnb.rs/pull/580))
-  - Added `find_cargo_workspace` which provides a convenient starting point for locating buildpacks for packaging and testing purposes.
+  - Added `find_cargo_workspace` which provides a convenient starting point for locating buildpacks for packaging and testing purposes. ([#629](https://github.com/heroku/libcnb.rs/pull/629))
 - `libherokubuildpack`: Switch the `flate2` decompression backend from `miniz_oxide` to `zlib`. ([#593](https://github.com/heroku/libcnb.rs/pull/593))
 - Bump minimum external dependency versions. ([#587](https://github.com/heroku/libcnb.rs/pull/587))
 
