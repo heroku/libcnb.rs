@@ -147,9 +147,7 @@ impl From<BuildBinariesError> for Error {
                 BuildError::UnexpectedCargoExitStatus(exit_status),
             ) => Error::BinaryBuildExitStatus {
                 target,
-                code: exit_status
-                    .code()
-                    .map_or_else(|| String::from("<unknown>"), |code| code.to_string()),
+                code: exit_status_or_unknown(exit_status),
             },
 
             BuildBinariesError::MissingBuildpackTarget(target) => {
