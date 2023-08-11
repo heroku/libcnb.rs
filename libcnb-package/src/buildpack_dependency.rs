@@ -180,11 +180,12 @@ mod tests {
         get_local_buildpackage_dependencies, rewrite_buildpackage_local_dependencies,
         rewrite_buildpackage_relative_path_dependencies_to_absolute,
     };
+    use crate::output::BuildpackOutputDirectoryLocator;
+    use crate::CargoProfile;
     use libcnb_data::buildpack_id;
     use libcnb_data::buildpackage::{
         Buildpackage, BuildpackageBuildpackReference, BuildpackageDependency, Platform,
     };
-    use std::collections::HashMap;
     use std::path::PathBuf;
 
     #[test]
@@ -203,17 +204,19 @@ mod tests {
     #[test]
     fn test_rewrite_buildpackage_local_dependencies() {
         let buildpackage = create_buildpackage();
-        let buildpack_id = buildpack_id!("buildpack-id");
-        let buildpack_ids_to_target_dir = HashMap::from([(
-            &buildpack_id,
-            PathBuf::from("/path/to/target/buildpacks/buildpack-id"),
-        )]);
-        let new_buildpackage =
-            rewrite_buildpackage_local_dependencies(&buildpackage, &buildpack_ids_to_target_dir)
-                .unwrap();
+        let buildpack_output_directory_locator = BuildpackOutputDirectoryLocator::new(
+            PathBuf::from("/path/to/target"),
+            CargoProfile::Dev,
+            "arch".to_string(),
+        );
+        let new_buildpackage = rewrite_buildpackage_local_dependencies(
+            &buildpackage,
+            &buildpack_output_directory_locator,
+        )
+        .unwrap();
         assert_eq!(
             new_buildpackage.dependencies[0].uri.to_string(),
-            "/path/to/target/buildpacks/buildpack-id"
+            "/path/to/target/buildpack/arch/debug/buildpack-id"
         );
     }
 
