@@ -12,7 +12,7 @@ use libcnb_package::buildpack_package::{read_buildpack_package, BuildpackPackage
 use libcnb_package::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
 use libcnb_package::dependency_graph::{create_dependency_graph, get_dependencies};
 use libcnb_package::{
-    assemble_buildpack_directory, find_buildpack_dirs, find_cargo_workspace,
+    assemble_buildpack_directory, find_buildpack_dirs, find_cargo_workspace_root_dir,
     get_buildpack_target_dir, CargoProfile,
 };
 use std::collections::HashMap;
@@ -25,7 +25,7 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
 
     let current_dir = std::env::current_dir().map_err(Error::GetCurrentDir)?;
 
-    let workspace_dir = find_cargo_workspace(&current_dir)?;
+    let workspace_dir = find_cargo_workspace_root_dir(&current_dir)?;
 
     let output_dir = get_buildpack_output_dir(&workspace_dir)?;
 

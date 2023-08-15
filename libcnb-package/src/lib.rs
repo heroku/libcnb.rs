@@ -278,7 +278,9 @@ pub fn get_buildpack_target_dir(
 /// - no `CARGO` environment variable with the path to the `cargo` binary
 /// - executing this function with a directory that is not within a Cargo project
 /// - any other file or system error that might occur
-pub fn find_cargo_workspace(dir_in_workspace: &Path) -> Result<PathBuf, FindCargoWorkspaceError> {
+pub fn find_cargo_workspace_root_dir(
+    dir_in_workspace: &Path,
+) -> Result<PathBuf, FindCargoWorkspaceError> {
     let cargo_bin = std::env::var("CARGO")
         .map(PathBuf::from)
         .map_err(FindCargoWorkspaceError::GetCargoEnv)?;
@@ -297,6 +299,7 @@ pub fn find_cargo_workspace(dir_in_workspace: &Path) -> Result<PathBuf, FindCarg
         .then_some(output)
         .ok_or(FindCargoWorkspaceError::CommandFailure(status))
         .and_then(|output| {
+            // Cargo outputs a newline after the actual path, so we have to trim.
             let root_cargo_toml = PathBuf::from(String::from_utf8_lossy(&output.stdout).trim());
             root_cargo_toml
                 .parent()
