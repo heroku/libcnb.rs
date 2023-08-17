@@ -9,6 +9,7 @@ separate changelogs for each crate were used. If you need to refer to these old 
 ### Added
 
 - `libcnb-package`: Add cross-compilation assistance for Linux `aarch64-unknown-linux-musl`. ([#577](https://github.com/heroku/libcnb.rs/pull/577))
+- `libcnb-cargo`: Add `--package-dir` command line option to control where packaged buildpacks are written to. ([#583](https://github.com/heroku/libcnb.rs/pull/583))
 - `libcnb-test`:
   - `LogOutput` now implements `std::fmt::Display`. ([#635](https://github.com/heroku/libcnb.rs/pull/635))
   - `ContainerConfig` now implements `Clone`. ([#636](https://github.com/heroku/libcnb.rs/pull/636))
