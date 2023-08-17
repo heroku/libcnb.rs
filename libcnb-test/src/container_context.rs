@@ -2,13 +2,15 @@ use crate::docker::{
     DockerExecCommand, DockerLogsCommand, DockerPortCommand, DockerRemoveContainerCommand,
 };
 use crate::log::LogOutput;
-use crate::util;
+use crate::util::CommandError;
+use crate::{util, ContainerConfig};
 use std::net::SocketAddr;
 
 /// Context of a launched container.
 pub struct ContainerContext {
     /// The randomly generated name of this container.
     pub container_name: String,
+    pub(crate) config: ContainerConfig,
 }
 
 impl ContainerContext {
@@ -111,15 +113,30 @@ impl ContainerContext {
     /// was not exposed using [`ContainerConfig::expose_port`](crate::ContainerConfig::expose_port).
     #[must_use]
     pub fn address_for_port(&self, port: u16) -> SocketAddr {
+        assert!(
+            self.config.exposed_ports.contains(&port),
+            "Unknown port: Port {port} needs to be exposed first using `ContainerConfig::expose_port`"
+        );
+
         let docker_port_command = DockerPortCommand::new(&self.container_name, port);
-        util::run_command(docker_port_command)
-            .unwrap_or_else(|command_err| {
-                panic!("Error obtaining container port mapping:\n\n{command_err}")
-            })
-            .stdout
-            .trim()
-            .parse()
-            .expect("Couldn't parse `docker port` output")
+
+        match util::run_command(docker_port_command) {
+            Ok(output) => output
+                .stdout
+                .trim()
+                .parse()
+                .expect("Couldn't parse `docker port` output"),
+            Err(CommandError::NonZeroExitCode { log_output, .. }) => {
+                panic!(
+                    "Error obtaining container port mapping:\n{}\nThis normally means that the container crashed. Container logs:\n\n{}",
+                    log_output.stderr,
+                    self.logs_now()
+                );
+            }
+            Err(command_err) => {
+                panic!("Error obtaining container port mapping:\n\n{command_err}");
+            }
+        }
     }
 
     /// Executes a shell command inside an already running container.

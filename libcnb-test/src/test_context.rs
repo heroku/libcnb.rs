@@ -109,7 +109,10 @@ impl<'a> TestContext<'a> {
         util::run_command(docker_run_command)
             .unwrap_or_else(|command_err| panic!("Error starting container:\n\n{command_err}"));
 
-        f(ContainerContext { container_name });
+        f(ContainerContext {
+            container_name,
+            config: config.clone(),
+        });
     }
 
     /// Run the provided shell command.
