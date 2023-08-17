@@ -296,11 +296,15 @@ fn copy_fixture_to_temp_dir(name: &str) -> Result<TempDir, std::io::Error> {
         .join("fixtures")
         .join(name);
 
+    // Instead of using `tempfile::tempdir` directly, we get the temporary directory ourselves and
+    // canonicalize it before creating a temporary directory inside. We do this since on some
+    // operating systems (macOS specifically, see: https://github.com/rust-lang/rust/issues/99608),
+    // `env::temp_dir` will return a path with symlinks in it and `TempDir` doesn't allow
+    // canonicalization after the fact.
+    //
+    // Since libcnb-cargo itself also canonicalizes, we need to do the same so we can compare
+    // paths when they're output as strings.
     env::temp_dir()
-        // libcnb-cargo itself will canonicalize paths too.
-        // If we don't, the string representations of the path won't match. Doing this here will
-        // simplify code at the call-sites since they don't have to canonicalize themselves.
-        // Ref: https://github.com/rust-lang/rust/issues/99608
         .canonicalize()
         .and_then(tempdir_in)
         .and_then(|temp_dir| copy_dir_recursively(&fixture_dir, temp_dir.path()).map(|_| temp_dir))
