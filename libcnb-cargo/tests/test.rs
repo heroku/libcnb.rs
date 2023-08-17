@@ -1,307 +1,330 @@
-use fs_extra::dir::{copy, CopyOptions};
-use libcnb_data::buildpack::{BuildpackDescriptor, BuildpackId};
+// Enable Clippy lints that are disabled by default.
+// https://rust-lang.github.io/rust-clippy/stable/index.html
+#![warn(clippy::pedantic)]
+
+use libcnb_data::buildpack::BuildpackId;
 use libcnb_data::buildpack_id;
-use libcnb_package::{get_buildpack_target_dir, read_buildpack_data, read_buildpackage_data};
-use std::env;
-use std::io::Read;
-use std::path::PathBuf;
-use std::process::{Command, Stdio};
-use tempfile::{tempdir, TempDir};
+use libcnb_data::buildpackage::BuildpackageDependency;
+use libcnb_package::{read_buildpack_data, read_buildpackage_data};
+use std::io::ErrorKind;
+use std::path::{Path, PathBuf};
+use std::process::Command;
+use std::{env, fs};
+use tempfile::{tempdir_in, TempDir};
 
 #[test]
 #[ignore = "integration test"]
 fn package_buildpack_in_single_buildpack_project() {
-    let packaging_test = BuildpackPackagingTest::new("single_buildpack", X86_64_UNKNOWN_LINUX_MUSL);
-    let output = packaging_test.run_libcnb_package();
+    let fixture_dir = copy_fixture_to_temp_dir("single_buildpack").unwrap();
+    let buildpack_id = buildpack_id!("single-buildpack");
+
+    let output = Command::new(CARGO_LIBCNB_BINARY_UNDER_TEST)
+        .args(["libcnb", "package", "--release"])
+        .current_dir(&fixture_dir)
+        .output()
+        .unwrap();
+
+    let packaged_buildpack_dir = create_packaged_buildpack_dir_resolver(
+        &fixture_dir.path().join(TARGET_DIR_NAME),
+        true,
+        X86_64_UNKNOWN_LINUX_MUSL,
+    )(&buildpack_id);
+
     assert_eq!(
-        output.stdout.trim(),
-        [packaging_test.target_dir_name(buildpack_id!("single-buildpack"))].join("\n")
+        String::from_utf8_lossy(&output.stdout),
+        format!("{}\n", packaged_buildpack_dir.to_string_lossy())
     );
-    assert_compiled_buildpack(&packaging_test, buildpack_id!("single-buildpack"));
+
+    validate_packaged_buildpack(&packaged_buildpack_dir, &buildpack_id);
 }
 
 #[test]
 #[ignore = "integration test"]
 fn package_single_meta_buildpack_in_monorepo_buildpack_project() {
-    let packaging_test =
-        BuildpackPackagingTest::new("multiple_buildpacks", X86_64_UNKNOWN_LINUX_MUSL);
-    let output = packaging_test.run_libcnb_package_from("meta-buildpacks/meta-one");
+    let fixture_dir = copy_fixture_to_temp_dir("multiple_buildpacks").unwrap();
+
+    let output = Command::new(CARGO_LIBCNB_BINARY_UNDER_TEST)
+        .args(["libcnb", "package", "--release"])
+        .current_dir(fixture_dir.path().join("meta-buildpacks").join("meta-one"))
+        .output()
+        .unwrap();
+
+    let packaged_buildpack_dir_resolver = create_packaged_buildpack_dir_resolver(
+        &fixture_dir.path().join(TARGET_DIR_NAME),
+        true,
+        X86_64_UNKNOWN_LINUX_MUSL,
+    );
+
     assert_eq!(
-        output.stdout.trim(),
-        [packaging_test.target_dir_name(buildpack_id!("multiple-buildpacks/meta-one"))].join("\n")
-    );
-    assert_compiled_buildpack(&packaging_test, buildpack_id!("multiple-buildpacks/one"));
-    assert_compiled_buildpack(&packaging_test, buildpack_id!("multiple-buildpacks/two"));
-    assert_compiled_meta_buildpack(
-        &packaging_test,
-        buildpack_id!("multiple-buildpacks/meta-one"),
-        vec![
-            packaging_test.target_dir_name(buildpack_id!("multiple-buildpacks/one")),
-            packaging_test.target_dir_name(buildpack_id!("multiple-buildpacks/two")),
-            packaging_test
-                .dir()
-                .join("meta-buildpacks/meta-one/../../buildpacks/not_libcnb")
+        String::from_utf8_lossy(&output.stdout),
+        format!(
+            "{}\n",
+            packaged_buildpack_dir_resolver(&buildpack_id!("multiple-buildpacks/meta-one"))
                 .to_string_lossy()
-                .to_string(),
-            String::from("docker://docker.io/heroku/procfile-cnb:2.0.0"),
-        ],
+        )
     );
+
+    validate_packaged_meta_buildpack(
+        &packaged_buildpack_dir_resolver(&buildpack_id!("multiple-buildpacks/meta-one")),
+        &buildpack_id!("multiple-buildpacks/meta-one"),
+        &[
+            BuildpackageDependency::try_from(packaged_buildpack_dir_resolver(&buildpack_id!(
+                "multiple-buildpacks/one"
+            ))),
+            BuildpackageDependency::try_from(packaged_buildpack_dir_resolver(&buildpack_id!(
+                "multiple-buildpacks/two"
+            ))),
+            BuildpackageDependency::try_from(
+                fixture_dir
+                    .path()
+                    .join("meta-buildpacks/meta-one/../../buildpacks/not_libcnb"),
+            ),
+            BuildpackageDependency::try_from("docker://docker.io/heroku/procfile-cnb:2.0.0"),
+        ]
+        .into_iter()
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap(),
+    );
+
+    for buildpack_id in [
+        buildpack_id!("multiple-buildpacks/one"),
+        buildpack_id!("multiple-buildpacks/two"),
+    ] {
+        validate_packaged_buildpack(
+            &packaged_buildpack_dir_resolver(&buildpack_id),
+            &buildpack_id,
+        );
+    }
 }
 
 #[test]
 #[ignore = "integration test"]
 fn package_single_buildpack_in_monorepo_buildpack_project() {
-    let packaging_test =
-        BuildpackPackagingTest::new("multiple_buildpacks", X86_64_UNKNOWN_LINUX_MUSL);
-    let output = packaging_test.run_libcnb_package_from("buildpacks/one");
+    let fixture_dir = copy_fixture_to_temp_dir("multiple_buildpacks").unwrap();
+    let buildpack_id = buildpack_id!("multiple-buildpacks/one");
+
+    let output = Command::new(CARGO_LIBCNB_BINARY_UNDER_TEST)
+        .args(["libcnb", "package", "--release"])
+        .current_dir(fixture_dir.path().join("buildpacks/one"))
+        .output()
+        .unwrap();
+
+    let packaged_buildpack_dir = create_packaged_buildpack_dir_resolver(
+        &fixture_dir.path().join(TARGET_DIR_NAME),
+        true,
+        X86_64_UNKNOWN_LINUX_MUSL,
+    )(&buildpack_id);
+
     assert_eq!(
-        output.stdout.trim(),
-        [packaging_test.target_dir_name(buildpack_id!("multiple-buildpacks/one"))].join("\n")
+        String::from_utf8_lossy(&output.stdout),
+        format!("{}\n", packaged_buildpack_dir.to_string_lossy())
     );
-    assert_compiled_buildpack(&packaging_test, buildpack_id!("multiple-buildpacks/one"));
-    assert!(!packaging_test
-        .target_dir(buildpack_id!("multiple-buildpacks/two"))
-        .exists());
-    assert!(!packaging_test
-        .target_dir(buildpack_id!("multiple-buildpacks/meta-one"))
-        .exists());
+
+    validate_packaged_buildpack(&packaged_buildpack_dir, &buildpack_id);
 }
 
 #[test]
 #[ignore = "integration test"]
 fn package_all_buildpacks_in_monorepo_buildpack_project() {
-    let packaging_test =
-        BuildpackPackagingTest::new("multiple_buildpacks", X86_64_UNKNOWN_LINUX_MUSL);
-    let output = packaging_test.run_libcnb_package();
+    let fixture_dir = copy_fixture_to_temp_dir("multiple_buildpacks").unwrap();
+
+    let dependent_buildpack_ids = [
+        buildpack_id!("multiple-buildpacks/one"),
+        buildpack_id!("multiple-buildpacks/two"),
+    ];
+
+    let output = Command::new(CARGO_LIBCNB_BINARY_UNDER_TEST)
+        .args(["libcnb", "package", "--release"])
+        .current_dir(&fixture_dir)
+        .output()
+        .unwrap();
+
+    let packaged_buildpack_dir_resolver = create_packaged_buildpack_dir_resolver(
+        &fixture_dir.path().join(TARGET_DIR_NAME),
+        true,
+        X86_64_UNKNOWN_LINUX_MUSL,
+    );
+
     assert_eq!(
-        output.stdout.trim(),
-        [
-            packaging_test
-                .dir()
-                .join("buildpacks/not_libcnb")
-                .to_string_lossy()
-                .to_string(),
-            packaging_test.target_dir_name(buildpack_id!("multiple-buildpacks/meta-one")),
-            packaging_test.target_dir_name(buildpack_id!("multiple-buildpacks/one")),
-            packaging_test.target_dir_name(buildpack_id!("multiple-buildpacks/two")),
+        String::from_utf8_lossy(&output.stdout),
+        format!(
+            "{}\n",
+            [
+                fixture_dir.path().join("buildpacks/not_libcnb"),
+                packaged_buildpack_dir_resolver(&buildpack_id!("multiple-buildpacks/meta-one")),
+                packaged_buildpack_dir_resolver(&buildpack_id!("multiple-buildpacks/one")),
+                packaged_buildpack_dir_resolver(&buildpack_id!("multiple-buildpacks/two"))
+            ]
+            .map(|path| path.to_string_lossy().into_owned())
+            .join("\n")
+        )
+    );
+
+    validate_packaged_meta_buildpack(
+        &packaged_buildpack_dir_resolver(&buildpack_id!("multiple-buildpacks/meta-one")),
+        &buildpack_id!("multiple-buildpacks/meta-one"),
+        &[
+            BuildpackageDependency::try_from(packaged_buildpack_dir_resolver(&buildpack_id!(
+                "multiple-buildpacks/one"
+            ))),
+            BuildpackageDependency::try_from(packaged_buildpack_dir_resolver(&buildpack_id!(
+                "multiple-buildpacks/two"
+            ))),
+            BuildpackageDependency::try_from(
+                fixture_dir
+                    .path()
+                    .join("meta-buildpacks/meta-one/../../buildpacks/not_libcnb"),
+            ),
+            BuildpackageDependency::try_from("docker://docker.io/heroku/procfile-cnb:2.0.0"),
         ]
-        .join("\n")
+        .into_iter()
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap(),
     );
-    assert_compiled_buildpack(&packaging_test, buildpack_id!("multiple-buildpacks/one"));
-    assert_compiled_buildpack(&packaging_test, buildpack_id!("multiple-buildpacks/two"));
-    assert_compiled_meta_buildpack(
-        &packaging_test,
-        buildpack_id!("multiple-buildpacks/meta-one"),
-        vec![
-            packaging_test.target_dir_name(buildpack_id!("multiple-buildpacks/one")),
-            packaging_test.target_dir_name(buildpack_id!("multiple-buildpacks/two")),
-            packaging_test
-                .dir()
-                .join("meta-buildpacks/meta-one/../../buildpacks/not_libcnb")
-                .to_string_lossy()
-                .to_string(),
-            String::from("docker://docker.io/heroku/procfile-cnb:2.0.0"),
-        ],
-    );
+
+    for buildpack_id in dependent_buildpack_ids {
+        validate_packaged_buildpack(
+            &packaged_buildpack_dir_resolver(&buildpack_id),
+            &buildpack_id,
+        );
+    }
 }
 
 #[test]
 #[ignore = "integration test"]
 fn package_non_libcnb_buildpack_in_meta_buildpack_project() {
-    let packaging_test =
-        BuildpackPackagingTest::new("multiple_buildpacks", X86_64_UNKNOWN_LINUX_MUSL);
-    let output = packaging_test.run_libcnb_package_from("buildpacks/not_libcnb");
+    let fixture_dir = copy_fixture_to_temp_dir("multiple_buildpacks").unwrap();
+
+    let output = Command::new(CARGO_LIBCNB_BINARY_UNDER_TEST)
+        .args(["libcnb", "package", "--release"])
+        .current_dir(fixture_dir.path().join("buildpacks/not_libcnb"))
+        .output()
+        .unwrap();
+
     assert_eq!(
-        output.stdout.trim(),
-        [packaging_test
-            .dir()
-            .join("buildpacks/not_libcnb")
-            .to_string_lossy()
-            .to_string()]
-        .join("\n")
+        String::from_utf8_lossy(&output.stdout),
+        format!(
+            "{}\n",
+            fixture_dir
+                .path()
+                .join("buildpacks/not_libcnb")
+                .to_string_lossy()
+        )
     );
-    assert!(!packaging_test
-        .target_dir(buildpack_id!("multiple-buildpacks/one"))
-        .exists());
-    assert!(!packaging_test
-        .target_dir(buildpack_id!("multiple-buildpacks/two"))
-        .exists());
-    assert!(!packaging_test
-        .target_dir(buildpack_id!("multiple-buildpacks/meta-one"))
-        .exists());
 }
 
 #[test]
 #[ignore = "integration test"]
 fn package_command_error_when_run_in_project_with_no_buildpacks() {
-    let packaging_test = BuildpackPackagingTest::new("no_buildpacks", X86_64_UNKNOWN_LINUX_MUSL);
-    let output = packaging_test.run_libcnb_package();
-    assert_ne!(output.code, Some(0));
+    let fixture_dir = copy_fixture_to_temp_dir("no_buildpacks").unwrap();
+
+    let output = Command::new(CARGO_LIBCNB_BINARY_UNDER_TEST)
+        .args(["libcnb", "package", "--release"])
+        .current_dir(&fixture_dir)
+        .output()
+        .unwrap();
+
+    assert_ne!(output.status.code(), Some(0));
     assert_eq!(
-        output.stderr,
+        String::from_utf8_lossy(&output.stderr),
         "🔍 Locating buildpacks...\n❌ No buildpacks found!\n"
     );
 }
 
-fn assert_compiled_buildpack(packaging_test: &BuildpackPackagingTest, buildpack_id: BuildpackId) {
-    let buildpack_target_dir = PathBuf::from(packaging_test.target_dir_name(buildpack_id.clone()));
+fn validate_packaged_buildpack(packaged_buildpack_dir: &Path, buildpack_id: &BuildpackId) {
+    assert!(packaged_buildpack_dir.join("buildpack.toml").exists());
+    assert!(packaged_buildpack_dir.join("package.toml").exists());
+    assert!(packaged_buildpack_dir.join("bin").join("build").exists());
+    assert!(packaged_buildpack_dir.join("bin").join("detect").exists());
 
-    assert!(buildpack_target_dir.exists());
-    assert!(buildpack_target_dir.join("buildpack.toml").exists());
-    assert!(buildpack_target_dir.join("package.toml").exists());
-    assert!(buildpack_target_dir.join("bin").join("build").exists());
-    assert!(buildpack_target_dir.join("bin").join("detect").exists());
-
-    let buildpack_data = read_buildpack_data(&buildpack_target_dir).unwrap();
-    let id = match buildpack_data.buildpack_descriptor {
-        BuildpackDescriptor::Single(descriptor) => descriptor.buildpack.id,
-        BuildpackDescriptor::Meta(descriptor) => descriptor.buildpack.id,
-    };
-    assert_eq!(id, buildpack_id);
+    assert_eq!(
+        &read_buildpack_data(packaged_buildpack_dir)
+            .unwrap()
+            .buildpack_descriptor
+            .buildpack()
+            .id,
+        buildpack_id
+    );
 }
 
-fn assert_compiled_meta_buildpack(
-    packaging_test: &BuildpackPackagingTest,
-    buildpack_id: BuildpackId,
-    dependencies: Vec<String>,
+fn validate_packaged_meta_buildpack(
+    packaged_buildpack_dir: &Path,
+    buildpack_id: &BuildpackId,
+    expected_buildpackage_dependencies: &[BuildpackageDependency],
 ) {
-    let buildpack_target_dir = PathBuf::from(packaging_test.target_dir_name(buildpack_id.clone()));
+    assert!(packaged_buildpack_dir.join("buildpack.toml").exists());
+    assert!(packaged_buildpack_dir.join("package.toml").exists());
 
-    assert!(buildpack_target_dir.exists());
-    assert!(buildpack_target_dir.join("buildpack.toml").exists());
-    assert!(buildpack_target_dir.join("package.toml").exists());
-
-    let buildpack_data = read_buildpack_data(&buildpack_target_dir).unwrap();
-    let id = match buildpack_data.buildpack_descriptor {
-        BuildpackDescriptor::Single(descriptor) => descriptor.buildpack.id,
-        BuildpackDescriptor::Meta(descriptor) => descriptor.buildpack.id,
-    };
-    assert_eq!(id, buildpack_id);
-
-    let buildpackage_data = read_buildpackage_data(buildpack_target_dir)
-        .unwrap()
-        .unwrap();
-    let compiled_uris: Vec<_> = buildpackage_data
-        .buildpackage_descriptor
-        .dependencies
-        .iter()
-        .map(|buildpackage_uri| buildpackage_uri.uri.to_string())
-        .collect();
-    assert_eq!(compiled_uris, dependencies);
-}
-
-struct BuildpackPackagingTest {
-    fixture_name: String,
-    temp_dir: TempDir,
-    release_build: bool,
-    target_triple: String,
-}
-
-struct TestOutput {
-    stdout: String,
-    stderr: String,
-    code: Option<i32>,
-}
-
-impl BuildpackPackagingTest {
-    fn new(fixture_name: &str, target_triple: &str) -> Self {
-        let source_directory = env::current_dir()
+    assert_eq!(
+        &read_buildpack_data(packaged_buildpack_dir)
             .unwrap()
-            .join("fixtures")
-            .join(fixture_name);
-        let target_directory = tempdir().unwrap();
-        let copy_options = CopyOptions::new();
-        copy(source_directory, &target_directory, &copy_options).unwrap();
-        BuildpackPackagingTest {
-            fixture_name: fixture_name.to_string(),
-            temp_dir: target_directory,
-            release_build: true,
-            target_triple: String::from(target_triple),
+            .buildpack_descriptor
+            .buildpack()
+            .id,
+        buildpack_id
+    );
+
+    assert_eq!(
+        read_buildpackage_data(packaged_buildpack_dir)
+            .unwrap()
+            .unwrap()
+            .buildpackage_descriptor
+            .dependencies,
+        expected_buildpackage_dependencies
+    );
+}
+
+fn create_packaged_buildpack_dir_resolver(
+    cargo_target_dir: &Path,
+    release: bool,
+    target_triple: &str,
+) -> impl Fn(&BuildpackId) -> PathBuf {
+    let cargo_target_dir = PathBuf::from(cargo_target_dir);
+    let target_triple = target_triple.to_string();
+
+    move |buildpack_id| {
+        cargo_target_dir
+            .join("buildpack")
+            .join(&target_triple)
+            .join(if release { "release" } else { "debug" })
+            .join(buildpack_id.as_str().replace('/', "_"))
+    }
+}
+
+fn copy_fixture_to_temp_dir(name: &str) -> Result<TempDir, std::io::Error> {
+    let fixture_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("fixtures")
+        .join(name);
+
+    env::temp_dir()
+        // libcnb-cargo itself will canonicalize paths too.
+        // If we don't, the string representations of the path won't match. Doing this here will
+        // simplify code at the call-sites since they don't have to canonicalize themselves.
+        // Ref: https://github.com/rust-lang/rust/issues/99608
+        .canonicalize()
+        .and_then(tempdir_in)
+        .and_then(|temp_dir| copy_dir_recursively(&fixture_dir, temp_dir.path()).map(|_| temp_dir))
+}
+
+fn copy_dir_recursively(source: &Path, destination: &Path) -> std::io::Result<()> {
+    match fs::create_dir(destination) {
+        Err(io_error) if io_error.kind() == ErrorKind::AlreadyExists => Ok(()),
+        other => other,
+    }?;
+
+    for entry in fs::read_dir(source)? {
+        let dir_entry = entry?;
+
+        if dir_entry.file_type()?.is_dir() {
+            copy_dir_recursively(&dir_entry.path(), &destination.join(dir_entry.file_name()))?;
+        } else {
+            fs::copy(dir_entry.path(), destination.join(dir_entry.file_name()))?;
         }
     }
 
-    fn dir(&self) -> PathBuf {
-        self.temp_dir
-            .path()
-            .canonicalize()
-            .unwrap()
-            .join(&self.fixture_name)
-    }
-
-    fn target_dir_name(&self, buildpack_id: BuildpackId) -> String {
-        self.target_dir(buildpack_id)
-            .canonicalize()
-            .unwrap()
-            .to_string_lossy()
-            .to_string()
-    }
-
-    fn target_dir(&self, buildpack_id: BuildpackId) -> PathBuf {
-        get_buildpack_target_dir(
-            &buildpack_id,
-            &self.dir().join("target"),
-            self.release_build,
-            &self.target_triple,
-        )
-    }
-
-    fn run_libcnb_package(&self) -> TestOutput {
-        self.run_libcnb_package_from(".")
-    }
-
-    fn run_libcnb_package_from(&self, from_dir: &str) -> TestOutput {
-        // borrowed from assert_cmd
-        let suffix = env::consts::EXE_SUFFIX;
-
-        let target_dir = env::current_exe()
-            .ok()
-            .map(|mut path| {
-                path.pop();
-                if path.ends_with("deps") {
-                    path.pop();
-                }
-                path
-            })
-            .unwrap();
-
-        let name = "cargo-libcnb";
-
-        let cargo_libcnb = env::var_os(format!("CARGO_BIN_EXE_{name}"))
-            .map(|p| p.into())
-            .unwrap_or_else(|| target_dir.join(format!("{name}{suffix}")));
-
-        let mut cmd = Command::new(cargo_libcnb)
-            .args(["libcnb", "package", "--release"])
-            .current_dir(self.dir().join(from_dir))
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .unwrap();
-
-        let status = cmd.wait().unwrap();
-
-        let mut stdout = String::new();
-        cmd.stdout
-            .take()
-            .unwrap()
-            .read_to_string(&mut stdout)
-            .unwrap();
-        println!("STDOUT:\n{stdout}");
-
-        let mut stderr = String::new();
-        cmd.stderr
-            .take()
-            .unwrap()
-            .read_to_string(&mut stderr)
-            .unwrap();
-        println!("STDERR:\n{stderr}");
-
-        TestOutput {
-            stdout: String::from_utf8_lossy(stdout.as_bytes()).to_string(),
-            stderr: String::from_utf8_lossy(stderr.as_bytes()).to_string(),
-            code: status.code(),
-        }
-    }
+    Ok(())
 }
 
 const X86_64_UNKNOWN_LINUX_MUSL: &str = "x86_64-unknown-linux-musl";
+const TARGET_DIR_NAME: &str = "target";
+const CARGO_LIBCNB_BINARY_UNDER_TEST: &str = env!("CARGO_BIN_EXE_cargo-libcnb");
