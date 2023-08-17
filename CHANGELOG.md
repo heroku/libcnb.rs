@@ -9,12 +9,14 @@ separate changelogs for each crate were used. If you need to refer to these old 
 ### Added
 
 - `libcnb-package`: Add cross-compilation assistance for Linux `aarch64-unknown-linux-musl`. ([#577](https://github.com/heroku/libcnb.rs/pull/577))
-- `libcnb-test`: `LogOutput` now implements `std::fmt::Display`. ([#635](https://github.com/heroku/libcnb.rs/pull/635))
+- `libcnb-test`:
+  - `LogOutput` now implements `std::fmt::Display`. ([#635](https://github.com/heroku/libcnb.rs/pull/635))
+  - `ContainerConfig` now implements `Clone`. ([#636](https://github.com/heroku/libcnb.rs/pull/636))
 
 ### Changed
 
 - `libcnb-test`:
-  - `ContainerContext::address_for_port` now returns `SocketAddr` directly instead of `Option<SocketAddr>`. ([#605](https://github.com/heroku/libcnb.rs/pull/605))
+  - `ContainerContext::address_for_port` will now panic for all failure modes rather than just some, and so now returns `SocketAddr` directly instead of `Option<SocketAddr>`. This reduces test boilerplate due to the caller no longer needing to `.unwrap()` and improves debugging UX when containers crash after startup. ([#605](https://github.com/heroku/libcnb.rs/pull/605) and [#636](https://github.com/heroku/libcnb.rs/pull/636))
   - Docker commands are now run using the Docker CLI instead of Bollard and the Docker daemon API. ([#620](https://github.com/heroku/libcnb.rs/pull/620))
   - `ContainerConfig::entrypoint` now accepts a String rather than a vector of strings. Any arguments to the entrypoint should be moved to `ContainerConfig::command`. ([#620](https://github.com/heroku/libcnb.rs/pull/620))
   - `TestRunner::new` has been removed, since its only purpose was for advanced configuration that's no longer applicable. Use `TestRunner::default` instead. ([#620](https://github.com/heroku/libcnb.rs/pull/620))
