@@ -9,6 +9,7 @@ separate changelogs for each crate were used. If you need to refer to these old 
 ### Added
 
 - `libcnb-package`: Add cross-compilation assistance for Linux `aarch64-unknown-linux-musl`. ([#577](https://github.com/heroku/libcnb.rs/pull/577))
+- `libcnb-test`: `LogOutput` now implements `std::fmt::Display`. ([#635](https://github.com/heroku/libcnb.rs/pull/635))
 
 ### Changed
 
