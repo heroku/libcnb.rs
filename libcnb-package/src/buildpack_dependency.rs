@@ -179,7 +179,7 @@ mod tests {
         get_local_buildpackage_dependencies, rewrite_buildpackage_local_dependencies,
         rewrite_buildpackage_relative_path_dependencies_to_absolute,
     };
-    use crate::output::BuildpackOutputDirectoryLocator;
+    use crate::output::create_packaged_buildpack_dir_resolver;
     use crate::CargoProfile;
     use libcnb_data::buildpack_id;
     use libcnb_data::buildpackage::{
@@ -203,19 +203,19 @@ mod tests {
     #[test]
     fn test_rewrite_buildpackage_local_dependencies() {
         let buildpackage = create_buildpackage();
-        let buildpack_output_directory_locator = BuildpackOutputDirectoryLocator::new(
-            PathBuf::from("/path/to/target"),
+        let packaged_buildpack_dir_resolver = create_packaged_buildpack_dir_resolver(
+            &PathBuf::from("/path/to/target"),
             CargoProfile::Dev,
-            "arch".to_string(),
+            "arch",
         );
         let new_buildpackage = rewrite_buildpackage_local_dependencies(
             &buildpackage,
-            &buildpack_output_directory_locator,
+            &packaged_buildpack_dir_resolver,
         )
         .unwrap();
         assert_eq!(
             new_buildpackage.dependencies[0].uri.to_string(),
-            "/path/to/target/buildpack/arch/debug/buildpack-id"
+            "/path/to/target/arch/debug/buildpack-id"
         );
     }
 

@@ -18,7 +18,7 @@ pub fn create_packaged_buildpack_dir_resolver(
                 CargoProfile::Dev => "debug",
                 CargoProfile::Release => "release",
             })
-            .join(default_buildpack_directory_name(&buildpack_id))
+            .join(default_buildpack_directory_name(buildpack_id))
     }
 }
 
