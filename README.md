@@ -178,16 +178,22 @@ In your project directory, run `cargo libcnb package` to start packaging:
 
 ```shell
 $ cargo libcnb package
-INFO - Reading buildpack metadata...
-INFO - Found buildpack libcnb-examples/my-buildpack with version 0.1.0.
-INFO - Determining automatic cross-compile settings...
-INFO - Building binaries (x86_64-unknown-linux-musl)...
+🔍 Locating buildpacks...
+📦 [1/1] Building libcnb-examples/my-buildpack
+Determining automatic cross-compile settings...
+Building binaries (x86_64-unknown-linux-musl)...
 # Omitting compilation output...
-    Finished dev [unoptimized] target(s) in 8.51s
-INFO - Writing buildpack directory...
-INFO - Successfully wrote buildpack directory: target/buildpack/debug/libcnb-examples_my-buildpack (3.03 MiB)
-INFO - Packaging successfully finished!
-INFO - Hint: To test your buildpack locally with pack, run: pack build my-image --buildpack target/buildpack/debug/libcnb-examples_my-buildpack --path /path/to/application
+    Finished dev [unoptimized] target(s) in 8.92s
+Writing buildpack directory...
+Successfully wrote buildpack directory: packaged/x86_64-unknown-linux-musl/debug/libcnb-examples_my-buildpack (4.06 MiB)
+✨ Packaging successfully finished!
+
+💡 To test your buildpack locally with pack, run:
+pack build my-image-name \
+  --buildpack /home/ponda.baba/my-buildpack/packaged/x86_64-unknown-linux-musl/debug/libcnb-examples_my-buildpack \
+  --path /path/to/application
+
+/home/ponda.baba/my-buildpack/packaged/x86_64-unknown-linux-musl/debug/libcnb-examples_my-buildpack
 ```
 
 If you get errors with hints about how to install required tools to cross-compile from your host platform to the
@@ -202,10 +208,10 @@ application code at all, we just create an empty directory and use that as our a
 
 ```shell
 $ mkdir bogus-app
-$ pack build my-image --buildpack target/buildpack/debug/libcnb-examples_my-buildpack --path bogus-app --builder heroku/builder:22
+$ pack build my-image --buildpack packaged/x86_64-unknown-linux-musl/debug/libcnb-examples_my-buildpack --path bogus-app --builder heroku/builder:22
 ...
 ===> ANALYZING
-Previous image with name "my-image" not found
+Image with name "my-image" not found
 ===> DETECTING
 libcnb-examples/my-buildpack 0.1.0
 ===> RESTORING
@@ -213,17 +219,17 @@ libcnb-examples/my-buildpack 0.1.0
 Hello World!
 Build runs on stack heroku-22!
 ===> EXPORTING
-Adding layer 'launch.sbom'
+Adding layer 'buildpacksio/lifecycle:launch.sbom'
 Adding 1/1 app layer(s)
-Adding layer 'launcher'
-Adding layer 'config'
-Adding layer 'process-types'
+Adding layer 'buildpacksio/lifecycle:launcher'
+Adding layer 'buildpacksio/lifecycle:config'
+Adding layer 'buildpacksio/lifecycle:process-types'
 Adding label 'io.buildpacks.lifecycle.metadata'
 Adding label 'io.buildpacks.build.metadata'
 Adding label 'io.buildpacks.project.metadata'
 Setting default process type 'web'
 Saving my-image...
-*** Images (24eed75bb2e6):
+*** Images (aa4695184718):
       my-image
 Successfully built image my-image
 ```
