@@ -1,7 +1,7 @@
 /target/
-/libcnb-packaged/
+/packaged/
 .DS_Store
 .idea
 Cargo.lock
 **/fixtures/*/target/
-**/fixtures/*/libcnb-packaged/
+**/fixtures/*/packaged/

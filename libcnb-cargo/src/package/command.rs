@@ -39,7 +39,7 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
         cargo_metadata
             .workspace_root
             .into_std_path_buf()
-            .join("libcnb-packaged")
+            .join("packaged")
     });
 
     std::fs::create_dir_all(&package_dir)

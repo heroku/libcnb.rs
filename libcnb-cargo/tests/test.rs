@@ -330,4 +330,4 @@ fn copy_dir_recursively(source: &Path, destination: &Path) -> std::io::Result<()
 
 const X86_64_UNKNOWN_LINUX_MUSL: &str = "x86_64-unknown-linux-musl";
 const CARGO_LIBCNB_BINARY_UNDER_TEST: &str = env!("CARGO_BIN_EXE_cargo-libcnb");
-const DEFAULT_PACKAGE_DIR_NAME: &str = "libcnb-packaged";
+const DEFAULT_PACKAGE_DIR_NAME: &str = "packaged";

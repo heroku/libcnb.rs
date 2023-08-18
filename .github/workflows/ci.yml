@@ -73,4 +73,4 @@ jobs:
         # Uses a non-libc image to validate the static musl cross-compilation.
         # TODO: Switch this back to using the `alpine` tag once the stable Pack CLI release supports
         # image extensions (currently newer sample alpine images fail to build with stable Pack).
-        run: pack build example-basics --builder cnbs/sample-builder@sha256:da5ff69191919f1ff30d5e28859affff8e39f23038137c7751e24a42e919c1ab --trust-builder --buildpack libcnb-packaged/x86_64-unknown-linux-musl/debug/libcnb-examples_basics --path examples/
+        run: pack build example-basics --builder cnbs/sample-builder@sha256:da5ff69191919f1ff30d5e28859affff8e39f23038137c7751e24a42e919c1ab --trust-builder --buildpack packaged/x86_64-unknown-linux-musl/debug/libcnb-examples_basics --path examples/

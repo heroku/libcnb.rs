@@ -26,7 +26,7 @@ pub(crate) struct PackageArgs {
     /// Build for the target triple
     #[arg(long, default_value = "x86_64-unknown-linux-musl")]
     pub target: String,
-    /// Directory for packaged buildpacks, defaults to 'libcnb-packaged' in Cargo workspace root
+    /// Directory for packaged buildpacks, defaults to 'packaged' in Cargo workspace root
     #[arg(long)]
     pub package_dir: Option<PathBuf>,
 }
