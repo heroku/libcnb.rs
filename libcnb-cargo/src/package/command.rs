@@ -17,6 +17,7 @@ use std::process::Command;
 
 type Result<T> = std::result::Result<T, Error>;
 
+#[allow(clippy::too_many_lines)]
 pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
     let target_triple = args.target.clone();
 
