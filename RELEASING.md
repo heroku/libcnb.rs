@@ -12,7 +12,9 @@ easier to gauge cross-crate compatibility.
 3. Update [CHANGELOG.md](./CHANGELOG.md)
    1. Move all content under `## [Unreleased]` to a new section that follows this pattern: `## [VERSION] YYYY-MM-DD`
    2. If appropriate, add a high-level summary of changes at the beginning of the new section
-4. Commit the changes, push them and open a PR targeting `main`
+4. Install the latest version of [cargo-edit](https://github.com/killercup/cargo-edit): `cargo install cargo-edit`
+5. Bump in-range dependency versions using: `cargo upgrade`
+6. Commit the changes, push them and open a PR targeting `main`
 
 ## Release
 
