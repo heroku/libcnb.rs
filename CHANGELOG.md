@@ -4,6 +4,9 @@ This is the new, unified, changelog that contains changes from across all libcnb
 separate changelogs for each crate were used. If you need to refer to these old changelogs, find them named
 `HISTORICAL_CHANGELOG.md` in their respective crate directories.
 
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
 ## [Unreleased]
 
 ### Added
@@ -37,7 +40,7 @@ separate changelogs for each crate were used. If you need to refer to these old 
   - `ContainerContext::expose_port` now only exposes the port to localhost. ([#610](https://github.com/heroku/libcnb.rs/pull/610))
   - If a test with an expected result of `PackResult::Failure` unexpectedly succeeds, the built app image is now correctly cleaned up. ([#625](https://github.com/heroku/libcnb.rs/pull/625))
 
-## [0.13.0] 2023-06-21
+## [0.13.0] - 2023-06-21
 
 The highlight of this release is the `cargo libcnb package` changes to support compilation of both buildpacks and meta-buildpacks.
 
@@ -76,7 +79,7 @@ The highlight of this release is the `cargo libcnb package` changes to support c
     `dependency_graph::get_dependencies`
     to support dependency ordering and resolution in libcnb.rs-based Rust packages. ([#575](https://github.com/heroku/libcnb.rs/pull/575))
 
-## [0.12.0] 2023-04-28
+## [0.12.0] - 2023-04-28
 
 Highlight of this release is the bump to [Buildpack API 0.9](https://github.com/buildpacks/spec/releases/tag/buildpack%2Fv0.9). This release contains breaking changes, please refer to the items below for migration advice.
 
@@ -92,26 +95,26 @@ Highlight of this release is the bump to [Buildpack API 0.9](https://github.com/
 - `Env::get_string_lossy` as a convenience method to work with environment variables directly. Getting a value out of an `Env` and treating its contents as unicode is a common case. Using this new method can simplify buildpack code. ([#565](https://github.com/heroku/libcnb.rs/pull/565))
 - `Clone` implementation for `libcnb::layer_env::Scope`. ([#566](https://github.com/heroku/libcnb.rs/pull/566))
 
-## [0.11.5] 2023-02-07
+## [0.11.5] - 2023-02-07
 
 ### Changed
 
 - Update `toml` to `0.7.1`. If your buildpack interacts with TOML data directly, you probably want to bump
 the `toml` version in your buildpack as well. ([#556](https://github.com/heroku/libcnb.rs/pull/556))
 
-## [0.11.4] 2023-01-11
+## [0.11.4] - 2023-01-11
 
 ### Added
 
 - libcnb-data: Store struct now supports `clone()` and `default()`. ([#547](https://github.com/heroku/libcnb.rs/pull/547))
 
-## [0.11.3] 2023-01-09
+## [0.11.3] - 2023-01-09
 
 ### Added
 
 - libcnb: Add `store` field to `BuildContext`, exposing the contents of `store.toml` if present. ([#543](https://github.com/heroku/libcnb.rs/pull/543))
 
-## [0.11.2] 2022-12-15
+## [0.11.2] - 2022-12-15
 
 ### Fixed
 
@@ -126,7 +129,7 @@ the `toml` version in your buildpack as well. ([#556](https://github.com/heroku/
 
 - libherokubuildpack: Add `command` and `write` modules for working with `std::process::Command` output streams. ([#535](https://github.com/heroku/libcnb.rs/pull/535))
 
-## [0.11.1] 2022-09-29
+## [0.11.1] - 2022-09-29
 
 ### Fixed
 
@@ -137,7 +140,7 @@ the `toml` version in your buildpack as well. ([#556](https://github.com/heroku/
 
 - Improve the `libherokubuildpack` root module rustdocs. ([#503](https://github.com/heroku/libcnb.rs/pull/503))
 
-## [0.11.0] 2022-09-23
+## [0.11.0] - 2022-09-23
 
 ### Changed
 
@@ -148,7 +151,7 @@ the `toml` version in your buildpack as well. ([#556](https://github.com/heroku/
 
 - Add new crate `libherokubuildpack` with common code that can be useful when implementing buildpacks with libcnb. Originally hosted in a separate, private, repository. Code from `libherokubuildpack` might eventually find its way into libcnb.rs proper. At this point, consider it an incubator. ([#495](https://github.com/heroku/libcnb.rs/pull/495))
 
-## [0.10.0] 2022-08-31
+## [0.10.0] - 2022-08-31
 
 Highlight of this release is the bump to
 [Buildpack API 0.8](https://github.com/buildpacks/spec/releases/tag/buildpack%2Fv0.8) which brings support for SBOM to
@@ -179,3 +182,14 @@ version number. See the changelog below for other changes.
 ### Removed
 
 - Remove support for legacy BOM. Remove `Launch::bom`, `Build::bom`, `bom::Bom`, `bom::Entry`. ([#489](https://github.com/heroku/libcnb.rs/pull/489))
+
+[unreleased]: https://github.com/heroku/libcnb.rs/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/heroku/libcnb.rs/compare/v0.12.0...v0.13.0
+[0.12.0]: https://github.com/heroku/libcnb.rs/compare/v0.11.5...v0.12.0
+[0.11.5]: https://github.com/heroku/libcnb.rs/compare/v0.11.4...v0.11.5
+[0.11.4]: https://github.com/heroku/libcnb.rs/compare/v0.11.3...v0.11.4
+[0.11.3]: https://github.com/heroku/libcnb.rs/compare/v0.11.2...v0.11.3
+[0.11.2]: https://github.com/heroku/libcnb.rs/compare/v0.11.1...v0.11.2
+[0.11.1]: https://github.com/heroku/libcnb.rs/compare/v0.11.0...v0.11.1
+[0.11.0]: https://github.com/heroku/libcnb.rs/compare/v0.10.0...v0.11.0
+[0.10.0]: https://github.com/heroku/libcnb.rs/compare/libcnb/v0.9.0...v0.10.0
