@@ -17,7 +17,7 @@ path = "src/main.rs"
 
 [dependencies]
 cargo_metadata = "0.17.0"
-clap = { version = "4.3.10", default-features = false, features = [
+clap = { version = "4.3.22", default-features = false, features = [
   "derive",
   "error-context",
   "help",
@@ -27,8 +27,8 @@ clap = { version = "4.3.10", default-features = false, features = [
 libcnb-data.workspace = true
 libcnb-package.workspace = true
 pathdiff = "0.2.1"
-thiserror = "1.0.41"
+thiserror = "1.0.47"
 toml.workspace = true
 
 [dev-dependencies]
-tempfile = "3.6.0"
+tempfile = "3.7.1"

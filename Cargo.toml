@@ -17,15 +17,15 @@ members = [
 ]
 
 [workspace.package]
-version = "0.13.0"
+version = "0.14.0"
 rust-version = "1.64"
 edition = "2021"
 license = "BSD-3-Clause"
 
 [workspace.dependencies]
-libcnb = { version = "=0.13.0", path = "libcnb" }
-libcnb-data = { version = "=0.13.0", path = "libcnb-data" }
-libcnb-package = { version = "=0.13.0", path = "libcnb-package" }
-libcnb-proc-macros = { version = "=0.13.0", path = "libcnb-proc-macros" }
-libcnb-test = { version = "=0.13.0", path = "libcnb-test" }
-toml = { version = "0.7.5" }
+libcnb = { version = "=0.14.0", path = "libcnb" }
+libcnb-data = { version = "=0.14.0", path = "libcnb-data" }
+libcnb-package = { version = "=0.14.0", path = "libcnb-package" }
+libcnb-proc-macros = { version = "=0.14.0", path = "libcnb-proc-macros" }
+libcnb-test = { version = "=0.14.0", path = "libcnb-test" }
+toml = { version = "0.7.6" }
