@@ -6,12 +6,12 @@ rust-version.workspace = true
 publish = false
 
 [dependencies]
-flate2 = { version = "1.0.26", default-features = false, features = ["zlib"] }
+flate2 = { version = "1.0.27", default-features = false, features = ["zlib"] }
 libcnb.workspace = true
-serde = "1.0.166"
+serde = "1.0.183"
 sha2 = "0.10.7"
-tar = { version = "0.4.38", default-features = false }
-tempfile = "3.6.0"
+tar = { version = "0.4.40", default-features = false }
+tempfile = "3.7.1"
 ureq = { version = "2.7.1", default-features = false, features = ["tls"] }
 
 [dev-dependencies]
