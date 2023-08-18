@@ -23,6 +23,9 @@ pub(crate) enum Error {
         source: cargo_metadata::Error,
     },
 
+    #[error("Could not create package directory: {0}\nError: {1}")]
+    CreatePackageDirectory(PathBuf, std::io::Error),
+
     #[error("Could not determine a target directory for buildpack with id `{buildpack_id}`")]
     TargetDirectoryLookup { buildpack_id: BuildpackId },
 

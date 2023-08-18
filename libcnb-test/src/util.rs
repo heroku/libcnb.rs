@@ -40,17 +40,18 @@ pub(crate) fn run_command(command: impl Into<Command>) -> Result<LogOutput, Comm
             }
         })
         .and_then(|output| {
-            let stdout = String::from_utf8_lossy(&output.stdout).into_owned();
-            let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
+            let log_output = LogOutput {
+                stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
+                stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+            };
 
             if output.status.success() {
-                Ok(LogOutput { stdout, stderr })
+                Ok(log_output)
             } else {
                 Err(CommandError::NonZeroExitCode {
                     program,
                     exit_code: output.status.code(),
-                    stdout,
-                    stderr,
+                    log_output,
                 })
             }
         })
@@ -69,8 +70,7 @@ pub(crate) enum CommandError {
     NonZeroExitCode {
         exit_code: Option<i32>,
         program: String,
-        stdout: String,
-        stderr: String,
+        log_output: LogOutput,
     },
 }
 
@@ -89,11 +89,10 @@ impl Display for CommandError {
             CommandError::NonZeroExitCode {
                 program,
                 exit_code,
-                stdout,
-                stderr,
+                log_output,
             } => write!(
                 f,
-                "{program} command failed with exit code {}!\n\n## stderr:\n\n{stderr}\n## stdout:\n\n{stdout}\n",
+                "{program} command failed with exit code {}!\n\n{log_output}",
                 exit_code.map_or(String::from("<unknown>"), |exit_code| exit_code.to_string())
             ),
         }

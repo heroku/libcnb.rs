@@ -13,7 +13,7 @@ use libcnb_package::cross_compile::{cross_compile_assistance, CrossCompileAssist
 use libcnb_package::dependency_graph::{create_dependency_graph, get_dependencies};
 use libcnb_package::{
     assemble_buildpack_directory, find_buildpack_dirs, find_cargo_workspace_root_dir,
-    get_buildpack_target_dir, CargoProfile,
+    get_buildpack_package_dir, CargoProfile,
 };
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -25,12 +25,17 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
 
     let current_dir = std::env::current_dir().map_err(Error::GetCurrentDir)?;
 
-    let workspace_dir = find_cargo_workspace_root_dir(&current_dir)?;
+    let workspace_root_path = find_cargo_workspace_root_dir(&current_dir)?;
 
-    let output_dir = get_buildpack_output_dir(&workspace_dir)?;
+    let default_package_dir = get_default_package_dir(&workspace_root_path)?;
 
-    let buildpack_dirs = find_buildpack_dirs(&workspace_dir, &[output_dir.clone()])
-        .map_err(|e| Error::FindBuildpackDirs(workspace_dir.clone(), e))?;
+    let package_dir = args.package_dir.clone().unwrap_or(default_package_dir);
+
+    std::fs::create_dir_all(&package_dir)
+        .map_err(|e| Error::CreatePackageDirectory(package_dir.clone(), e))?;
+
+    let buildpack_dirs = find_buildpack_dirs(&workspace_root_path, &[package_dir.clone()])
+        .map_err(|e| Error::FindBuildpackDirs(workspace_root_path, e))?;
 
     let buildpack_packages = buildpack_dirs
         .into_iter()
@@ -46,7 +51,7 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
             let target_dir = if contains_buildpack_binaries(&buildpack_package.path) {
                 buildpack_package.path.clone()
             } else {
-                get_buildpack_target_dir(id, &output_dir, args.release, &args.target)
+                get_buildpack_package_dir(id, &package_dir, args.release, &args.target)
             };
             (id, target_dir)
         })
@@ -315,10 +320,10 @@ fn contains_buildpack_binaries(dir: &Path) -> bool {
         .all(|path| path.is_file())
 }
 
-fn get_buildpack_output_dir(workspace_dir: &Path) -> Result<PathBuf> {
+fn get_default_package_dir(workspace_root_path: &Path) -> Result<PathBuf> {
     MetadataCommand::new()
-        .manifest_path(&workspace_dir.join("Cargo.toml"))
+        .manifest_path(&workspace_root_path.join("Cargo.toml"))
         .exec()
-        .map(|metadata| metadata.target_directory.into_std_path_buf())
-        .map_err(|e| Error::GetBuildpackOutputDir(workspace_dir.to_path_buf(), e))
+        .map(|metadata| metadata.workspace_root.into_std_path_buf().join("packaged"))
+        .map_err(|e| Error::GetBuildpackOutputDir(workspace_root_path.to_path_buf(), e))
 }

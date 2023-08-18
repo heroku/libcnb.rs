@@ -475,13 +475,9 @@ fn expose_port_invalid_port() {
 
 #[test]
 #[ignore = "integration test"]
-#[should_panic(expected = "Error obtaining container port mapping:
-
-docker command failed with exit code 1!
-
-## stderr:
-
-Error: No public port '12345")]
+#[should_panic(
+    expected = "Unknown port: Port 12345 needs to be exposed first using `ContainerConfig::expose_port`"
+)]
 fn address_for_port_when_port_not_exposed() {
     TestRunner::default().build(
         BuildConfig::new("heroku/builder:22", "test-fixtures/procfile")
@@ -496,14 +492,17 @@ fn address_for_port_when_port_not_exposed() {
 
 #[test]
 #[ignore = "integration test"]
-// TODO: Improve the UX here: https://github.com/heroku/libcnb.rs/issues/482
-#[should_panic(expected = "Error obtaining container port mapping:
-
-docker command failed with exit code 1!
+#[should_panic(expected = "
+This normally means that the container crashed. Container logs:
 
 ## stderr:
 
-Error: No public port '12345")]
+some stderr
+
+## stdout:
+
+some stdout
+")]
 fn address_for_port_when_container_crashed() {
     TestRunner::default().build(
         BuildConfig::new("heroku/builder:22", "test-fixtures/procfile")
@@ -512,11 +511,12 @@ fn address_for_port_when_container_crashed() {
             context.start_container(
                 ContainerConfig::new()
                     .entrypoint("launcher")
-                    .command(["exit 1"])
+                    .command(["echo 'some stdout'; echo 'some stderr' >&2; exit 1"])
                     .expose_port(TEST_PORT),
                 |container| {
+                    // Wait for the container to actually exit, otherwise `address_for_port()` will succeed.
                     thread::sleep(Duration::from_secs(1));
-                    let _ = container.address_for_port(12345);
+                    let _ = container.address_for_port(TEST_PORT);
                 },
             );
         },
