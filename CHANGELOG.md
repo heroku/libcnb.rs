@@ -9,6 +9,7 @@ separate changelogs for each crate were used. If you need to refer to these old 
 ### Added
 
 - `libcnb-package`: Add cross-compilation assistance for Linux `aarch64-unknown-linux-musl`. ([#577](https://github.com/heroku/libcnb.rs/pull/577))
+- `libcnb-cargo`: Add `--package-dir` command line option to control where packaged buildpacks are written to. ([#583](https://github.com/heroku/libcnb.rs/pull/583))
 - `libcnb-test`:
   - `LogOutput` now implements `std::fmt::Display`. ([#635](https://github.com/heroku/libcnb.rs/pull/635))
   - `ContainerConfig` now implements `Clone`. ([#636](https://github.com/heroku/libcnb.rs/pull/636))
@@ -22,9 +23,12 @@ separate changelogs for each crate were used. If you need to refer to these old 
   - `TestRunner::new` has been removed, since its only purpose was for advanced configuration that's no longer applicable. Use `TestRunner::default` instead. ([#620](https://github.com/heroku/libcnb.rs/pull/620))
   - `LogOutput` no longer exposes `stdout_raw` and `stderr_raw`. ([#607](https://github.com/heroku/libcnb.rs/pull/607))
   - Improved wording of panic error messages. ([#619](https://github.com/heroku/libcnb.rs/pull/619) and [#620](https://github.com/heroku/libcnb.rs/pull/620))
-- `libcnb-package`: buildpack target directory now contains the target triple. Users that implicitly rely on the output directory need to adapt. The output of `cargo libcnb package` will refer to the new locations. ([#580](https://github.com/heroku/libcnb.rs/pull/580))
+- `libcnb-package`:
+  - buildpack target directory now contains the target triple. Users that implicitly rely on the output directory need to adapt. The output of `cargo libcnb package` will refer to the new locations. ([#580](https://github.com/heroku/libcnb.rs/pull/580))
+  - `get_buildpack_target_dir` was renamed to `get_buildpack_package_dir` ([#583](https://github.com/heroku/libcnb.rs/pull/583))
 - `libherokubuildpack`: Switch the `flate2` decompression backend from `miniz_oxide` to `zlib`. ([#593](https://github.com/heroku/libcnb.rs/pull/593))
 - Bump minimum external dependency versions. ([#587](https://github.com/heroku/libcnb.rs/pull/587))
+- `libcnb-cargo`: Default location for packaged buildpacks moved from Cargo's `target` directory to `packaged` in the Cargo workspace root. This simplifies the path and stops modification of the `target` directory which previously might have caching implications when other tools didn't expect non-Cargo output in that directory. Users that implicitly rely on the output directory need to adapt. The output of `cargo libcnb package` will refer to the new locations. ([#583](https://github.com/heroku/libcnb.rs/pull/583))
 
 ### Fixed
 

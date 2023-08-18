@@ -25,7 +25,7 @@ fn package_buildpack_in_single_buildpack_project() {
         .unwrap();
 
     let packaged_buildpack_dir = create_packaged_buildpack_dir_resolver(
-        &fixture_dir.path().join(TARGET_DIR_NAME),
+        &fixture_dir.path().join(DEFAULT_PACKAGE_DIR_NAME),
         true,
         X86_64_UNKNOWN_LINUX_MUSL,
     )(&buildpack_id);
@@ -50,7 +50,7 @@ fn package_single_meta_buildpack_in_monorepo_buildpack_project() {
         .unwrap();
 
     let packaged_buildpack_dir_resolver = create_packaged_buildpack_dir_resolver(
-        &fixture_dir.path().join(TARGET_DIR_NAME),
+        &fixture_dir.path().join(DEFAULT_PACKAGE_DIR_NAME),
         true,
         X86_64_UNKNOWN_LINUX_MUSL,
     );
@@ -110,7 +110,7 @@ fn package_single_buildpack_in_monorepo_buildpack_project() {
         .unwrap();
 
     let packaged_buildpack_dir = create_packaged_buildpack_dir_resolver(
-        &fixture_dir.path().join(TARGET_DIR_NAME),
+        &fixture_dir.path().join(DEFAULT_PACKAGE_DIR_NAME),
         true,
         X86_64_UNKNOWN_LINUX_MUSL,
     )(&buildpack_id);
@@ -140,7 +140,7 @@ fn package_all_buildpacks_in_monorepo_buildpack_project() {
         .unwrap();
 
     let packaged_buildpack_dir_resolver = create_packaged_buildpack_dir_resolver(
-        &fixture_dir.path().join(TARGET_DIR_NAME),
+        &fixture_dir.path().join(DEFAULT_PACKAGE_DIR_NAME),
         true,
         X86_64_UNKNOWN_LINUX_MUSL,
     );
@@ -275,16 +275,15 @@ fn validate_packaged_meta_buildpack(
 }
 
 fn create_packaged_buildpack_dir_resolver(
-    cargo_target_dir: &Path,
+    package_dir: &Path,
     release: bool,
     target_triple: &str,
 ) -> impl Fn(&BuildpackId) -> PathBuf {
-    let cargo_target_dir = PathBuf::from(cargo_target_dir);
+    let package_dir = PathBuf::from(package_dir);
     let target_triple = target_triple.to_string();
 
     move |buildpack_id| {
-        cargo_target_dir
-            .join("buildpack")
+        package_dir
             .join(&target_triple)
             .join(if release { "release" } else { "debug" })
             .join(buildpack_id.as_str().replace('/', "_"))
@@ -330,5 +329,5 @@ fn copy_dir_recursively(source: &Path, destination: &Path) -> std::io::Result<()
 }
 
 const X86_64_UNKNOWN_LINUX_MUSL: &str = "x86_64-unknown-linux-musl";
-const TARGET_DIR_NAME: &str = "target";
 const CARGO_LIBCNB_BINARY_UNDER_TEST: &str = env!("CARGO_BIN_EXE_cargo-libcnb");
+const DEFAULT_PACKAGE_DIR_NAME: &str = "packaged";
