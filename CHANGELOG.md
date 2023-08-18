@@ -4,34 +4,51 @@ This is the new, unified, changelog that contains changes from across all libcnb
 separate changelogs for each crate were used. If you need to refer to these old changelogs, find them named
 `HISTORICAL_CHANGELOG.md` in their respective crate directories.
 
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
 ## [Unreleased]
 
 ### Added
 
-- `libcnb-package`: 
-  - Add cross-compilation assistance for Linux `aarch64-unknown-linux-musl`. ([#577](https://github.com/heroku/libcnb.rs/pull/577))
-  - Added the `output::BuildpackOutputDirectoryLocator` struct which contains information on how compiled buildpack directories are structured and provides a `.get(buildpack_id)` method which produces the output path for a buildpack. ([#632](https://github.com/heroku/libcnb.rs/pull/632))
+- `libcnb-package`:
+  - Added the `output::create_packaged_buildpack_dir_resolver` helper which contains all the information on how compiled buildpack directories are structured returns a function that can be invoked with `BuildpackId` to produce the output path for a buildpack. ([#632](https://github.com/heroku/libcnb.rs/pull/632))
 
 ### Changed
 
-- `libcnb-test`:
-  - `ContainerContext::address_for_port` now returns `SocketAddr` directly instead of `Option<SocketAddr>`. ([#605](https://github.com/heroku/libcnb.rs/pull/605))
-  - Docker commands are now run using the Docker CLI instead of Bollard and the Docker daemon API. ([#620](https://github.com/heroku/libcnb.rs/pull/620))
-  - `ContainerConfig::entrypoint` now accepts a String rather than a vector of strings. Any arguments to the entrypoint should be moved to `ContainerConfig::command`. ([#620](https://github.com/heroku/libcnb.rs/pull/620))
-  - `TestRunner::new` has been removed, since its only purpose was for advanced configuration that's no longer applicable. Use `TestRunner::default` instead. ([#620](https://github.com/heroku/libcnb.rs/pull/620))
-  - `LogOutput` no longer exposes `stdout_raw` and `stderr_raw`. ([#607](https://github.com/heroku/libcnb.rs/pull/607))
-  - Improved wording of panic error messages. ([#619](https://github.com/heroku/libcnb.rs/pull/619) and [#620](https://github.com/heroku/libcnb.rs/pull/620))
-- `libcnb-package`: 
-  - buildpack target directory now contains the target triple. Users that implicitly rely on the output directory need to adapt. The output of `cargo libcnb package` will refer to the new locations. ([#580](https://github.com/heroku/libcnb.rs/pull/580))
-  - Changed `buildpack_dependency::rewrite_buildpackage_local_dependencies` to accept a `&BuildpackOutputDirectoryLocator` instead of `&HashMap<&BuildpackId, PathBuf>`. ([#632](https://github.com/heroku/libcnb.rs/pull/632))
-  - Moved `default_buildpack_directory_name` to `output::default_buildpack_directory_name`. ([#632](https://github.com/heroku/libcnb.rs/pull/632))
-- `libherokubuildpack`: Switch the `flate2` decompression backend from `miniz_oxide` to `zlib`. ([#593](https://github.com/heroku/libcnb.rs/pull/593))
-- Bump minimum external dependency versions. ([#587](https://github.com/heroku/libcnb.rs/pull/587))
+- `libcnb-package`:
+    - Changed `buildpack_dependency::rewrite_buildpackage_local_dependencies` to accept a `&BuildpackOutputDirectoryLocator` instead of `&HashMap<&BuildpackId, PathBuf>`. ([#632](https://github.com/heroku/libcnb.rs/pull/632))
+    - Moved `default_buildpack_directory_name` to `output::default_buildpack_directory_name`. ([#632](https://github.com/heroku/libcnb.rs/pull/632))
 
 ### Removed
 
 - `libcnb-package`:
-  - `get_buildpack_target_dir` has been removed in favor of `output::BuildpackOutputDirectoryLocator` for building output paths to compiled buildpacks. ([#632](https://github.com/heroku/libcnb.rs/pull/632))
+    - `get_buildpack_package_dir` has been removed in favor of `output::create_packaged_buildpack_dir_resolver` for building output paths to compiled buildpacks. ([#632](https://github.com/heroku/libcnb.rs/pull/632))
+
+## [0.14.0] - 2023-08-18
+
+### Added
+
+- `libcnb-package`: Added cross-compilation assistance for Linux `aarch64-unknown-linux-musl`. ([#577](https://github.com/heroku/libcnb.rs/pull/577))
+- `libcnb-cargo`: Added `--package-dir` command line option to control where packaged buildpacks are written. ([#583](https://github.com/heroku/libcnb.rs/pull/583))
+- `libcnb-test`:
+  - `LogOutput` now implements `std::fmt::Display`. ([#635](https://github.com/heroku/libcnb.rs/pull/635))
+  - `ContainerConfig` now implements `Clone`. ([#636](https://github.com/heroku/libcnb.rs/pull/636))
+
+### Changed
+
+- `libcnb-cargo`: Moved the default location for packaged buildpacks from Cargo's `target/` directory to `packaged/` in the Cargo workspace root. This simplifies the path and stops modification of the `target/` directory which previously might have caching implications when other tools didn't expect non-Cargo output in that directory. Users that implicitly rely on the output directory need to adapt. The output of `cargo libcnb package` will refer to the new locations. ([#583](https://github.com/heroku/libcnb.rs/pull/583))
+- `libcnb-package`:
+  - buildpack target directory now contains the target triple. Users that implicitly rely on the output directory need to adapt. The output of `cargo libcnb package` will refer to the new locations. ([#580](https://github.com/heroku/libcnb.rs/pull/580))
+  - `get_buildpack_target_dir` was renamed to `get_buildpack_package_dir` ([#583](https://github.com/heroku/libcnb.rs/pull/583))
+- `libcnb-test`:
+  - `ContainerContext::address_for_port` will now panic for all failure modes rather than just some, and so now returns `SocketAddr` directly instead of `Option<SocketAddr>`. This reduces test boilerplate due to the caller no longer needing to `.unwrap()` and improves debugging UX when containers crash after startup. ([#605](https://github.com/heroku/libcnb.rs/pull/605) and [#636](https://github.com/heroku/libcnb.rs/pull/636))
+  - Docker commands are now run using the Docker CLI instead of Bollard and the Docker daemon API. ([#620](https://github.com/heroku/libcnb.rs/pull/620))
+  - `ContainerConfig::entrypoint` now accepts a String rather than a vector of strings. Any arguments to the entrypoint should be moved to `ContainerConfig::command`. ([#620](https://github.com/heroku/libcnb.rs/pull/620))
+  - Removed `TestRunner::new` since its only purpose was for advanced configuration that's no longer applicable. Use `TestRunner::default` instead. ([#620](https://github.com/heroku/libcnb.rs/pull/620))
+  - Removed `stdout_raw` and `stderr_raw` from `LogOutput`. ([#607](https://github.com/heroku/libcnb.rs/pull/607))
+  - Improved wording of panic error messages. ([#619](https://github.com/heroku/libcnb.rs/pull/619) and [#620](https://github.com/heroku/libcnb.rs/pull/620))
+- `libherokubuildpack`: Changed the `flate2` decompression backend from `miniz_oxide` to `zlib`. ([#593](https://github.com/heroku/libcnb.rs/pull/593))
 
 ### Fixed
 
@@ -40,7 +57,7 @@ separate changelogs for each crate were used. If you need to refer to these old 
   - `ContainerContext::expose_port` now only exposes the port to localhost. ([#610](https://github.com/heroku/libcnb.rs/pull/610))
   - If a test with an expected result of `PackResult::Failure` unexpectedly succeeds, the built app image is now correctly cleaned up. ([#625](https://github.com/heroku/libcnb.rs/pull/625))
 
-## [0.13.0] 2023-06-21
+## [0.13.0] - 2023-06-21
 
 The highlight of this release is the `cargo libcnb package` changes to support compilation of both buildpacks and meta-buildpacks.
 
@@ -79,7 +96,7 @@ The highlight of this release is the `cargo libcnb package` changes to support c
     `dependency_graph::get_dependencies`
     to support dependency ordering and resolution in libcnb.rs-based Rust packages. ([#575](https://github.com/heroku/libcnb.rs/pull/575))
 
-## [0.12.0] 2023-04-28
+## [0.12.0] - 2023-04-28
 
 Highlight of this release is the bump to [Buildpack API 0.9](https://github.com/buildpacks/spec/releases/tag/buildpack%2Fv0.9). This release contains breaking changes, please refer to the items below for migration advice.
 
@@ -95,26 +112,26 @@ Highlight of this release is the bump to [Buildpack API 0.9](https://github.com/
 - `Env::get_string_lossy` as a convenience method to work with environment variables directly. Getting a value out of an `Env` and treating its contents as unicode is a common case. Using this new method can simplify buildpack code. ([#565](https://github.com/heroku/libcnb.rs/pull/565))
 - `Clone` implementation for `libcnb::layer_env::Scope`. ([#566](https://github.com/heroku/libcnb.rs/pull/566))
 
-## [0.11.5] 2023-02-07
+## [0.11.5] - 2023-02-07
 
 ### Changed
 
 - Update `toml` to `0.7.1`. If your buildpack interacts with TOML data directly, you probably want to bump
 the `toml` version in your buildpack as well. ([#556](https://github.com/heroku/libcnb.rs/pull/556))
 
-## [0.11.4] 2023-01-11
+## [0.11.4] - 2023-01-11
 
 ### Added
 
 - libcnb-data: Store struct now supports `clone()` and `default()`. ([#547](https://github.com/heroku/libcnb.rs/pull/547))
 
-## [0.11.3] 2023-01-09
+## [0.11.3] - 2023-01-09
 
 ### Added
 
 - libcnb: Add `store` field to `BuildContext`, exposing the contents of `store.toml` if present. ([#543](https://github.com/heroku/libcnb.rs/pull/543))
 
-## [0.11.2] 2022-12-15
+## [0.11.2] - 2022-12-15
 
 ### Fixed
 
@@ -129,7 +146,7 @@ the `toml` version in your buildpack as well. ([#556](https://github.com/heroku/
 
 - libherokubuildpack: Add `command` and `write` modules for working with `std::process::Command` output streams. ([#535](https://github.com/heroku/libcnb.rs/pull/535))
 
-## [0.11.1] 2022-09-29
+## [0.11.1] - 2022-09-29
 
 ### Fixed
 
@@ -140,7 +157,7 @@ the `toml` version in your buildpack as well. ([#556](https://github.com/heroku/
 
 - Improve the `libherokubuildpack` root module rustdocs. ([#503](https://github.com/heroku/libcnb.rs/pull/503))
 
-## [0.11.0] 2022-09-23
+## [0.11.0] - 2022-09-23
 
 ### Changed
 
@@ -151,7 +168,7 @@ the `toml` version in your buildpack as well. ([#556](https://github.com/heroku/
 
 - Add new crate `libherokubuildpack` with common code that can be useful when implementing buildpacks with libcnb. Originally hosted in a separate, private, repository. Code from `libherokubuildpack` might eventually find its way into libcnb.rs proper. At this point, consider it an incubator. ([#495](https://github.com/heroku/libcnb.rs/pull/495))
 
-## [0.10.0] 2022-08-31
+## [0.10.0] - 2022-08-31
 
 Highlight of this release is the bump to
 [Buildpack API 0.8](https://github.com/buildpacks/spec/releases/tag/buildpack%2Fv0.8) which brings support for SBOM to
@@ -182,3 +199,15 @@ version number. See the changelog below for other changes.
 ### Removed
 
 - Remove support for legacy BOM. Remove `Launch::bom`, `Build::bom`, `bom::Bom`, `bom::Entry`. ([#489](https://github.com/heroku/libcnb.rs/pull/489))
+
+[unreleased]: https://github.com/heroku/libcnb.rs/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/heroku/libcnb.rs/compare/v0.13.0...v0.14.0
+[0.13.0]: https://github.com/heroku/libcnb.rs/compare/v0.12.0...v0.13.0
+[0.12.0]: https://github.com/heroku/libcnb.rs/compare/v0.11.5...v0.12.0
+[0.11.5]: https://github.com/heroku/libcnb.rs/compare/v0.11.4...v0.11.5
+[0.11.4]: https://github.com/heroku/libcnb.rs/compare/v0.11.3...v0.11.4
+[0.11.3]: https://github.com/heroku/libcnb.rs/compare/v0.11.2...v0.11.3
+[0.11.2]: https://github.com/heroku/libcnb.rs/compare/v0.11.1...v0.11.2
+[0.11.1]: https://github.com/heroku/libcnb.rs/compare/v0.11.0...v0.11.1
+[0.11.0]: https://github.com/heroku/libcnb.rs/compare/v0.10.0...v0.11.0
+[0.10.0]: https://github.com/heroku/libcnb.rs/compare/libcnb/v0.9.0...v0.10.0

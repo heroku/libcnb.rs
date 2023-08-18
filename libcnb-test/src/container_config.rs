@@ -25,7 +25,7 @@ use std::collections::{HashMap, HashSet};
 ///     },
 /// );
 /// ```
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct ContainerConfig {
     pub(crate) entrypoint: Option<String>,
     pub(crate) command: Option<Vec<String>>,

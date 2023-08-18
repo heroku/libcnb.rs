@@ -27,6 +27,9 @@ pub(crate) enum Error {
         source: cargo_metadata::Error,
     },
 
+    #[error("Could not create package directory: {0}\nError: {1}")]
+    CreatePackageDirectory(PathBuf, std::io::Error),
+
     #[error("{0}")]
     CrossCompilationHelp(String),
 

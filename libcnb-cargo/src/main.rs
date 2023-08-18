@@ -9,8 +9,6 @@ mod package;
 
 // Suppress warnings due to the `unused_crate_dependencies` lint not handling integration tests well.
 #[cfg(test)]
-use fs_extra as _;
-#[cfg(test)]
 use tempfile as _;
 
 use crate::cli::{Cli, LibcnbSubcommand};

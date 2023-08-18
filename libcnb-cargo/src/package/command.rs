@@ -1,7 +1,7 @@
 use crate::cli::PackageArgs;
 use crate::package::error::Error;
 use cargo_metadata::MetadataCommand;
-use libcnb_data::buildpack::BuildpackDescriptor;
+use libcnb_data::buildpack::{BuildpackDescriptor, BuildpackId};
 use libcnb_data::buildpackage::Buildpackage;
 use libcnb_package::build::build_buildpack_binaries;
 use libcnb_package::buildpack_dependency::{
@@ -11,7 +11,7 @@ use libcnb_package::buildpack_dependency::{
 use libcnb_package::buildpack_package::{read_buildpack_package, BuildpackPackage};
 use libcnb_package::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
 use libcnb_package::dependency_graph::{create_dependency_graph, get_dependencies};
-use libcnb_package::output::BuildpackOutputDirectoryLocator;
+use libcnb_package::output::create_packaged_buildpack_dir_resolver;
 use libcnb_package::{assemble_buildpack_directory, find_buildpack_dirs, CargoProfile};
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
@@ -32,21 +32,30 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
 
     let current_dir = std::env::current_dir().map_err(Error::GetCurrentDir)?;
 
-    let workspace = get_cargo_workspace_root(&current_dir)?;
+    let workspace_root_path = get_cargo_workspace_root(&current_dir)?;
 
-    let workspace_target_dir = MetadataCommand::new()
-        .manifest_path(&workspace.join("Cargo.toml"))
+    let cargo_metadata = MetadataCommand::new()
+        .manifest_path(&workspace_root_path.join("Cargo.toml"))
         .exec()
-        .map(|metadata| metadata.target_directory.into_std_path_buf())
         .map_err(|e| Error::ReadCargoMetadata {
-            path: workspace.clone(),
+            path: workspace_root_path.clone(),
             source: e,
         })?;
 
+    let package_dir = args.package_dir.clone().unwrap_or_else(|| {
+        cargo_metadata
+            .workspace_root
+            .into_std_path_buf()
+            .join("packaged")
+    });
+
+    std::fs::create_dir_all(&package_dir)
+        .map_err(|e| Error::CreatePackageDirectory(package_dir.clone(), e))?;
+
     let buildpack_packages = create_dependency_graph(
-        find_buildpack_dirs(&workspace, &[workspace_target_dir.clone()])
+        find_buildpack_dirs(&workspace_root_path, &[package_dir.clone()])
             .map_err(|e| Error::FindBuildpackDirs {
-                path: workspace_target_dir.clone(),
+                path: workspace_root_path,
                 source: e,
             })?
             .into_iter()
@@ -73,17 +82,14 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
 
     let build_order = get_dependencies(&buildpack_packages, &buildpack_packages_requested)?;
 
-    let buildpack_output_directory_locator = BuildpackOutputDirectoryLocator::new(
-        workspace_target_dir,
-        cargo_profile,
-        target_triple.clone(),
-    );
+    let packaged_buildpack_dir_resolver =
+        create_packaged_buildpack_dir_resolver(&package_dir, cargo_profile, &target_triple);
 
     let lookup_target_dir = |buildpack_package: &BuildpackPackage| {
         if contains_buildpack_binaries(&buildpack_package.path) {
             buildpack_package.path.clone()
         } else {
-            buildpack_output_directory_locator.get(buildpack_package.buildpack_id())
+            packaged_buildpack_dir_resolver(buildpack_package.buildpack_id())
         }
     };
 
@@ -113,7 +119,7 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
                 package_meta_buildpack(
                     buildpack_package,
                     &target_dir,
-                    &buildpack_output_directory_locator,
+                    &packaged_buildpack_dir_resolver,
                 )?;
             }
         }
@@ -187,7 +193,7 @@ fn package_single_buildpack(
 fn package_meta_buildpack(
     buildpack_package: &BuildpackPackage,
     target_dir: &Path,
-    buildpack_output_directory_locator: &BuildpackOutputDirectoryLocator,
+    packaged_buildpack_dir_resolver: &impl Fn(&BuildpackId) -> PathBuf,
 ) -> Result<()> {
     eprintln!("Writing buildpack directory...");
 
@@ -208,11 +214,8 @@ fn package_meta_buildpack(
         .map(|buildpackage_data| &buildpackage_data.buildpackage_descriptor)
         .ok_or(Error::MissingBuildpackageData)
         .and_then(|buildpackage| {
-            rewrite_buildpackage_local_dependencies(
-                buildpackage,
-                buildpack_output_directory_locator,
-            )
-            .map_err(std::convert::Into::into)
+            rewrite_buildpackage_local_dependencies(buildpackage, packaged_buildpack_dir_resolver)
+                .map_err(std::convert::Into::into)
         })
         .and_then(|buildpackage| {
             rewrite_buildpackage_relative_path_dependencies_to_absolute(

@@ -1,33 +1,24 @@
 use crate::CargoProfile;
 use libcnb_data::buildpack::BuildpackId;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
-pub struct BuildpackOutputDirectoryLocator {
-    root_dir: PathBuf,
+/// Create a function that can construct the output location for a buildpack.
+pub fn create_packaged_buildpack_dir_resolver(
+    package_dir: &Path,
     cargo_profile: CargoProfile,
-    target_triple: String,
-}
+    target_triple: &str,
+) -> impl Fn(&BuildpackId) -> PathBuf {
+    let package_dir = PathBuf::from(package_dir);
+    let target_triple = target_triple.to_string();
 
-impl BuildpackOutputDirectoryLocator {
-    #[must_use]
-    pub fn new(root_dir: PathBuf, cargo_profile: CargoProfile, target_triple: String) -> Self {
-        Self {
-            root_dir,
-            cargo_profile,
-            target_triple,
-        }
-    }
-
-    #[must_use]
-    pub fn get(&self, buildpack_id: &BuildpackId) -> PathBuf {
-        self.root_dir
-            .join("buildpack")
-            .join(&self.target_triple)
-            .join(match self.cargo_profile {
+    move |buildpack_id| {
+        package_dir
+            .join(&target_triple)
+            .join(match cargo_profile {
                 CargoProfile::Dev => "debug",
                 CargoProfile::Release => "release",
             })
-            .join(default_buildpack_directory_name(buildpack_id))
+            .join(default_buildpack_directory_name(&buildpack_id))
     }
 }
 
@@ -42,36 +33,33 @@ pub fn default_buildpack_directory_name(buildpack_id: &BuildpackId) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::output::BuildpackOutputDirectoryLocator;
+    use crate::output::create_packaged_buildpack_dir_resolver;
     use crate::CargoProfile;
     use libcnb_data::buildpack_id;
     use std::path::PathBuf;
 
     #[test]
-    fn test_get_buildpack_output_directory_locator() {
+    fn test_get_buildpack_target_dir() {
         let buildpack_id = buildpack_id!("some-org/with-buildpack");
+        let package_dir = PathBuf::from("/package");
+        let target_triple = "x86_64-unknown-linux-musl";
+
+        let dev_packaged_buildpack_dir_resolver =
+            create_packaged_buildpack_dir_resolver(&package_dir, CargoProfile::Dev, target_triple);
+
+        let release_packaged_buildpack_dir_resolver = create_packaged_buildpack_dir_resolver(
+            &package_dir,
+            CargoProfile::Release,
+            target_triple,
+        );
 
         assert_eq!(
-            BuildpackOutputDirectoryLocator {
-                cargo_profile: CargoProfile::Dev,
-                target_triple: "x86_64-unknown-linux-musl".to_string(),
-                root_dir: PathBuf::from("/target")
-            }
-            .get(&buildpack_id),
-            PathBuf::from(
-                "/target/buildpack/x86_64-unknown-linux-musl/debug/some-org_with-buildpack"
-            )
+            dev_packaged_buildpack_dir_resolver(&buildpack_id),
+            PathBuf::from("/package/x86_64-unknown-linux-musl/debug/some-org_with-buildpack")
         );
         assert_eq!(
-            BuildpackOutputDirectoryLocator {
-                cargo_profile: CargoProfile::Release,
-                target_triple: "x86_64-unknown-linux-musl".to_string(),
-                root_dir: PathBuf::from("/target")
-            }
-            .get(&buildpack_id),
-            PathBuf::from(
-                "/target/buildpack/x86_64-unknown-linux-musl/release/some-org_with-buildpack"
-            )
+            release_packaged_buildpack_dir_resolver(&buildpack_id),
+            PathBuf::from("/package/x86_64-unknown-linux-musl/release/some-org_with-buildpack")
         );
     }
 }
