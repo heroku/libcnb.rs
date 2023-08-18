@@ -10,9 +10,12 @@ easier to gauge cross-crate compatibility.
    1. In the `workspace.package` table, update `version` to the new version
    2. In the `workspace.dependencies` table, update the `version` of each of the repository-local dependencies to the new version
 3. Update [CHANGELOG.md](./CHANGELOG.md)
-   1. Move all content under `## [Unreleased]` to a new section that follows this pattern: `## [VERSION] YYYY-MM-DD`
+   1. Move all content under `## [Unreleased]` to a new section that follows this pattern: `## [VERSION] - YYYY-MM-DD`
    2. If appropriate, add a high-level summary of changes at the beginning of the new section
-4. Commit the changes, push them and open a PR targeting `main`
+   3. Update the version compare links at the bottom of the file to both add the new version, and update the "unreleased" link's "from" version.
+4. Install the latest version of [cargo-edit](https://github.com/killercup/cargo-edit): `cargo install cargo-edit`
+5. Bump in-range dependency versions using: `cargo upgrade`
+6. Commit the changes, push them and open a PR targeting `main`
 
 ## Release
 

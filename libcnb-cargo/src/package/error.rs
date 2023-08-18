@@ -25,6 +25,9 @@ pub(crate) enum Error {
     #[error("Could not read Cargo.toml metadata in `{0}`\nError: {1}")]
     ReadCargoMetadata(PathBuf, cargo_metadata::Error),
 
+    #[error("Could not create package directory: {0}\nError: {1}")]
+    CreatePackageDirectory(PathBuf, std::io::Error),
+
     #[error("{0}")]
     CrossCompilationHelp(String),
 

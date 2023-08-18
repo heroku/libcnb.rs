@@ -1,9 +1,7 @@
 use crate::docker::DockerRemoveImageCommand;
 use crate::pack::PackBuildCommand;
 use crate::util::CommandError;
-use crate::{
-    app, build, util, BuildConfig, BuildpackReference, LogOutput, PackResult, TestContext,
-};
+use crate::{app, build, util, BuildConfig, BuildpackReference, PackResult, TestContext};
 use std::borrow::Borrow;
 use std::env;
 use std::path::PathBuf;
@@ -119,10 +117,10 @@ impl TestRunner {
 
         let output = match (&config.expected_pack_result, pack_result) {
             (PackResult::Success, Ok(output)) => output,
-            (PackResult::Failure, Err(CommandError::NonZeroExitCode { stdout, stderr, .. })) => {
-                LogOutput { stdout, stderr }
+            (PackResult::Failure, Err(CommandError::NonZeroExitCode { log_output, .. })) => {
+                log_output
             }
-            (PackResult::Failure, Ok(LogOutput { stdout, stderr })) => {
+            (PackResult::Failure, Ok(log_output)) => {
                 // Ordinarily the Docker image created by `pack build` will either be cleaned up by
                 // `TestContext::Drop` later on, or will not have been created in the first place,
                 // if the `pack build` was not successful. However, in the case of an unexpectedly
@@ -130,7 +128,7 @@ impl TestRunner {
                 util::run_command(DockerRemoveImageCommand::new(image_name)).unwrap_or_else(
                     |command_err| panic!("Error removing Docker image:\n\n{command_err}"),
                 );
-                panic!("The pack build was expected to fail, but did not:\n\n## stderr:\n\n{stderr}\n## stdout:\n\n{stdout}\n");
+                panic!("The pack build was expected to fail, but did not:\n\n{log_output}");
             }
             (_, Err(command_err)) => {
                 panic!("Error performing pack build:\n\n{command_err}");

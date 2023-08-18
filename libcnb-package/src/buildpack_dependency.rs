@@ -1,4 +1,3 @@
-use crate::output::BuildpackOutputDirectoryLocator;
 use libcnb_data::buildpack::{BuildpackId, BuildpackIdError};
 use libcnb_data::buildpackage::{Buildpackage, BuildpackageDependency};
 use std::path::{Path, PathBuf};
@@ -81,7 +80,7 @@ pub fn get_local_buildpackage_dependencies(
 /// * the target path for a local dependency is an invalid URI
 pub fn rewrite_buildpackage_local_dependencies(
     buildpackage: &Buildpackage,
-    buildpack_output_directory_locator: &BuildpackOutputDirectoryLocator,
+    packaged_buildpack_dir_resolver: &impl Fn(&BuildpackId) -> PathBuf,
 ) -> Result<Buildpackage, RewriteBuildpackageLocalDependenciesError> {
     let local_dependency_to_target_dir = |target_dir: &PathBuf| {
         BuildpackageDependency::try_from(target_dir.clone()).map_err(|_| {
@@ -99,7 +98,7 @@ pub fn rewrite_buildpackage_local_dependencies(
                         Ok(buildpackage_dependency)
                     }
                     BuildpackDependency::Local(buildpack_id, _) => {
-                        let output_dir = buildpack_output_directory_locator.get(&buildpack_id);
+                        let output_dir = packaged_buildpack_dir_resolver(&buildpack_id);
                         local_dependency_to_target_dir(&output_dir)
                     }
                 })
