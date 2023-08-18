@@ -12,8 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `libcnb-package`:
-    - Added `find_cargo_workspace` which provides a convenient starting point for locating buildpacks for packaging and testing purposes. ([#629](https://github.com/heroku/libcnb.rs/pull/629))
-
+    - Added `find_cargo_workspace_root_dir` which provides a convenient starting point for locating buildpacks for packaging and testing purposes. ([#629](https://github.com/heroku/libcnb.rs/pull/629))
 
 ## [0.14.0] - 2023-08-18
 
