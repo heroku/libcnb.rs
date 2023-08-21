@@ -25,7 +25,7 @@ use uriparse::{URIReference, URIReferenceError};
 /// uri = "/absolute/path"
 ///
 /// [[dependencies]]
-/// uri = "docker://docker.io/heroku/procfile-cnb:2.0.0"
+/// uri = "docker://docker.io/heroku/example:1.2.3"
 ///
 /// [platform]
 /// os = "windows"
@@ -205,7 +205,7 @@ uri = "../relative/path"
 uri = "/absolute/path"
 
 [[dependencies]]
-uri = "docker://docker.io/heroku/procfile-cnb:2.0.0"
+uri = "docker://docker.io/heroku/example:1.2.3"
 
 [platform]
 os = "windows"
@@ -223,7 +223,7 @@ os = "windows"
                 BuildpackageDependency::try_from("libcnb:buildpack-id").unwrap(),
                 BuildpackageDependency::try_from("../relative/path").unwrap(),
                 BuildpackageDependency::try_from("/absolute/path").unwrap(),
-                BuildpackageDependency::try_from("docker://docker.io/heroku/procfile-cnb:2.0.0")
+                BuildpackageDependency::try_from("docker://docker.io/heroku/example:1.2.3")
                     .unwrap()
             ]
         );
@@ -237,7 +237,7 @@ os = "windows"
                 BuildpackageDependency::try_from("libcnb:buildpack-id").unwrap(),
                 BuildpackageDependency::try_from("../relative/path").unwrap(),
                 BuildpackageDependency::try_from("/absolute/path").unwrap(),
-                BuildpackageDependency::try_from("docker://docker.io/heroku/procfile-cnb:2.0.0")
+                BuildpackageDependency::try_from("docker://docker.io/heroku/example:1.2.3")
                     .unwrap(),
             ],
             platform: Platform::default(),
@@ -260,7 +260,7 @@ uri = "../relative/path"
 uri = "/absolute/path"
 
 [[dependencies]]
-uri = "docker://docker.io/heroku/procfile-cnb:2.0.0"
+uri = "docker://docker.io/heroku/example:1.2.3"
 
 [platform]
 os = "linux"

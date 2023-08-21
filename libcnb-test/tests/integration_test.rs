@@ -20,7 +20,7 @@ use std::{env, fs, thread};
 // prevents issues when the builder contains multiple heroku/procfile versions. We don't use CNB
 // registry URLs since, as of August 2022, pack fails when another pack instance is resolving such
 // an URL in parallel.
-const PROCFILE_URL: &str = "docker://docker.io/heroku/procfile-cnb:2.0.0";
+const PROCFILE_URL: &str = "docker://docker.io/heroku/procfile-cnb:2.0.1";
 const TEST_PORT: u16 = 12345;
 
 #[test]
