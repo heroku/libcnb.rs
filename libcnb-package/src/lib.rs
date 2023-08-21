@@ -274,7 +274,7 @@ mod tests {
     use std::path::PathBuf;
 
     #[test]
-    fn test_get_buildpack_target_dir() {
+    fn test_get_buildpack_package_dir() {
         let buildpack_id = buildpack_id!("some-org/with-buildpack");
         let package_dir = PathBuf::from("/package");
         let target_triple = "x86_64-unknown-linux-musl";
