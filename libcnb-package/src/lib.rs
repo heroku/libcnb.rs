@@ -10,6 +10,7 @@ pub mod buildpack_package;
 pub mod config;
 pub mod cross_compile;
 pub mod dependency_graph;
+pub mod output;
 
 use crate::build::BuildpackBinaries;
 use libcnb_data::buildpack::{BuildpackDescriptor, BuildpackId};
@@ -188,15 +189,6 @@ fn create_file_symlink<P: AsRef<Path>, Q: AsRef<Path>>(
     std::os::windows::fs::symlink_file(original.as_ref(), link.as_ref())
 }
 
-/// Construct a good default filename for a buildpack directory.
-///
-/// This function ensures the resulting name is valid and does not contain problematic characters
-/// such as `/`.
-#[must_use]
-pub fn default_buildpack_directory_name(buildpack_id: &BuildpackId) -> String {
-    buildpack_id.replace('/', "_")
-}
-
 /// Recursively walks the file system from the given `start_dir` to locate any folders containing a
 /// `buildpack.toml` file.
 ///
@@ -248,7 +240,7 @@ pub fn get_buildpack_package_dir(
     package_dir
         .join(target_triple)
         .join(if is_release { "release" } else { "debug" })
-        .join(default_buildpack_directory_name(buildpack_id))
+        .join(output::default_buildpack_directory_name(buildpack_id))
 }
 
 /// Returns the path of the root workspace directory for a Rust Cargo project. This is often a useful

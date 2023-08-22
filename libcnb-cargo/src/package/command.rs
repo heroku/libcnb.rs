@@ -11,16 +11,25 @@ use libcnb_package::buildpack_dependency::{
 use libcnb_package::buildpack_package::{read_buildpack_package, BuildpackPackage};
 use libcnb_package::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
 use libcnb_package::dependency_graph::{create_dependency_graph, get_dependencies};
+use libcnb_package::output::create_packaged_buildpack_dir_resolver;
 use libcnb_package::{
-    assemble_buildpack_directory, find_buildpack_dirs, find_cargo_workspace_root_dir,
-    get_buildpack_package_dir, CargoProfile,
+    assemble_buildpack_directory, find_buildpack_dirs, find_cargo_workspace_root_dir, CargoProfile,
 };
-use std::collections::HashMap;
+use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
 type Result<T> = std::result::Result<T, Error>;
 
+#[allow(clippy::too_many_lines)]
 pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
+    let target_triple = args.target.clone();
+
+    let cargo_profile = if args.release {
+        CargoProfile::Release
+    } else {
+        CargoProfile::Dev
+    };
+
     eprintln!("🔍 Locating buildpacks...");
 
     let current_dir = std::env::current_dir().map_err(Error::GetCurrentDir)?;
@@ -43,19 +52,6 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
 
     let buildpack_packages_graph = create_dependency_graph(buildpack_packages)?;
 
-    let target_directories_index = buildpack_packages_graph
-        .node_weights()
-        .map(|buildpack_package| {
-            let id = buildpack_package.buildpack_id();
-            let target_dir = if contains_buildpack_binaries(&buildpack_package.path) {
-                buildpack_package.path.clone()
-            } else {
-                get_buildpack_package_dir(id, &package_dir, args.release, &args.target)
-            };
-            (id, target_dir)
-        })
-        .collect::<HashMap<_, _>>();
-
     let buildpack_packages_requested = buildpack_packages_graph
         .node_weights()
         .filter(|buildpack_package| {
@@ -75,13 +71,15 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
 
     let build_order = get_dependencies(&buildpack_packages_graph, &buildpack_packages_requested)?;
 
+    let packaged_buildpack_dir_resolver =
+        create_packaged_buildpack_dir_resolver(&package_dir, cargo_profile, &target_triple);
+
     let lookup_target_dir = |buildpack_package: &BuildpackPackage| {
-        target_directories_index
-            .get(&buildpack_package.buildpack_id())
-            .ok_or(Error::TargetDirectoryLookup {
-                buildpack_id: buildpack_package.buildpack_id().clone(),
-            })
-            .map(std::clone::Clone::clone)
+        if contains_buildpack_binaries(&buildpack_package.path) {
+            buildpack_package.path.clone()
+        } else {
+            packaged_buildpack_dir_resolver(buildpack_package.buildpack_id())
+        }
     };
 
     let mut current_count = 1;
@@ -91,17 +89,27 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
             "📦 [{current_count}/{total_count}] Building {}",
             buildpack_package.buildpack_id()
         );
-        let target_dir = lookup_target_dir(buildpack_package)?;
+        let target_dir = lookup_target_dir(buildpack_package);
         match buildpack_package.buildpack_data.buildpack_descriptor {
             BuildpackDescriptor::Single(_) => {
                 if contains_buildpack_binaries(&buildpack_package.path) {
                     eprintln!("Not a libcnb.rs buildpack, nothing to compile...");
                 } else {
-                    package_single_buildpack(buildpack_package, &target_dir, args)?;
+                    package_single_buildpack(
+                        buildpack_package,
+                        &target_dir,
+                        cargo_profile,
+                        &target_triple,
+                        args.no_cross_compile_assistance,
+                    )?;
                 }
             }
             BuildpackDescriptor::Meta(_) => {
-                package_meta_buildpack(buildpack_package, &target_dir, &target_directories_index)?;
+                package_meta_buildpack(
+                    buildpack_package,
+                    &target_dir,
+                    &packaged_buildpack_dir_resolver,
+                )?;
             }
         }
         current_count += 1;
@@ -111,14 +119,14 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
         build_order
             .into_iter()
             .map(lookup_target_dir)
-            .collect::<Result<Vec<_>>>()?,
+            .collect::<Vec<_>>(),
     );
 
     print_requested_buildpack_output_dirs(
         buildpack_packages_requested
             .into_iter()
             .map(lookup_target_dir)
-            .collect::<Result<Vec<_>>>()?,
+            .collect::<Vec<_>>(),
     );
 
     Ok(())
@@ -127,16 +135,10 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
 fn package_single_buildpack(
     buildpack_package: &BuildpackPackage,
     target_dir: &Path,
-    args: &PackageArgs,
+    cargo_profile: CargoProfile,
+    target_triple: &str,
+    no_cross_compile_assistance: bool,
 ) -> Result<()> {
-    let cargo_profile = if args.release {
-        CargoProfile::Release
-    } else {
-        CargoProfile::Dev
-    };
-
-    let target_triple = &args.target;
-
     let cargo_metadata = MetadataCommand::new()
         .manifest_path(&buildpack_package.path.join("Cargo.toml"))
         .exec()
@@ -145,25 +147,7 @@ fn package_single_buildpack(
             source: e,
         })?;
 
-    let cargo_build_env = if args.no_cross_compile_assistance {
-        vec![]
-    } else {
-        eprintln!("Determining automatic cross-compile settings...");
-        match cross_compile_assistance(target_triple) {
-            CrossCompileAssistance::Configuration { cargo_env } => cargo_env,
-
-            CrossCompileAssistance::NoAssistance => {
-                eprintln!("Could not determine automatic cross-compile settings for target triple {target_triple}.");
-                eprintln!("This is not an error, but without proper cross-compile settings in your Cargo manifest and locally installed toolchains, compilation might fail.");
-                eprintln!("To disable this warning, pass --no-cross-compile-assistance.");
-                vec![]
-            }
-
-            CrossCompileAssistance::HelpText(help_text) => {
-                Err(Error::CrossCompilationHelp { message: help_text })?
-            }
-        }
-    };
+    let cargo_build_env = get_cargo_build_env(target_triple, no_cross_compile_assistance)?;
 
     eprintln!("Building binaries ({target_triple})...");
 
@@ -198,7 +182,7 @@ fn package_single_buildpack(
 fn package_meta_buildpack(
     buildpack_package: &BuildpackPackage,
     target_dir: &Path,
-    target_dirs_by_buildpack_id: &HashMap<&BuildpackId, PathBuf>,
+    packaged_buildpack_dir_resolver: &impl Fn(&BuildpackId) -> PathBuf,
 ) -> Result<()> {
     eprintln!("Writing buildpack directory...");
 
@@ -219,7 +203,7 @@ fn package_meta_buildpack(
         .map(|buildpackage_data| &buildpackage_data.buildpackage_descriptor)
         .ok_or(Error::MissingBuildpackageData)
         .and_then(|buildpackage| {
-            rewrite_buildpackage_local_dependencies(buildpackage, target_dirs_by_buildpack_id)
+            rewrite_buildpackage_local_dependencies(buildpackage, packaged_buildpack_dir_resolver)
                 .map_err(std::convert::Into::into)
         })
         .and_then(|buildpackage| {
@@ -317,6 +301,31 @@ fn contains_buildpack_binaries(dir: &Path) -> bool {
         .into_iter()
         .map(|path| dir.join(path))
         .all(|path| path.is_file())
+}
+
+fn get_cargo_build_env(
+    target_triple: &str,
+    no_cross_compile_assistance: bool,
+) -> Result<Vec<(OsString, OsString)>> {
+    if no_cross_compile_assistance {
+        Ok(vec![])
+    } else {
+        eprintln!("Determining automatic cross-compile settings...");
+        match cross_compile_assistance(target_triple) {
+            CrossCompileAssistance::Configuration { cargo_env } => Ok(cargo_env),
+
+            CrossCompileAssistance::NoAssistance => {
+                eprintln!("Could not determine automatic cross-compile settings for target triple {target_triple}.");
+                eprintln!("This is not an error, but without proper cross-compile settings in your Cargo manifest and locally installed toolchains, compilation might fail.");
+                eprintln!("To disable this warning, pass --no-cross-compile-assistance.");
+                Ok(vec![])
+            }
+
+            CrossCompileAssistance::HelpText(help_text) => {
+                Err(Error::CrossCompilationHelp(help_text))?
+            }
+        }
+    }
 }
 
 fn get_default_package_dir(workspace_root_path: &Path) -> Result<PathBuf> {

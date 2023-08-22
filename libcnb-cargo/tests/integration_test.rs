@@ -5,7 +5,8 @@
 use libcnb_data::buildpack::BuildpackId;
 use libcnb_data::buildpack_id;
 use libcnb_data::buildpackage::BuildpackageDependency;
-use libcnb_package::{read_buildpack_data, read_buildpackage_data};
+use libcnb_package::output::create_packaged_buildpack_dir_resolver;
+use libcnb_package::{read_buildpack_data, read_buildpackage_data, CargoProfile};
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -26,7 +27,7 @@ fn package_buildpack_in_single_buildpack_project() {
 
     let packaged_buildpack_dir = create_packaged_buildpack_dir_resolver(
         &fixture_dir.path().join(DEFAULT_PACKAGE_DIR_NAME),
-        true,
+        CargoProfile::Release,
         X86_64_UNKNOWN_LINUX_MUSL,
     )(&buildpack_id);
 
@@ -51,7 +52,7 @@ fn package_single_meta_buildpack_in_monorepo_buildpack_project() {
 
     let packaged_buildpack_dir_resolver = create_packaged_buildpack_dir_resolver(
         &fixture_dir.path().join(DEFAULT_PACKAGE_DIR_NAME),
-        true,
+        CargoProfile::Release,
         X86_64_UNKNOWN_LINUX_MUSL,
     );
 
@@ -111,7 +112,7 @@ fn package_single_buildpack_in_monorepo_buildpack_project() {
 
     let packaged_buildpack_dir = create_packaged_buildpack_dir_resolver(
         &fixture_dir.path().join(DEFAULT_PACKAGE_DIR_NAME),
-        true,
+        CargoProfile::Release,
         X86_64_UNKNOWN_LINUX_MUSL,
     )(&buildpack_id);
 
@@ -141,7 +142,7 @@ fn package_all_buildpacks_in_monorepo_buildpack_project() {
 
     let packaged_buildpack_dir_resolver = create_packaged_buildpack_dir_resolver(
         &fixture_dir.path().join(DEFAULT_PACKAGE_DIR_NAME),
-        true,
+        CargoProfile::Release,
         X86_64_UNKNOWN_LINUX_MUSL,
     );
 
@@ -272,22 +273,6 @@ fn validate_packaged_meta_buildpack(
             .dependencies,
         expected_buildpackage_dependencies
     );
-}
-
-fn create_packaged_buildpack_dir_resolver(
-    package_dir: &Path,
-    release: bool,
-    target_triple: &str,
-) -> impl Fn(&BuildpackId) -> PathBuf {
-    let package_dir = PathBuf::from(package_dir);
-    let target_triple = target_triple.to_string();
-
-    move |buildpack_id| {
-        package_dir
-            .join(&target_triple)
-            .join(if release { "release" } else { "debug" })
-            .join(buildpack_id.as_str().replace('/', "_"))
-    }
 }
 
 fn copy_fixture_to_temp_dir(name: &str) -> Result<TempDir, std::io::Error> {
