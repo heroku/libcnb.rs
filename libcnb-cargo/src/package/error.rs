@@ -5,21 +5,17 @@ use libcnb_package::buildpack_dependency::{
     RewriteBuildpackageRelativePathDependenciesToAbsoluteError,
 };
 use libcnb_package::dependency_graph::{CreateDependencyGraphError, GetDependenciesError};
+use libcnb_package::FindCargoWorkspaceError;
 use std::path::PathBuf;
+use std::process::ExitStatus;
 
 #[derive(Debug, thiserror::Error)]
 pub(crate) enum Error {
     #[error("Failed to get current dir\nError: {0}")]
     GetCurrentDir(std::io::Error),
 
-    #[error("Could not locate a Cargo workspace within `{path}` or it's parent directories")]
-    GetWorkspaceDirectory { path: PathBuf },
-
-    #[error("Could not execute `cargo locate-project --workspace --message-format plain in {path}\nError: {source}")]
-    GetWorkspaceCommand {
-        path: PathBuf,
-        source: std::io::Error,
-    },
+    #[error("Could not locate a Cargo workspace within `{0}` or it's parent directories")]
+    GetWorkspaceDirectory(PathBuf),
 
     #[error("Could not read Cargo.toml metadata in `{path}`\nError: {source}")]
     ReadCargoMetadata {
@@ -45,11 +41,8 @@ pub(crate) enum Error {
     #[error("Failed to serialize package.toml\nError: {0}")]
     SerializeBuildpackage(toml::ser::Error),
 
-    #[error("Error while finding buildpack directories\nLocation: {path}\nError: {source}")]
-    FindBuildpackDirs {
-        path: PathBuf,
-        source: std::io::Error,
-    },
+    #[error("Error while finding buildpack directories\nLocation: {0}\nError: {1}")]
+    FindBuildpackDirs(PathBuf, std::io::Error),
 
     #[error("There was a problem with the build configuration")]
     BinaryConfig,
@@ -60,8 +53,8 @@ pub(crate) enum Error {
         source: std::io::Error,
     },
 
-    #[error("Unexpected Cargo exit status for target {target}\nExit Status: {code}\nExamine Cargo output for details and potential compilation errors.")]
-    BinaryBuildExitStatus { target: String, code: String },
+    #[error("Unexpected Cargo exit status for target {0}\nExit Status: {}\nExamine Cargo output for details and potential compilation errors.", .exit_code_or_unknown(.1))]
+    BinaryBuildExitStatus(String, ExitStatus),
 
     #[error("Configured buildpack target name {target} could not be found!")]
     BinaryBuildMissingTarget { target: String },
@@ -132,6 +125,15 @@ pub(crate) enum Error {
 
     #[error("I/O error while calculating directory size\nPath: {0}\nError: {1}")]
     CalculateDirectorySize(PathBuf, std::io::Error),
+
+    #[error("Failed to spawn Cargo command\nError: {0}")]
+    SpawnCargoCommand(std::io::Error),
+
+    #[error("Unexpected Cargo exit status while attempting to read workspace root\nExit Status: {}\nExamine Cargo output for details and potential compilation errors.", exit_code_or_unknown(.0))]
+    CargoCommandFailure(ExitStatus),
+
+    #[error("Could not read Cargo.toml metadata from workspace\nPath: {0}\nError: {1}")]
+    GetBuildpackOutputDir(PathBuf, cargo_metadata::Error),
 }
 
 impl From<BuildBinariesError> for Error {
@@ -146,12 +148,7 @@ impl From<BuildBinariesError> for Error {
             BuildBinariesError::BuildError(
                 target,
                 BuildError::UnexpectedCargoExitStatus(exit_status),
-            ) => Error::BinaryBuildExitStatus {
-                target,
-                code: exit_status
-                    .code()
-                    .map_or_else(|| String::from("<unknown>"), |code| code.to_string()),
-            },
+            ) => Error::BinaryBuildExitStatus(target, exit_status),
 
             BuildBinariesError::MissingBuildpackTarget(target) => {
                 Error::BinaryBuildMissingTarget { target }
@@ -230,4 +227,27 @@ impl From<RewriteBuildpackageRelativePathDependenciesToAbsoluteError> for Error 
             RewriteBuildpackageRelativePathDependenciesToAbsoluteError::GetBuildpackDependenciesError(error) => Error::GetBuildpackDependencies(error)
         }
     }
+}
+
+impl From<FindCargoWorkspaceError> for Error {
+    fn from(value: FindCargoWorkspaceError) -> Self {
+        match value {
+            FindCargoWorkspaceError::GetCargoEnv(error) => Error::GetCargoBin(error),
+            FindCargoWorkspaceError::SpawnCommand(error) => Error::SpawnCargoCommand(error),
+            FindCargoWorkspaceError::CommandFailure(exit_status) => {
+                Error::CargoCommandFailure(exit_status)
+            }
+            FindCargoWorkspaceError::GetParentDirectory(path) => Error::GetWorkspaceDirectory(path),
+        }
+    }
+}
+
+// This function is used with the thiserror crate, where getting a value from an (error) enum
+// variant yields a reference. Since this is the only use-case for this function, we accept a
+// reference, even though ExitStatus is Copy.
+#[allow(clippy::trivially_copy_pass_by_ref)]
+fn exit_code_or_unknown(exit_status: &ExitStatus) -> String {
+    exit_status
+        .code()
+        .map_or_else(|| String::from("<unknown>"), |code| code.to_string())
 }
