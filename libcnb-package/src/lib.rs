@@ -13,10 +13,11 @@ pub mod dependency_graph;
 pub mod output;
 
 use crate::build::BuildpackBinaries;
-use libcnb_data::buildpack::BuildpackDescriptor;
+use libcnb_data::buildpack::{BuildpackDescriptor, BuildpackId};
 use libcnb_data::buildpackage::Buildpackage;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use toml::Table;
 
 /// The profile to use when invoking Cargo.
@@ -51,14 +52,10 @@ pub fn read_buildpack_data(
     let dir = project_path.as_ref();
     let buildpack_descriptor_path = dir.join("buildpack.toml");
     fs::read_to_string(&buildpack_descriptor_path)
-        .map_err(|e| ReadBuildpackDataError::ReadingBuildpack {
-            path: buildpack_descriptor_path.clone(),
-            source: e,
-        })
+        .map_err(|e| ReadBuildpackDataError::ReadingBuildpack(buildpack_descriptor_path.clone(), e))
         .and_then(|file_contents| {
-            toml::from_str(&file_contents).map_err(|e| ReadBuildpackDataError::ParsingBuildpack {
-                path: buildpack_descriptor_path.clone(),
-                source: e,
+            toml::from_str(&file_contents).map_err(|e| {
+                ReadBuildpackDataError::ParsingBuildpack(buildpack_descriptor_path.clone(), e)
             })
         })
         .map(|buildpack_descriptor| BuildpackData {
@@ -70,14 +67,8 @@ pub fn read_buildpack_data(
 /// An error from [`read_buildpack_data`]
 #[derive(Debug)]
 pub enum ReadBuildpackDataError {
-    ReadingBuildpack {
-        path: PathBuf,
-        source: std::io::Error,
-    },
-    ParsingBuildpack {
-        path: PathBuf,
-        source: toml::de::Error,
-    },
+    ReadingBuildpack(PathBuf, std::io::Error),
+    ParsingBuildpack(PathBuf, toml::de::Error),
 }
 
 /// A parsed buildpackage descriptor and it's path.
@@ -102,16 +93,15 @@ pub fn read_buildpackage_data(
     }
 
     fs::read_to_string(&buildpackage_descriptor_path)
-        .map_err(|e| ReadBuildpackageDataError::ReadingBuildpackage {
-            path: buildpackage_descriptor_path.clone(),
-            source: e,
+        .map_err(|e| {
+            ReadBuildpackageDataError::ReadingBuildpackage(buildpackage_descriptor_path.clone(), e)
         })
         .and_then(|file_contents| {
             toml::from_str(&file_contents).map_err(|e| {
-                ReadBuildpackageDataError::ParsingBuildpackage {
-                    path: buildpackage_descriptor_path.clone(),
-                    source: e,
-                }
+                ReadBuildpackageDataError::ParsingBuildpackage(
+                    buildpackage_descriptor_path.clone(),
+                    e,
+                )
             })
         })
         .map(|buildpackage_descriptor| {
@@ -125,14 +115,8 @@ pub fn read_buildpackage_data(
 /// An error from [`read_buildpackage_data`]
 #[derive(Debug)]
 pub enum ReadBuildpackageDataError {
-    ReadingBuildpackage {
-        path: PathBuf,
-        source: std::io::Error,
-    },
-    ParsingBuildpackage {
-        path: PathBuf,
-        source: toml::de::Error,
-    },
+    ReadingBuildpackage(PathBuf, std::io::Error),
+    ParsingBuildpackage(PathBuf, toml::de::Error),
 }
 
 /// Creates a buildpack directory and copies all buildpack assets to it.
@@ -243,4 +227,88 @@ pub fn find_buildpack_dirs(start_dir: &Path, ignore: &[PathBuf]) -> std::io::Res
     let mut buildpack_dirs: Vec<PathBuf> = vec![];
     find_buildpack_dirs_recursive(start_dir, ignore, &mut buildpack_dirs)?;
     Ok(buildpack_dirs)
+}
+
+/// Provides a standard path to use for storing a compiled buildpack's artifacts.
+#[must_use]
+pub fn get_buildpack_package_dir(
+    buildpack_id: &BuildpackId,
+    package_dir: &Path,
+    is_release: bool,
+    target_triple: &str,
+) -> PathBuf {
+    package_dir
+        .join(target_triple)
+        .join(if is_release { "release" } else { "debug" })
+        .join(output::default_buildpack_directory_name(buildpack_id))
+}
+
+/// Returns the path of the root workspace directory for a Rust Cargo project. This is often a useful
+/// starting point for detecting buildpacks with [`find_buildpack_dirs`].
+///
+/// ## Errors
+///
+/// Will return an `Err` if the root workspace directory cannot be located due to:
+/// - no `CARGO` environment variable with the path to the `cargo` binary
+/// - executing this function with a directory that is not within a Cargo project
+/// - any other file or system error that might occur
+pub fn find_cargo_workspace_root_dir(
+    dir_in_workspace: &Path,
+) -> Result<PathBuf, FindCargoWorkspaceError> {
+    let cargo_bin = std::env::var("CARGO")
+        .map(PathBuf::from)
+        .map_err(FindCargoWorkspaceError::GetCargoEnv)?;
+
+    let output = Command::new(cargo_bin)
+        .args(["locate-project", "--workspace", "--message-format", "plain"])
+        .current_dir(dir_in_workspace)
+        .output()
+        .map_err(FindCargoWorkspaceError::SpawnCommand)?;
+
+    let status = output.status;
+
+    output
+        .status
+        .success()
+        .then_some(output)
+        .ok_or(FindCargoWorkspaceError::CommandFailure(status))
+        .and_then(|output| {
+            // Cargo outputs a newline after the actual path, so we have to trim.
+            let root_cargo_toml = PathBuf::from(String::from_utf8_lossy(&output.stdout).trim());
+            root_cargo_toml
+                .parent()
+                .map(Path::to_path_buf)
+                .ok_or(FindCargoWorkspaceError::GetParentDirectory(root_cargo_toml))
+        })
+}
+
+#[derive(Debug)]
+pub enum FindCargoWorkspaceError {
+    GetCargoEnv(std::env::VarError),
+    SpawnCommand(std::io::Error),
+    CommandFailure(std::process::ExitStatus),
+    GetParentDirectory(PathBuf),
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::get_buildpack_package_dir;
+    use libcnb_data::buildpack_id;
+    use std::path::PathBuf;
+
+    #[test]
+    fn test_get_buildpack_package_dir() {
+        let buildpack_id = buildpack_id!("some-org/with-buildpack");
+        let package_dir = PathBuf::from("/package");
+        let target_triple = "x86_64-unknown-linux-musl";
+
+        assert_eq!(
+            get_buildpack_package_dir(&buildpack_id, &package_dir, false, target_triple),
+            PathBuf::from("/package/x86_64-unknown-linux-musl/debug/some-org_with-buildpack")
+        );
+        assert_eq!(
+            get_buildpack_package_dir(&buildpack_id, &package_dir, true, target_triple),
+            PathBuf::from("/package/x86_64-unknown-linux-musl/release/some-org_with-buildpack")
+        );
+    }
 }

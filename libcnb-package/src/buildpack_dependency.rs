@@ -233,7 +233,7 @@ mod tests {
             "libcnb:buildpack-id",
             "../relative/path",
             "/absolute/path",
-            "docker://docker.io/heroku/procfile-cnb:2.0.0",
+            "docker://docker.io/heroku/example:1.2.3",
         ])
     }
 

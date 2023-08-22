@@ -80,7 +80,7 @@ fn package_single_meta_buildpack_in_monorepo_buildpack_project() {
                     .path()
                     .join("meta-buildpacks/meta-one/../../buildpacks/not_libcnb"),
             ),
-            BuildpackageDependency::try_from("docker://docker.io/heroku/procfile-cnb:2.0.0"),
+            BuildpackageDependency::try_from("docker://docker.io/heroku/example:1.2.3"),
         ]
         .into_iter()
         .collect::<Result<Vec<_>, _>>()
@@ -176,7 +176,7 @@ fn package_all_buildpacks_in_monorepo_buildpack_project() {
                     .path()
                     .join("meta-buildpacks/meta-one/../../buildpacks/not_libcnb"),
             ),
-            BuildpackageDependency::try_from("docker://docker.io/heroku/procfile-cnb:2.0.0"),
+            BuildpackageDependency::try_from("docker://docker.io/heroku/example:1.2.3"),
         ]
         .into_iter()
         .collect::<Result<Vec<_>, _>>()

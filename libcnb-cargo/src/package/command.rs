@@ -12,10 +12,11 @@ use libcnb_package::buildpack_package::{read_buildpack_package, BuildpackPackage
 use libcnb_package::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
 use libcnb_package::dependency_graph::{create_dependency_graph, get_dependencies};
 use libcnb_package::output::create_packaged_buildpack_dir_resolver;
-use libcnb_package::{assemble_buildpack_directory, find_buildpack_dirs, CargoProfile};
+use libcnb_package::{
+    assemble_buildpack_directory, find_buildpack_dirs, find_cargo_workspace_root_dir, CargoProfile,
+};
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 type Result<T> = std::result::Result<T, Error>;
 
@@ -33,38 +34,25 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
 
     let current_dir = std::env::current_dir().map_err(Error::GetCurrentDir)?;
 
-    let workspace_root_path = get_cargo_workspace_root(&current_dir)?;
+    let workspace_root_path = find_cargo_workspace_root_dir(&current_dir)?;
 
-    let cargo_metadata = MetadataCommand::new()
-        .manifest_path(&workspace_root_path.join("Cargo.toml"))
-        .exec()
-        .map_err(|e| Error::ReadCargoMetadata {
-            path: workspace_root_path.clone(),
-            source: e,
-        })?;
-
-    let package_dir = args.package_dir.clone().unwrap_or_else(|| {
-        cargo_metadata
-            .workspace_root
-            .into_std_path_buf()
-            .join("packaged")
-    });
+    let package_dir = args
+        .package_dir
+        .clone()
+        .map_or_else(|| get_default_package_dir(&workspace_root_path), Ok)?;
 
     std::fs::create_dir_all(&package_dir)
         .map_err(|e| Error::CreatePackageDirectory(package_dir.clone(), e))?;
 
-    let buildpack_packages = create_dependency_graph(
-        find_buildpack_dirs(&workspace_root_path, &[package_dir.clone()])
-            .map_err(|e| Error::FindBuildpackDirs {
-                path: workspace_root_path,
-                source: e,
-            })?
-            .into_iter()
-            .map(|dir| read_buildpack_package(dir).map_err(std::convert::Into::into))
-            .collect::<Result<Vec<BuildpackPackage>>>()?,
-    )?;
+    let buildpack_packages = find_buildpack_dirs(&workspace_root_path, &[package_dir.clone()])
+        .map_err(|e| Error::FindBuildpackDirs(workspace_root_path, e))?
+        .into_iter()
+        .map(read_buildpack_package)
+        .collect::<std::result::Result<Vec<_>, _>>()?;
 
-    let buildpack_packages_requested = buildpack_packages
+    let buildpack_packages_graph = create_dependency_graph(buildpack_packages)?;
+
+    let buildpack_packages_requested = buildpack_packages_graph
         .node_weights()
         .filter(|buildpack_package| {
             // If we're in a directory with a buildpack.toml file, we only want to build the
@@ -81,7 +69,7 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
         Err(Error::NoBuildpacksFound)?;
     }
 
-    let build_order = get_dependencies(&buildpack_packages, &buildpack_packages_requested)?;
+    let build_order = get_dependencies(&buildpack_packages_graph, &buildpack_packages_requested)?;
 
     let packaged_buildpack_dir_resolver =
         create_packaged_buildpack_dir_resolver(&package_dir, cargo_profile, &target_triple);
@@ -258,27 +246,6 @@ fn print_requested_buildpack_output_dirs(output_directories: Vec<PathBuf>) {
     }
 }
 
-fn get_cargo_workspace_root(dir: &Path) -> Result<PathBuf> {
-    let cargo_bin = std::env::var("CARGO").map(PathBuf::from)?;
-
-    Command::new(cargo_bin)
-        .args(["locate-project", "--workspace", "--message-format", "plain"])
-        .current_dir(dir)
-        .output()
-        .map_err(|e| Error::GetWorkspaceCommand {
-            path: dir.to_path_buf(),
-            source: e,
-        })
-        .map(|output| {
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            PathBuf::from(stdout.trim()).parent().map(Path::to_path_buf)
-        })
-        .transpose()
-        .ok_or(Error::GetWorkspaceDirectory {
-            path: dir.to_path_buf(),
-        })?
-}
-
 fn clean_target_directory(dir: &Path) -> Result<()> {
     if dir.exists() {
         std::fs::remove_dir_all(dir)
@@ -359,4 +326,12 @@ fn get_cargo_build_env(
             }
         }
     }
+}
+
+fn get_default_package_dir(workspace_root_path: &Path) -> Result<PathBuf> {
+    MetadataCommand::new()
+        .manifest_path(&workspace_root_path.join("Cargo.toml"))
+        .exec()
+        .map(|metadata| metadata.workspace_root.into_std_path_buf().join("packaged"))
+        .map_err(|e| Error::GetBuildpackOutputDir(workspace_root_path.to_path_buf(), e))
 }
