@@ -12,7 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `libcnb-package`:
-    - Added `find_cargo_workspace_root_dir` which provides a convenient starting point for locating buildpacks for packaging and testing purposes. ([#629](https://github.com/heroku/libcnb.rs/pull/629))
+  - Added `find_cargo_workspace_root_dir` which provides a convenient starting point for locating buildpacks for packaging and testing purposes. ([#629](https://github.com/heroku/libcnb.rs/pull/629))
+  - Changed the `ReadBuildpackDataError` and `ReadBuildpackageDataError` enums from struct to tuple format to be consistent with other error enums in the package. ([#631](https://github.com/heroku/libcnb.rs/pull/631))
 
 ## [0.14.0] - 2023-08-18
 
