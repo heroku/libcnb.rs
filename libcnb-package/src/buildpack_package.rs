@@ -60,8 +60,10 @@ pub fn read_buildpack_package<P: Into<PathBuf>>(
 }
 
 /// An error from [`read_buildpack_package`]
-#[derive(Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum ReadBuildpackPackageError {
-    ReadBuildpackDataError(ReadBuildpackDataError),
-    ReadBuildpackageDataError(ReadBuildpackageDataError),
+    #[error("Failed to read buildpack data: {0}")]
+    ReadBuildpackDataError(#[source] ReadBuildpackDataError),
+    #[error("Failed to read buildpackage data: {0}")]
+    ReadBuildpackageDataError(#[source] ReadBuildpackageDataError),
 }

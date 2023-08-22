@@ -17,3 +17,4 @@ libcnb-data.workspace = true
 petgraph = { version = "0.6.3", default-features = false }
 toml.workspace = true
 which = "4.4.0"
+thiserror = "1.0.44"

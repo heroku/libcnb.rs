@@ -134,7 +134,7 @@ pub fn build_binary(
         .current_dir(&project_path)
         .spawn()
         .and_then(|mut child| child.wait())
-        .map_err(BuildError::IoError)?;
+        .map_err(BuildError::CargoProcessIoError)?;
 
     if exit_status.success() {
         let binary_path = cargo_metadata
@@ -161,16 +161,21 @@ pub struct BuildpackBinaries {
     pub additional_target_binary_paths: HashMap<String, PathBuf>,
 }
 
-#[derive(Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum BuildError {
-    IoError(std::io::Error),
+    #[error("Error while running Cargo build process: {0}")]
+    CargoProcessIoError(#[source] std::io::Error),
+    #[error("Cargo unexpectedly exited with status {0}")]
     UnexpectedCargoExitStatus(ExitStatus),
 }
 
-#[derive(Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum BuildBinariesError {
-    ConfigError(ConfigError),
-    BuildError(String, BuildError),
+    #[error("Failed to obtain config: {0}")]
+    ConfigError(#[source] ConfigError),
+    #[error("Failed to build binary target {0}: {1}")]
+    BuildError(String, #[source] BuildError),
+    #[error("Binary target {0} could not be found")]
     MissingBuildpackTarget(String),
 }
 

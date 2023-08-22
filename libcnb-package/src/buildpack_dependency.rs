@@ -89,7 +89,7 @@ pub fn rewrite_buildpackage_local_dependencies(
     };
 
     get_buildpack_dependencies(buildpackage)
-        .map_err(RewriteBuildpackageLocalDependenciesError::GetBuildpackDependenciesError)
+        .map_err(RewriteBuildpackageLocalDependenciesError::InvalidBuildpackIdReference)
         .and_then(|dependencies| {
             dependencies
                 .into_iter()
@@ -112,10 +112,12 @@ pub fn rewrite_buildpackage_local_dependencies(
 }
 
 /// An error for [`rewrite_buildpackage_local_dependencies`]
-#[derive(Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum RewriteBuildpackageLocalDependenciesError {
+    #[error("Path {0} cannot be treated as a buildpack dependency")]
     InvalidDependency(PathBuf),
-    GetBuildpackDependenciesError(BuildpackIdError),
+    #[error("Buildpackage references another buildpack with an invalid id: {0}")]
+    InvalidBuildpackIdReference(#[source] BuildpackIdError),
 }
 
 /// Creates a new [`Buildpackage`] value by replacing each relative URI with it's absolute path using
@@ -141,7 +143,9 @@ pub fn rewrite_buildpackage_relative_path_dependencies_to_absolute(
         };
 
     get_buildpack_dependencies(buildpackage)
-        .map_err(RewriteBuildpackageRelativePathDependenciesToAbsoluteError::GetBuildpackDependenciesError)
+        .map_err(
+            RewriteBuildpackageRelativePathDependenciesToAbsoluteError::InvalidBuildpackIdReference,
+        )
         .and_then(|dependencies| {
             dependencies
                 .into_iter()
@@ -167,10 +171,12 @@ pub fn rewrite_buildpackage_relative_path_dependencies_to_absolute(
 }
 
 /// An error for [`rewrite_buildpackage_relative_path_dependencies_to_absolute`]
-#[derive(Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum RewriteBuildpackageRelativePathDependenciesToAbsoluteError {
+    #[error("Path {0} cannot be treated as a buildpack dependency")]
     InvalidDependency(PathBuf),
-    GetBuildpackDependenciesError(BuildpackIdError),
+    #[error("Buildpackage references another buildpack with an invalid id: {0}")]
+    InvalidBuildpackIdReference(#[source] BuildpackIdError),
 }
 
 #[cfg(test)]
