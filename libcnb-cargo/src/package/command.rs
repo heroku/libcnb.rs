@@ -35,10 +35,8 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
     std::fs::create_dir_all(&package_dir)
         .map_err(|e| Error::CreatePackageDirectory(package_dir.clone(), e))?;
 
-    let buildpack_dirs = find_buildpack_dirs(&workspace_root_path, &[package_dir.clone()])
-        .map_err(|e| Error::FindBuildpackDirs(workspace_root_path, e))?;
-
-    let buildpack_packages = buildpack_dirs
+    let buildpack_packages = find_buildpack_dirs(&workspace_root_path, &[package_dir.clone()])
+        .map_err(|e| Error::FindBuildpackDirs(workspace_root_path, e))?
         .into_iter()
         .map(read_buildpack_package)
         .collect::<std::result::Result<Vec<_>, _>>()?;
