@@ -242,6 +242,9 @@ impl From<FindCargoWorkspaceError> for Error {
     }
 }
 
+// This function is used with the thiserror crate, where getting a value from an (error) enum
+// variant yields a reference. Since this is the only use-case for this function, we accept a
+// reference, even though ExitStatus is Copy.
 #[allow(clippy::trivially_copy_pass_by_ref)]
 fn exit_code_or_unknown(exit_status: &ExitStatus) -> String {
     exit_status
