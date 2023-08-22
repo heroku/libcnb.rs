@@ -27,9 +27,10 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
 
     let workspace_root_path = find_cargo_workspace_root_dir(&current_dir)?;
 
-    let default_package_dir = get_default_package_dir(&workspace_root_path)?;
-
-    let package_dir = args.package_dir.clone().unwrap_or(default_package_dir);
+    let package_dir = args
+        .package_dir
+        .clone()
+        .map_or_else(|| get_default_package_dir(&workspace_root_path), Ok)?;
 
     std::fs::create_dir_all(&package_dir)
         .map_err(|e| Error::CreatePackageDirectory(package_dir.clone(), e))?;
