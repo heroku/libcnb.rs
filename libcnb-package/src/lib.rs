@@ -31,46 +31,33 @@ pub enum CargoProfile {
     Release,
 }
 
-/// A convenient type alias to use with [`buildpack_package::BuildpackPackage`] or [`BuildpackData`] when you don't required a specialized metadata representation.
+/// A convenient type alias to use with [`buildpack_package::BuildpackPackage`] when you don't required a specialized metadata representation.
 pub type GenericMetadata = Option<Table>;
-
-/// A parsed buildpack descriptor and it's path.
-#[derive(Debug)]
-pub struct BuildpackData<BM> {
-    pub buildpack_descriptor_path: PathBuf,
-    pub buildpack_descriptor: BuildpackDescriptor<BM>,
-}
 
 /// Reads buildpack data from the given project path.
 ///
 /// # Errors
 ///
 /// Will return `Err` if the buildpack data could not be read successfully.
-pub fn read_buildpack_data(
+pub fn read_buildpack_descriptor(
     project_path: impl AsRef<Path>,
-) -> Result<BuildpackData<GenericMetadata>, ReadBuildpackDataError> {
-    let dir = project_path.as_ref();
-    let buildpack_descriptor_path = dir.join("buildpack.toml");
-    fs::read_to_string(&buildpack_descriptor_path)
-        .map_err(|e| ReadBuildpackDataError::ReadingBuildpack(buildpack_descriptor_path.clone(), e))
+) -> Result<BuildpackDescriptor<GenericMetadata>, ReadBuildpackDescriptorError> {
+    let buildpack_descriptor_path = project_path.as_ref().join("buildpack.toml");
+
+    fs::read_to_string(buildpack_descriptor_path)
+        .map_err(ReadBuildpackDescriptorError::Io)
         .and_then(|file_contents| {
-            toml::from_str(&file_contents).map_err(|e| {
-                ReadBuildpackDataError::ParsingBuildpack(buildpack_descriptor_path.clone(), e)
-            })
-        })
-        .map(|buildpack_descriptor| BuildpackData {
-            buildpack_descriptor_path,
-            buildpack_descriptor,
+            toml::from_str(&file_contents).map_err(ReadBuildpackDescriptorError::Parse)
         })
 }
 
-/// An error from [`read_buildpack_data`]
+/// An error from [`read_buildpack_descriptor`]
 #[derive(thiserror::Error, Debug)]
-pub enum ReadBuildpackDataError {
-    #[error("Failed to read buildpack data from {0}: {1}")]
-    ReadingBuildpack(PathBuf, #[source] std::io::Error),
-    #[error("Failed to parse buildpack data from {0}: {1}")]
-    ParsingBuildpack(PathBuf, #[source] toml::de::Error),
+pub enum ReadBuildpackDescriptorError {
+    #[error("Failed to read buildpack descriptor: {0}")]
+    Io(#[source] std::io::Error),
+    #[error("Failed to parse buildpack descriptor: {0}")]
+    Parse(#[source] toml::de::Error),
 }
 
 /// Reads a package descriptor from the given project path.

@@ -1,10 +1,10 @@
 use crate::buildpack_dependency::get_local_package_descriptor_dependencies;
 use crate::dependency_graph::DependencyNode;
 use crate::{
-    read_buildpack_data, read_package_descriptor, BuildpackData, GenericMetadata,
-    ReadBuildpackDataError, ReadPackageDescriptorError,
+    read_buildpack_descriptor, read_package_descriptor, GenericMetadata,
+    ReadBuildpackDescriptorError, ReadPackageDescriptorError,
 };
-use libcnb_data::buildpack::{BuildpackId, BuildpackIdError};
+use libcnb_data::buildpack::{BuildpackDescriptor, BuildpackId, BuildpackIdError};
 use libcnb_data::package_descriptor::PackageDescriptor;
 use std::path::PathBuf;
 
@@ -12,24 +12,20 @@ use std::path::PathBuf;
 #[derive(Debug)]
 pub struct BuildpackPackage<T = GenericMetadata> {
     pub path: PathBuf,
-    pub buildpack_data: BuildpackData<T>,
+    pub buildpack_descriptor: BuildpackDescriptor<T>,
     pub package_descriptor: Option<PackageDescriptor>,
 }
 
 impl BuildpackPackage {
     #[must_use]
     pub fn buildpack_id(&self) -> &BuildpackId {
-        &self.buildpack_data.buildpack_descriptor.buildpack().id
+        &self.buildpack_descriptor.buildpack().id
     }
 }
 
 impl DependencyNode<BuildpackId, BuildpackIdError> for BuildpackPackage {
     fn id(&self) -> BuildpackId {
-        self.buildpack_data
-            .buildpack_descriptor
-            .buildpack()
-            .id
-            .clone()
+        self.buildpack_descriptor.buildpack().id.clone()
     }
 
     fn dependencies(&self) -> Result<Vec<BuildpackId>, BuildpackIdError> {
@@ -48,8 +44,8 @@ pub fn read_buildpack_package<P: Into<PathBuf>>(
     project_path: P,
 ) -> Result<BuildpackPackage, ReadBuildpackPackageError> {
     let path = project_path.into();
-    let buildpack_data =
-        read_buildpack_data(&path).map_err(ReadBuildpackPackageError::ReadBuildpackDataError)?;
+    let buildpack_descriptor = read_buildpack_descriptor(&path)
+        .map_err(ReadBuildpackPackageError::ReadBuildpackDescriptorError)?;
 
     let package_toml_path = path.join("package.toml");
     let package_descriptor = package_toml_path
@@ -62,7 +58,7 @@ pub fn read_buildpack_package<P: Into<PathBuf>>(
 
     Ok(BuildpackPackage {
         path,
-        buildpack_data,
+        buildpack_descriptor,
         package_descriptor,
     })
 }
@@ -71,7 +67,7 @@ pub fn read_buildpack_package<P: Into<PathBuf>>(
 #[derive(thiserror::Error, Debug)]
 pub enum ReadBuildpackPackageError {
     #[error("Failed to read package descriptor data: {0}")]
-    ReadBuildpackDataError(#[source] ReadBuildpackDataError),
+    ReadBuildpackDescriptorError(#[source] ReadBuildpackDescriptorError),
     #[error("Failed to read package descriptor data: {0}")]
     ReadPackageDescriptorError(#[source] ReadPackageDescriptorError),
 }

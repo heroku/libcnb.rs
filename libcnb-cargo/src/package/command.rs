@@ -94,7 +94,7 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
             buildpack_package.buildpack_id()
         );
         let target_dir = lookup_target_dir(buildpack_package);
-        match buildpack_package.buildpack_data.buildpack_descriptor {
+        match buildpack_package.buildpack_descriptor {
             BuildpackDescriptor::Single(_) => {
                 if contains_buildpack_binaries(&buildpack_package.path) {
                     eprintln!("Not a libcnb.rs buildpack, nothing to compile...");
@@ -167,7 +167,7 @@ fn package_single_buildpack(
 
     assemble_buildpack_directory(
         target_dir,
-        &buildpack_package.buildpack_data.buildpack_descriptor_path,
+        buildpack_package.path.join("buildpack.toml"),
         &buildpack_binaries,
     )
     .map_err(|e| Error::AssembleBuildpackDirectory(target_dir.to_path_buf(), e))?;
@@ -194,7 +194,7 @@ fn package_meta_buildpack(
         .map_err(|e| Error::CreateBuildpackTargetDirectory(target_dir.to_path_buf(), e))?;
 
     std::fs::copy(
-        &buildpack_package.buildpack_data.buildpack_descriptor_path,
+        buildpack_package.path.join("buildpack.toml"),
         target_dir.join("buildpack.toml"),
     )
     .map_err(|e| Error::CopyBuildpackToml(target_dir.to_path_buf(), e))?;
