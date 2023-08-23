@@ -7,7 +7,7 @@
 pub mod build;
 pub mod buildpack_dependency;
 pub mod buildpack_package;
-pub mod config;
+pub mod cargo;
 pub mod cross_compile;
 pub mod dependency_graph;
 pub mod output;
