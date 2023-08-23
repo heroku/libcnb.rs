@@ -64,7 +64,7 @@ fn rebuild() {
 #[test]
 #[ignore = "integration test"]
 #[should_panic(
-    expected = "Could not package current crate as buildpack: BuildBinariesError(ConfigError(NoBinTargetsFound))"
+    expected = "Could not package current crate as buildpack: BuildBinariesError(CannotDetermineBuildpackCargoTargetName(NoBinTargets))"
 )]
 fn buildpack_packaging_failure() {
     TestRunner::default().build(BuildConfig::new("invalid!", "test-fixtures/empty"), |_| {
@@ -132,7 +132,7 @@ fn expected_pack_failure() {
 #[test]
 #[ignore = "integration test"]
 #[should_panic(
-    expected = "Could not package current crate as buildpack: BuildBinariesError(ConfigError(NoBinTargetsFound))"
+    expected = "Could not package current crate as buildpack: BuildBinariesError(CannotDetermineBuildpackCargoTargetName(NoBinTargets))"
 )]
 fn expected_pack_failure_still_panics_for_non_pack_failure() {
     TestRunner::default().build(
