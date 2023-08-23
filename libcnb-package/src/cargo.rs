@@ -5,13 +5,14 @@ pub(crate) fn determine_buildpack_cargo_target_name(
         .root_package()
         .ok_or(DetermineBuildpackCargoTargetNameError::NoRootPackage)?;
 
-    let mut bin_targets: Vec<String> = cargo_binary_target_names_from_root_package(root_package);
+    let mut binary_target_names: Vec<String> =
+        cargo_binary_target_names_from_root_package(root_package);
 
-    match bin_targets.len() {
-        0 | 1 => bin_targets
+    match binary_target_names.len() {
+        0 | 1 => binary_target_names
             .pop()
             .ok_or(DetermineBuildpackCargoTargetNameError::NoBinTargets),
-        _ => bin_targets
+        _ => binary_target_names
             .contains(&root_package.name)
             .then_some(root_package.name.clone())
             .ok_or(DetermineBuildpackCargoTargetNameError::AmbiguousBinTargets),
