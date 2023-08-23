@@ -44,13 +44,14 @@ where
 
         let dependencies = node
             .dependencies()
-            .map_err(CreateDependencyGraphError::Dependencies)?;
+            .map_err(CreateDependencyGraphError::GetNodeDependenciesError)?;
 
         for dependency in dependencies {
             let dependency_idx = graph
                 .node_indices()
                 .find(|idx| graph[*idx].id() == dependency)
                 .ok_or(CreateDependencyGraphError::MissingDependency(dependency))?;
+
             graph.add_edge(idx, dependency_idx, ());
         }
     }
@@ -61,9 +62,9 @@ where
 /// An error from [`create_dependency_graph`]
 #[derive(thiserror::Error, Debug)]
 pub enum CreateDependencyGraphError<I, E: Error> {
-    #[error("Cannot determine dependencies of a node: {0}")]
-    Dependencies(#[source] E),
-    #[error("Node references an unknown dependency: {0}")]
+    #[error("Error while determining dependencies of a node: {0}")]
+    GetNodeDependenciesError(#[source] E),
+    #[error("Node references unknown dependency {0}")]
     MissingDependency(I),
 }
 
@@ -88,8 +89,10 @@ where
         let idx = graph
             .node_indices()
             .find(|idx| graph[*idx].id() == root_node.id())
-            .ok_or(GetDependenciesError::MissingDependency(root_node.id()))?;
+            .ok_or(GetDependenciesError::UnknownRootNode(root_node.id()))?;
+
         dfs.move_to(idx);
+
         while let Some(visited) = dfs.next(&graph) {
             order.push(&graph[visited]);
         }
@@ -100,8 +103,8 @@ where
 /// An error from [`get_dependencies`]
 #[derive(thiserror::Error, Debug)]
 pub enum GetDependenciesError<I> {
-    #[error("Node references an unknown dependency: {0}")]
-    MissingDependency(I),
+    #[error("Root node {0} is not in the dependency graph")]
+    UnknownRootNode(I),
 }
 
 #[cfg(test)]

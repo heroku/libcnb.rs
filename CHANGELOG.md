@@ -31,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Renamed `RewriteBuildpackageRelativePathDependenciesToAbsoluteError::GetBuildpackDependenciesError` to `RewriteBuildpackageRelativePathDependenciesToAbsoluteError::InvalidBuildpackIdReference`. ([#652](https://github.com/heroku/libcnb.rs/pull/652))
   - Replaced `ConfigError` with `DetermineBuildpackCargoTargetNameError`. ([#654](https://github.com/heroku/libcnb.rs/pull/654))
   - Renamed `BuildBinariesError::ConfigError` to `BuildBinariesError::CannotDetermineBuildpackCargoTargetName`. ([#654](https://github.com/heroku/libcnb.rs/pull/654))
+  - Renamed `CreateDependencyGraphError::Dependencies` to `CreateDependencyGraphError::GetNodeDependenciesError`. ([#653](https://github.com/heroku/libcnb.rs/pull/653))
+  - Renamed `GetDependenciesError::MissingDependency` to `GetDependenciesError::UnknownRootNode`. ([#653](https://github.com/heroku/libcnb.rs/pull/653))
   - Added type bound to `CreateDependencyGraphError<I, E>` to ensure `E` implements `std::error::Error`. ([#652](https://github.com/heroku/libcnb.rs/pull/652))
 
 ### Removed
