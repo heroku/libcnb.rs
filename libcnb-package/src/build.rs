@@ -1,4 +1,7 @@
-use crate::config::{config_from_metadata, ConfigError};
+use crate::cargo::{
+    cargo_binary_target_names, determine_buildpack_cargo_target_name,
+    DetermineBuildpackCargoTargetNameError,
+};
 use crate::CargoProfile;
 use cargo_metadata::Metadata;
 use std::collections::HashMap;
@@ -24,29 +27,30 @@ pub fn build_buildpack_binaries(
     cargo_env: &[(OsString, OsString)],
     target_triple: impl AsRef<str>,
 ) -> Result<BuildpackBinaries, BuildBinariesError> {
-    let binary_target_names = binary_target_names(cargo_metadata);
-    let config = config_from_metadata(cargo_metadata).map_err(BuildBinariesError::ConfigError)?;
+    let binary_target_names = cargo_binary_target_names(cargo_metadata);
+    let buildpack_cargo_target = determine_buildpack_cargo_target_name(cargo_metadata)
+        .map_err(BuildBinariesError::CannotDetermineBuildpackCargoTargetName)?;
 
-    let buildpack_target_binary_path = if binary_target_names.contains(&config.buildpack_target) {
+    let buildpack_target_binary_path = if binary_target_names.contains(&buildpack_cargo_target) {
         build_binary(
             project_path.as_ref(),
             cargo_metadata,
             cargo_profile,
             cargo_env.to_owned(),
             target_triple.as_ref(),
-            &config.buildpack_target,
+            &buildpack_cargo_target,
         )
-        .map_err(|error| BuildBinariesError::BuildError(config.buildpack_target.clone(), error))
+        .map_err(|error| BuildBinariesError::BuildError(buildpack_cargo_target.clone(), error))
     } else {
         Err(BuildBinariesError::MissingBuildpackTarget(
-            config.buildpack_target.clone(),
+            buildpack_cargo_target.clone(),
         ))
     }?;
 
     let mut additional_target_binary_paths = HashMap::new();
     for additional_binary_target_name in binary_target_names
         .iter()
-        .filter(|name| *name != &config.buildpack_target)
+        .filter(|name| *name != &buildpack_cargo_target)
     {
         additional_target_binary_paths.insert(
             additional_binary_target_name.clone(),
@@ -171,30 +175,10 @@ pub enum BuildError {
 
 #[derive(thiserror::Error, Debug)]
 pub enum BuildBinariesError {
-    #[error("Failed to obtain config: {0}")]
-    ConfigError(#[source] ConfigError),
+    #[error("Failed to determine Cargo target name for buildpack: {0}")]
+    CannotDetermineBuildpackCargoTargetName(#[source] DetermineBuildpackCargoTargetNameError),
     #[error("Failed to build binary target {0}: {1}")]
     BuildError(String, #[source] BuildError),
     #[error("Binary target {0} could not be found")]
     MissingBuildpackTarget(String),
-}
-
-/// Determines the names of all binary targets from the given Cargo metadata.
-fn binary_target_names(cargo_metadata: &Metadata) -> Vec<String> {
-    cargo_metadata
-        .root_package()
-        .map(|root_package| {
-            root_package
-                .targets
-                .iter()
-                .filter_map(|target| {
-                    if target.kind.contains(&String::from("bin")) {
-                        Some(target.name.clone())
-                    } else {
-                        None
-                    }
-                })
-                .collect()
-        })
-        .unwrap_or_default()
 }
