@@ -65,10 +65,12 @@ pub fn read_buildpack_data(
 }
 
 /// An error from [`read_buildpack_data`]
-#[derive(Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum ReadBuildpackDataError {
-    ReadingBuildpack(PathBuf, std::io::Error),
-    ParsingBuildpack(PathBuf, toml::de::Error),
+    #[error("Failed to read buildpack data from {0}: {1}")]
+    ReadingBuildpack(PathBuf, #[source] std::io::Error),
+    #[error("Failed to parse buildpack data from {0}: {1}")]
+    ParsingBuildpack(PathBuf, #[source] toml::de::Error),
 }
 
 /// A parsed buildpackage descriptor and it's path.
@@ -113,10 +115,12 @@ pub fn read_buildpackage_data(
 }
 
 /// An error from [`read_buildpackage_data`]
-#[derive(Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum ReadBuildpackageDataError {
-    ReadingBuildpackage(PathBuf, std::io::Error),
-    ParsingBuildpackage(PathBuf, toml::de::Error),
+    #[error("Failed to read buildpackage data from {0}: {1}")]
+    ReadingBuildpackage(PathBuf, #[source] std::io::Error),
+    #[error("Failed to parse buildpackage data from {0}: {1}")]
+    ParsingBuildpackage(PathBuf, #[source] toml::de::Error),
 }
 
 /// Creates a buildpack directory and copies all buildpack assets to it.
@@ -254,16 +258,16 @@ pub fn get_buildpack_package_dir(
 /// - any other file or system error that might occur
 pub fn find_cargo_workspace_root_dir(
     dir_in_workspace: &Path,
-) -> Result<PathBuf, FindCargoWorkspaceError> {
+) -> Result<PathBuf, FindCargoWorkspaceRootError> {
     let cargo_bin = std::env::var("CARGO")
         .map(PathBuf::from)
-        .map_err(FindCargoWorkspaceError::GetCargoEnv)?;
+        .map_err(FindCargoWorkspaceRootError::GetCargoEnv)?;
 
     let output = Command::new(cargo_bin)
         .args(["locate-project", "--workspace", "--message-format", "plain"])
         .current_dir(dir_in_workspace)
         .output()
-        .map_err(FindCargoWorkspaceError::SpawnCommand)?;
+        .map_err(FindCargoWorkspaceRootError::SpawnCommand)?;
 
     let status = output.status;
 
@@ -271,23 +275,32 @@ pub fn find_cargo_workspace_root_dir(
         .status
         .success()
         .then_some(output)
-        .ok_or(FindCargoWorkspaceError::CommandFailure(status))
+        .ok_or(FindCargoWorkspaceRootError::CommandFailure(status))
         .and_then(|output| {
             // Cargo outputs a newline after the actual path, so we have to trim.
             let root_cargo_toml = PathBuf::from(String::from_utf8_lossy(&output.stdout).trim());
-            root_cargo_toml
-                .parent()
-                .map(Path::to_path_buf)
-                .ok_or(FindCargoWorkspaceError::GetParentDirectory(root_cargo_toml))
+            root_cargo_toml.parent().map(Path::to_path_buf).ok_or(
+                FindCargoWorkspaceRootError::GetParentDirectory(root_cargo_toml),
+            )
         })
 }
 
-#[derive(Debug)]
-pub enum FindCargoWorkspaceError {
-    GetCargoEnv(std::env::VarError),
-    SpawnCommand(std::io::Error),
+#[derive(thiserror::Error, Debug)]
+pub enum FindCargoWorkspaceRootError {
+    #[error("Cannot get value of CARGO environment variable: {0}")]
+    GetCargoEnv(#[source] std::env::VarError),
+    #[error("Error while spawning Cargo process: {0}")]
+    SpawnCommand(#[source] std::io::Error),
+    #[error("Unexpected Cargo exit status ({}) while attempting to read workspace root", exit_code_or_unknown(*.0))]
     CommandFailure(std::process::ExitStatus),
+    #[error("Could not locate a Cargo workspace within {0} or its parent directories")]
     GetParentDirectory(PathBuf),
+}
+
+fn exit_code_or_unknown(exit_status: std::process::ExitStatus) -> String {
+    exit_status
+        .code()
+        .map_or_else(|| String::from("<unknown>"), |code| code.to_string())
 }
 
 #[cfg(test)]

@@ -37,9 +37,12 @@ pub(crate) fn config_from_metadata(cargo_metadata: &Metadata) -> Result<Config, 
     }
 }
 
-#[derive(Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum ConfigError {
+    #[error("Cargo metadata does not contain a root package")]
     MissingRootPackage,
+    #[error("No binary targets could be found in Cargo metadata")]
     NoBinTargetsFound,
+    #[error("Multiple binary targets found in Cargo metadata")]
     MultipleBinTargetsFound,
 }

@@ -34,7 +34,8 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
 
     let current_dir = std::env::current_dir().map_err(Error::GetCurrentDir)?;
 
-    let workspace_root_path = find_cargo_workspace_root_dir(&current_dir)?;
+    let workspace_root_path =
+        find_cargo_workspace_root_dir(&current_dir).map_err(Error::FindCargoWorkspaceRoot)?;
 
     let package_dir = args
         .package_dir
@@ -48,9 +49,11 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
         .map_err(|e| Error::FindBuildpackDirs(workspace_root_path, e))?
         .into_iter()
         .map(read_buildpack_package)
-        .collect::<std::result::Result<Vec<_>, _>>()?;
+        .collect::<std::result::Result<Vec<_>, _>>()
+        .map_err(|error| Error::ReadBuildpackPackage(Box::new(error)))?;
 
-    let buildpack_packages_graph = create_dependency_graph(buildpack_packages)?;
+    let buildpack_packages_graph =
+        create_dependency_graph(buildpack_packages).map_err(Error::CreateDependencyGraph)?;
 
     let buildpack_packages_requested = buildpack_packages_graph
         .node_weights()
@@ -69,7 +72,8 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
         Err(Error::NoBuildpacksFound)?;
     }
 
-    let build_order = get_dependencies(&buildpack_packages_graph, &buildpack_packages_requested)?;
+    let build_order = get_dependencies(&buildpack_packages_graph, &buildpack_packages_requested)
+        .map_err(Error::GetDependencies)?;
 
     let packaged_buildpack_dir_resolver =
         create_packaged_buildpack_dir_resolver(&package_dir, cargo_profile, &target_triple);
@@ -142,10 +146,7 @@ fn package_single_buildpack(
     let cargo_metadata = MetadataCommand::new()
         .manifest_path(&buildpack_package.path.join("Cargo.toml"))
         .exec()
-        .map_err(|e| Error::ReadCargoMetadata {
-            path: buildpack_package.path.clone(),
-            source: e,
-        })?;
+        .map_err(|e| Error::ReadCargoMetadata(buildpack_package.path.clone(), e))?;
 
     let cargo_build_env = get_cargo_build_env(target_triple, no_cross_compile_assistance)?;
 
@@ -157,7 +158,8 @@ fn package_single_buildpack(
         cargo_profile,
         &cargo_build_env,
         target_triple,
-    )?;
+    )
+    .map_err(Error::BuildBinaries)?;
 
     eprintln!("Writing buildpack directory...");
 
@@ -195,7 +197,7 @@ fn package_meta_buildpack(
         &buildpack_package.buildpack_data.buildpack_descriptor_path,
         target_dir.join("buildpack.toml"),
     )
-    .map_err(|e| Error::WriteBuildpack(target_dir.to_path_buf(), e))?;
+    .map_err(|e| Error::CopyBuildpackToml(target_dir.to_path_buf(), e))?;
 
     let buildpackage_content = &buildpack_package
         .buildpackage_data
@@ -204,14 +206,14 @@ fn package_meta_buildpack(
         .ok_or(Error::MissingBuildpackageData)
         .and_then(|buildpackage| {
             rewrite_buildpackage_local_dependencies(buildpackage, packaged_buildpack_dir_resolver)
-                .map_err(std::convert::Into::into)
+                .map_err(Error::RewriteBuildpackageLocalDependencies)
         })
         .and_then(|buildpackage| {
             rewrite_buildpackage_relative_path_dependencies_to_absolute(
                 &buildpackage,
                 &buildpack_package.path,
             )
-            .map_err(std::convert::Into::into)
+            .map_err(Error::RewriteBuildpackageRelativePathDependenciesToAbsolute)
         })
         .and_then(|buildpackage| {
             toml::to_string(&buildpackage).map_err(Error::SerializeBuildpackage)

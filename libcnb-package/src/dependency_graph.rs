@@ -1,5 +1,6 @@
 use petgraph::visit::DfsPostOrder;
 use petgraph::Graph;
+use std::error::Error;
 
 /// A node of a dependency graph.
 ///
@@ -30,6 +31,7 @@ pub fn create_dependency_graph<T, I, E>(
 where
     T: DependencyNode<I, E>,
     I: PartialEq,
+    E: Error,
 {
     let mut graph = Graph::new();
 
@@ -57,9 +59,11 @@ where
 }
 
 /// An error from [`create_dependency_graph`]
-#[derive(Debug)]
-pub enum CreateDependencyGraphError<I, E> {
-    Dependencies(E),
+#[derive(thiserror::Error, Debug)]
+pub enum CreateDependencyGraphError<I, E: Error> {
+    #[error("Cannot determine dependencies of a node: {0}")]
+    Dependencies(#[source] E),
+    #[error("Node references an unknown dependency: {0}")]
     MissingDependency(I),
 }
 
@@ -94,8 +98,9 @@ where
 }
 
 /// An error from [`get_dependencies`]
-#[derive(Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum GetDependenciesError<I> {
+    #[error("Node references an unknown dependency: {0}")]
     MissingDependency(I),
 }
 
