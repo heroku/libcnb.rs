@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Renamed `BuildError::IoError` to `BuildError::CargoProcessIoError`. ([#652](https://github.com/heroku/libcnb.rs/pull/652))
   - Renamed `RewriteBuildpackageLocalDependenciesError::GetBuildpackDependenciesError` to `RewriteBuildpackageLocalDependenciesError::InvalidBuildpackIdReference`. ([#652](https://github.com/heroku/libcnb.rs/pull/652))
   - Renamed `RewriteBuildpackageRelativePathDependenciesToAbsoluteError::GetBuildpackDependenciesError` to `RewriteBuildpackageRelativePathDependenciesToAbsoluteError::InvalidBuildpackIdReference`. ([#652](https://github.com/heroku/libcnb.rs/pull/652))
+  - Replaced `ConfigError` with `DetermineBuildpackCargoTargetNameError`. ([#654](https://github.com/heroku/libcnb.rs/pull/654))
+  - Renamed `BuildBinariesError::ConfigError` to `BuildBinariesError::CannotDetermineBuildpackCargoTargetName`. ([#654](https://github.com/heroku/libcnb.rs/pull/654))
   - Added type bound to `CreateDependencyGraphError<I, E>` to ensure `E` implements `std::error::Error`. ([#652](https://github.com/heroku/libcnb.rs/pull/652))
 
 ### Removed
