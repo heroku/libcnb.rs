@@ -1,5 +1,5 @@
 use crate::cargo::{
-    binary_target_names, determine_buildpack_cargo_target_name,
+    cargo_binary_target_names, determine_buildpack_cargo_target_name,
     DetermineBuildpackCargoTargetNameError,
 };
 use crate::CargoProfile;
@@ -27,7 +27,7 @@ pub fn build_buildpack_binaries(
     cargo_env: &[(OsString, OsString)],
     target_triple: impl AsRef<str>,
 ) -> Result<BuildpackBinaries, BuildBinariesError> {
-    let binary_target_names = binary_target_names(cargo_metadata);
+    let binary_target_names = cargo_binary_target_names(cargo_metadata);
     let buildpack_cargo_target = determine_buildpack_cargo_target_name(cargo_metadata)
         .map_err(BuildBinariesError::CannotDetermineBuildpackCargoTargetName)?;
 

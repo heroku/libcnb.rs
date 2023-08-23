@@ -5,7 +5,7 @@ pub(crate) fn determine_buildpack_cargo_target_name(
         .root_package()
         .ok_or(DetermineBuildpackCargoTargetNameError::NoRootPackage)?;
 
-    let mut bin_targets: Vec<String> = binary_target_names_from_root_package(root_package);
+    let mut bin_targets: Vec<String> = cargo_binary_target_names_from_root_package(root_package);
 
     match bin_targets.len() {
         0 | 1 => bin_targets
@@ -29,14 +29,16 @@ pub enum DetermineBuildpackCargoTargetNameError {
 }
 
 /// Determines the names of all binary targets from the given Cargo metadata.
-pub(crate) fn binary_target_names(cargo_metadata: &cargo_metadata::Metadata) -> Vec<String> {
+pub(crate) fn cargo_binary_target_names(cargo_metadata: &cargo_metadata::Metadata) -> Vec<String> {
     cargo_metadata
         .root_package()
-        .map(binary_target_names_from_root_package)
+        .map(cargo_binary_target_names_from_root_package)
         .unwrap_or_default()
 }
 
-fn binary_target_names_from_root_package(root_package: &cargo_metadata::Package) -> Vec<String> {
+fn cargo_binary_target_names_from_root_package(
+    root_package: &cargo_metadata::Package,
+) -> Vec<String> {
     root_package
         .targets
         .iter()
