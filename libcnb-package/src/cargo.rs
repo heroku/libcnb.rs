@@ -40,10 +40,10 @@ fn binary_target_names_from_root_package(root_package: &cargo_metadata::Package)
     root_package
         .targets
         .iter()
-        .filter_map(|target| is_bin_target(target).then_some(target.name.clone()))
+        .filter_map(|target| is_binary_target(target).then_some(target.name.clone()))
         .collect()
 }
 
-fn is_bin_target(target: &cargo_metadata::Target) -> bool {
-    target.kind == vec!["bin"]
+fn is_binary_target(target: &cargo_metadata::Target) -> bool {
+    target.kind.contains(&String::from("bin"))
 }
