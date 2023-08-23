@@ -1,4 +1,7 @@
-use crate::cargo::{determine_buildpack_cargo_target_name, DetermineBuildpackCargoTargetNameError};
+use crate::cargo::{
+    binary_target_names, determine_buildpack_cargo_target_name,
+    DetermineBuildpackCargoTargetNameError,
+};
 use crate::CargoProfile;
 use cargo_metadata::Metadata;
 use std::collections::HashMap;
@@ -178,24 +181,4 @@ pub enum BuildBinariesError {
     BuildError(String, #[source] BuildError),
     #[error("Binary target {0} could not be found")]
     MissingBuildpackTarget(String),
-}
-
-/// Determines the names of all binary targets from the given Cargo metadata.
-fn binary_target_names(cargo_metadata: &Metadata) -> Vec<String> {
-    cargo_metadata
-        .root_package()
-        .map(|root_package| {
-            root_package
-                .targets
-                .iter()
-                .filter_map(|target| {
-                    if target.kind.contains(&String::from("bin")) {
-                        Some(target.name.clone())
-                    } else {
-                        None
-                    }
-                })
-                .collect()
-        })
-        .unwrap_or_default()
 }
