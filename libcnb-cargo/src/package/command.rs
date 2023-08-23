@@ -200,9 +200,8 @@ fn package_meta_buildpack(
     .map_err(|e| Error::CopyBuildpackToml(target_dir.to_path_buf(), e))?;
 
     let package_descriptor_content = &buildpack_package
-        .package_descriptor_data
+        .package_descriptor
         .as_ref()
-        .map(|package_descriptor_data| &package_descriptor_data.package_descriptor)
         .ok_or(Error::MissingPackageDescriptorData)
         .and_then(|package_descriptor| {
             rewrite_package_descriptor_local_dependencies(

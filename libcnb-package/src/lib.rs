@@ -73,57 +73,28 @@ pub enum ReadBuildpackDataError {
     ParsingBuildpack(PathBuf, #[source] toml::de::Error),
 }
 
-/// A parsed package descriptor and it's path.
-#[derive(Debug, Clone)]
-pub struct PackageDescriptorData {
-    pub package_descriptor_path: PathBuf,
-    pub package_descriptor: PackageDescriptor,
-}
-
-/// Reads package descriptor data from the given project path.
+/// Reads a package descriptor from the given project path.
 ///
 /// # Errors
 ///
-/// Will return `Err` if the package descriptor data could not be read successfully.
-pub fn read_package_descriptor_data(
+/// Will return `Err` if the package descriptor could not be read successfully.
+pub fn read_package_descriptor(
     project_path: impl AsRef<Path>,
-) -> Result<Option<PackageDescriptorData>, ReadPackageDescriptorDataError> {
-    let package_descriptor_path = project_path.as_ref().join("package.toml");
-
-    if !package_descriptor_path.exists() {
-        return Ok(None);
-    }
-
-    fs::read_to_string(&package_descriptor_path)
-        .map_err(|e| {
-            ReadPackageDescriptorDataError::ReadingPackageDescriptor(
-                package_descriptor_path.clone(),
-                e,
-            )
-        })
+) -> Result<PackageDescriptor, ReadPackageDescriptorError> {
+    fs::read_to_string(&project_path)
+        .map_err(ReadPackageDescriptorError::Io)
         .and_then(|file_contents| {
-            toml::from_str(&file_contents).map_err(|e| {
-                ReadPackageDescriptorDataError::ParsingPackageDescriptor(
-                    package_descriptor_path.clone(),
-                    e,
-                )
-            })
-        })
-        .map(|package_descriptor| {
-            Some(PackageDescriptorData {
-                package_descriptor_path,
-                package_descriptor,
-            })
+            toml::from_str(&file_contents).map_err(ReadPackageDescriptorError::Parse)
         })
 }
 
-/// An error from [`read_package_descriptor_data`]
+/// An error from [`read_package_descriptor`]
 #[derive(thiserror::Error, Debug)]
-pub enum ReadPackageDescriptorDataError {
-    #[error("Failed to read package descriptor data from {0}: {1}")]
-    ReadingPackageDescriptor(PathBuf, #[source] std::io::Error),
-    #[error("Failed to parse package descriptor data from {0}: {1}")]
-    ParsingPackageDescriptor(PathBuf, #[source] toml::de::Error),
+pub enum ReadPackageDescriptorError {
+    #[error("Failed to read buildpackage: {0}")]
+    Io(#[source] std::io::Error),
+    #[error("Failed to parse buildpackage: {0}")]
+    Parse(#[source] toml::de::Error),
 }
 
 /// Creates a buildpack directory and copies all buildpack assets to it.

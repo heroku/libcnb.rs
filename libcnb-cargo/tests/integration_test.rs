@@ -6,7 +6,7 @@ use libcnb_data::buildpack::BuildpackId;
 use libcnb_data::buildpack_id;
 use libcnb_data::package_descriptor::PackageDescriptorDependency;
 use libcnb_package::output::create_packaged_buildpack_dir_resolver;
-use libcnb_package::{read_buildpack_data, read_package_descriptor_data, CargoProfile};
+use libcnb_package::{read_buildpack_data, read_package_descriptor, CargoProfile};
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -266,10 +266,8 @@ fn validate_packaged_meta_buildpack(
     );
 
     assert_eq!(
-        read_package_descriptor_data(packaged_buildpack_dir)
+        read_package_descriptor(packaged_buildpack_dir.join("package.toml"))
             .unwrap()
-            .unwrap()
-            .package_descriptor
             .dependencies,
         expected_package_descriptor_dependencies
     );
