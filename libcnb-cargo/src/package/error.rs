@@ -50,6 +50,4 @@ pub(crate) enum Error {
     CalculateDirectorySize(PathBuf, #[source] std::io::Error),
     #[error("{0}")]
     CrossCompilationHelp(String),
-    #[error("Failed to get buildpack output directory: {1}")]
-    GetBuildpackOutputDir(PathBuf, #[source] cargo_metadata::Error),
 }

@@ -39,7 +39,7 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<(), Error> {
     let package_dir = args
         .package_dir
         .clone()
-        .map_or_else(|| get_default_package_dir(&workspace_root_path), Ok)?;
+        .unwrap_or(get_default_package_dir(&workspace_root_path));
 
     std::fs::create_dir_all(&package_dir)
         .map_err(|e| Error::CreatePackageDirectory(package_dir.clone(), e))?;
@@ -329,10 +329,6 @@ fn get_cargo_build_env(
     }
 }
 
-fn get_default_package_dir(workspace_root_path: &Path) -> Result<PathBuf, Error> {
-    MetadataCommand::new()
-        .manifest_path(&workspace_root_path.join("Cargo.toml"))
-        .exec()
-        .map(|metadata| metadata.workspace_root.into_std_path_buf().join("packaged"))
-        .map_err(|e| Error::GetBuildpackOutputDir(workspace_root_path.to_path_buf(), e))
+fn get_default_package_dir(workspace_root_path: &Path) -> PathBuf {
+    workspace_root_path.join("packaged")
 }
