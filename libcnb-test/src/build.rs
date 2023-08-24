@@ -34,7 +34,6 @@ pub(crate) fn package_crate_buildpack(
         tempdir().map_err(PackageCrateBuildpackError::CannotCreateBuildpackTempDirectory)?;
 
     let buildpack_binaries = build_buildpack_binaries(
-        &cargo_manifest_dir,
         &cargo_metadata,
         cargo_profile,
         &cargo_env,

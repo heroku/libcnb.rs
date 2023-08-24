@@ -5,7 +5,7 @@ use crate::cargo::{
 use cargo_metadata::Metadata;
 use std::collections::HashMap;
 use std::ffi::OsString;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::{Command, ExitStatus};
 
 /// Builds all buildpack binary targets using Cargo.
@@ -20,7 +20,6 @@ use std::process::{Command, ExitStatus};
 /// Will return `Err` if any build did not finish successfully, the configuration cannot be
 /// read or the configured main buildpack binary does not exist.
 pub fn build_buildpack_binaries(
-    project_path: impl AsRef<Path>,
     cargo_metadata: &Metadata,
     cargo_profile: CargoProfile,
     cargo_env: &[(OsString, OsString)],
@@ -32,7 +31,6 @@ pub fn build_buildpack_binaries(
 
     let buildpack_target_binary_path = if binary_target_names.contains(&buildpack_cargo_target) {
         build_binary(
-            project_path.as_ref(),
             cargo_metadata,
             cargo_profile,
             cargo_env.to_owned(),
@@ -54,7 +52,6 @@ pub fn build_buildpack_binaries(
         additional_target_binary_paths.insert(
             additional_binary_target_name.clone(),
             build_binary(
-                project_path.as_ref(),
                 cargo_metadata,
                 cargo_profile,
                 cargo_env.to_owned(),
@@ -95,7 +92,6 @@ pub fn build_buildpack_binaries(
 ///
 /// Will return `Err` if the build did not finish successfully.
 pub fn build_binary(
-    project_path: impl AsRef<Path>,
     cargo_metadata: &Metadata,
     cargo_profile: CargoProfile,
     mut cargo_env: Vec<(OsString, OsString)>,
@@ -134,7 +130,7 @@ pub fn build_binary(
     let exit_status = Command::new("cargo")
         .args(cargo_args)
         .envs(cargo_env)
-        .current_dir(&project_path)
+        .current_dir(&cargo_metadata.workspace_root)
         .spawn()
         .and_then(|mut child| child.wait())
         .map_err(BuildError::CargoProcessIoError)?;

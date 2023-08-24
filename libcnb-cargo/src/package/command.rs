@@ -159,7 +159,6 @@ fn package_single_buildpack(
     eprintln!("Building binaries ({target_triple})...");
 
     let buildpack_binaries = build_buildpack_binaries(
-        &buildpack_package.path,
         &cargo_metadata,
         cargo_profile,
         &cargo_build_env,
