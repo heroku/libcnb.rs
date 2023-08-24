@@ -1,4 +1,4 @@
-use crate::buildpackage::PlatformOs::Linux;
+use crate::package_descriptor::PlatformOs::Linux;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::path::PathBuf;
 use uriparse::{URIReference, URIReferenceError};
@@ -7,7 +7,7 @@ use uriparse::{URIReference, URIReferenceError};
 ///
 /// # Example
 /// ```
-/// use libcnb_data::buildpackage::PackageDescriptor;
+/// use libcnb_data::package_descriptor::PackageDescriptor;
 ///
 /// let toml_str = r#"
 /// [buildpack]
@@ -170,7 +170,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::buildpackage::PlatformOs::Windows;
+    use crate::package_descriptor::PlatformOs::Windows;
 
     #[test]
     fn it_parses_minimal() {

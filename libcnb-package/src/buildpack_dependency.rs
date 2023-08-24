@@ -1,5 +1,5 @@
 use libcnb_data::buildpack::{BuildpackId, BuildpackIdError};
-use libcnb_data::buildpackage::{PackageDescriptor, PackageDescriptorDependency};
+use libcnb_data::package_descriptor::{PackageDescriptor, PackageDescriptorDependency};
 use std::path::{Path, PathBuf};
 
 /// Buildpack dependency type
@@ -189,7 +189,7 @@ mod tests {
     use crate::output::create_packaged_buildpack_dir_resolver;
     use crate::CargoProfile;
     use libcnb_data::buildpack_id;
-    use libcnb_data::buildpackage::{
+    use libcnb_data::package_descriptor::{
         PackageDescriptor, PackageDescriptorBuildpackReference, PackageDescriptorDependency,
         Platform,
     };

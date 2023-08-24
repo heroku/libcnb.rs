@@ -2,7 +2,7 @@ use crate::cli::PackageArgs;
 use crate::package::error::Error;
 use cargo_metadata::MetadataCommand;
 use libcnb_data::buildpack::{BuildpackDescriptor, BuildpackId};
-use libcnb_data::buildpackage::PackageDescriptor;
+use libcnb_data::package_descriptor::PackageDescriptor;
 use libcnb_package::build::build_buildpack_binaries;
 use libcnb_package::buildpack_dependency::{
     rewrite_package_descriptor_local_dependencies,
@@ -172,8 +172,8 @@ fn package_single_buildpack(
     )
     .map_err(|e| Error::AssembleBuildpackDirectory(target_dir.to_path_buf(), e))?;
 
-    let package_descriptor_content =
-        toml::to_string(&PackageDescriptor::default()).map_err(Error::SerializePackageDescriptor)?;
+    let package_descriptor_content = toml::to_string(&PackageDescriptor::default())
+        .map_err(Error::SerializePackageDescriptor)?;
 
     std::fs::write(target_dir.join("package.toml"), package_descriptor_content)
         .map_err(|e| Error::WritePackageDescriptor(target_dir.to_path_buf(), e))?;

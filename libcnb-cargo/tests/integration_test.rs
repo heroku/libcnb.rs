@@ -4,7 +4,7 @@
 
 use libcnb_data::buildpack::BuildpackId;
 use libcnb_data::buildpack_id;
-use libcnb_data::buildpackage::PackageDescriptorDependency;
+use libcnb_data::package_descriptor::PackageDescriptorDependency;
 use libcnb_package::output::create_packaged_buildpack_dir_resolver;
 use libcnb_package::{read_buildpack_data, read_package_descriptor_data, CargoProfile};
 use std::io::ErrorKind;

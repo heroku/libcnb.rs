@@ -14,7 +14,7 @@ pub mod output;
 
 use crate::build::BuildpackBinaries;
 use libcnb_data::buildpack::{BuildpackDescriptor, BuildpackId};
-use libcnb_data::buildpackage::PackageDescriptor;
+use libcnb_data::package_descriptor::PackageDescriptor;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
