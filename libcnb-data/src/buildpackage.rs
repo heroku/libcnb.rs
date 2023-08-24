@@ -3,13 +3,11 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::path::PathBuf;
 use uriparse::{URIReference, URIReferenceError};
 
-/// Data structure for the Buildpackage configuration schema (package.toml) for a buildpack.
-///
 /// Representation of [package.toml](https://buildpacks.io/docs/reference/config/package-config/).
 ///
 /// # Example
 /// ```
-/// use libcnb_data::buildpackage::Buildpackage;
+/// use libcnb_data::buildpackage::PackageDescriptor;
 ///
 /// let toml_str = r#"
 /// [buildpack]
@@ -31,27 +29,27 @@ use uriparse::{URIReference, URIReferenceError};
 /// os = "windows"
 /// "#;
 ///
-/// let buildpackage = toml::from_str::<Buildpackage>(toml_str).unwrap();
+/// toml::from_str::<PackageDescriptor>(toml_str).unwrap();
 /// ```
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct Buildpackage {
+pub struct PackageDescriptor {
     /// The buildpack to package.
-    pub buildpack: BuildpackageBuildpackReference,
+    pub buildpack: PackageDescriptorBuildpackReference,
 
     /// A set of dependent buildpack locations, for packaging a meta-buildpack. Each dependent buildpack location must correspond to an order group within the meta-buildpack being packaged.
     #[serde(default)]
-    pub dependencies: Vec<BuildpackageDependency>,
+    pub dependencies: Vec<PackageDescriptorDependency>,
 
-    /// The expected runtime environment for the buildpackage.
+    /// The expected runtime environment for the packaged buildpack.
     #[serde(default)]
     pub platform: Platform,
 }
 
-impl Default for Buildpackage {
+impl Default for PackageDescriptor {
     fn default() -> Self {
-        Buildpackage {
-            buildpack: BuildpackageBuildpackReference::try_from(".")
+        PackageDescriptor {
+            buildpack: PackageDescriptorBuildpackReference::try_from(".")
                 .expect("a package.toml with buildpack.uri=\".\" should be valid"),
             dependencies: vec![],
             platform: Platform::default(),
@@ -62,7 +60,7 @@ impl Default for Buildpackage {
 /// The buildpack to package.
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct BuildpackageBuildpackReference {
+pub struct PackageDescriptorBuildpackReference {
     /// A URL or path to an archive, or a path to a directory.
     /// If the `uri` field is a relative path it will be relative to the `package.toml` file.
     #[serde(deserialize_with = "deserialize_uri_reference")]
@@ -71,24 +69,24 @@ pub struct BuildpackageBuildpackReference {
 }
 
 #[derive(Debug)]
-pub enum BuildpackageBuildpackError {
+pub enum PackageDescriptorBuildpackError {
     InvalidUri(String),
 }
 
-impl TryFrom<&str> for BuildpackageBuildpackReference {
-    type Error = BuildpackageBuildpackError;
+impl TryFrom<&str> for PackageDescriptorBuildpackReference {
+    type Error = PackageDescriptorBuildpackError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         try_uri_from_str(value)
-            .map(|uri| BuildpackageBuildpackReference { uri })
-            .map_err(|_| BuildpackageBuildpackError::InvalidUri(value.to_string()))
+            .map(|uri| PackageDescriptorBuildpackReference { uri })
+            .map_err(|_| PackageDescriptorBuildpackError::InvalidUri(value.to_string()))
     }
 }
 
 /// A dependent buildpack location for packaging a meta-buildpack.
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct BuildpackageDependency {
+pub struct PackageDescriptorDependency {
     /// A URL or path to an archive, a packaged buildpack (saved as a .cnb file), or a directory.
     /// If the `uri` field is a relative path it will be relative to the `package.toml` file.
     #[serde(deserialize_with = "deserialize_uri_reference")]
@@ -97,25 +95,25 @@ pub struct BuildpackageDependency {
 }
 
 #[derive(Debug)]
-pub enum BuildpackageDependencyError {
+pub enum PackageDescriptorDependencyError {
     InvalidUri(String),
 }
 
-impl TryFrom<PathBuf> for BuildpackageDependency {
-    type Error = BuildpackageDependencyError;
+impl TryFrom<PathBuf> for PackageDescriptorDependency {
+    type Error = PackageDescriptorDependencyError;
 
     fn try_from(value: PathBuf) -> Result<Self, Self::Error> {
         Self::try_from(value.to_string_lossy().to_string().as_str())
     }
 }
 
-impl TryFrom<&str> for BuildpackageDependency {
-    type Error = BuildpackageDependencyError;
+impl TryFrom<&str> for PackageDescriptorDependency {
+    type Error = PackageDescriptorDependencyError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         try_uri_from_str(value)
-            .map(|uri| BuildpackageDependency { uri })
-            .map_err(|_| BuildpackageDependencyError::InvalidUri(value.to_string()))
+            .map(|uri| PackageDescriptorDependency { uri })
+            .map_err(|_| PackageDescriptorDependencyError::InvalidUri(value.to_string()))
     }
 }
 
@@ -123,11 +121,11 @@ fn try_uri_from_str(value: &str) -> Result<URIReference<'static>, URIReferenceEr
     URIReference::try_from(value).map(URIReference::into_owned)
 }
 
-/// The expected runtime environment for the buildpackage.
+/// The expected runtime environment for the packaged buildpack.
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct Platform {
-    /// The operating system type that the buildpackage will run on.
+    /// The operating system type that the packaged buildpack will run on.
     /// Only linux or windows is supported. If omitted, linux will be the default.
     pub os: PlatformOs,
 }
@@ -181,12 +179,12 @@ mod tests {
 uri = "."
 "#;
 
-        let buildpackage = toml::from_str::<Buildpackage>(toml_str).unwrap();
+        let package_descriptor = toml::from_str::<PackageDescriptor>(toml_str).unwrap();
         assert_eq!(
-            buildpackage.buildpack,
-            BuildpackageBuildpackReference::try_from(".").unwrap()
+            package_descriptor.buildpack,
+            PackageDescriptorBuildpackReference::try_from(".").unwrap()
         );
-        assert_eq!(buildpackage.platform.os, Linux);
+        assert_eq!(package_descriptor.platform.os, Linux);
     }
 
     #[test]
@@ -211,19 +209,19 @@ uri = "docker://docker.io/heroku/example:1.2.3"
 os = "windows"
 "#;
 
-        let buildpackage = toml::from_str::<Buildpackage>(toml_str).unwrap();
+        let package_descriptor = toml::from_str::<PackageDescriptor>(toml_str).unwrap();
         assert_eq!(
-            buildpackage.buildpack,
-            BuildpackageBuildpackReference::try_from(".").unwrap()
+            package_descriptor.buildpack,
+            PackageDescriptorBuildpackReference::try_from(".").unwrap()
         );
-        assert_eq!(buildpackage.platform.os, Windows);
+        assert_eq!(package_descriptor.platform.os, Windows);
         assert_eq!(
-            buildpackage.dependencies,
+            package_descriptor.dependencies,
             vec![
-                BuildpackageDependency::try_from("libcnb:buildpack-id").unwrap(),
-                BuildpackageDependency::try_from("../relative/path").unwrap(),
-                BuildpackageDependency::try_from("/absolute/path").unwrap(),
-                BuildpackageDependency::try_from("docker://docker.io/heroku/example:1.2.3")
+                PackageDescriptorDependency::try_from("libcnb:buildpack-id").unwrap(),
+                PackageDescriptorDependency::try_from("../relative/path").unwrap(),
+                PackageDescriptorDependency::try_from("/absolute/path").unwrap(),
+                PackageDescriptorDependency::try_from("docker://docker.io/heroku/example:1.2.3")
                     .unwrap()
             ]
         );
@@ -231,21 +229,21 @@ os = "windows"
 
     #[test]
     fn it_serializes() {
-        let buildpackage = Buildpackage {
-            buildpack: BuildpackageBuildpackReference::try_from(".").unwrap(),
+        let package_descriptor = PackageDescriptor {
+            buildpack: PackageDescriptorBuildpackReference::try_from(".").unwrap(),
             dependencies: vec![
-                BuildpackageDependency::try_from("libcnb:buildpack-id").unwrap(),
-                BuildpackageDependency::try_from("../relative/path").unwrap(),
-                BuildpackageDependency::try_from("/absolute/path").unwrap(),
-                BuildpackageDependency::try_from("docker://docker.io/heroku/example:1.2.3")
+                PackageDescriptorDependency::try_from("libcnb:buildpack-id").unwrap(),
+                PackageDescriptorDependency::try_from("../relative/path").unwrap(),
+                PackageDescriptorDependency::try_from("/absolute/path").unwrap(),
+                PackageDescriptorDependency::try_from("docker://docker.io/heroku/example:1.2.3")
                     .unwrap(),
             ],
             platform: Platform::default(),
         };
 
-        let buildpackage_contents = toml::to_string(&buildpackage).unwrap();
+        let package_descriptor_contents = toml::to_string(&package_descriptor).unwrap();
         assert_eq!(
-            buildpackage_contents,
+            package_descriptor_contents,
             r#"
 [buildpack]
 uri = "."

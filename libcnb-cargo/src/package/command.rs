@@ -2,11 +2,11 @@ use crate::cli::PackageArgs;
 use crate::package::error::Error;
 use cargo_metadata::MetadataCommand;
 use libcnb_data::buildpack::{BuildpackDescriptor, BuildpackId};
-use libcnb_data::buildpackage::Buildpackage;
+use libcnb_data::buildpackage::PackageDescriptor;
 use libcnb_package::build::build_buildpack_binaries;
 use libcnb_package::buildpack_dependency::{
-    rewrite_buildpackage_local_dependencies,
-    rewrite_buildpackage_relative_path_dependencies_to_absolute,
+    rewrite_package_descriptor_local_dependencies,
+    rewrite_package_descriptor_relative_path_dependencies_to_absolute,
 };
 use libcnb_package::buildpack_package::{read_buildpack_package, BuildpackPackage};
 use libcnb_package::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
@@ -172,11 +172,11 @@ fn package_single_buildpack(
     )
     .map_err(|e| Error::AssembleBuildpackDirectory(target_dir.to_path_buf(), e))?;
 
-    let buildpackage_content =
-        toml::to_string(&Buildpackage::default()).map_err(Error::SerializeBuildpackage)?;
+    let package_descriptor_content =
+        toml::to_string(&PackageDescriptor::default()).map_err(Error::SerializePackageDescriptor)?;
 
-    std::fs::write(target_dir.join("package.toml"), buildpackage_content)
-        .map_err(|e| Error::WriteBuildpackage(target_dir.to_path_buf(), e))?;
+    std::fs::write(target_dir.join("package.toml"), package_descriptor_content)
+        .map_err(|e| Error::WritePackageDescriptor(target_dir.to_path_buf(), e))?;
 
     eprint_compiled_buildpack_success(&buildpack_package.path, target_dir)
 }
@@ -199,28 +199,31 @@ fn package_meta_buildpack(
     )
     .map_err(|e| Error::CopyBuildpackToml(target_dir.to_path_buf(), e))?;
 
-    let buildpackage_content = &buildpack_package
-        .buildpackage_data
+    let package_descriptor_content = &buildpack_package
+        .package_descriptor_data
         .as_ref()
-        .map(|buildpackage_data| &buildpackage_data.buildpackage_descriptor)
-        .ok_or(Error::MissingBuildpackageData)
-        .and_then(|buildpackage| {
-            rewrite_buildpackage_local_dependencies(buildpackage, packaged_buildpack_dir_resolver)
-                .map_err(Error::RewriteBuildpackageLocalDependencies)
+        .map(|package_descriptor_data| &package_descriptor_data.package_descriptor)
+        .ok_or(Error::MissingPackageDescriptorData)
+        .and_then(|package_descriptor| {
+            rewrite_package_descriptor_local_dependencies(
+                package_descriptor,
+                packaged_buildpack_dir_resolver,
+            )
+            .map_err(Error::RewritePackageDescriptorLocalDependencies)
         })
-        .and_then(|buildpackage| {
-            rewrite_buildpackage_relative_path_dependencies_to_absolute(
-                &buildpackage,
+        .and_then(|package_descriptor| {
+            rewrite_package_descriptor_relative_path_dependencies_to_absolute(
+                &package_descriptor,
                 &buildpack_package.path,
             )
-            .map_err(Error::RewriteBuildpackageRelativePathDependenciesToAbsolute)
+            .map_err(Error::RewritePackageDescriptorRelativePathDependenciesToAbsolute)
         })
-        .and_then(|buildpackage| {
-            toml::to_string(&buildpackage).map_err(Error::SerializeBuildpackage)
+        .and_then(|package_descriptor| {
+            toml::to_string(&package_descriptor).map_err(Error::SerializePackageDescriptor)
         })?;
 
-    std::fs::write(target_dir.join("package.toml"), buildpackage_content)
-        .map_err(|e| Error::WriteBuildpackage(target_dir.to_path_buf(), e))?;
+    std::fs::write(target_dir.join("package.toml"), package_descriptor_content)
+        .map_err(|e| Error::WritePackageDescriptor(target_dir.to_path_buf(), e))?;
 
     eprint_compiled_buildpack_success(&buildpack_package.path, target_dir)
 }
