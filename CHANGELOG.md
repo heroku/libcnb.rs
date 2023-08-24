@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Renamed `libcnb-data`'s `Buildpackage` to `PackageDescriptor`. This required changes in many other names across multiple libcnb.rs crates for consistency. See the PR diff for details, but renames should be straightforward and unsurprising. ([#656](https://github.com/heroku/libcnb.rs/pull/656))
 - `libcnb-package`:
   - Added `find_cargo_workspace_root_dir` which provides a convenient starting point for locating buildpacks for packaging and testing purposes. ([#629](https://github.com/heroku/libcnb.rs/pull/629))
   - Changed the `ReadBuildpackDataError` and `ReadBuildpackageDataError` enums from struct to tuple format to be consistent with other error enums in the package. ([#631](https://github.com/heroku/libcnb.rs/pull/631))
