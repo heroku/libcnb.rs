@@ -87,13 +87,14 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
         }
     };
 
-    let mut current_count = 1;
-    let total_count = build_order.len();
-    for buildpack_package in &build_order {
+    for (buildpack_package_index, buildpack_package) in build_order.iter().enumerate() {
         eprintln!(
-            "📦 [{current_count}/{total_count}] Building {}",
+            "📦 [{}/{}] Building {}",
+            buildpack_package_index + 1,
+            build_order.len(),
             buildpack_package.buildpack_id()
         );
+
         let target_dir = lookup_target_dir(buildpack_package);
         match buildpack_package.buildpack_descriptor {
             BuildpackDescriptor::Single(_) => {
@@ -117,7 +118,6 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
                 )?;
             }
         }
-        current_count += 1;
     }
 
     eprint_pack_command_hint(
