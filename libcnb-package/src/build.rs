@@ -29,45 +29,28 @@ pub fn build_buildpack_binaries(
     let buildpack_cargo_target = determine_buildpack_cargo_target_name(cargo_metadata)
         .map_err(BuildBinariesError::CannotDetermineBuildpackCargoTargetName)?;
 
-    let buildpack_target_binary_path = if binary_target_names.contains(&buildpack_cargo_target) {
-        build_binary(
+    let mut buildpack_binaries = BuildpackBinaries::default();
+
+    for binary_target_name in binary_target_names {
+        let binary_path = build_binary(
             cargo_metadata,
             cargo_profile,
             cargo_env.to_owned(),
             target_triple.as_ref(),
             &buildpack_cargo_target,
         )
-        .map_err(|error| BuildBinariesError::BuildError(buildpack_cargo_target.clone(), error))
-    } else {
-        Err(BuildBinariesError::MissingBuildpackTarget(
-            buildpack_cargo_target.clone(),
-        ))
-    }?;
+        .map_err(|error| BuildBinariesError::BuildError(buildpack_cargo_target.clone(), error))?;
 
-    let mut additional_target_binary_paths = HashMap::new();
-    for additional_binary_target_name in binary_target_names
-        .iter()
-        .filter(|name| *name != &buildpack_cargo_target)
-    {
-        additional_target_binary_paths.insert(
-            additional_binary_target_name.clone(),
-            build_binary(
-                cargo_metadata,
-                cargo_profile,
-                cargo_env.to_owned(),
-                target_triple.as_ref(),
-                additional_binary_target_name,
-            )
-            .map_err(|error| {
-                BuildBinariesError::BuildError(additional_binary_target_name.clone(), error)
-            })?,
-        );
+        if binary_target_name == buildpack_cargo_target {
+            buildpack_binaries.buildpack_target_binary_path = binary_path;
+        } else {
+            buildpack_binaries
+                .additional_target_binary_paths
+                .insert(binary_target_name, binary_path);
+        }
     }
 
-    Ok(BuildpackBinaries {
-        buildpack_target_binary_path,
-        additional_target_binary_paths,
-    })
+    Ok(buildpack_binaries)
 }
 
 /// Builds a binary using Cargo.
@@ -98,7 +81,13 @@ pub fn build_binary(
     target_triple: impl AsRef<str>,
     target_name: impl AsRef<str>,
 ) -> Result<PathBuf, BuildError> {
-    let mut cargo_args = vec!["build", "--target", target_triple.as_ref()];
+    let mut cargo_args = vec![
+        "build",
+        "--bin",
+        target_name.as_ref(),
+        "--target",
+        target_triple.as_ref(),
+    ];
     match cargo_profile {
         CargoProfile::Dev => {
             // We enable stripping for dev builds too, since debug builds are extremely
@@ -152,7 +141,7 @@ pub fn build_binary(
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct BuildpackBinaries {
     /// The path to the main buildpack binary
     pub buildpack_target_binary_path: PathBuf,
@@ -174,6 +163,4 @@ pub enum BuildBinariesError {
     CannotDetermineBuildpackCargoTargetName(#[source] DetermineBuildpackCargoTargetNameError),
     #[error("Failed to build binary target {0}: {1}")]
     BuildError(String, #[source] BuildError),
-    #[error("Binary target {0} could not be found")]
-    MissingBuildpackTarget(String),
 }
