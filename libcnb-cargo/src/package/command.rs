@@ -19,10 +19,8 @@ use libcnb_package::{
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
-type Result<T> = std::result::Result<T, Error>;
-
 #[allow(clippy::too_many_lines)]
-pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
+pub(crate) fn execute(args: &PackageArgs) -> Result<(), Error> {
     let target_triple = args.target.clone();
 
     let cargo_profile = if args.release {
@@ -50,7 +48,7 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<()> {
         .map_err(|e| Error::FindBuildpackDirs(workspace_root_path, e))?
         .into_iter()
         .map(read_buildpack_package)
-        .collect::<std::result::Result<Vec<_>, _>>()
+        .collect::<Result<Vec<_>, _>>()
         .map_err(|error| Error::ReadBuildpackPackage(Box::new(error)))?;
 
     let buildpack_packages_graph =
@@ -143,7 +141,7 @@ fn package_single_buildpack(
     cargo_profile: CargoProfile,
     target_triple: &str,
     no_cross_compile_assistance: bool,
-) -> Result<()> {
+) -> Result<(), Error> {
     let cargo_metadata = MetadataCommand::new()
         .manifest_path(&buildpack_package.path.join("Cargo.toml"))
         .exec()
@@ -189,7 +187,7 @@ fn package_meta_buildpack(
     buildpack_package: &BuildpackPackage,
     target_dir: &Path,
     packaged_buildpack_dir_resolver: &impl Fn(&BuildpackId) -> PathBuf,
-) -> Result<()> {
+) -> Result<(), Error> {
     eprintln!("Writing buildpack directory...");
 
     if target_dir.exists() {
@@ -257,7 +255,7 @@ fn print_requested_buildpack_output_dirs(output_directories: Vec<PathBuf>) {
     }
 }
 
-fn eprint_compiled_buildpack_success(source_dir: &Path, target_dir: &Path) -> Result<()> {
+fn eprint_compiled_buildpack_success(source_dir: &Path, target_dir: &Path) -> Result<(), Error> {
     let size_in_bytes = calculate_dir_size(target_dir)
         .map_err(|e| Error::CalculateDirectorySize(target_dir.to_path_buf(), e))?;
 
@@ -309,7 +307,7 @@ fn contains_buildpack_binaries(dir: &Path) -> bool {
 fn get_cargo_build_env(
     target_triple: &str,
     no_cross_compile_assistance: bool,
-) -> Result<Vec<(OsString, OsString)>> {
+) -> Result<Vec<(OsString, OsString)>, Error> {
     if no_cross_compile_assistance {
         Ok(vec![])
     } else {
@@ -331,7 +329,7 @@ fn get_cargo_build_env(
     }
 }
 
-fn get_default_package_dir(workspace_root_path: &Path) -> Result<PathBuf> {
+fn get_default_package_dir(workspace_root_path: &Path) -> Result<PathBuf, Error> {
     MetadataCommand::new()
         .manifest_path(&workspace_root_path.join("Cargo.toml"))
         .exec()
