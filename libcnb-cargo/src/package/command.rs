@@ -164,7 +164,10 @@ fn package_single_buildpack(
 
     eprintln!("Writing buildpack directory...");
 
-    clean_target_directory(target_dir)?;
+    if target_dir.exists() {
+        std::fs::remove_dir_all(target_dir)
+            .map_err(|e| Error::CleanBuildpackTargetDirectory(target_dir.to_path_buf(), e))?;
+    }
 
     assemble_buildpack_directory(
         target_dir,
@@ -189,7 +192,10 @@ fn package_meta_buildpack(
 ) -> Result<()> {
     eprintln!("Writing buildpack directory...");
 
-    clean_target_directory(target_dir)?;
+    if target_dir.exists() {
+        std::fs::remove_dir_all(target_dir)
+            .map_err(|e| Error::CleanBuildpackTargetDirectory(target_dir.to_path_buf(), e))?;
+    }
 
     std::fs::create_dir_all(target_dir)
         .map_err(|e| Error::CreateBuildpackTargetDirectory(target_dir.to_path_buf(), e))?;
@@ -249,14 +255,6 @@ fn print_requested_buildpack_output_dirs(output_directories: Vec<PathBuf>) {
     for dir in output_directories {
         println!("{dir}");
     }
-}
-
-fn clean_target_directory(dir: &Path) -> Result<()> {
-    if dir.exists() {
-        std::fs::remove_dir_all(dir)
-            .map_err(|e| Error::CleanBuildpackTargetDirectory(dir.to_path_buf(), e))?;
-    }
-    Ok(())
 }
 
 fn eprint_compiled_buildpack_success(source_dir: &Path, target_dir: &Path) -> Result<()> {
