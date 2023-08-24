@@ -5,8 +5,9 @@
 use libcnb_data::buildpack::BuildpackId;
 use libcnb_data::buildpack_id;
 use libcnb_data::package_descriptor::PackageDescriptorDependency;
+use libcnb_package::cargo::CargoProfile;
 use libcnb_package::output::create_packaged_buildpack_dir_resolver;
-use libcnb_package::{read_buildpack_descriptor, read_package_descriptor, CargoProfile};
+use libcnb_package::{read_buildpack_descriptor, read_package_descriptor};
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::process::Command;

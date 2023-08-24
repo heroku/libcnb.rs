@@ -1,7 +1,8 @@
 use cargo_metadata::MetadataCommand;
+use libcnb_package::assemble_buildpack_directory;
 use libcnb_package::build::{build_buildpack_binaries, BuildBinariesError};
+use libcnb_package::cargo::CargoProfile;
 use libcnb_package::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
-use libcnb_package::{assemble_buildpack_directory, CargoProfile};
 use std::path::PathBuf;
 use tempfile::{tempdir, TempDir};
 

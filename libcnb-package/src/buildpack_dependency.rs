@@ -186,8 +186,8 @@ mod tests {
         get_local_package_descriptor_dependencies, rewrite_package_descriptor_local_dependencies,
         rewrite_package_descriptor_relative_path_dependencies_to_absolute,
     };
+    use crate::cargo::CargoProfile;
     use crate::output::create_packaged_buildpack_dir_resolver;
-    use crate::CargoProfile;
     use libcnb_data::buildpack_id;
     use libcnb_data::package_descriptor::{
         PackageDescriptor, PackageDescriptorBuildpackReference, PackageDescriptorDependency,

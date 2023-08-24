@@ -1,4 +1,4 @@
-use crate::CargoProfile;
+use crate::cargo::CargoProfile;
 use libcnb_data::buildpack::BuildpackId;
 use std::path::{Path, PathBuf};
 
@@ -33,8 +33,8 @@ pub fn default_buildpack_directory_name(buildpack_id: &BuildpackId) -> String {
 
 #[cfg(test)]
 mod tests {
+    use crate::cargo::CargoProfile;
     use crate::output::create_packaged_buildpack_dir_resolver;
-    use crate::CargoProfile;
     use libcnb_data::buildpack_id;
     use std::path::PathBuf;
 

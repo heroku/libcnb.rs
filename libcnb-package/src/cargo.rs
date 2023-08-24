@@ -37,6 +37,17 @@ pub(crate) fn cargo_binary_target_names(cargo_metadata: &cargo_metadata::Metadat
         .unwrap_or_default()
 }
 
+/// The profile to use when invoking Cargo.
+///
+/// <https://doc.rust-lang.org/cargo/reference/profiles.html>
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum CargoProfile {
+    /// Provides faster compilation times at the expense of runtime performance and binary size.
+    Dev,
+    /// Produces assets with optimised runtime performance and binary size, at the expense of compilation time.
+    Release,
+}
+
 fn cargo_binary_target_names_from_root_package(
     root_package: &cargo_metadata::Package,
 ) -> Vec<String> {

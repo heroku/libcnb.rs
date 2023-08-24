@@ -20,17 +20,6 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use toml::Table;
 
-/// The profile to use when invoking Cargo.
-///
-/// <https://doc.rust-lang.org/cargo/reference/profiles.html>
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum CargoProfile {
-    /// Provides faster compilation times at the expense of runtime performance and binary size.
-    Dev,
-    /// Produces assets with optimised runtime performance and binary size, at the expense of compilation time.
-    Release,
-}
-
 /// A convenient type alias to use with [`buildpack_package::BuildpackPackage`] when you don't required a specialized metadata representation.
 pub type GenericMetadata = Option<Table>;
 

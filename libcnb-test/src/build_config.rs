@@ -1,8 +1,7 @@
+use libcnb_package::cargo::CargoProfile;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
-
-pub use libcnb_package::CargoProfile;
 
 /// Configuration for a test.
 #[derive(Clone)]
@@ -77,7 +76,8 @@ impl BuildConfig {
     ///
     /// # Example
     /// ```no_run
-    /// use libcnb_test::{BuildConfig, CargoProfile, TestRunner};
+    /// use libcnb_package::cargo::CargoProfile;
+    /// use libcnb_test::{BuildConfig, TestRunner};
     ///
     /// TestRunner::default().build(
     ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app")

@@ -1,8 +1,7 @@
 use crate::cargo::{
-    cargo_binary_target_names, determine_buildpack_cargo_target_name,
+    cargo_binary_target_names, determine_buildpack_cargo_target_name, CargoProfile,
     DetermineBuildpackCargoTargetNameError,
 };
-use crate::CargoProfile;
 use cargo_metadata::Metadata;
 use std::collections::HashMap;
 use std::ffi::OsString;

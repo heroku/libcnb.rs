@@ -9,11 +9,12 @@ use libcnb_package::buildpack_dependency::{
     rewrite_package_descriptor_relative_path_dependencies_to_absolute,
 };
 use libcnb_package::buildpack_package::{read_buildpack_package, BuildpackPackage};
+use libcnb_package::cargo::CargoProfile;
 use libcnb_package::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
 use libcnb_package::dependency_graph::{create_dependency_graph, get_dependencies};
 use libcnb_package::output::create_packaged_buildpack_dir_resolver;
 use libcnb_package::{
-    assemble_buildpack_directory, find_buildpack_dirs, find_cargo_workspace_root_dir, CargoProfile,
+    assemble_buildpack_directory, find_buildpack_dirs, find_cargo_workspace_root_dir,
 };
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
