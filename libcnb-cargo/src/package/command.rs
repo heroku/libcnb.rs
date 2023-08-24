@@ -71,8 +71,9 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<(), Error> {
         Err(Error::NoBuildpacksFound)?;
     }
 
-    let build_order = get_dependencies(&buildpack_packages_graph, &buildpack_packages_requested)
-        .map_err(Error::GetDependencies)?;
+    let ordered_buildpack_packages =
+        get_dependencies(&buildpack_packages_graph, &buildpack_packages_requested)
+            .map_err(Error::GetDependencies)?;
 
     let packaged_buildpack_dir_resolver =
         create_packaged_buildpack_dir_resolver(&package_dir, cargo_profile, &target_triple);
@@ -85,41 +86,47 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<(), Error> {
         }
     };
 
-    for (buildpack_package_index, buildpack_package) in build_order.iter().enumerate() {
+    for (buildpack_package_index, buildpack_package) in
+        ordered_buildpack_packages.iter().enumerate()
+    {
         eprintln!(
             "📦 [{}/{}] Building {}",
             buildpack_package_index + 1,
-            build_order.len(),
+            ordered_buildpack_packages.len(),
             buildpack_package.buildpack_id()
         );
 
-        let target_dir = lookup_target_dir(buildpack_package);
-        match buildpack_package.buildpack_descriptor {
-            BuildpackDescriptor::Single(_) => {
-                if contains_buildpack_binaries(&buildpack_package.path) {
-                    eprintln!("Not a libcnb.rs buildpack, nothing to compile...");
-                } else {
-                    package_single_buildpack(
-                        buildpack_package,
-                        &target_dir,
-                        cargo_profile,
-                        &target_triple,
-                        args.no_cross_compile_assistance,
-                    )?;
-                }
-            }
-            BuildpackDescriptor::Meta(_) => {
-                package_meta_buildpack(
-                    buildpack_package,
-                    &target_dir,
-                    &packaged_buildpack_dir_resolver,
-                )?;
-            }
+        if contains_buildpack_binaries(&buildpack_package.path) {
+            eprintln!("Not a libcnb.rs buildpack, nothing to compile...");
+            continue;
         }
+
+        let buildpack_target_dir = lookup_target_dir(buildpack_package);
+
+        if buildpack_target_dir.exists() {
+            std::fs::remove_dir_all(&buildpack_target_dir).map_err(|error| {
+                Error::CleanBuildpackTargetDirectory(buildpack_target_dir.clone(), error)
+            })?;
+        }
+
+        match buildpack_package.buildpack_descriptor {
+            BuildpackDescriptor::Single(_) => package_single_buildpack(
+                buildpack_package,
+                &buildpack_target_dir,
+                cargo_profile,
+                &target_triple,
+                args.no_cross_compile_assistance,
+            ),
+            BuildpackDescriptor::Meta(_) => package_meta_buildpack(
+                buildpack_package,
+                &buildpack_target_dir,
+                &packaged_buildpack_dir_resolver,
+            ),
+        }?;
     }
 
     eprint_pack_command_hint(
-        build_order
+        ordered_buildpack_packages
             .into_iter()
             .map(lookup_target_dir)
             .collect::<Vec<_>>(),
@@ -162,11 +169,6 @@ fn package_single_buildpack(
 
     eprintln!("Writing buildpack directory...");
 
-    if target_dir.exists() {
-        std::fs::remove_dir_all(target_dir)
-            .map_err(|e| Error::CleanBuildpackTargetDirectory(target_dir.to_path_buf(), e))?;
-    }
-
     assemble_buildpack_directory(
         target_dir,
         buildpack_package.path.join("buildpack.toml"),
@@ -189,11 +191,6 @@ fn package_meta_buildpack(
     packaged_buildpack_dir_resolver: &impl Fn(&BuildpackId) -> PathBuf,
 ) -> Result<(), Error> {
     eprintln!("Writing buildpack directory...");
-
-    if target_dir.exists() {
-        std::fs::remove_dir_all(target_dir)
-            .map_err(|e| Error::CleanBuildpackTargetDirectory(target_dir.to_path_buf(), e))?;
-    }
 
     std::fs::create_dir_all(target_dir)
         .map_err(|e| Error::CreateBuildpackTargetDirectory(target_dir.to_path_buf(), e))?;
