@@ -14,7 +14,7 @@ pub mod output;
 
 use crate::build::BuildpackBinaries;
 use libcnb_data::buildpack::{BuildpackDescriptor, BuildpackId};
-use libcnb_data::buildpackage::Buildpackage;
+use libcnb_data::package_descriptor::PackageDescriptor;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -73,54 +73,57 @@ pub enum ReadBuildpackDataError {
     ParsingBuildpack(PathBuf, #[source] toml::de::Error),
 }
 
-/// A parsed buildpackage descriptor and it's path.
+/// A parsed package descriptor and it's path.
 #[derive(Debug, Clone)]
-pub struct BuildpackageData {
-    pub buildpackage_descriptor_path: PathBuf,
-    pub buildpackage_descriptor: Buildpackage,
+pub struct PackageDescriptorData {
+    pub package_descriptor_path: PathBuf,
+    pub package_descriptor: PackageDescriptor,
 }
 
-/// Reads buildpackage data from the given project path.
+/// Reads package descriptor data from the given project path.
 ///
 /// # Errors
 ///
-/// Will return `Err` if the buildpackage data could not be read successfully.
-pub fn read_buildpackage_data(
+/// Will return `Err` if the package descriptor data could not be read successfully.
+pub fn read_package_descriptor_data(
     project_path: impl AsRef<Path>,
-) -> Result<Option<BuildpackageData>, ReadBuildpackageDataError> {
-    let buildpackage_descriptor_path = project_path.as_ref().join("package.toml");
+) -> Result<Option<PackageDescriptorData>, ReadPackageDescriptorDataError> {
+    let package_descriptor_path = project_path.as_ref().join("package.toml");
 
-    if !buildpackage_descriptor_path.exists() {
+    if !package_descriptor_path.exists() {
         return Ok(None);
     }
 
-    fs::read_to_string(&buildpackage_descriptor_path)
+    fs::read_to_string(&package_descriptor_path)
         .map_err(|e| {
-            ReadBuildpackageDataError::ReadingBuildpackage(buildpackage_descriptor_path.clone(), e)
+            ReadPackageDescriptorDataError::ReadingPackageDescriptor(
+                package_descriptor_path.clone(),
+                e,
+            )
         })
         .and_then(|file_contents| {
             toml::from_str(&file_contents).map_err(|e| {
-                ReadBuildpackageDataError::ParsingBuildpackage(
-                    buildpackage_descriptor_path.clone(),
+                ReadPackageDescriptorDataError::ParsingPackageDescriptor(
+                    package_descriptor_path.clone(),
                     e,
                 )
             })
         })
-        .map(|buildpackage_descriptor| {
-            Some(BuildpackageData {
-                buildpackage_descriptor_path,
-                buildpackage_descriptor,
+        .map(|package_descriptor| {
+            Some(PackageDescriptorData {
+                package_descriptor_path,
+                package_descriptor,
             })
         })
 }
 
-/// An error from [`read_buildpackage_data`]
+/// An error from [`read_package_descriptor_data`]
 #[derive(thiserror::Error, Debug)]
-pub enum ReadBuildpackageDataError {
-    #[error("Failed to read buildpackage data from {0}: {1}")]
-    ReadingBuildpackage(PathBuf, #[source] std::io::Error),
-    #[error("Failed to parse buildpackage data from {0}: {1}")]
-    ParsingBuildpackage(PathBuf, #[source] toml::de::Error),
+pub enum ReadPackageDescriptorDataError {
+    #[error("Failed to read package descriptor data from {0}: {1}")]
+    ReadingPackageDescriptor(PathBuf, #[source] std::io::Error),
+    #[error("Failed to parse package descriptor data from {0}: {1}")]
+    ParsingPackageDescriptor(PathBuf, #[source] toml::de::Error),
 }
 
 /// Creates a buildpack directory and copies all buildpack assets to it.

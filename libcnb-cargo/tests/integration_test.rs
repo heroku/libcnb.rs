@@ -4,9 +4,9 @@
 
 use libcnb_data::buildpack::BuildpackId;
 use libcnb_data::buildpack_id;
-use libcnb_data::buildpackage::BuildpackageDependency;
+use libcnb_data::package_descriptor::PackageDescriptorDependency;
 use libcnb_package::output::create_packaged_buildpack_dir_resolver;
-use libcnb_package::{read_buildpack_data, read_buildpackage_data, CargoProfile};
+use libcnb_package::{read_buildpack_data, read_package_descriptor_data, CargoProfile};
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -69,18 +69,18 @@ fn package_single_meta_buildpack_in_monorepo_buildpack_project() {
         &packaged_buildpack_dir_resolver(&buildpack_id!("multiple-buildpacks/meta-one")),
         &buildpack_id!("multiple-buildpacks/meta-one"),
         &[
-            BuildpackageDependency::try_from(packaged_buildpack_dir_resolver(&buildpack_id!(
+            PackageDescriptorDependency::try_from(packaged_buildpack_dir_resolver(&buildpack_id!(
                 "multiple-buildpacks/one"
             ))),
-            BuildpackageDependency::try_from(packaged_buildpack_dir_resolver(&buildpack_id!(
+            PackageDescriptorDependency::try_from(packaged_buildpack_dir_resolver(&buildpack_id!(
                 "multiple-buildpacks/two"
             ))),
-            BuildpackageDependency::try_from(
+            PackageDescriptorDependency::try_from(
                 fixture_dir
                     .path()
                     .join("meta-buildpacks/meta-one/../../buildpacks/not_libcnb"),
             ),
-            BuildpackageDependency::try_from("docker://docker.io/heroku/example:1.2.3"),
+            PackageDescriptorDependency::try_from("docker://docker.io/heroku/example:1.2.3"),
         ]
         .into_iter()
         .collect::<Result<Vec<_>, _>>()
@@ -165,18 +165,18 @@ fn package_all_buildpacks_in_monorepo_buildpack_project() {
         &packaged_buildpack_dir_resolver(&buildpack_id!("multiple-buildpacks/meta-one")),
         &buildpack_id!("multiple-buildpacks/meta-one"),
         &[
-            BuildpackageDependency::try_from(packaged_buildpack_dir_resolver(&buildpack_id!(
+            PackageDescriptorDependency::try_from(packaged_buildpack_dir_resolver(&buildpack_id!(
                 "multiple-buildpacks/one"
             ))),
-            BuildpackageDependency::try_from(packaged_buildpack_dir_resolver(&buildpack_id!(
+            PackageDescriptorDependency::try_from(packaged_buildpack_dir_resolver(&buildpack_id!(
                 "multiple-buildpacks/two"
             ))),
-            BuildpackageDependency::try_from(
+            PackageDescriptorDependency::try_from(
                 fixture_dir
                     .path()
                     .join("meta-buildpacks/meta-one/../../buildpacks/not_libcnb"),
             ),
-            BuildpackageDependency::try_from("docker://docker.io/heroku/example:1.2.3"),
+            PackageDescriptorDependency::try_from("docker://docker.io/heroku/example:1.2.3"),
         ]
         .into_iter()
         .collect::<Result<Vec<_>, _>>()
@@ -251,7 +251,7 @@ fn validate_packaged_buildpack(packaged_buildpack_dir: &Path, buildpack_id: &Bui
 fn validate_packaged_meta_buildpack(
     packaged_buildpack_dir: &Path,
     buildpack_id: &BuildpackId,
-    expected_buildpackage_dependencies: &[BuildpackageDependency],
+    expected_package_descriptor_dependencies: &[PackageDescriptorDependency],
 ) {
     assert!(packaged_buildpack_dir.join("buildpack.toml").exists());
     assert!(packaged_buildpack_dir.join("package.toml").exists());
@@ -266,12 +266,12 @@ fn validate_packaged_meta_buildpack(
     );
 
     assert_eq!(
-        read_buildpackage_data(packaged_buildpack_dir)
+        read_package_descriptor_data(packaged_buildpack_dir)
             .unwrap()
             .unwrap()
-            .buildpackage_descriptor
+            .package_descriptor
             .dependencies,
-        expected_buildpackage_dependencies
+        expected_package_descriptor_dependencies
     );
 }
 

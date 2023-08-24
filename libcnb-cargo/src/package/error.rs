@@ -29,20 +29,20 @@ pub(crate) enum Error {
     #[error("Failed to build buildpack binaries: {0}")]
     BuildBinaries(#[source] BuildBinariesError),
     #[error("Failed to serialize package.toml: {0}")]
-    SerializeBuildpackage(#[source] toml::ser::Error),
+    SerializePackageDescriptor(#[source] toml::ser::Error),
     #[error("Failed to write package.toml to {0}: {1}")]
-    WriteBuildpackage(PathBuf, #[source] std::io::Error),
+    WritePackageDescriptor(PathBuf, #[source] std::io::Error),
     #[error("Failed to create buildpack target directory {0}: {1}")]
     CreateBuildpackTargetDirectory(PathBuf, #[source] std::io::Error),
     #[error("Failed to copy buildpack.toml to {0}: {1}")]
     CopyBuildpackToml(PathBuf, #[source] std::io::Error),
     #[error("Buildpack does not contain a package.toml file")]
-    MissingBuildpackageData,
+    MissingPackageDescriptorData,
     #[error("Failed to rewrite package.toml: {0}")]
-    RewriteBuildpackageLocalDependencies(#[source] libcnb_package::buildpack_dependency::RewriteBuildpackageLocalDependenciesError),
+    RewritePackageDescriptorLocalDependencies(#[source] libcnb_package::buildpack_dependency::RewritePackageDescriptorLocalDependenciesError),
     #[error("Failed to rewrite package.toml: {0}")]
-    RewriteBuildpackageRelativePathDependenciesToAbsolute(
-        #[source] libcnb_package::buildpack_dependency::RewriteBuildpackageRelativePathDependenciesToAbsoluteError,
+    RewritePackageDescriptorRelativePathDependenciesToAbsolute(
+        #[source] libcnb_package::buildpack_dependency::RewritePackageDescriptorRelativePathDependenciesToAbsoluteError,
     ),
     #[error("Failed to clean buildpack target directory {0}: {1}")]
     CleanBuildpackTargetDirectory(PathBuf, #[source] std::io::Error),
