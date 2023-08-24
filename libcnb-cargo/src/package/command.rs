@@ -264,12 +264,12 @@ fn eprint_compiled_buildpack_success(source_dir: &Path, target_dir: &Path) -> Re
     // Precision will only be lost for sizes bigger than 52 bits (~4 Petabytes), and even
     // then will only result in a less precise figure, so is not an issue.
     #[allow(clippy::cast_precision_loss)]
-    let size_in_mb = size_in_bytes as f64 / (1024.0 * 1024.0);
+    let size_in_mib = size_in_bytes as f64 / (1024.0 * 1024.0);
     let relative_output_path =
         pathdiff::diff_paths(target_dir, source_dir).unwrap_or_else(|| source_dir.to_path_buf());
 
     eprintln!(
-        "Successfully wrote buildpack directory: {} ({size_in_mb:.2} MiB)",
+        "Successfully wrote buildpack directory: {} ({size_in_mib:.2} MiB)",
         relative_output_path.to_string_lossy(),
     );
 
