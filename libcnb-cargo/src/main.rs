@@ -4,12 +4,12 @@
 // This lint is too noisy and enforces a style that reduces readability in many cases.
 #![allow(clippy::module_name_repetitions)]
 
-mod cli;
-mod package;
-
 // Suppress warnings due to the `unused_crate_dependencies` lint not handling integration tests well.
 #[cfg(test)]
 use tempfile as _;
+
+mod cli;
+mod package;
 
 use crate::cli::{Cli, LibcnbSubcommand};
 use clap::Parser;

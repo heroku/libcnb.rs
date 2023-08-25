@@ -94,8 +94,9 @@ pub struct PackageDescriptorDependency {
     pub uri: URIReference<'static>,
 }
 
-#[derive(Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum PackageDescriptorDependencyError {
+    #[error("Invalid URI: {0}")]
     InvalidUri(String),
 }
 

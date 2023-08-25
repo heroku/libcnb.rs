@@ -13,8 +13,10 @@ include = ["src/**/*", "LICENSE", "README.md"]
 
 [dependencies]
 cargo_metadata = "0.17.0"
+libcnb-common.workspace = true
 libcnb-data.workspace = true
 petgraph = { version = "0.6.3", default-features = false }
 thiserror = "1.0.44"
 toml.workspace = true
+uriparse = "0.6.4"
 which = "4.4.0"
