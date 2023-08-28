@@ -6,7 +6,9 @@
 /// - [`Display`](std::fmt::Display)
 /// - [`Eq`]
 /// - [`Hash`]
+/// - [`Ord`]
 /// - [`PartialEq`]
+/// - [`PartialOrd`]
 /// - [`serde::Deserialize`]
 /// - [`serde::Serialize`]
 /// - [`FromStr`](std::str::FromStr)
@@ -134,6 +136,18 @@ macro_rules! libcnb_newtype {
             }
         }
 
+        impl ::std::cmp::Ord for $name {
+           fn cmp(&self, other: &Self) -> ::std::cmp::Ordering {
+                self.0.cmp(&other.0)
+            }
+        }
+
+        impl ::std::cmp::PartialOrd for $name {
+           fn partial_cmp(&self, other: &Self) -> Option<::std::cmp::Ordering> {
+                Some(self.cmp(&other))
+            }
+        }
+
         impl $name {
             /// Construct an instance of this type without performing validation.
             ///
@@ -230,6 +244,25 @@ mod tests {
     fn join() {
         let names = vec![capitalized_name!("A"), capitalized_name!("B")];
         assert_eq!("A, B", names.join(", "));
+    }
+
+    #[test]
+    fn ord() {
+        let mut names = vec![
+            capitalized_name!("A"),
+            capitalized_name!("C"),
+            capitalized_name!("B"),
+        ];
+        names.sort();
+
+        assert_eq!(
+            vec![
+                capitalized_name!("A"),
+                capitalized_name!("B"),
+                capitalized_name!("C")
+            ],
+            names
+        );
     }
 
     #[test]
