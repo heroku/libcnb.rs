@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `libcnb-package`:
   - Added the `output::create_packaged_buildpack_dir_resolver` helper which contains all the information on how compiled buildpack directories are structured returns a function that can be invoked with `BuildpackId` to produce the output path for a buildpack. ([#632](https://github.com/heroku/libcnb.rs/pull/632))
   - `std::fmt::Display` and `std::error::Error` implementations for all error values. ([#652](https://github.com/heroku/libcnb.rs/pull/652))
+- `libcnb-data`:
+  - `ExecDProgramOutputKey`, `ProcessType`, `LayerName`, `BuildpackId` and `StackId` now implement `Ord` and `PartialOrd`. ([#658](https://github.com/heroku/libcnb.rs/pull/658))
 
 ### Changed
 
