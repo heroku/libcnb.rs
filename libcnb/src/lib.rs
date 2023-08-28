@@ -24,15 +24,14 @@ mod error;
 mod exit_code;
 mod platform;
 mod runtime;
-mod toml_file;
 mod util;
 
 pub use buildpack::Buildpack;
 pub use env::*;
 pub use error::*;
+pub use libcnb_common::toml_file::*;
 pub use platform::*;
 pub use runtime::*;
-pub use toml_file::*;
 
 /// Provides types for CNB data formats. Is a re-export of the `libcnb-data` crate.
 #[doc(inline)]

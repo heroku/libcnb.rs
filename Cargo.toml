@@ -6,6 +6,7 @@ members = [
     "examples/ruby-sample",
     "libcnb",
     "libcnb-cargo",
+    "libcnb-common",
     "libcnb-data",
     "libcnb-package",
     "libcnb-proc-macros",
@@ -24,6 +25,7 @@ license = "BSD-3-Clause"
 
 [workspace.dependencies]
 libcnb = { version = "=0.14.0", path = "libcnb" }
+libcnb-common = { version = "=0.14.0", path = "libcnb-common" }
 libcnb-data = { version = "=0.14.0", path = "libcnb-data" }
 libcnb-package = { version = "=0.14.0", path = "libcnb-package" }
 libcnb-proc-macros = { version = "=0.14.0", path = "libcnb-proc-macros" }
