@@ -1,4 +1,5 @@
 use crate::build::build_buildpack_binaries;
+use crate::buildpack_kind::{determine_buildpack_kind, BuildpackKind};
 use crate::package_descriptor::{normalize_package_descriptor, NormalizePackageDescriptorError};
 use crate::{assemble_buildpack_directory, CargoProfile};
 use cargo_metadata::MetadataCommand;
@@ -8,8 +9,6 @@ use libcnb_data::package_descriptor::PackageDescriptor;
 use std::collections::BTreeMap;
 use std::ffi::OsString;
 use std::fs;
-
-use crate::buildpack_kind::{determine_buildpack_kind, BuildpackKind};
 use std::path::{Path, PathBuf};
 
 /// Packages either a libcnb.rs or a meta-buildpack.
@@ -110,7 +109,7 @@ pub enum PackageLibcnbBuildpackError {
 /// destination path.
 ///
 /// In addition, references to libcnb.rs buildpacks in the form of `libcnb:` URIs are resolved and
-/// local paths are absolutized to the `package.toml` stays correct after being moved to a
+/// local paths are absolutized so the `package.toml` stays correct after being moved to a
 /// different location.
 ///
 /// # Errors

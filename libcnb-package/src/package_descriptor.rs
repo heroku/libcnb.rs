@@ -4,7 +4,6 @@ use libcnb_data::package_descriptor::{
     PackageDescriptor, PackageDescriptorDependency, PackageDescriptorDependencyError,
 };
 use std::collections::BTreeMap;
-
 use std::path::{Path, PathBuf};
 
 pub(crate) fn normalize_package_descriptor(

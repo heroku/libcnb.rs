@@ -37,7 +37,7 @@ pub fn absolutize_path(path: &Path, parent: &Path) -> PathBuf {
 /// Normalizes a path without it needing to exist on the file system.
 ///
 /// Works similarly to [`std::fs::canonicalize`] but without using the file system. This means that
-/// symbolic links will not be resolved. In return, it can be used before create a path on the
+/// symbolic links will not be resolved. In return, it can be used before creating a path on the
 /// file system.
 #[must_use]
 pub fn normalize_path(path: &Path) -> PathBuf {
