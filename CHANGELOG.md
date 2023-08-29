@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Renamed `libcnb-data`'s `Buildpackage` to `PackageDescriptor`. This required changes in many other names across multiple libcnb.rs crates for consistency. See the PR diff for details, but renames should be straightforward and unsurprising. ([#656](https://github.com/heroku/libcnb.rs/pull/656))
+- `libcnb-cargo`:
+  - No longer outputs paths for non-libcnb.rs and non-meta buildpacks. ([#657](https://github.com/heroku/libcnb.rs/pull/657))
+  - Build output for humans changed slightly, output intended for machines/scripting didn't change. ([#657](https://github.com/heroku/libcnb.rs/pull/657))
 
 ## [0.14.0] - 2023-08-18
 
