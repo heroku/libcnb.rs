@@ -2,7 +2,7 @@
 
 Common code that is shared between libcnb.rs crates.
 
-In most cases, users of libcnb.rs do not need to use this crate directly. 
+This is an internal crate and should not be used by users directly. There are no stability guarantees for its API.
 
 [Docs]: https://img.shields.io/docsrs/libcnb-common
 [docs.rs]: https://docs.rs/libcnb-proc-macros/latest/libcnb_common/
