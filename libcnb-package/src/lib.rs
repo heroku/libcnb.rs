@@ -5,15 +5,18 @@
 #![allow(clippy::module_name_repetitions)]
 
 pub mod build;
-pub mod buildpack_dependency;
-pub mod buildpack_package;
+pub mod buildpack_dependency_graph;
+pub mod buildpack_kind;
 pub mod cargo;
 pub mod cross_compile;
 pub mod dependency_graph;
 pub mod output;
+pub mod package;
+pub mod package_descriptor;
+pub mod util;
 
 use crate::build::BuildpackBinaries;
-use libcnb_data::buildpack::{BuildpackDescriptor, BuildpackId};
+use libcnb_data::buildpack::BuildpackDescriptor;
 use libcnb_data::package_descriptor::PackageDescriptor;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -31,7 +34,7 @@ pub enum CargoProfile {
     Release,
 }
 
-/// A convenient type alias to use with [`buildpack_package::BuildpackPackage`] or [`BuildpackData`] when you don't required a specialized metadata representation.
+/// A convenient type alias to use when you don't required a specialized metadata representation.
 pub type GenericMetadata = Option<Table>;
 
 /// A parsed buildpack descriptor and it's path.
@@ -202,13 +205,13 @@ fn create_file_symlink<P: AsRef<Path>, Q: AsRef<Path>>(
 /// # Errors
 ///
 /// Will return an `Err` if any I/O errors happen while walking the file system.
-pub fn find_buildpack_dirs(start_dir: &Path, ignore: &[PathBuf]) -> std::io::Result<Vec<PathBuf>> {
+pub fn find_buildpack_dirs(start_dir: &Path, ignore: &[&Path]) -> std::io::Result<Vec<PathBuf>> {
     fn find_buildpack_dirs_recursive(
         path: &Path,
-        ignore: &[PathBuf],
+        ignore: &[&Path],
         accumulator: &mut Vec<PathBuf>,
     ) -> std::io::Result<()> {
-        if ignore.contains(&path.to_path_buf()) {
+        if ignore.contains(&path) {
             return Ok(());
         }
 
@@ -236,24 +239,10 @@ pub fn find_buildpack_dirs(start_dir: &Path, ignore: &[PathBuf]) -> std::io::Res
     Ok(buildpack_dirs)
 }
 
-/// Provides a standard path to use for storing a compiled buildpack's artifacts.
-#[must_use]
-pub fn get_buildpack_package_dir(
-    buildpack_id: &BuildpackId,
-    package_dir: &Path,
-    is_release: bool,
-    target_triple: &str,
-) -> PathBuf {
-    package_dir
-        .join(target_triple)
-        .join(if is_release { "release" } else { "debug" })
-        .join(output::default_buildpack_directory_name(buildpack_id))
-}
-
 /// Returns the path of the root workspace directory for a Rust Cargo project. This is often a useful
 /// starting point for detecting buildpacks with [`find_buildpack_dirs`].
 ///
-/// ## Errors
+/// # Errors
 ///
 /// Will return an `Err` if the root workspace directory cannot be located due to:
 /// - no `CARGO` environment variable with the path to the `cargo` binary
@@ -304,27 +293,4 @@ fn exit_code_or_unknown(exit_status: std::process::ExitStatus) -> String {
     exit_status
         .code()
         .map_or_else(|| String::from("<unknown>"), |code| code.to_string())
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::get_buildpack_package_dir;
-    use libcnb_data::buildpack_id;
-    use std::path::PathBuf;
-
-    #[test]
-    fn test_get_buildpack_package_dir() {
-        let buildpack_id = buildpack_id!("some-org/with-buildpack");
-        let package_dir = PathBuf::from("/package");
-        let target_triple = "x86_64-unknown-linux-musl";
-
-        assert_eq!(
-            get_buildpack_package_dir(&buildpack_id, &package_dir, false, target_triple),
-            PathBuf::from("/package/x86_64-unknown-linux-musl/debug/some-org_with-buildpack")
-        );
-        assert_eq!(
-            get_buildpack_package_dir(&buildpack_id, &package_dir, true, target_triple),
-            PathBuf::from("/package/x86_64-unknown-linux-musl/release/some-org_with-buildpack")
-        );
-    }
 }

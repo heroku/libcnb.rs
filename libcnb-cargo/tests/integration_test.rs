@@ -75,11 +75,7 @@ fn package_single_meta_buildpack_in_monorepo_buildpack_project() {
             PackageDescriptorDependency::try_from(packaged_buildpack_dir_resolver(&buildpack_id!(
                 "multiple-buildpacks/two"
             ))),
-            PackageDescriptorDependency::try_from(
-                fixture_dir
-                    .path()
-                    .join("meta-buildpacks/meta-one/../../buildpacks/not_libcnb"),
-            ),
+            PackageDescriptorDependency::try_from(fixture_dir.path().join("buildpacks/not_libcnb")),
             PackageDescriptorDependency::try_from("docker://docker.io/heroku/example:1.2.3"),
         ]
         .into_iter()
@@ -151,10 +147,9 @@ fn package_all_buildpacks_in_monorepo_buildpack_project() {
         format!(
             "{}\n",
             [
-                fixture_dir.path().join("buildpacks/not_libcnb"),
                 packaged_buildpack_dir_resolver(&buildpack_id!("multiple-buildpacks/meta-one")),
                 packaged_buildpack_dir_resolver(&buildpack_id!("multiple-buildpacks/one")),
-                packaged_buildpack_dir_resolver(&buildpack_id!("multiple-buildpacks/two"))
+                packaged_buildpack_dir_resolver(&buildpack_id!("multiple-buildpacks/two")),
             ]
             .map(|path| path.to_string_lossy().into_owned())
             .join("\n")
@@ -171,11 +166,7 @@ fn package_all_buildpacks_in_monorepo_buildpack_project() {
             PackageDescriptorDependency::try_from(packaged_buildpack_dir_resolver(&buildpack_id!(
                 "multiple-buildpacks/two"
             ))),
-            PackageDescriptorDependency::try_from(
-                fixture_dir
-                    .path()
-                    .join("meta-buildpacks/meta-one/../../buildpacks/not_libcnb"),
-            ),
+            PackageDescriptorDependency::try_from(fixture_dir.path().join("buildpacks/not_libcnb")),
             PackageDescriptorDependency::try_from("docker://docker.io/heroku/example:1.2.3"),
         ]
         .into_iter()
@@ -202,15 +193,10 @@ fn package_non_libcnb_buildpack_in_meta_buildpack_project() {
         .output()
         .unwrap();
 
+    assert_ne!(output.status.code(), Some(0));
     assert_eq!(
-        String::from_utf8_lossy(&output.stdout),
-        format!(
-            "{}\n",
-            fixture_dir
-                .path()
-                .join("buildpacks/not_libcnb")
-                .to_string_lossy()
-        )
+        String::from_utf8_lossy(&output.stderr),
+        "🚚 Preparing package directory...\n🖥\u{fe0f} Gathering Cargo configuration (for x86_64-unknown-linux-musl)\n🏗\u{fe0f} Building buildpack dependency graph...\n🔀 Determining build order...\n❌ No buildpacks found!\n"
     );
 }
 
@@ -228,7 +214,7 @@ fn package_command_error_when_run_in_project_with_no_buildpacks() {
     assert_ne!(output.status.code(), Some(0));
     assert_eq!(
         String::from_utf8_lossy(&output.stderr),
-        "🔍 Locating buildpacks...\n❌ No buildpacks found!\n"
+        "🚚 Preparing package directory...\n🖥\u{fe0f} Gathering Cargo configuration (for x86_64-unknown-linux-musl)\n🏗\u{fe0f} Building buildpack dependency graph...\n🔀 Determining build order...\n❌ No buildpacks found!\n"
     );
 }
 
