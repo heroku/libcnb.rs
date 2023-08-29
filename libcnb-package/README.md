@@ -2,6 +2,8 @@
 
 A library for cross-compiling and packaging buildpacks written with [libcnb.rs](https://github.com/heroku/libcnb.rs).
 
+This is an internal crate and should not be used by users directly. There are no stability guarantees for its API.
+
 In most cases you should use [libcnb-cargo](https://crates.io/crates/libcnb-cargo) and/or
 [libcnb-test](https://crates.io/crates/libcnb-test), rather than depending on this crate
 directly.

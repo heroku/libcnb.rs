@@ -11,34 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `libcnb-package`:
-  - Added the `output::create_packaged_buildpack_dir_resolver` helper which contains all the information on how compiled buildpack directories are structured returns a function that can be invoked with `BuildpackId` to produce the output path for a buildpack. ([#632](https://github.com/heroku/libcnb.rs/pull/632))
-  - `std::fmt::Display` and `std::error::Error` implementations for all error values. ([#652](https://github.com/heroku/libcnb.rs/pull/652))
 - `libcnb-data`:
   - `ExecDProgramOutputKey`, `ProcessType`, `LayerName`, `BuildpackId` and `StackId` now implement `Ord` and `PartialOrd`. ([#658](https://github.com/heroku/libcnb.rs/pull/658))
 
 ### Changed
 
 - Renamed `libcnb-data`'s `Buildpackage` to `PackageDescriptor`. This required changes in many other names across multiple libcnb.rs crates for consistency. See the PR diff for details, but renames should be straightforward and unsurprising. ([#656](https://github.com/heroku/libcnb.rs/pull/656))
-- `libcnb-package`:
-  - Added `find_cargo_workspace_root_dir` which provides a convenient starting point for locating buildpacks for packaging and testing purposes. ([#629](https://github.com/heroku/libcnb.rs/pull/629))
-  - Changed the `ReadBuildpackDataError` and `ReadBuildpackageDataError` enums from struct to tuple format to be consistent with other error enums in the package. ([#631](https://github.com/heroku/libcnb.rs/pull/631))
-  - Changed `buildpack_dependency::rewrite_buildpackage_local_dependencies` to accept a `&BuildpackOutputDirectoryLocator` instead of `&HashMap<&BuildpackId, PathBuf>`. ([#632](https://github.com/heroku/libcnb.rs/pull/632))
-  - Moved `default_buildpack_directory_name` to `output::default_buildpack_directory_name`. ([#632](https://github.com/heroku/libcnb.rs/pull/632))
-  - Renamed `FindCargoWorkspaceError` to `FindCargoWorkspaceRootError`. ([#652](https://github.com/heroku/libcnb.rs/pull/652))
-  - Renamed `BuildError::IoError` to `BuildError::CargoProcessIoError`. ([#652](https://github.com/heroku/libcnb.rs/pull/652))
-  - Renamed `RewriteBuildpackageLocalDependenciesError::GetBuildpackDependenciesError` to `RewriteBuildpackageLocalDependenciesError::InvalidBuildpackIdReference`. ([#652](https://github.com/heroku/libcnb.rs/pull/652))
-  - Renamed `RewriteBuildpackageRelativePathDependenciesToAbsoluteError::GetBuildpackDependenciesError` to `RewriteBuildpackageRelativePathDependenciesToAbsoluteError::InvalidBuildpackIdReference`. ([#652](https://github.com/heroku/libcnb.rs/pull/652))
-  - Replaced `ConfigError` with `DetermineBuildpackCargoTargetNameError`. ([#654](https://github.com/heroku/libcnb.rs/pull/654))
-  - Renamed `BuildBinariesError::ConfigError` to `BuildBinariesError::CannotDetermineBuildpackCargoTargetName`. ([#654](https://github.com/heroku/libcnb.rs/pull/654))
-  - Renamed `CreateDependencyGraphError::Dependencies` to `CreateDependencyGraphError::GetNodeDependenciesError`. ([#653](https://github.com/heroku/libcnb.rs/pull/653))
-  - Renamed `GetDependenciesError::MissingDependency` to `GetDependenciesError::UnknownRootNode`. ([#653](https://github.com/heroku/libcnb.rs/pull/653))
-  - Added type bound to `CreateDependencyGraphError<I, E>` to ensure `E` implements `std::error::Error`. ([#652](https://github.com/heroku/libcnb.rs/pull/652))
-
-### Removed
-
-- `libcnb-package`:
-  - `get_buildpack_package_dir` has been removed in favor of `output::create_packaged_buildpack_dir_resolver` for building output paths to compiled buildpacks. ([#632](https://github.com/heroku/libcnb.rs/pull/632))
 
 ## [0.14.0] - 2023-08-18
 
