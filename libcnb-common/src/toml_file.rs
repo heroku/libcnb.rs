@@ -14,6 +14,11 @@ pub enum TomlFileError {
     TomlSerializationError(#[from] toml::ser::Error),
 }
 
+/// Serializes the given value as TOML and writes it to the given file path.
+///
+/// # Errors
+///
+/// Will return `Err` if the file could not be written or the value could not be serialized as a TOML string.
 pub fn write_toml_file(
     value: &impl Serialize,
     path: impl AsRef<Path>,
@@ -23,6 +28,11 @@ pub fn write_toml_file(
     Ok(())
 }
 
+/// Reads the file at the given path and parses it as `A`.
+///
+/// # Errors
+///
+/// Will return `Err` if the file could not be read or its contents could not be deserialized.
 pub fn read_toml_file<A: DeserializeOwned>(path: impl AsRef<Path>) -> Result<A, TomlFileError> {
     let contents = fs::read_to_string(path)?;
     Ok(toml::from_str(&contents)?)

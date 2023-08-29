@@ -1,7 +1,7 @@
 use crate::data::buildpack::StackIdError;
 use crate::data::launch::ProcessTypeError;
 use crate::layer::HandleLayerError;
-use crate::toml_file::TomlFileError;
+use libcnb_common::toml_file::TomlFileError;
 use std::fmt::Debug;
 
 /// A specialized Result type for libcnb.

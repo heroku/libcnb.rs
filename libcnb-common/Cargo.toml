@@ -1,0 +1,16 @@
+[package]
+name = "libcnb-common"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Common code that is shared between libcnb.rs crates."
+repository = "https://github.com/heroku/libcnb.rs/tree/main/libcnb-common"
+documentation = "https://docs.rs/libcnb-common"
+readme = "README.md"
+include = ["src/**/*", "LICENSE", "README.md"]
+
+[dependencies]
+serde = { version = "1.0.177", features = ["derive"] }
+thiserror = "1.0.44"
+toml.workspace = true
