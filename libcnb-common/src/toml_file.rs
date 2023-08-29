@@ -18,7 +18,7 @@ pub enum TomlFileError {
 ///
 /// # Errors
 ///
-/// Will return `Err` if the file written or the value could not be serialized as a TOML string.
+/// Will return `Err` if the file could not be written or the value could not be serialized as a TOML string.
 pub fn write_toml_file(
     value: &impl Serialize,
     path: impl AsRef<Path>,
@@ -28,7 +28,7 @@ pub fn write_toml_file(
     Ok(())
 }
 
-/// Reads the file at the given paths and parses it as `A`.
+/// Reads the file at the given path and parses it as `A`.
 ///
 /// # Errors
 ///
