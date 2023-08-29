@@ -5,8 +5,6 @@ use std::path::{Component, Path, PathBuf};
 /// # Errors
 ///
 /// Returns `Err` if an IO error occurred during the size calucaltion.
-// Not using `fs_extra::dir::get_size` since it doesn't handle symlinks correctly:
-// https://github.com/webdesus/fs_extra/issues/59
 pub fn calculate_dir_size(path: impl AsRef<Path>) -> std::io::Result<u64> {
     let mut size_in_bytes = 0;
 
