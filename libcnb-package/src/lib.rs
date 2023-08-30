@@ -16,10 +16,10 @@ pub mod package_descriptor;
 pub mod util;
 
 use crate::build::BuildpackBinaries;
+use libcnb_data::generic::GenericMetadata;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use toml::Table;
 
 /// The profile to use when invoking Cargo.
 ///
@@ -31,9 +31,6 @@ pub enum CargoProfile {
     /// Produces assets with optimised runtime performance and binary size, at the expense of compilation time.
     Release,
 }
-
-/// A convenient type alias to use when you don't required a specialized metadata representation.
-pub type GenericMetadata = Option<Table>;
 
 /// Creates a buildpack directory and copies all buildpack assets to it.
 ///
