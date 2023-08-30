@@ -16,7 +16,6 @@ pub mod package_descriptor;
 pub mod util;
 
 use crate::build::BuildpackBinaries;
-use libcnb_data::generic::GenericMetadata;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
