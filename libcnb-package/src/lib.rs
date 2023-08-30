@@ -16,8 +16,6 @@ pub mod package_descriptor;
 pub mod util;
 
 use crate::build::BuildpackBinaries;
-use libcnb_data::buildpack::BuildpackDescriptor;
-use libcnb_data::package_descriptor::PackageDescriptor;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -36,98 +34,6 @@ pub enum CargoProfile {
 
 /// A convenient type alias to use when you don't required a specialized metadata representation.
 pub type GenericMetadata = Option<Table>;
-
-/// A parsed buildpack descriptor and it's path.
-#[derive(Debug)]
-pub struct BuildpackData<BM> {
-    pub buildpack_descriptor_path: PathBuf,
-    pub buildpack_descriptor: BuildpackDescriptor<BM>,
-}
-
-/// Reads buildpack data from the given project path.
-///
-/// # Errors
-///
-/// Will return `Err` if the buildpack data could not be read successfully.
-pub fn read_buildpack_data(
-    project_path: impl AsRef<Path>,
-) -> Result<BuildpackData<GenericMetadata>, ReadBuildpackDataError> {
-    let dir = project_path.as_ref();
-    let buildpack_descriptor_path = dir.join("buildpack.toml");
-    fs::read_to_string(&buildpack_descriptor_path)
-        .map_err(|e| ReadBuildpackDataError::ReadingBuildpack(buildpack_descriptor_path.clone(), e))
-        .and_then(|file_contents| {
-            toml::from_str(&file_contents).map_err(|e| {
-                ReadBuildpackDataError::ParsingBuildpack(buildpack_descriptor_path.clone(), e)
-            })
-        })
-        .map(|buildpack_descriptor| BuildpackData {
-            buildpack_descriptor_path,
-            buildpack_descriptor,
-        })
-}
-
-/// An error from [`read_buildpack_data`]
-#[derive(thiserror::Error, Debug)]
-pub enum ReadBuildpackDataError {
-    #[error("Failed to read buildpack data from {0}: {1}")]
-    ReadingBuildpack(PathBuf, #[source] std::io::Error),
-    #[error("Failed to parse buildpack data from {0}: {1}")]
-    ParsingBuildpack(PathBuf, #[source] toml::de::Error),
-}
-
-/// A parsed package descriptor and it's path.
-#[derive(Debug, Clone)]
-pub struct PackageDescriptorData {
-    pub package_descriptor_path: PathBuf,
-    pub package_descriptor: PackageDescriptor,
-}
-
-/// Reads package descriptor data from the given project path.
-///
-/// # Errors
-///
-/// Will return `Err` if the package descriptor data could not be read successfully.
-pub fn read_package_descriptor_data(
-    project_path: impl AsRef<Path>,
-) -> Result<Option<PackageDescriptorData>, ReadPackageDescriptorDataError> {
-    let package_descriptor_path = project_path.as_ref().join("package.toml");
-
-    if !package_descriptor_path.exists() {
-        return Ok(None);
-    }
-
-    fs::read_to_string(&package_descriptor_path)
-        .map_err(|e| {
-            ReadPackageDescriptorDataError::ReadingPackageDescriptor(
-                package_descriptor_path.clone(),
-                e,
-            )
-        })
-        .and_then(|file_contents| {
-            toml::from_str(&file_contents).map_err(|e| {
-                ReadPackageDescriptorDataError::ParsingPackageDescriptor(
-                    package_descriptor_path.clone(),
-                    e,
-                )
-            })
-        })
-        .map(|package_descriptor| {
-            Some(PackageDescriptorData {
-                package_descriptor_path,
-                package_descriptor,
-            })
-        })
-}
-
-/// An error from [`read_package_descriptor_data`]
-#[derive(thiserror::Error, Debug)]
-pub enum ReadPackageDescriptorDataError {
-    #[error("Failed to read package descriptor data from {0}: {1}")]
-    ReadingPackageDescriptor(PathBuf, #[source] std::io::Error),
-    #[error("Failed to parse package descriptor data from {0}: {1}")]
-    ParsingPackageDescriptor(PathBuf, #[source] toml::de::Error),
-}
 
 /// Creates a buildpack directory and copies all buildpack assets to it.
 ///

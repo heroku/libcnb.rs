@@ -30,3 +30,4 @@ thiserror = "1.0.47"
 
 [dev-dependencies]
 tempfile = "3.7.1"
+libcnb-common.workspace = true
