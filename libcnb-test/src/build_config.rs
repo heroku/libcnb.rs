@@ -1,3 +1,4 @@
+use libcnb_data::buildpack::BuildpackId;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
@@ -251,6 +252,8 @@ impl BuildConfig {
 pub enum BuildpackReference {
     /// References the buildpack in the Rust Crate currently being tested.
     Crate,
+    /// References a libcnb.rs buildpack within the Rust Workspace that needs to be packaged into a buildpack
+    LibCnbRs(BuildpackId),
     /// References another buildpack by id, local directory or tarball.
     Other(String),
 }

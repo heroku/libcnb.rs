@@ -1,5 +1,5 @@
 use crate::docker::DockerRemoveImageCommand;
-use crate::pack::PackBuildCommand;
+use crate::pack::{PackBuildCommand, PackVersionCommand};
 use crate::util::CommandError;
 use crate::{app, build, util, BuildConfig, BuildpackReference, PackResult, TestContext};
 use std::borrow::Borrow;
@@ -56,6 +56,8 @@ impl TestRunner {
         config: C,
         f: F,
     ) {
+        check_required_pack_version();
+
         let config = config.borrow();
 
         let app_dir = {
@@ -88,14 +90,7 @@ impl TestRunner {
             }
         };
 
-        let temp_crate_buildpack_dir =
-            config
-                .buildpacks
-                .contains(&BuildpackReference::Crate)
-                .then(|| {
-                    build::package_crate_buildpack(config.cargo_profile, &config.target_triple)
-                        .expect("Could not package current crate as buildpack")
-                });
+        let mut buildpack_dirs = vec![];
 
         let mut pack_command = PackBuildCommand::new(&config.builder_name, &app_dir, &image_name);
 
@@ -106,10 +101,22 @@ impl TestRunner {
         for buildpack in &config.buildpacks {
             match buildpack {
                 BuildpackReference::Crate => {
-                    pack_command.buildpack(temp_crate_buildpack_dir.as_ref()
-                        .expect("Test references crate buildpack, but crate wasn't packaged as a buildpack. This is an internal libcnb-test error, please report any occurrences."))
+                    let crate_buildpack_dir = build::package_crate_buildpack(config.cargo_profile, &config.target_triple)
+                        .expect("Test references crate buildpack, but crate wasn't packaged as a buildpack. This is an internal libcnb-test error, please report any occurrences");
+                    pack_command.buildpack(crate_buildpack_dir.path.clone());
+                    buildpack_dirs.push(crate_buildpack_dir);
                 }
-                BuildpackReference::Other(id) => pack_command.buildpack(id.clone()),
+
+                BuildpackReference::LibCnbRs(builpack_id) => {
+                    let buildpack_dir = build::package_buildpack(builpack_id, config.cargo_profile, &config.target_triple)
+                        .unwrap_or_else(|_| panic!("Test references buildpack `{builpack_id}`, but this directory wasn't packaged as a buildpack. This is an internal libcnb-test error, please report any occurrences"));
+                    pack_command.buildpack(buildpack_dir.path.clone());
+                    buildpack_dirs.push(buildpack_dir);
+                }
+
+                BuildpackReference::Other(id) => {
+                    pack_command.buildpack(id.clone());
+                }
             };
         }
 
@@ -144,5 +151,35 @@ impl TestRunner {
         };
 
         f(test_context);
+    }
+}
+
+fn check_required_pack_version() {
+    match util::run_command(PackVersionCommand) {
+        Ok(output) => {
+            let version = output.stdout.trim();
+            let mut split = version.split('.');
+            let major: u32 = split
+                .next()
+                .map(|value| {
+                    value
+                        .parse::<u32>()
+                        .expect("Major coordinate should be a number")
+                })
+                .expect("Major coordinate should be present in pack --version output");
+            let minor: u32 = split
+                .next()
+                .map(|value| {
+                    value
+                        .parse::<u32>()
+                        .expect("Minor coordinate should be a number")
+                })
+                .expect("Minor coordinate should be present in pack --version output");
+            let is_min_version = major == 0 && minor >= 30 || major >= 1;
+            assert!(is_min_version, "Pack version 0.30+ is required but {version} is installed. Please upgrade your pack CLI.");
+        }
+        Err(error) => {
+            panic!("Error determinging pack version:\n\n{error}");
+        }
     }
 }
