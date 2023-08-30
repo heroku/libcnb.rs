@@ -2,11 +2,12 @@
 // https://rust-lang.github.io/rust-clippy/stable/index.html
 #![warn(clippy::pedantic)]
 
-use libcnb_data::buildpack::BuildpackId;
+use libcnb_common::toml_file::read_toml_file;
+use libcnb_data::buildpack::{BuildpackDescriptor, BuildpackId};
 use libcnb_data::buildpack_id;
-use libcnb_data::package_descriptor::PackageDescriptorDependency;
+use libcnb_data::package_descriptor::{PackageDescriptor, PackageDescriptorDependency};
 use libcnb_package::output::create_packaged_buildpack_dir_resolver;
-use libcnb_package::{read_buildpack_data, read_package_descriptor_data, CargoProfile};
+use libcnb_package::{CargoProfile, GenericMetadata};
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -225,11 +226,12 @@ fn validate_packaged_buildpack(packaged_buildpack_dir: &Path, buildpack_id: &Bui
     assert!(packaged_buildpack_dir.join("bin").join("detect").exists());
 
     assert_eq!(
-        &read_buildpack_data(packaged_buildpack_dir)
-            .unwrap()
-            .buildpack_descriptor
-            .buildpack()
-            .id,
+        &read_toml_file::<BuildpackDescriptor<GenericMetadata>>(
+            packaged_buildpack_dir.join("buildpack.toml")
+        )
+        .unwrap()
+        .buildpack()
+        .id,
         buildpack_id
     );
 }
@@ -243,19 +245,18 @@ fn validate_packaged_meta_buildpack(
     assert!(packaged_buildpack_dir.join("package.toml").exists());
 
     assert_eq!(
-        &read_buildpack_data(packaged_buildpack_dir)
-            .unwrap()
-            .buildpack_descriptor
-            .buildpack()
-            .id,
+        &read_toml_file::<BuildpackDescriptor<GenericMetadata>>(
+            packaged_buildpack_dir.join("buildpack.toml")
+        )
+        .unwrap()
+        .buildpack()
+        .id,
         buildpack_id
     );
 
     assert_eq!(
-        read_package_descriptor_data(packaged_buildpack_dir)
+        read_toml_file::<PackageDescriptor>(packaged_buildpack_dir.join("package.toml"))
             .unwrap()
-            .unwrap()
-            .package_descriptor
             .dependencies,
         expected_package_descriptor_dependencies
     );

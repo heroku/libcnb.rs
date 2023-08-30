@@ -6,6 +6,8 @@
 
 // Suppress warnings due to the `unused_crate_dependencies` lint not handling integration tests well.
 #[cfg(test)]
+use libcnb_common as _;
+#[cfg(test)]
 use tempfile as _;
 
 mod cli;
