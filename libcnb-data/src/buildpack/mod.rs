@@ -4,6 +4,7 @@ mod stack;
 mod stack_id;
 mod version;
 
+use crate::generic::GenericMetadata;
 use crate::sbom::SbomFormat;
 pub use api::*;
 pub use id::*;
@@ -45,7 +46,7 @@ pub use version::*;
 /// "#;
 ///
 /// let buildpack_descriptor =
-///     toml::from_str::<BuildpackDescriptor<Option<toml::value::Table>>>(toml_str)
+///     toml::from_str::<BuildpackDescriptor>(toml_str)
 ///         .expect("buildpack.toml did not match a known type!");
 /// match buildpack_descriptor {
 ///     BuildpackDescriptor::Single(buildpack) => {
@@ -58,7 +59,7 @@ pub use version::*;
 /// ```
 #[derive(Deserialize, Debug)]
 #[serde(untagged)]
-pub enum BuildpackDescriptor<BM> {
+pub enum BuildpackDescriptor<BM = GenericMetadata> {
     Single(SingleBuildpackDescriptor<BM>),
     Meta(MetaBuildpackDescriptor<BM>),
 }
@@ -104,13 +105,13 @@ impl<BM> BuildpackDescriptor<BM> {
 /// "#;
 ///
 /// let buildpack_descriptor =
-///     toml::from_str::<SingleBuildpackDescriptor<Option<toml::value::Table>>>(toml_str).unwrap();
+///     toml::from_str::<SingleBuildpackDescriptor>(toml_str).unwrap();
 /// assert_eq!(buildpack_descriptor.buildpack.id, buildpack_id!("foo/bar"));
 /// assert_eq!(buildpack_descriptor.stacks, vec![Stack::Any]);
 /// ```
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct SingleBuildpackDescriptor<BM> {
+pub struct SingleBuildpackDescriptor<BM = GenericMetadata> {
     pub api: BuildpackApi,
     pub buildpack: Buildpack,
     pub stacks: Vec<Stack>,
@@ -152,12 +153,12 @@ pub struct SingleBuildpackDescriptor<BM> {
 /// "#;
 ///
 /// let buildpack_descriptor =
-///     toml::from_str::<MetaBuildpackDescriptor<Option<toml::value::Table>>>(toml_str).unwrap();
+///     toml::from_str::<MetaBuildpackDescriptor>(toml_str).unwrap();
 /// assert_eq!(buildpack_descriptor.buildpack.id, buildpack_id!("foo/bar"));
 /// ```
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct MetaBuildpackDescriptor<BM> {
+pub struct MetaBuildpackDescriptor<BM = GenericMetadata> {
     pub api: BuildpackApi,
     pub buildpack: Buildpack,
     pub order: Vec<Order>,
@@ -213,8 +214,6 @@ mod tests {
     use super::*;
     use crate::sbom::SbomFormat;
 
-    type GenericMetadata = Option<toml::value::Table>;
-
     #[test]
     #[allow(clippy::too_many_lines)]
     fn deserialize_singlebuildpack() {
@@ -262,8 +261,7 @@ id = "*"
 checksum = "abc123"
         "#;
 
-        let buildpack_descriptor =
-            toml::from_str::<SingleBuildpackDescriptor<GenericMetadata>>(toml_str).unwrap();
+        let buildpack_descriptor = toml::from_str::<SingleBuildpackDescriptor>(toml_str).unwrap();
 
         assert_eq!(
             buildpack_descriptor.api,
@@ -383,8 +381,7 @@ optional = true
 checksum = "abc123"
         "#;
 
-        let buildpack_descriptor =
-            toml::from_str::<MetaBuildpackDescriptor<GenericMetadata>>(toml_str).unwrap();
+        let buildpack_descriptor = toml::from_str::<MetaBuildpackDescriptor>(toml_str).unwrap();
 
         assert_eq!(
             buildpack_descriptor.api,
@@ -468,8 +465,7 @@ version = "0.0.1"
 id = "*"
         "#;
 
-        let buildpack_descriptor =
-            toml::from_str::<SingleBuildpackDescriptor<GenericMetadata>>(toml_str).unwrap();
+        let buildpack_descriptor = toml::from_str::<SingleBuildpackDescriptor>(toml_str).unwrap();
 
         assert_eq!(
             buildpack_descriptor.api,
@@ -513,8 +509,7 @@ id = "foo/bar"
 version = "0.0.1"
 "#;
 
-        let buildpack_descriptor =
-            toml::from_str::<MetaBuildpackDescriptor<GenericMetadata>>(toml_str).unwrap();
+        let buildpack_descriptor = toml::from_str::<MetaBuildpackDescriptor>(toml_str).unwrap();
 
         assert_eq!(
             buildpack_descriptor.api,
@@ -563,8 +558,7 @@ version = "0.0.1"
 id = "*"
         "#;
 
-        let buildpack_descriptor =
-            toml::from_str::<BuildpackDescriptor<GenericMetadata>>(toml_str).unwrap();
+        let buildpack_descriptor = toml::from_str::<BuildpackDescriptor>(toml_str).unwrap();
         assert!(matches!(
             buildpack_descriptor,
             BuildpackDescriptor::Single(_)
@@ -587,8 +581,7 @@ id = "foo/baz"
 version = "0.0.1"
         "#;
 
-        let buildpack_descriptor =
-            toml::from_str::<BuildpackDescriptor<GenericMetadata>>(toml_str).unwrap();
+        let buildpack_descriptor = toml::from_str::<BuildpackDescriptor>(toml_str).unwrap();
         assert!(matches!(buildpack_descriptor, BuildpackDescriptor::Meta(_)));
     }
 
@@ -611,17 +604,16 @@ id = "foo/baz"
 version = "0.0.1"
 "#;
 
-        let err = toml::from_str::<BuildpackDescriptor<GenericMetadata>>(toml_str).unwrap_err();
+        let err = toml::from_str::<BuildpackDescriptor>(toml_str).unwrap_err();
         assert_eq!(
             err.to_string(),
             "data did not match any variant of untagged enum BuildpackDescriptor\n"
         );
 
-        let err =
-            toml::from_str::<SingleBuildpackDescriptor<GenericMetadata>>(toml_str).unwrap_err();
+        let err = toml::from_str::<SingleBuildpackDescriptor>(toml_str).unwrap_err();
         assert!(err.to_string().contains("unknown field `order`"));
 
-        let err = toml::from_str::<MetaBuildpackDescriptor<GenericMetadata>>(toml_str).unwrap_err();
+        let err = toml::from_str::<MetaBuildpackDescriptor>(toml_str).unwrap_err();
         assert!(err.to_string().contains("unknown field `stacks`"));
     }
 }

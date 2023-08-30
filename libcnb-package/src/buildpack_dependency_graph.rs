@@ -3,8 +3,8 @@ use crate::buildpack_kind::BuildpackKind;
 use crate::dependency_graph::{
     create_dependency_graph, CreateDependencyGraphError, DependencyNode,
 };
+use crate::find_buildpack_dirs;
 use crate::package_descriptor::buildpack_id_from_libcnb_dependency;
-use crate::{find_buildpack_dirs, GenericMetadata};
 use libcnb_common::toml_file::{read_toml_file, TomlFileError};
 use libcnb_data::buildpack::{BuildpackDescriptor, BuildpackId, BuildpackIdError};
 use libcnb_data::package_descriptor::PackageDescriptor;
@@ -54,11 +54,10 @@ pub fn build_libcnb_buildpacks_dependency_graph(
 fn build_libcnb_buildpack_dependency_graph_node(
     buildpack_directory: &Path,
 ) -> Result<BuildpackDependencyGraphNode, BuildBuildpackDependencyGraphError> {
-    let buildpack_id = read_toml_file::<BuildpackDescriptor<GenericMetadata>>(
-        buildpack_directory.join("buildpack.toml"),
-    )
-    .map_err(BuildBuildpackDependencyGraphError::ReadBuildpackDescriptorError)
-    .map(|buildpack_descriptor| buildpack_descriptor.buildpack().id.clone())?;
+    let buildpack_id =
+        read_toml_file::<BuildpackDescriptor>(buildpack_directory.join("buildpack.toml"))
+            .map_err(BuildBuildpackDependencyGraphError::ReadBuildpackDescriptorError)
+            .map(|buildpack_descriptor| buildpack_descriptor.buildpack().id.clone())?;
 
     let dependencies = {
         let package_toml_path = buildpack_directory.join("package.toml");

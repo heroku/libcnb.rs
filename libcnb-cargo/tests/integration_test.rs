@@ -7,7 +7,7 @@ use libcnb_data::buildpack::{BuildpackDescriptor, BuildpackId};
 use libcnb_data::buildpack_id;
 use libcnb_data::package_descriptor::{PackageDescriptor, PackageDescriptorDependency};
 use libcnb_package::output::create_packaged_buildpack_dir_resolver;
-use libcnb_package::{CargoProfile, GenericMetadata};
+use libcnb_package::CargoProfile;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -226,12 +226,10 @@ fn validate_packaged_buildpack(packaged_buildpack_dir: &Path, buildpack_id: &Bui
     assert!(packaged_buildpack_dir.join("bin").join("detect").exists());
 
     assert_eq!(
-        &read_toml_file::<BuildpackDescriptor<GenericMetadata>>(
-            packaged_buildpack_dir.join("buildpack.toml")
-        )
-        .unwrap()
-        .buildpack()
-        .id,
+        &read_toml_file::<BuildpackDescriptor>(packaged_buildpack_dir.join("buildpack.toml"))
+            .unwrap()
+            .buildpack()
+            .id,
         buildpack_id
     );
 }
@@ -245,12 +243,10 @@ fn validate_packaged_meta_buildpack(
     assert!(packaged_buildpack_dir.join("package.toml").exists());
 
     assert_eq!(
-        &read_toml_file::<BuildpackDescriptor<GenericMetadata>>(
-            packaged_buildpack_dir.join("buildpack.toml")
-        )
-        .unwrap()
-        .buildpack()
-        .id,
+        &read_toml_file::<BuildpackDescriptor>(packaged_buildpack_dir.join("buildpack.toml"))
+            .unwrap()
+            .buildpack()
+            .id,
         buildpack_id
     );
 

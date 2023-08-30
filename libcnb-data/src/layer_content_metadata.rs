@@ -1,3 +1,4 @@
+use crate::generic::GenericMetadata;
 use serde::{Deserialize, Serialize};
 
 /// Describes Layer Content Metadata
@@ -5,7 +6,7 @@ use serde::{Deserialize, Serialize};
 /// See [Cloud Native Buildpack specification](https://github.com/buildpacks/spec/blob/main/buildpack.md#layer-content-metadata-toml)
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
-pub struct LayerContentMetadata<M> {
+pub struct LayerContentMetadata<M = GenericMetadata> {
     pub types: Option<LayerTypes>,
 
     /// Metadata that describes the layer contents.
@@ -40,8 +41,6 @@ pub struct LayerTypes {
 mod tests {
     use super::*;
 
-    type GenericLayerContentMetadata = LayerContentMetadata<Option<toml::value::Table>>;
-
     #[test]
     fn deserialize_everything() {
         let toml_str = r#"
@@ -53,7 +52,7 @@ mod tests {
         [metadata]
         version = "1.2.3"
         "#;
-        let layer = toml::from_str::<GenericLayerContentMetadata>(toml_str).unwrap();
+        let layer = toml::from_str::<LayerContentMetadata>(toml_str).unwrap();
         assert_eq!(
             layer.types,
             Some(LayerTypes {
@@ -70,7 +69,7 @@ mod tests {
 
     #[test]
     fn deserialize_empty() {
-        let layer = toml::from_str::<GenericLayerContentMetadata>("").unwrap();
+        let layer = toml::from_str::<LayerContentMetadata>("").unwrap();
         assert_eq!(layer.types, None);
         assert_eq!(layer.metadata, None);
     }
@@ -80,7 +79,7 @@ mod tests {
         let toml_str = r#"
         [types]
         "#;
-        let layer = toml::from_str::<GenericLayerContentMetadata>(toml_str).unwrap();
+        let layer = toml::from_str::<LayerContentMetadata>(toml_str).unwrap();
         assert_eq!(
             layer.types,
             Some(LayerTypes {
