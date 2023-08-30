@@ -46,7 +46,7 @@ pub use version::*;
 /// "#;
 ///
 /// let buildpack_descriptor =
-///     toml::from_str::<BuildpackDescriptor<Option<toml::value::Table>>>(toml_str)
+///     toml::from_str::<BuildpackDescriptor>(toml_str)
 ///         .expect("buildpack.toml did not match a known type!");
 /// match buildpack_descriptor {
 ///     BuildpackDescriptor::Single(buildpack) => {
@@ -105,7 +105,7 @@ impl<BM> BuildpackDescriptor<BM> {
 /// "#;
 ///
 /// let buildpack_descriptor =
-///     toml::from_str::<SingleBuildpackDescriptor<Option<toml::value::Table>>>(toml_str).unwrap();
+///     toml::from_str::<SingleBuildpackDescriptor>(toml_str).unwrap();
 /// assert_eq!(buildpack_descriptor.buildpack.id, buildpack_id!("foo/bar"));
 /// assert_eq!(buildpack_descriptor.stacks, vec![Stack::Any]);
 /// ```
@@ -153,7 +153,7 @@ pub struct SingleBuildpackDescriptor<BM = GenericMetadata> {
 /// "#;
 ///
 /// let buildpack_descriptor =
-///     toml::from_str::<MetaBuildpackDescriptor<Option<toml::value::Table>>>(toml_str).unwrap();
+///     toml::from_str::<MetaBuildpackDescriptor>(toml_str).unwrap();
 /// assert_eq!(buildpack_descriptor.buildpack.id, buildpack_id!("foo/bar"));
 /// ```
 #[derive(Deserialize, Debug)]
