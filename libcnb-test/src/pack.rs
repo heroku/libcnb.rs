@@ -162,17 +162,6 @@ impl From<PackSbomDownloadCommand> for Command {
     }
 }
 
-#[derive(Clone, Debug)]
-pub(crate) struct PackVersionCommand;
-
-impl From<PackVersionCommand> for Command {
-    fn from(_: PackVersionCommand) -> Self {
-        let mut command = Self::new("pack");
-        command.arg("--version");
-        command
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

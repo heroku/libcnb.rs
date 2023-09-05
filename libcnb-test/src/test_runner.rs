@@ -1,5 +1,5 @@
 use crate::docker::DockerRemoveImageCommand;
-use crate::pack::{PackBuildCommand, PackVersionCommand};
+use crate::pack::PackBuildCommand;
 use crate::util::CommandError;
 use crate::{app, build, util, BuildConfig, BuildpackReference, PackResult, TestContext};
 use std::borrow::Borrow;
@@ -56,8 +56,6 @@ impl TestRunner {
         config: C,
         f: F,
     ) {
-        check_required_pack_version();
-
         let config = config.borrow();
 
         let app_dir = {
@@ -151,35 +149,5 @@ impl TestRunner {
         };
 
         f(test_context);
-    }
-}
-
-fn check_required_pack_version() {
-    match util::run_command(PackVersionCommand) {
-        Ok(output) => {
-            let version = output.stdout.trim();
-            let mut split = version.split('.');
-            let major: u32 = split
-                .next()
-                .map(|value| {
-                    value
-                        .parse::<u32>()
-                        .expect("Major coordinate should be a number")
-                })
-                .expect("Major coordinate should be present in pack --version output");
-            let minor: u32 = split
-                .next()
-                .map(|value| {
-                    value
-                        .parse::<u32>()
-                        .expect("Minor coordinate should be a number")
-                })
-                .expect("Minor coordinate should be present in pack --version output");
-            let is_min_version = major == 0 && minor >= 30 || major >= 1;
-            assert!(is_min_version, "Pack version 0.30+ is required but {version} is installed. Please upgrade your pack CLI.");
-        }
-        Err(error) => {
-            panic!("Error determinging pack version:\n\n{error}");
-        }
     }
 }
