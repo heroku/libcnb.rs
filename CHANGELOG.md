@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `libcnb`:
+  - Change Layer interface from `&self` to `&mut self`. ([#669](https://github.com/heroku/libcnb.rs/pull/669))
+
 
 ## [0.17.0] - 2023-12-06
 
