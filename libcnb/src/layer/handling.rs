@@ -21,10 +21,10 @@ use std::path::{Path, PathBuf};
 pub(crate) fn handle_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
     context: &BuildContext<B>,
     layer_name: LayerName,
-    layer: L,
+    mut layer: L,
 ) -> Result<LayerData<L::Metadata>, HandleLayerErrorOrBuildpackError<B::Error>> {
     match read_layer(&context.layers_dir, &layer_name) {
-        Ok(None) => handle_create_layer(context, &layer_name, &layer),
+        Ok(None) => handle_create_layer(context, &layer_name, &mut layer),
         Ok(Some(layer_data)) => {
             let existing_layer_strategy = layer
                 .existing_layer_strategy(context, &layer_data)
@@ -33,9 +33,11 @@ pub(crate) fn handle_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
             match existing_layer_strategy {
                 ExistingLayerStrategy::Recreate => {
                     delete_layer(&context.layers_dir, &layer_name)?;
-                    handle_create_layer(context, &layer_name, &layer)
+                    handle_create_layer(context, &layer_name, &mut layer)
                 }
-                ExistingLayerStrategy::Update => handle_update_layer(context, &layer_data, &layer),
+                ExistingLayerStrategy::Update => {
+                    handle_update_layer(context, &layer_data, &mut layer)
+                }
                 ExistingLayerStrategy::Keep => {
                     // We need to rewrite the metadata even if we just want to keep the layer around
                     // since cached layers are restored without their types, causing the layer to be
@@ -106,7 +108,7 @@ pub(crate) fn handle_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
 fn handle_create_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
     context: &BuildContext<B>,
     layer_name: &LayerName,
-    layer: &L,
+    layer: &mut L,
 ) -> Result<LayerData<L::Metadata>, HandleLayerErrorOrBuildpackError<B::Error>> {
     let layer_dir = context.layers_dir.join(layer_name.as_str());
 
@@ -138,7 +140,7 @@ fn handle_create_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
 fn handle_update_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
     context: &BuildContext<B>,
     layer_data: &LayerData<L::Metadata>,
-    layer: &L,
+    layer: &mut L,
 ) -> Result<LayerData<L::Metadata>, HandleLayerErrorOrBuildpackError<B::Error>> {
     let layer_result = layer
         .update(context, layer_data)
