@@ -89,8 +89,5 @@ jobs:
         run: cargo run --package libcnb-cargo -- libcnb package
         working-directory: ./examples/basics
       - name: Pack build using examples/basics
-        # TODO: This test previously used a non-libc builder to validate the static musl cross-compilation.
-        # This image used the experimental image extensions feature which has to be explicitly enabled and doesn't
-        # work with `--trust-builder`. To unblock CI, the builder has been changed to `heroku/builder:22`. As soon as
-        # we can, we should use a non-libc builder again.
-        run: pack build example-basics --force-color --builder heroku/builder:22 --trust-builder --trust-extra-buildpacks --buildpack packaged/x86_64-unknown-linux-musl/debug/libcnb-examples_basics --path examples/
+        # Uses a non-libc image to validate the static musl cross-compilation.
+        run: pack build example-basics --force-color --builder cnbs/sample-builder:alpine --trust-builder --trust-extra-buildpacks --buildpack packaged/x86_64-unknown-linux-musl/debug/libcnb-examples_basics --path examples/
