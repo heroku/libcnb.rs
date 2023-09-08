@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `libcnb-data`:
   - `ExecDProgramOutputKey`, `ProcessType`, `LayerName`, `BuildpackId` and `StackId` now implement `Ord` and `PartialOrd`. ([#658](https://github.com/heroku/libcnb.rs/pull/658))
   - Add `generic::GenericMetadata` as a generic metadata type. Also makes it the default for `BuildpackDescriptor`, `SingleBuildpackDescriptor`, `MetaBuildpackDescriptor` and `LayerContentMetadata`. ([#664](https://github.com/heroku/libcnb.rs/pull/664))
+- `libcnb`:
+  - Struct `LayerTypes` now implements `Copy` and `Clone`. This allows injection of layer types into the struct implementing the `Layer` trait ([#670](https://github.com/heroku/libcnb.rs/pull/670)).
 
 ### Changed
 
