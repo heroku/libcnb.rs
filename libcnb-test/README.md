@@ -191,13 +191,15 @@ fn dynamic_fixture() {
 Building with multiple buildpacks, using [`BuildConfig::buildpacks`]:
 
 ```rust,no_run
+use libcnb_data::buildpack_id;
 use libcnb_test::{BuildConfig, BuildpackReference, TestRunner};
 
 // #[test]
 fn additional_buildpacks() {
     TestRunner::default().build(
         BuildConfig::new("heroku/builder:22", "test-fixtures/app").buildpacks(vec![
-            BuildpackReference::Crate,
+            BuildpackReference::CurrentCrate,
+            BuildpackReference::WorkspaceBuildpack(buildpack_id!("my-project/buildpack")),
             BuildpackReference::Other(String::from("heroku/another-buildpack")),
         ]),
         |context| {

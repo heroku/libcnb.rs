@@ -98,14 +98,14 @@ impl TestRunner {
 
         for buildpack in &config.buildpacks {
             match buildpack {
-                BuildpackReference::Crate => {
+                BuildpackReference::CurrentCrate => {
                     let crate_buildpack_dir = build::package_crate_buildpack(config.cargo_profile, &config.target_triple)
                         .expect("Test references crate buildpack, but crate wasn't packaged as a buildpack. This is an internal libcnb-test error, please report any occurrences");
                     pack_command.buildpack(crate_buildpack_dir.path.clone());
                     buildpack_dirs.push(crate_buildpack_dir);
                 }
 
-                BuildpackReference::LibCnbRs(builpack_id) => {
+                BuildpackReference::WorkspaceBuildpack(builpack_id) => {
                     let buildpack_dir = build::package_buildpack(builpack_id, config.cargo_profile, &config.target_triple)
                         .unwrap_or_else(|_| panic!("Test references buildpack `{builpack_id}`, but this directory wasn't packaged as a buildpack. This is an internal libcnb-test error, please report any occurrences"));
                     pack_command.buildpack(buildpack_dir.path.clone());
