@@ -274,7 +274,7 @@ fn copy_fixture_to_temp_dir(name: &str) -> Result<TempDir, std::io::Error> {
     env::temp_dir()
         .canonicalize()
         .and_then(tempdir_in)
-        .and_then(|temp_dir| copy_dir_recursively(&fixture_dir, temp_dir.path()).map(|_| temp_dir))
+        .and_then(|temp_dir| copy_dir_recursively(&fixture_dir, temp_dir.path()).map(|()| temp_dir))
 }
 
 fn copy_dir_recursively(source: &Path, destination: &Path) -> std::io::Result<()> {
