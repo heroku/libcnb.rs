@@ -106,38 +106,20 @@ fn create_file_symlink<P: AsRef<Path>, Q: AsRef<Path>>(
 ///
 /// # Errors
 ///
-/// Will return an `Err` if any I/O errors happen while walking the file system.
-pub fn find_buildpack_dirs(start_dir: &Path, ignore: &[&Path]) -> std::io::Result<Vec<PathBuf>> {
-    fn find_buildpack_dirs_recursive(
-        path: &Path,
-        ignore: &[&Path],
-        accumulator: &mut Vec<PathBuf>,
-    ) -> std::io::Result<()> {
-        if ignore.contains(&path) {
-            return Ok(());
-        }
-
-        let metadata = path.metadata()?;
-        if metadata.is_dir() {
-            let entries = fs::read_dir(path)?;
-            for entry in entries {
-                let entry = entry?;
-                let metadata = entry.metadata()?;
-                if metadata.is_dir() {
-                    find_buildpack_dirs_recursive(&entry.path(), ignore, accumulator)?;
-                } else if let Some(file_name) = entry.path().file_name() {
-                    if file_name.to_string_lossy() == "buildpack.toml" {
-                        accumulator.push(path.to_path_buf());
-                    }
+/// Will return an `Err` if any I/O errors happen while walking the file system or any parsing errors
+/// from reading a gitignore file.
+pub fn find_buildpack_dirs(start_dir: &Path) -> Result<Vec<PathBuf>, ignore::Error> {
+    let mut buildpack_dirs = vec![];
+    for result in ignore::Walk::new(start_dir) {
+        match result {
+            Ok(entry) => {
+                if entry.path().is_dir() && entry.path().join("buildpack.toml").exists() {
+                    buildpack_dirs.push(entry.path().to_path_buf());
                 }
             }
+            Err(error) => return Err(error),
         }
-
-        Ok(())
     }
-
-    let mut buildpack_dirs: Vec<PathBuf> = vec![];
-    find_buildpack_dirs_recursive(start_dir, ignore, &mut buildpack_dirs)?;
     Ok(buildpack_dirs)
 }
 
