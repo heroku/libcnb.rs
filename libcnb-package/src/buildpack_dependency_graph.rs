@@ -84,7 +84,7 @@ fn build_libcnb_buildpack_dependency_graph_node(
 
 #[derive(thiserror::Error, Debug)]
 pub enum BuildBuildpackDependencyGraphError {
-    #[error("IO error while finding buildpack directories: {0}")]
+    #[error("Error while finding buildpack directories: {0}")]
     FindBuildpackDirectories(ignore::Error),
     #[error("Cannot read buildpack descriptor: {0}")]
     ReadBuildpackDescriptorError(TomlFileError),

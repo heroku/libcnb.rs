@@ -109,18 +109,20 @@ fn create_file_symlink<P: AsRef<Path>, Q: AsRef<Path>>(
 /// Will return an `Err` if any I/O errors happen while walking the file system or any parsing errors
 /// from reading a gitignore file.
 pub fn find_buildpack_dirs(start_dir: &Path) -> Result<Vec<PathBuf>, ignore::Error> {
-    let mut buildpack_dirs = vec![];
-    for result in ignore::Walk::new(start_dir) {
-        match result {
-            Ok(entry) => {
-                if entry.path().is_dir() && entry.path().join("buildpack.toml").exists() {
-                    buildpack_dirs.push(entry.path().to_path_buf());
-                }
-            }
-            Err(error) => return Err(error),
-        }
-    }
-    Ok(buildpack_dirs)
+    ignore::Walk::new(start_dir)
+        .collect::<Result<Vec<_>, _>>()
+        .map(|entries| {
+            entries
+                .iter()
+                .filter_map(|entry| {
+                    if entry.path().is_dir() && entry.path().join("buildpack.toml").exists() {
+                        Some(entry.path().to_path_buf())
+                    } else {
+                        None
+                    }
+                })
+                .collect()
+        })
 }
 
 /// Returns the path of the root workspace directory for a Rust Cargo project. This is often a useful

@@ -219,6 +219,47 @@ fn package_command_error_when_run_in_project_with_no_buildpacks() {
     );
 }
 
+#[test]
+#[ignore = "integration test"]
+fn package_command_respects_ignore_files() {
+    let fixture_dir = copy_fixture_to_temp_dir("multiple_buildpacks").unwrap();
+
+    // when a git folder is not present, .ignore should be used
+    let ignore_file = fixture_dir.path().join(".ignore");
+    fs::write(&ignore_file, "meta-buildpacks\nbuildpacks\n").unwrap();
+
+    let output = Command::new(CARGO_LIBCNB_BINARY_UNDER_TEST)
+        .args(["libcnb", "package", "--release"])
+        .current_dir(fixture_dir.path())
+        .output()
+        .unwrap();
+
+    //assert_ne!(output.status.code(), Some(0));
+    assert_eq!(
+        String::from_utf8_lossy(&output.stderr),
+        "🚚 Preparing package directory...\n🖥\u{fe0f} Gathering Cargo configuration (for x86_64-unknown-linux-musl)\n🏗\u{fe0f} Building buildpack dependency graph...\n🔀 Determining build order...\n❌ No buildpacks found!\n"
+    );
+
+    fs::remove_file(ignore_file).unwrap();
+
+    // when a git folder is not present, .gitignore can be used
+    fs::create_dir(fixture_dir.path().join(".git")).unwrap();
+    let ignore_file = fixture_dir.path().join(".gitignore");
+    fs::write(ignore_file, "meta-buildpacks\nbuildpacks\n").unwrap();
+
+    let output = Command::new(CARGO_LIBCNB_BINARY_UNDER_TEST)
+        .args(["libcnb", "package", "--release"])
+        .current_dir(fixture_dir.path())
+        .output()
+        .unwrap();
+
+    //assert_ne!(output.status.code(), Some(0));
+    assert_eq!(
+        String::from_utf8_lossy(&output.stderr),
+        "🚚 Preparing package directory...\n🖥\u{fe0f} Gathering Cargo configuration (for x86_64-unknown-linux-musl)\n🏗\u{fe0f} Building buildpack dependency graph...\n🔀 Determining build order...\n❌ No buildpacks found!\n"
+    );
+}
+
 fn validate_packaged_buildpack(packaged_buildpack_dir: &Path, buildpack_id: &BuildpackId) {
     assert!(packaged_buildpack_dir.join("buildpack.toml").exists());
     assert!(packaged_buildpack_dir.join("package.toml").exists());
