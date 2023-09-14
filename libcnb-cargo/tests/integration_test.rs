@@ -234,7 +234,7 @@ fn package_command_respects_ignore_files() {
         .output()
         .unwrap();
 
-    //assert_ne!(output.status.code(), Some(0));
+    assert_ne!(output.status.code(), Some(0));
     assert_eq!(
         String::from_utf8_lossy(&output.stderr),
         "🚚 Preparing package directory...\n🖥\u{fe0f} Gathering Cargo configuration (for x86_64-unknown-linux-musl)\n🏗\u{fe0f} Building buildpack dependency graph...\n🔀 Determining build order...\n❌ No buildpacks found!\n"
@@ -253,7 +253,7 @@ fn package_command_respects_ignore_files() {
         .output()
         .unwrap();
 
-    //assert_ne!(output.status.code(), Some(0));
+    assert_ne!(output.status.code(), Some(0));
     assert_eq!(
         String::from_utf8_lossy(&output.stderr),
         "🚚 Preparing package directory...\n🖥\u{fe0f} Gathering Cargo configuration (for x86_64-unknown-linux-musl)\n🏗\u{fe0f} Building buildpack dependency graph...\n🔀 Determining build order...\n❌ No buildpacks found!\n"
