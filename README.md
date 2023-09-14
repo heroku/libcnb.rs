@@ -153,13 +153,14 @@ impl Buildpack for HelloWorldBuildpack {
 
         BuildResultBuilder::new()
             .launch(
-                LaunchBuilder::new().process(
-                    ProcessBuilder::new(process_type!("web"), ["echo"])
-                        .arg("Hello World!")
-                        .default(true)
-                        .build(),
-                )
-                .build(),
+                LaunchBuilder::new()
+                    .process(
+                        ProcessBuilder::new(process_type!("web"), ["echo"])
+                            .arg("Hello World!")
+                            .default(true)
+                            .build(),
+                    )
+                    .build(),
             )
             .build()
     }
