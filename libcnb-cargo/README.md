@@ -10,8 +10,24 @@ $ cargo install libcnb-cargo
 
 ## Usage
 
-Currently, there is only one sub-command: `package`. It allows users to package their Rust buildpack in a spec-compliant
-manner and helps with cross-compilation. Using it is fairly simple, run `cargo libcnb package` inside the buildpack's
+Currently, there is only one sub-command: `package`. It allows users to package their
+Rust buildpack in a spec-compliant manner and helps with cross-compilation.
+
+```shell
+$ cargo libcnb package --help
+Packages a libcnb.rs Cargo project as a Cloud Native Buildpack
+
+Usage: cargo libcnb package [OPTIONS]
+
+Options:
+      --no-cross-compile-assistance  Disable cross-compile assistance
+      --release                      Build in release mode, with optimizations
+      --target <TARGET>              Build for the target triple [default: x86_64-unknown-linux-musl]
+      --package-dir <PACKAGE_DIR>    Directory for packaged buildpacks, defaults to 'packaged' in Cargo workspace root
+  -h, --help                         Print help
+```
+
+Using it is fairly simple, run `cargo libcnb package` inside the buildpack's
 project directory:
 
 ```shell
