@@ -178,22 +178,23 @@ In your project directory, run `cargo libcnb package` to start packaging:
 
 ```shell
 $ cargo libcnb package
-🔍 Locating buildpacks...
-📦 [1/1] Building libcnb-examples/my-buildpack
-Determining automatic cross-compile settings...
-Building binaries (x86_64-unknown-linux-musl)...
+🚚 Preparing package directory...
+🖥️ Gathering Cargo configuration (for x86_64-unknown-linux-musl)
+🏗️ Building buildpack dependency graph...
+🔀 Determining build order...
+🚚 Building 1 buildpacks...
+📦 [1/1] Building libcnb-examples/my-buildpack (./)
 # Omitting compilation output...
-    Finished dev [unoptimized] target(s) in 8.92s
-Writing buildpack directory...
-Successfully wrote buildpack directory: packaged/x86_64-unknown-linux-musl/debug/libcnb-examples_my-buildpack (4.06 MiB)
+    Finished dev [unoptimized] target(s) in 8.24s
+Successfully wrote buildpack directory: packaged/x86_64-unknown-linux-musl/debug/libcnb-examples_my-buildpack (4.09 MiB)
 ✨ Packaging successfully finished!
 
 💡 To test your buildpack locally with pack, run:
 pack build my-image-name \
-  --buildpack /home/ponda.baba/my-buildpack/packaged/x86_64-unknown-linux-musl/debug/libcnb-examples_my-buildpack \
+  --buildpack packaged/x86_64-unknown-linux-musl/debug/libcnb-examples_my-buildpack \
   --path /path/to/application
 
-/home/ponda.baba/my-buildpack/packaged/x86_64-unknown-linux-musl/debug/libcnb-examples_my-buildpack
+/Users/example/src/my-buildpack/packaged/x86_64-unknown-linux-musl/debug/libcnb-examples_my-buildpack
 ```
 
 If you get errors with hints about how to install required tools to cross-compile from your host platform to the

@@ -32,16 +32,23 @@ project directory:
 
 ```shell
 $ cargo libcnb package
-INFO - Reading buildpack metadata...
-INFO - Found buildpack libcnb-examples/my-buildpack with version 0.1.0.
-INFO - Determining automatic cross-compile settings...
-INFO - Building binaries (x86_64-unknown-linux-musl)...
+🚚 Preparing package directory...
+🖥️ Gathering Cargo configuration (for x86_64-unknown-linux-musl)
+🏗️ Building buildpack dependency graph...
+🔀 Determining build order...
+🚚 Building 1 buildpacks...
+📦 [1/1] Building libcnb-examples/my-buildpack (./)
 # Omitting compilation output...
-    Finished dev [unoptimized + debuginfo] target(s) in 4.29s
-INFO - Writing buildpack directory...
-INFO - Successfully wrote buildpack directory: target/buildpack/debug/libcnb-examples_my-buildpack (3.26 MiB)
-INFO - Packaging successfully finished!
-INFO - Hint: To test your buildpack locally with pack, run: pack build my-image --buildpack target/buildpack/debug/libcnb-examples_my-buildpack --path /path/to/application
+    Finished dev [unoptimized] target(s) in 8.24s
+Successfully wrote buildpack directory: packaged/x86_64-unknown-linux-musl/debug/libcnb-examples_my-buildpack (4.09 MiB)
+✨ Packaging successfully finished!
+
+💡 To test your buildpack locally with pack, run:
+pack build my-image-name \
+  --buildpack packaged/x86_64-unknown-linux-musl/debug/libcnb-examples_my-buildpack \
+  --path /path/to/application
+
+/Users/example/src/my-buildpack/packaged/x86_64-unknown-linux-musl/debug/libcnb-examples_my-buildpack
 ```
 
 [Latest Version]: https://img.shields.io/crates/v/libcnb-cargo.svg
