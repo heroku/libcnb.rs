@@ -10,18 +10,15 @@ use libcnb_package::package::PackageBuildpackError;
 use libcnb_package::{find_cargo_workspace_root_dir, CargoProfile, FindCargoWorkspaceRootError};
 use std::collections::BTreeMap;
 use std::fs;
-use std::path::PathBuf;
-use tempfile::{tempdir, TempDir};
+use std::path::{Path, PathBuf};
 
 /// Packages the current crate as a buildpack into a temporary directory.
 pub(crate) fn package_crate_buildpack(
     cargo_profile: CargoProfile,
     target_triple: impl AsRef<str>,
-) -> Result<PackagedBuildpackDir, PackageTestBuildpackError> {
-    let cargo_manifest_dir = std::env::var("CARGO_MANIFEST_DIR")
-        .map(PathBuf::from)
-        .map_err(PackageTestBuildpackError::CannotDetermineCrateDirectory)?;
-
+    cargo_manifest_dir: &Path,
+    target_buildpack_dir: &Path,
+) -> Result<PathBuf, PackageTestBuildpackError> {
     let buildpack_toml = cargo_manifest_dir.join("buildpack.toml");
 
     assert!(
@@ -30,13 +27,15 @@ pub(crate) fn package_crate_buildpack(
         cargo_manifest_dir.display()
     );
 
-    let buildpack_descriptor: BuildpackDescriptor =
-        read_toml_file(buildpack_toml).map_err(PackageTestBuildpackError::CannotReadBuildpack)?;
+    let buildpack_descriptor: BuildpackDescriptor = read_toml_file(buildpack_toml)
+        .map_err(PackageTestBuildpackError::CannotReadBuildpackDescriptor)?;
 
     package_buildpack(
         &buildpack_descriptor.buildpack().id,
         cargo_profile,
         target_triple,
+        cargo_manifest_dir,
+        target_buildpack_dir,
     )
 }
 
@@ -44,11 +43,9 @@ pub(crate) fn package_buildpack(
     buildpack_id: &BuildpackId,
     cargo_profile: CargoProfile,
     target_triple: impl AsRef<str>,
-) -> Result<PackagedBuildpackDir, PackageTestBuildpackError> {
-    let cargo_manifest_dir = std::env::var("CARGO_MANIFEST_DIR")
-        .map(PathBuf::from)
-        .map_err(PackageTestBuildpackError::CannotDetermineCrateDirectory)?;
-
+    cargo_manifest_dir: &Path,
+    target_buildpack_dir: &Path,
+) -> Result<PathBuf, PackageTestBuildpackError> {
     let cargo_build_env = match cross_compile_assistance(target_triple.as_ref()) {
         CrossCompileAssistance::HelpText(help_text) => {
             return Err(PackageTestBuildpackError::CrossCompileConfigurationError(
@@ -59,25 +56,18 @@ pub(crate) fn package_buildpack(
         CrossCompileAssistance::Configuration { cargo_env } => cargo_env,
     };
 
-    let workspace_root_path = find_cargo_workspace_root_dir(&cargo_manifest_dir)
-        .map_err(PackageTestBuildpackError::FindCargoWorkspace)?;
-
-    let package_dir =
-        tempdir().map_err(PackageTestBuildpackError::CannotCreateBuildpackTempDirectory)?;
+    let workspace_root_path = find_cargo_workspace_root_dir(cargo_manifest_dir)
+        .map_err(PackageTestBuildpackError::FindCargoWorkspaceRoot)?;
 
     let buildpack_dir_resolver = create_packaged_buildpack_dir_resolver(
-        package_dir.as_ref(),
+        target_buildpack_dir,
         cargo_profile,
         target_triple.as_ref(),
     );
 
-    // TODO: this could accidentally detect a packaged meta-buildpack twice. how should we ignore directories
-    //       containing packaged buildpacks that might get detected now that the user controls --package-dir?
-    //       - support .gitignore or some other persistent configuration?
-    //       - during packaging should we create some type of file that indicates the output is a packaged buildpack?
     let buildpack_dependency_graph =
         build_libcnb_buildpacks_dependency_graph(&workspace_root_path, &[])
-            .map_err(PackageTestBuildpackError::CreateBuildpackDependencyGraph)?;
+            .map_err(PackageTestBuildpackError::BuildBuildpackDependencyGraph)?;
 
     let root_node = buildpack_dependency_graph
         .node_weights()
@@ -114,25 +104,15 @@ pub(crate) fn package_buildpack(
         packaged_buildpack_dirs.insert(node.buildpack_id.clone(), buildpack_destination_dir);
     }
 
-    Ok(PackagedBuildpackDir {
-        _root: package_dir,
-        path: buildpack_dir_resolver(buildpack_id),
-    })
-}
-
-pub(crate) struct PackagedBuildpackDir {
-    _root: TempDir,
-    pub(crate) path: PathBuf,
+    Ok(buildpack_dir_resolver(buildpack_id))
 }
 
 #[derive(Debug)]
 pub(crate) enum PackageTestBuildpackError {
-    CannotCreateBuildpackTempDirectory(std::io::Error),
-    CannotDetermineCrateDirectory(std::env::VarError),
-    CannotReadBuildpack(TomlFileError),
-    CreateBuildpackDependencyGraph(BuildBuildpackDependencyGraphError),
+    CannotReadBuildpackDescriptor(TomlFileError),
+    BuildBuildpackDependencyGraph(BuildBuildpackDependencyGraphError),
     CrossCompileConfigurationError(String),
-    FindCargoWorkspace(FindCargoWorkspaceRootError),
+    FindCargoWorkspaceRoot(FindCargoWorkspaceRootError),
     GetDependencies(GetDependenciesError<BuildpackId>),
     PackageBuildpack(PackageBuildpackError),
 }
