@@ -224,7 +224,8 @@ fn package_command_error_when_run_in_project_with_no_buildpacks() {
 fn package_command_respects_ignore_files() {
     let fixture_dir = copy_fixture_to_temp_dir("multiple_buildpacks").unwrap();
 
-    // when a git folder is not present, .ignore should be used
+    // The `ignore` crate supports `.ignore` files. So this first `cargo libcnb package` execution
+    // just sanity checks that our ignore rules will be respected.
     let ignore_file = fixture_dir.path().join(".ignore");
     fs::write(&ignore_file, "meta-buildpacks\nbuildpacks\n").unwrap();
 
@@ -242,7 +243,12 @@ fn package_command_respects_ignore_files() {
 
     fs::remove_file(ignore_file).unwrap();
 
-    // when a git folder is not present, .gitignore can be used
+    // The `ignore` crate supports `.gitignore` files but only if the folder is within a git repository
+    // which is the default configuration used in our directory traversal.
+    // https://docs.rs/ignore/latest/ignore/struct.WalkBuilder.html#method.require_git
+    //
+    // So this second `cargo libcnb package` execution just sanity checks that our gitignore rules
+    // in a git repository will be respected.
     fs::create_dir(fixture_dir.path().join(".git")).unwrap();
     let ignore_file = fixture_dir.path().join(".gitignore");
     fs::write(ignore_file, "meta-buildpacks\nbuildpacks\n").unwrap();
