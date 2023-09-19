@@ -191,7 +191,7 @@ fn dynamic_fixture() {
 Building with multiple buildpacks, using [`BuildConfig::buildpacks`]:
 
 ```rust,no_run
-use libcnb_data::buildpack_id;
+use libcnb::data::buildpack_id;
 use libcnb_test::{BuildConfig, BuildpackReference, TestRunner};
 
 // #[test]
