@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `libcnb-cargo`:
   - No longer outputs paths for non-libcnb.rs and non-meta buildpacks. ([#657](https://github.com/heroku/libcnb.rs/pull/657))
   - Build output for humans changed slightly, output intended for machines/scripting didn't change. ([#657](https://github.com/heroku/libcnb.rs/pull/657))
+  - When performing buildpack detection, standard ignore files (`.ignore` and `.gitignore`) will be respected. ([#673](https://github.com/heroku/libcnb.rs/pull/673))
 
 ## [0.14.0] - 2023-08-18
 

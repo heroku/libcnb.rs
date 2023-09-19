@@ -27,9 +27,8 @@ use std::path::{Path, PathBuf};
 /// package.toml or an IO error occurred while traversing the given directory.
 pub fn build_libcnb_buildpacks_dependency_graph(
     cargo_workspace_root: &Path,
-    ignore: &[&Path],
 ) -> Result<Graph<BuildpackDependencyGraphNode, ()>, BuildBuildpackDependencyGraphError> {
-    find_buildpack_dirs(cargo_workspace_root, ignore)
+    find_buildpack_dirs(cargo_workspace_root)
         .map_err(BuildBuildpackDependencyGraphError::FindBuildpackDirectories)
         .and_then(|buildpack_directories| {
             buildpack_directories
@@ -85,8 +84,8 @@ fn build_libcnb_buildpack_dependency_graph_node(
 
 #[derive(thiserror::Error, Debug)]
 pub enum BuildBuildpackDependencyGraphError {
-    #[error("IO error while finding buildpack directories: {0}")]
-    FindBuildpackDirectories(std::io::Error),
+    #[error("Error while finding buildpack directories: {0}")]
+    FindBuildpackDirectories(ignore::Error),
     #[error("Cannot read buildpack descriptor: {0}")]
     ReadBuildpackDescriptorError(TomlFileError),
     #[error("Cannot read package descriptor: {0}")]

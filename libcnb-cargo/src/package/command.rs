@@ -61,9 +61,8 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<(), Error> {
     };
 
     eprintln!("🏗️ Building buildpack dependency graph...");
-    let buildpack_dependency_graph =
-        build_libcnb_buildpacks_dependency_graph(&workspace_root_path, &[&package_dir])
-            .map_err(Error::CannotBuildBuildpackDependencyGraph)?;
+    let buildpack_dependency_graph = build_libcnb_buildpacks_dependency_graph(&workspace_root_path)
+        .map_err(Error::CannotBuildBuildpackDependencyGraph)?;
 
     eprintln!("🔀 Determining build order...");
     let root_nodes = buildpack_dependency_graph
