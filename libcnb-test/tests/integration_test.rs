@@ -546,7 +546,7 @@ fn address_for_port_when_container_crashed() {
 #[ignore = "integration test"]
 fn basic_build_with_libcnb_reference_to_single_buildpack() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "test-fixtures/procfile").buildpacks(vec![
+        BuildConfig::new("heroku/builder:22", "test-fixtures/empty").buildpacks(vec![
             BuildpackReference::WorkspaceBuildpack(buildpack_id!("libcnb-test/a")),
         ]),
         |context| {
