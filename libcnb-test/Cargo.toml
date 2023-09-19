@@ -22,3 +22,4 @@ tempfile = "3.7.1"
 [dev-dependencies]
 indoc = "2.0.3"
 ureq = { version = "2.7.1", default-features = false }
+libcnb.workspace = true

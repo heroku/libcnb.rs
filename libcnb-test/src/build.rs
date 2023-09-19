@@ -65,9 +65,8 @@ pub(crate) fn package_buildpack(
         target_triple.as_ref(),
     );
 
-    let buildpack_dependency_graph =
-        build_libcnb_buildpacks_dependency_graph(&workspace_root_path, &[])
-            .map_err(PackageTestBuildpackError::BuildBuildpackDependencyGraph)?;
+    let buildpack_dependency_graph = build_libcnb_buildpacks_dependency_graph(&workspace_root_path)
+        .map_err(PackageTestBuildpackError::BuildBuildpackDependencyGraph)?;
 
     let root_node = buildpack_dependency_graph
         .node_weights()

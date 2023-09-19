@@ -219,6 +219,53 @@ fn package_command_error_when_run_in_project_with_no_buildpacks() {
     );
 }
 
+#[test]
+#[ignore = "integration test"]
+fn package_command_respects_ignore_files() {
+    let fixture_dir = copy_fixture_to_temp_dir("multiple_buildpacks").unwrap();
+
+    // The `ignore` crate supports `.ignore` files. So this first `cargo libcnb package` execution
+    // just sanity checks that our ignore rules will be respected.
+    let ignore_file = fixture_dir.path().join(".ignore");
+    fs::write(&ignore_file, "meta-buildpacks\nbuildpacks\n").unwrap();
+
+    let output = Command::new(CARGO_LIBCNB_BINARY_UNDER_TEST)
+        .args(["libcnb", "package", "--release"])
+        .current_dir(fixture_dir.path())
+        .output()
+        .unwrap();
+
+    assert_ne!(output.status.code(), Some(0));
+    assert_eq!(
+        String::from_utf8_lossy(&output.stderr),
+        "🚚 Preparing package directory...\n🖥\u{fe0f} Gathering Cargo configuration (for x86_64-unknown-linux-musl)\n🏗\u{fe0f} Building buildpack dependency graph...\n🔀 Determining build order...\n❌ No buildpacks found!\n"
+    );
+
+    fs::remove_file(ignore_file).unwrap();
+
+    // The `ignore` crate supports `.gitignore` files but only if the folder is within a git repository
+    // which is the default configuration used in our directory traversal.
+    // https://docs.rs/ignore/latest/ignore/struct.WalkBuilder.html#method.require_git
+    //
+    // So this second `cargo libcnb package` execution just sanity checks that our gitignore rules
+    // in a git repository will be respected.
+    fs::create_dir(fixture_dir.path().join(".git")).unwrap();
+    let ignore_file = fixture_dir.path().join(".gitignore");
+    fs::write(ignore_file, "meta-buildpacks\nbuildpacks\n").unwrap();
+
+    let output = Command::new(CARGO_LIBCNB_BINARY_UNDER_TEST)
+        .args(["libcnb", "package", "--release"])
+        .current_dir(fixture_dir.path())
+        .output()
+        .unwrap();
+
+    assert_ne!(output.status.code(), Some(0));
+    assert_eq!(
+        String::from_utf8_lossy(&output.stderr),
+        "🚚 Preparing package directory...\n🖥\u{fe0f} Gathering Cargo configuration (for x86_64-unknown-linux-musl)\n🏗\u{fe0f} Building buildpack dependency graph...\n🔀 Determining build order...\n❌ No buildpacks found!\n"
+    );
+}
+
 fn validate_packaged_buildpack(packaged_buildpack_dir: &Path, buildpack_id: &BuildpackId) {
     assert!(packaged_buildpack_dir.join("buildpack.toml").exists());
     assert!(packaged_buildpack_dir.join("package.toml").exists());
@@ -274,7 +321,7 @@ fn copy_fixture_to_temp_dir(name: &str) -> Result<TempDir, std::io::Error> {
     env::temp_dir()
         .canonicalize()
         .and_then(tempdir_in)
-        .and_then(|temp_dir| copy_dir_recursively(&fixture_dir, temp_dir.path()).map(|_| temp_dir))
+        .and_then(|temp_dir| copy_dir_recursively(&fixture_dir, temp_dir.path()).map(|()| temp_dir))
 }
 
 fn copy_dir_recursively(source: &Path, destination: &Path) -> std::io::Result<()> {
