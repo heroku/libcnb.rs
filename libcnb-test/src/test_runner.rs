@@ -5,6 +5,7 @@ use crate::{app, build, util, BuildConfig, BuildpackReference, PackResult, TestC
 use std::borrow::Borrow;
 use std::env;
 use std::path::PathBuf;
+use tempfile::tempdir;
 
 /// Runner for libcnb integration tests.
 ///
@@ -58,12 +59,13 @@ impl TestRunner {
     ) {
         let config = config.borrow();
 
+        let cargo_manifest_dir = env::var("CARGO_MANIFEST_DIR")
+            .map(PathBuf::from)
+            .expect("Could not determine Cargo manifest directory");
+
         let app_dir = {
             let normalized_app_dir_path = if config.app_dir.is_relative() {
-                env::var("CARGO_MANIFEST_DIR")
-                    .map(PathBuf::from)
-                    .expect("Could not determine Cargo manifest directory")
-                    .join(&config.app_dir)
+                cargo_manifest_dir.join(&config.app_dir)
             } else {
                 config.app_dir.clone()
             };
@@ -88,14 +90,8 @@ impl TestRunner {
             }
         };
 
-        let temp_crate_buildpack_dir =
-            config
-                .buildpacks
-                .contains(&BuildpackReference::Crate)
-                .then(|| {
-                    build::package_crate_buildpack(config.cargo_profile, &config.target_triple)
-                        .expect("Could not package current crate as buildpack")
-                });
+        let buildpacks_target_dir =
+            tempdir().expect("Could not create a temporary directory for compiled buildpacks");
 
         let mut pack_command = PackBuildCommand::new(&config.builder_name, &app_dir, &image_name);
 
@@ -105,11 +101,30 @@ impl TestRunner {
 
         for buildpack in &config.buildpacks {
             match buildpack {
-                BuildpackReference::Crate => {
-                    pack_command.buildpack(temp_crate_buildpack_dir.as_ref()
-                        .expect("Test references crate buildpack, but crate wasn't packaged as a buildpack. This is an internal libcnb-test error, please report any occurrences."))
+                BuildpackReference::CurrentCrate => {
+                    let crate_buildpack_dir = build::package_crate_buildpack(
+                        config.cargo_profile,
+                        &config.target_triple,
+                        &cargo_manifest_dir,
+                        buildpacks_target_dir.path(),
+                    ).expect("Test references crate buildpack, but crate wasn't packaged as a buildpack. This is an internal libcnb-test error, please report any occurrences");
+                    pack_command.buildpack(crate_buildpack_dir);
                 }
-                BuildpackReference::Other(id) => pack_command.buildpack(id.clone()),
+
+                BuildpackReference::WorkspaceBuildpack(builpack_id) => {
+                    let buildpack_dir = build::package_buildpack(
+                        builpack_id,
+                        config.cargo_profile,
+                        &config.target_triple,
+                        &cargo_manifest_dir,
+                        buildpacks_target_dir.path()
+                    ).unwrap_or_else(|_| panic!("Test references buildpack `{builpack_id}`, but this directory wasn't packaged as a buildpack. This is an internal libcnb-test error, please report any occurrences"));
+                    pack_command.buildpack(buildpack_dir);
+                }
+
+                BuildpackReference::Other(id) => {
+                    pack_command.buildpack(id.clone());
+                }
             };
         }
 

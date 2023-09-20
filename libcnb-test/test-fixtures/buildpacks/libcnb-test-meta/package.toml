@@ -1,0 +1,9 @@
+[buildpack]
+uri = "."
+
+[[dependencies]]
+uri = "libcnb:libcnb-test/a"
+
+[[dependencies]]
+uri = "libcnb:libcnb-test/b"
+

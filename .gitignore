@@ -5,3 +5,4 @@
 Cargo.lock
 **/fixtures/*/target/
 **/fixtures/*/packaged/
+**/test-fixtures/buildpacks/*/target/

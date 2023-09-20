@@ -1,0 +1,8 @@
+api = "0.8"
+
+[buildpack]
+id = "libcnb-test/a"
+version = "0.0.0"
+
+[[stacks]]
+id = "*"

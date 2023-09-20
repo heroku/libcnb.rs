@@ -8,6 +8,7 @@
 #![warn(clippy::pedantic)]
 
 use indoc::indoc;
+use libcnb_data::buildpack_id;
 use libcnb_test::{
     assert_contains, assert_empty, assert_not_contains, BuildConfig, BuildpackReference,
     ContainerConfig, PackResult, TestRunner,
@@ -63,13 +64,21 @@ fn rebuild() {
 
 #[test]
 #[ignore = "integration test"]
-#[should_panic(
-    expected = "Could not package current crate as buildpack: BuildBinariesError(CannotDetermineBuildpackCargoTargetName(NoBinTargets))"
-)]
 fn buildpack_packaging_failure() {
-    TestRunner::default().build(BuildConfig::new("invalid!", "test-fixtures/empty"), |_| {
-        unreachable!("The test should panic prior to the TestContext being invoked.");
+    let result = std::panic::catch_unwind(|| {
+        TestRunner::default().build(BuildConfig::new("invalid!", "test-fixtures/empty"), |_| {
+            unreachable!("The test should panic prior to the TestContext being invoked.");
+        });
     });
+    match result {
+        Ok(_) => panic!("expected a failure"),
+        Err(error) => {
+            assert_eq!(
+                error.downcast_ref::<String>().unwrap().to_string(),
+                format!("Could not package directory as buildpack! No `buildpack.toml` file exists at {}", env::var("CARGO_MANIFEST_DIR").unwrap())
+            );
+        }
+    }
 }
 
 #[test]
@@ -131,15 +140,25 @@ fn expected_pack_failure() {
 
 #[test]
 #[ignore = "integration test"]
-#[should_panic(
-    expected = "Could not package current crate as buildpack: BuildBinariesError(CannotDetermineBuildpackCargoTargetName(NoBinTargets))"
-)]
 fn expected_pack_failure_still_panics_for_non_pack_failure() {
-    TestRunner::default().build(
-        BuildConfig::new("invalid!", "test-fixtures/empty")
-            .expected_pack_result(PackResult::Failure),
-        |_| {},
-    );
+    let result = std::panic::catch_unwind(|| {
+        TestRunner::default().build(
+            BuildConfig::new("invalid!", "test-fixtures/empty")
+                .expected_pack_result(PackResult::Failure),
+            |_| {
+                unreachable!("The test should panic prior to the TestContext being invoked.");
+            },
+        );
+    });
+    match result {
+        Ok(_) => panic!("expected a failure"),
+        Err(error) => {
+            assert_eq!(
+                error.downcast_ref::<String>().unwrap().to_string(),
+                format!("Could not package directory as buildpack! No `buildpack.toml` file exists at {}", env::var("CARGO_MANIFEST_DIR").unwrap())
+            );
+        }
+    }
 }
 
 #[test]
@@ -518,6 +537,45 @@ fn address_for_port_when_container_crashed() {
                     thread::sleep(Duration::from_secs(1));
                     let _ = container.address_for_port(TEST_PORT);
                 },
+            );
+        },
+    );
+}
+
+#[test]
+#[ignore = "integration test"]
+fn basic_build_with_libcnb_reference_to_single_buildpack() {
+    TestRunner::default().build(
+        BuildConfig::new("heroku/builder:22", "test-fixtures/empty").buildpacks(vec![
+            BuildpackReference::WorkspaceBuildpack(buildpack_id!("libcnb-test/a")),
+        ]),
+        |context| {
+            assert_empty!(context.pack_stderr);
+            assert_contains!(
+                context.pack_stdout,
+                indoc! {"
+                    Buildpack A
+                "}
+            );
+        },
+    );
+}
+
+#[test]
+#[ignore = "integration test"]
+fn basic_build_with_libcnb_reference_to_meta_buildpack() {
+    TestRunner::default().build(
+        BuildConfig::new("heroku/builder:22", "test-fixtures/empty").buildpacks(vec![
+            BuildpackReference::WorkspaceBuildpack(buildpack_id!("libcnb-test/meta")),
+        ]),
+        |context| {
+            assert_empty!(context.pack_stderr);
+            assert_contains!(
+                context.pack_stdout,
+                indoc! {"
+                    Buildpack A
+                    Buildpack B
+                "}
             );
         },
     );

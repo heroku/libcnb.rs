@@ -1,3 +1,4 @@
+use libcnb_data::buildpack::BuildpackId;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
@@ -41,7 +42,7 @@ impl BuildConfig {
             cargo_profile: CargoProfile::Dev,
             target_triple: String::from("x86_64-unknown-linux-musl"),
             builder_name: builder_name.into(),
-            buildpacks: vec![BuildpackReference::Crate],
+            buildpacks: vec![BuildpackReference::CurrentCrate],
             env: HashMap::new(),
             app_dir_preprocessor: None,
             expected_pack_result: PackResult::Success,
@@ -50,7 +51,7 @@ impl BuildConfig {
 
     /// Sets the buildpacks (and their ordering) to use when building the app.
     ///
-    /// Defaults to [`BuildpackReference::Crate`].
+    /// Defaults to [`BuildpackReference::CurrentCrate`].
     ///
     /// # Example
     /// ```no_run
@@ -59,7 +60,7 @@ impl BuildConfig {
     /// TestRunner::default().build(
     ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app").buildpacks(vec![
     ///         BuildpackReference::Other(String::from("heroku/another-buildpack")),
-    ///         BuildpackReference::Crate,
+    ///         BuildpackReference::CurrentCrate,
     ///     ]),
     ///     |context| {
     ///         // ...
@@ -250,7 +251,9 @@ impl BuildConfig {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum BuildpackReference {
     /// References the buildpack in the Rust Crate currently being tested.
-    Crate,
+    CurrentCrate,
+    /// References a libcnb.rs buildpack within the Rust Workspace that needs to be packaged into a buildpack
+    WorkspaceBuildpack(BuildpackId),
     /// References another buildpack by id, local directory or tarball.
     Other(String),
 }
