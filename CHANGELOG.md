@@ -15,8 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `ExecDProgramOutputKey`, `ProcessType`, `LayerName`, `BuildpackId` and `StackId` now implement `Ord` and `PartialOrd`. ([#658](https://github.com/heroku/libcnb.rs/pull/658))
   - Add `generic::GenericMetadata` as a generic metadata type. Also makes it the default for `BuildpackDescriptor`, `SingleBuildpackDescriptor`, `MetaBuildpackDescriptor` and `LayerContentMetadata`. ([#664](https://github.com/heroku/libcnb.rs/pull/664))
 - `libcnb-test`:
-  - Added the variant `WorkspaceBuildpack` to the `build_config::BuildpackReference` enum which allows any buildpack within the Rust workspace to be referenced for testing. ([#666](https://github.com/heroku/libcnb.rs/pull/666))
-  - Testing of composite buildpacks is now supported using the `WorkspaceBuildpack` variant - **Requires `pack` CLI version `>=0.30`**. ([#666](https://github.com/heroku/libcnb.rs/pull/666))
+  - Added the `BuildpackReference::WorkspaceBuildpack` enum variant. This allows for the testing of any libcnb.rs or composite buildpack in the Cargo workspace, instead of only the buildpack of the current crate. **Note: The testing of composite buildpacks requires `pack` CLI version `>=0.30`.** ([#666](https://github.com/heroku/libcnb.rs/pull/666))
 
 ### Changed
 
@@ -26,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Build output for humans changed slightly, output intended for machines/scripting didn't change. ([#657](https://github.com/heroku/libcnb.rs/pull/657))
   - When performing buildpack detection, standard ignore files (`.ignore` and `.gitignore`) will be respected. ([#673](https://github.com/heroku/libcnb.rs/pull/673))
 - `libcnb-test`:
-  - Renamed the variant `Crate` to `CurrentCrate` for the `build_config::BuildpackReference` enum which references the buildpack within the Rust Crate currently being tested. ([#666](https://github.com/heroku/libcnb.rs/pull/666))
+  - Renamed `BuildpackReference::Crate` to `BuildpackReference::CurrentCrate`. ([#666](https://github.com/heroku/libcnb.rs/pull/666))
 
 ## [0.14.0] - 2023-08-18
 
