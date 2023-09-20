@@ -6,7 +6,6 @@ use libcnb_package::buildpack_dependency_graph::{
 use libcnb_package::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
 use libcnb_package::dependency_graph::{get_dependencies, GetDependenciesError};
 use libcnb_package::output::create_packaged_buildpack_dir_resolver;
-use libcnb_package::package::PackageBuildpackError;
 use libcnb_package::{find_cargo_workspace_root_dir, CargoProfile, FindCargoWorkspaceRootError};
 use std::collections::BTreeMap;
 use std::fs;
@@ -18,7 +17,7 @@ pub(crate) fn package_crate_buildpack(
     target_triple: impl AsRef<str>,
     cargo_manifest_dir: &Path,
     target_buildpack_dir: &Path,
-) -> Result<PathBuf, PackageTestBuildpackError> {
+) -> Result<PathBuf, PackageBuildpackError> {
     let buildpack_toml = cargo_manifest_dir.join("buildpack.toml");
 
     assert!(
@@ -28,7 +27,7 @@ pub(crate) fn package_crate_buildpack(
     );
 
     let buildpack_descriptor: BuildpackDescriptor = read_toml_file(buildpack_toml)
-        .map_err(PackageTestBuildpackError::CannotReadBuildpackDescriptor)?;
+        .map_err(PackageBuildpackError::CannotReadBuildpackDescriptor)?;
 
     package_buildpack(
         &buildpack_descriptor.buildpack().id,
@@ -45,10 +44,10 @@ pub(crate) fn package_buildpack(
     target_triple: impl AsRef<str>,
     cargo_manifest_dir: &Path,
     target_buildpack_dir: &Path,
-) -> Result<PathBuf, PackageTestBuildpackError> {
+) -> Result<PathBuf, PackageBuildpackError> {
     let cargo_build_env = match cross_compile_assistance(target_triple.as_ref()) {
         CrossCompileAssistance::HelpText(help_text) => {
-            return Err(PackageTestBuildpackError::CrossCompileConfigurationError(
+            return Err(PackageBuildpackError::CrossCompileConfigurationError(
                 help_text,
             ));
         }
@@ -57,7 +56,7 @@ pub(crate) fn package_buildpack(
     };
 
     let workspace_root_path = find_cargo_workspace_root_dir(cargo_manifest_dir)
-        .map_err(PackageTestBuildpackError::FindCargoWorkspaceRoot)?;
+        .map_err(PackageBuildpackError::FindCargoWorkspaceRoot)?;
 
     let buildpack_dir_resolver = create_packaged_buildpack_dir_resolver(
         target_buildpack_dir,
@@ -66,7 +65,7 @@ pub(crate) fn package_buildpack(
     );
 
     let buildpack_dependency_graph = build_libcnb_buildpacks_dependency_graph(&workspace_root_path)
-        .map_err(PackageTestBuildpackError::BuildBuildpackDependencyGraph)?;
+        .map_err(PackageBuildpackError::BuildBuildpackDependencyGraph)?;
 
     let root_node = buildpack_dependency_graph
         .node_weights()
@@ -82,7 +81,7 @@ pub(crate) fn package_buildpack(
         &buildpack_dependency_graph,
         &[root_node.expect("The root node should exist")],
     )
-    .map_err(PackageTestBuildpackError::GetDependencies)?;
+    .map_err(PackageBuildpackError::GetDependencies)?;
 
     let mut packaged_buildpack_dirs = BTreeMap::new();
     for node in &build_order {
@@ -98,7 +97,7 @@ pub(crate) fn package_buildpack(
             &buildpack_destination_dir,
             &packaged_buildpack_dirs,
         )
-        .map_err(PackageTestBuildpackError::PackageBuildpack)?;
+        .map_err(PackageBuildpackError::PackageBuildpack)?;
 
         packaged_buildpack_dirs.insert(node.buildpack_id.clone(), buildpack_destination_dir);
     }
@@ -107,11 +106,11 @@ pub(crate) fn package_buildpack(
 }
 
 #[derive(Debug)]
-pub(crate) enum PackageTestBuildpackError {
+pub(crate) enum PackageBuildpackError {
     CannotReadBuildpackDescriptor(TomlFileError),
     BuildBuildpackDependencyGraph(BuildBuildpackDependencyGraphError),
     CrossCompileConfigurationError(String),
     FindCargoWorkspaceRoot(FindCargoWorkspaceRootError),
     GetDependencies(GetDependenciesError<BuildpackId>),
-    PackageBuildpack(PackageBuildpackError),
+    PackageBuildpack(libcnb_package::package::PackageBuildpackError),
 }
