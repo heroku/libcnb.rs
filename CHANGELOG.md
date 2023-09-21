@@ -13,13 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `libcnb-data`:
   - `ExecDProgramOutputKey`, `ProcessType`, `LayerName`, `BuildpackId` and `StackId` now implement `Ord` and `PartialOrd`. ([#658](https://github.com/heroku/libcnb.rs/pull/658))
-  - Add `generic::GenericMetadata` as a generic metadata type. Also makes it the default for `BuildpackDescriptor`, `SingleBuildpackDescriptor`, `MetaBuildpackDescriptor` and `LayerContentMetadata`. ([#664](https://github.com/heroku/libcnb.rs/pull/664))
+  - Added `generic::GenericMetadata` as a generic metadata type. Also makes it the default for `BuildpackDescriptor`, `SingleBuildpackDescriptor`, `CompositeBuildpackDescriptor` and `LayerContentMetadata`. ([#664](https://github.com/heroku/libcnb.rs/pull/664))
 - `libcnb-test`:
   - Added the `BuildpackReference::WorkspaceBuildpack` enum variant. This allows for the testing of any libcnb.rs or composite buildpack in the Cargo workspace, instead of only the buildpack of the current crate. **Note: The testing of composite buildpacks requires `pack` CLI version `>=0.30`.** ([#666](https://github.com/heroku/libcnb.rs/pull/666))
 
 ### Changed
 
 - Renamed `libcnb-data`'s `Buildpackage` to `PackageDescriptor`. This required changes in many other names across multiple libcnb.rs crates for consistency. See the PR diff for details, but renames should be straightforward and unsurprising. ([#656](https://github.com/heroku/libcnb.rs/pull/656))
+- `libcnb-data`:
+  - Renamed multiple types to match the new composite vs component buildpack [upstream terminology](https://github.com/buildpacks/spec/blob/main/buildpack.md#cnb-terminology). Renamed `SingleBuildpackDescriptor` to `ComponentBuildpackDescriptor`, `MetaBuildpackDescriptor` to `CompositeBuildpackDescriptor` and `BuildpackDescriptor::{Single,Meta}` to `BuildpackDescriptor::{Component,Composite}`. ([#682](https://github.com/heroku/libcnb.rs/pull/682))
 - `libcnb-cargo`:
   - No longer outputs paths for non-libcnb.rs and non-meta buildpacks. ([#657](https://github.com/heroku/libcnb.rs/pull/657))
   - Build output for humans changed slightly, output intended for machines/scripting didn't change. ([#657](https://github.com/heroku/libcnb.rs/pull/657))

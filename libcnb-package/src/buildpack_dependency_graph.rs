@@ -12,9 +12,9 @@ use petgraph::Graph;
 use std::convert::Infallible;
 use std::path::{Path, PathBuf};
 
-/// Creates a dependency graph of libcnb.rs and meta buildpacks in a directory.
+/// Creates a dependency graph of libcnb.rs and composite buildpacks in a directory.
 ///
-/// Buildpacks that aren't implemented with libcnb.rs or aren't meta-buildpacks will not be part
+/// Buildpacks that aren't implemented with libcnb.rs or aren't composite buildpacks will not be part
 /// of the dependency graph. Examples buildpacks that are not included are docker image URLs or
 /// directories containing CNBs written in bash.
 ///
@@ -36,7 +36,7 @@ pub fn build_libcnb_buildpacks_dependency_graph(
                 .filter(|buildpack_directory| {
                     matches!(
                         determine_buildpack_kind(buildpack_directory),
-                        Some(BuildpackKind::LibCnbRs | BuildpackKind::Meta)
+                        Some(BuildpackKind::LibCnbRs | BuildpackKind::Composite)
                     )
                 })
                 .map(|buildpack_directory| {

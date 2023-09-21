@@ -1,8 +1,8 @@
 api = "0.8"
 
 [buildpack]
-id = "multiple-buildpacks/meta-one"
-name = "Meta-buildpack Test"
+id = "multiple-buildpacks/composite-one"
+name = "Composite Buildpack Test"
 version = "0.0.0"
 homepage = "https://example.com"
 description = "Official test example"

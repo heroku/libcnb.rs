@@ -213,7 +213,7 @@ fn additional_buildpacks() {
 
 - Rust tests are automatically run in parallel, however only if they are in the same crate.
   For integration tests Rust compiles each file as a separate crate. As such, make sure to
-  include all integration  tests in a single file (either inlined or by including additional
+  include all integration tests in a single file (either inlined or by including additional
   test modules) to ensure they run in parallel.
 - If you would like to be able to more easily run your unit tests and integration tests
   separately, annotate each integration test with `#[ignore = "integration test"]`, which

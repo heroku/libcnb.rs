@@ -563,10 +563,10 @@ fn basic_build_with_libcnb_reference_to_single_buildpack() {
 
 #[test]
 #[ignore = "integration test"]
-fn basic_build_with_libcnb_reference_to_meta_buildpack() {
+fn basic_build_with_libcnb_reference_to_composite_buildpack() {
     TestRunner::default().build(
         BuildConfig::new("heroku/builder:22", "tests/fixtures/empty").buildpacks([
-            BuildpackReference::WorkspaceBuildpack(buildpack_id!("libcnb-test/meta")),
+            BuildpackReference::WorkspaceBuildpack(buildpack_id!("libcnb-test/composite")),
         ]),
         |context| {
             assert_empty!(context.pack_stderr);
