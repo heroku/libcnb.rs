@@ -55,12 +55,14 @@ impl BuildConfig {
     ///
     /// # Example
     /// ```no_run
+    /// use libcnb::data::buildpack_id;
     /// use libcnb_test::{BuildConfig, BuildpackReference, TestRunner};
     ///
     /// TestRunner::default().build(
     ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app").buildpacks(vec![
-    ///         BuildpackReference::Other(String::from("heroku/another-buildpack")),
     ///         BuildpackReference::CurrentCrate,
+    ///         BuildpackReference::WorkspaceBuildpack(buildpack_id!("my-project/buildpack")),
+    ///         BuildpackReference::Other(String::from("heroku/another-buildpack")),
     ///     ]),
     ///     |context| {
     ///         // ...
@@ -251,8 +253,10 @@ impl BuildConfig {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum BuildpackReference {
     /// References the buildpack in the Rust Crate currently being tested.
+    ///
+    /// Is equivalent to `BuildpackReference::WorkspaceBuildpack(buildpack_id!("<buildpack ID of current crate"))`.
     CurrentCrate,
-    /// References a libcnb.rs buildpack within the Rust Workspace that needs to be packaged into a buildpack
+    /// References a libcnb.rs or composite buildpack within the Cargo workspace that needs to be packaged into a buildpack.
     WorkspaceBuildpack(BuildpackId),
     /// References another buildpack by id, local directory or tarball.
     Other(String),
