@@ -48,7 +48,9 @@ https://github.com/messense/homebrew-macos-cross-toolchains"#,
             })
     } else if target_triple.as_ref() == X86_64_UNKNOWN_LINUX_MUSL && cfg!(target_os = "linux") {
         match which("musl-gcc") {
-            Ok(_) => CrossCompileAssistance::Configuration { cargo_env: vec![] },
+            Ok(_) => CrossCompileAssistance::Configuration {
+                cargo_env: Vec::new(),
+            },
             Err(_) => CrossCompileAssistance::HelpText(String::from(
                 r#"For cross-compilation from Linux to x86_64-unknown-linux-musl, a C compiler and
 linker for the target platform must be installed on your computer.

@@ -51,7 +51,7 @@ impl Default for PackageDescriptor {
         PackageDescriptor {
             buildpack: PackageDescriptorBuildpackReference::try_from(".")
                 .expect("a package.toml with buildpack.uri=\".\" should be valid"),
-            dependencies: vec![],
+            dependencies: Vec::new(),
             platform: Platform::default(),
         }
     }
@@ -218,7 +218,7 @@ os = "windows"
         assert_eq!(package_descriptor.platform.os, Windows);
         assert_eq!(
             package_descriptor.dependencies,
-            vec![
+            [
                 PackageDescriptorDependency::try_from("libcnb:buildpack-id").unwrap(),
                 PackageDescriptorDependency::try_from("../relative/path").unwrap(),
                 PackageDescriptorDependency::try_from("/absolute/path").unwrap(),

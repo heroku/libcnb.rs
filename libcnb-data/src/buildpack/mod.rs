@@ -107,7 +107,7 @@ impl<BM> BuildpackDescriptor<BM> {
 /// let buildpack_descriptor =
 ///     toml::from_str::<SingleBuildpackDescriptor>(toml_str).unwrap();
 /// assert_eq!(buildpack_descriptor.buildpack.id, buildpack_id!("foo/bar"));
-/// assert_eq!(buildpack_descriptor.stacks, vec![Stack::Any]);
+/// assert_eq!(buildpack_descriptor.stacks, [Stack::Any]);
 /// ```
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
@@ -290,11 +290,11 @@ checksum = "abc123"
         );
         assert_eq!(
             buildpack_descriptor.buildpack.keywords,
-            vec![String::from("foo"), String::from("bar")]
+            [String::from("foo"), String::from("bar")]
         );
         assert_eq!(
             buildpack_descriptor.buildpack.licenses,
-            vec![
+            [
                 License {
                     r#type: Some(String::from("BSD-3-Clause")),
                     uri: None
@@ -319,7 +319,7 @@ checksum = "abc123"
         );
         assert_eq!(
             buildpack_descriptor.stacks,
-            vec![
+            [
                 Stack::Specific {
                     // Cannot use the `stack_id!` macro due to: https://github.com/heroku/libcnb.rs/issues/179
                     id: "heroku-20".parse().unwrap(),
@@ -410,11 +410,11 @@ checksum = "abc123"
         );
         assert_eq!(
             buildpack_descriptor.buildpack.keywords,
-            vec![String::from("foo"), String::from("bar")]
+            [String::from("foo"), String::from("bar")]
         );
         assert_eq!(
             buildpack_descriptor.buildpack.licenses,
-            vec![
+            [
                 License {
                     r#type: Some(String::from("BSD-3-Clause")),
                     uri: None
@@ -431,7 +431,7 @@ checksum = "abc123"
         );
         assert_eq!(
             buildpack_descriptor.order,
-            vec![Order {
+            [Order {
                 group: vec![
                     Group {
                         id: "foo/bar".parse().unwrap(),
@@ -489,7 +489,7 @@ id = "*"
         );
         assert_eq!(buildpack_descriptor.buildpack.licenses, Vec::new());
         assert_eq!(buildpack_descriptor.buildpack.sbom_formats, HashSet::new());
-        assert_eq!(buildpack_descriptor.stacks, vec![Stack::Any]);
+        assert_eq!(buildpack_descriptor.stacks, [Stack::Any]);
         assert_eq!(buildpack_descriptor.metadata, None);
     }
 
@@ -534,7 +534,7 @@ version = "0.0.1"
         assert_eq!(buildpack_descriptor.buildpack.licenses, Vec::new());
         assert_eq!(
             buildpack_descriptor.order,
-            vec![Order {
+            [Order {
                 group: vec![Group {
                     id: "foo/bar".parse().unwrap(),
                     version: BuildpackVersion::new(0, 0, 1),

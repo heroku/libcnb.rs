@@ -86,8 +86,8 @@ impl CommandExt for process::Command {
         stdout_write: OW,
         stderr_write: EW,
     ) -> io::Result<process::Output> {
-        let mut stdout_buffer = vec![];
-        let mut stderr_buffer = vec![];
+        let mut stdout_buffer = Vec::new();
+        let mut stderr_buffer = Vec::new();
 
         self.spawn_and_write_streams(
             tee(&mut stdout_buffer, stdout_write),
@@ -151,8 +151,8 @@ mod test {
     #[test]
     #[cfg(unix)]
     fn test_spawn_and_write_streams() {
-        let mut stdout_buf = vec![];
-        let mut stderr_buf = vec![];
+        let mut stdout_buf = Vec::new();
+        let mut stderr_buf = Vec::new();
 
         Command::new("echo")
             .args(["-n", "Hello World!"])
@@ -167,8 +167,8 @@ mod test {
     #[test]
     #[cfg(unix)]
     fn test_output_and_write_streams() {
-        let mut stdout_buf = vec![];
-        let mut stderr_buf = vec![];
+        let mut stdout_buf = Vec::new();
+        let mut stderr_buf = Vec::new();
 
         let output = Command::new("echo")
             .args(["-n", "Hello World!"])

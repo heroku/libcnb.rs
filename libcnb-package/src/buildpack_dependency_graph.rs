@@ -72,7 +72,7 @@ fn build_libcnb_buildpack_dependency_graph_node(
                         )
                     })
             })
-            .unwrap_or(Ok(vec![]))
+            .unwrap_or(Ok(Vec::new()))
     }?;
 
     Ok(BuildpackDependencyGraphNode {

@@ -51,13 +51,13 @@ impl Buildpack for RubyBuildpack {
                 LaunchBuilder::new()
                     .process(
                         ProcessBuilder::new(process_type!("web"), ["bundle"])
-                            .args(vec!["exec", "ruby", "app.rb"])
+                            .args(["exec", "ruby", "app.rb"])
                             .default(true)
                             .build(),
                     )
                     .process(
                         ProcessBuilder::new(process_type!("worker"), ["bundle"])
-                            .args(vec!["exec", "ruby", "worker.rb"])
+                            .args(["exec", "ruby", "worker.rb"])
                             .build(),
                     )
                     .build(),
