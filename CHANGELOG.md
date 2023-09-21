@@ -19,8 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Renamed `libcnb-data`'s `Buildpackage` to `PackageDescriptor`. This required changes in many other names across multiple libcnb.rs crates for consistency. See the PR diff for details, but renames should be straightforward and unsurprising. ([#656](https://github.com/heroku/libcnb.rs/pull/656))
 - `libcnb-data`:
+  - Renamed the `buildpackage` module to `package_descriptor`, and the `Buildpackage*` types within it to `PackageDescriptor*`. ([#656](https://github.com/heroku/libcnb.rs/pull/656))
   - Renamed multiple types to match the new composite vs component buildpack [upstream terminology](https://github.com/buildpacks/spec/blob/main/buildpack.md#cnb-terminology). Renamed `SingleBuildpackDescriptor` to `ComponentBuildpackDescriptor`, `MetaBuildpackDescriptor` to `CompositeBuildpackDescriptor` and `BuildpackDescriptor::{Single,Meta}` to `BuildpackDescriptor::{Component,Composite}`. ([#682](https://github.com/heroku/libcnb.rs/pull/682))
 - `libcnb-cargo`:
   - No longer outputs paths for non-libcnb.rs and non-meta buildpacks. ([#657](https://github.com/heroku/libcnb.rs/pull/657))
