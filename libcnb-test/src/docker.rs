@@ -268,7 +268,7 @@ mod tests {
         assert_eq!(command.get_program(), "docker");
         assert_eq!(
             command.get_args().collect::<Vec<&OsStr>>(),
-            vec!["run", "--name", "my-container", "my-image"]
+            ["run", "--name", "my-container", "my-image"]
         );
 
         // With optional flag/arguments set
@@ -285,7 +285,7 @@ mod tests {
         let command: Command = docker_run_command.clone().into();
         assert_eq!(
             command.get_args().collect::<Vec<&OsStr>>(),
-            vec![
+            [
                 "run",
                 "--name",
                 "my-container",
@@ -317,7 +317,7 @@ mod tests {
         assert_eq!(command.get_program(), "docker");
         assert_eq!(
             command.get_args().collect::<Vec<&OsStr>>(),
-            vec!["exec", "my-container", "ps"]
+            ["exec", "my-container", "ps"]
         );
     }
 
@@ -330,7 +330,7 @@ mod tests {
         assert_eq!(command.get_program(), "docker");
         assert_eq!(
             command.get_args().collect::<Vec<&OsStr>>(),
-            vec!["logs", "my-container"]
+            ["logs", "my-container"]
         );
 
         // With optional flag/arguments set
@@ -339,7 +339,7 @@ mod tests {
         let command: Command = docker_logs_command.clone().into();
         assert_eq!(
             command.get_args().collect::<Vec<&OsStr>>(),
-            vec!["logs", "my-container", "--follow"]
+            ["logs", "my-container", "--follow"]
         );
     }
 
@@ -350,7 +350,7 @@ mod tests {
         assert_eq!(command.get_program(), "docker");
         assert_eq!(
             command.get_args().collect::<Vec<&OsStr>>(),
-            vec!["port", "my-container", "12345"]
+            ["port", "my-container", "12345"]
         );
     }
 
@@ -361,7 +361,7 @@ mod tests {
         assert_eq!(command.get_program(), "docker");
         assert_eq!(
             command.get_args().collect::<Vec<&OsStr>>(),
-            vec!["rm", "my-container", "--force"]
+            ["rm", "my-container", "--force"]
         );
     }
 
@@ -372,7 +372,7 @@ mod tests {
         assert_eq!(command.get_program(), "docker");
         assert_eq!(
             command.get_args().collect::<Vec<&OsStr>>(),
-            vec!["rmi", "my-image", "--force"]
+            ["rmi", "my-image", "--force"]
         );
     }
 }

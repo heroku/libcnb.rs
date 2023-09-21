@@ -24,7 +24,7 @@ pub struct Launch {
 /// let launch_toml = LaunchBuilder::new()
 ///     .process(
 ///         ProcessBuilder::new(process_type!("web"), ["bundle"])
-///             .args(vec!["exec", "ruby", "app.rb"])
+///             .args(["exec", "ruby", "app.rb"])
 ///             .build(),
 ///     )
 ///     .build();
@@ -318,7 +318,7 @@ mod tests {
     fn launch_builder_add_processes() {
         let launch = LaunchBuilder::new()
             .process(ProcessBuilder::new(process_type!("web"), ["web_command"]).build())
-            .processes(vec![
+            .processes([
                 ProcessBuilder::new(process_type!("another"), ["another_command"]).build(),
                 ProcessBuilder::new(process_type!("worker"), ["worker_command"]).build(),
             ])
@@ -326,7 +326,7 @@ mod tests {
 
         assert_eq!(
             launch.processes,
-            vec![
+            [
                 ProcessBuilder::new(process_type!("web"), ["web_command"]).build(),
                 ProcessBuilder::new(process_type!("another"), ["another_command"]).build(),
                 ProcessBuilder::new(process_type!("worker"), ["worker_command"]).build(),
@@ -372,7 +372,7 @@ command = ["foo"]
             Ok(Process {
                 r#type: process_type!("web"),
                 command: vec![String::from("foo")],
-                args: vec![],
+                args: Vec::new(),
                 default: false,
                 working_directory: WorkingDirectory::App
             })
@@ -419,7 +419,7 @@ working-directory = "dist"
             Process {
                 r#type: process_type!("web"),
                 command: vec![String::from("java")],
-                args: vec![],
+                args: Vec::new(),
                 default: false,
                 working_directory: WorkingDirectory::App
             }
@@ -432,7 +432,7 @@ working-directory = "dist"
             Process {
                 r#type: process_type!("web"),
                 command: vec![String::from("java")],
-                args: vec![],
+                args: Vec::new(),
                 default: true,
                 working_directory: WorkingDirectory::App
             }
@@ -445,7 +445,7 @@ working-directory = "dist"
             Process {
                 r#type: process_type!("web"),
                 command: vec![String::from("java")],
-                args: vec![],
+                args: Vec::new(),
                 default: true,
                 working_directory: WorkingDirectory::Directory(PathBuf::from("dist"))
             }
@@ -457,7 +457,7 @@ working-directory = "dist"
         assert_eq!(
             ProcessBuilder::new(process_type!("web"), ["java"])
                 .arg("foo")
-                .args(vec!["baz", "eggs"])
+                .args(["baz", "eggs"])
                 .arg("bar")
                 .build(),
             Process {

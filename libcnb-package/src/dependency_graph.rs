@@ -83,7 +83,7 @@ where
     T: DependencyNode<I, E>,
     I: PartialEq,
 {
-    let mut order: Vec<&T> = vec![];
+    let mut order: Vec<&T> = Vec::new();
     let mut dfs = DfsPostOrder::empty(&graph);
     for root_node in root_nodes {
         let idx = graph
@@ -128,8 +128,8 @@ mod tests {
 
     #[test]
     fn test_get_dependencies_one_level_deep() {
-        let a = ("a", vec![]);
-        let b = ("b", vec![]);
+        let a = ("a", Vec::new());
+        let b = ("b", Vec::new());
         let c = ("c", vec!["a", "b"]);
 
         let graph = create_dependency_graph(vec![a.clone(), b.clone(), c.clone()]).unwrap();
@@ -148,7 +148,7 @@ mod tests {
 
     #[test]
     fn test_get_dependencies_two_levels_deep() {
-        let a = ("a", vec![]);
+        let a = ("a", Vec::new());
         let b = ("b", vec!["a"]);
         let c = ("c", vec!["b"]);
 
@@ -169,9 +169,9 @@ mod tests {
     #[test]
     #[allow(clippy::many_single_char_names)]
     fn test_get_dependencies_with_overlap() {
-        let a = ("a", vec![]);
-        let b = ("b", vec![]);
-        let c = ("c", vec![]);
+        let a = ("a", Vec::new());
+        let b = ("b", Vec::new());
+        let c = ("c", Vec::new());
         let d = ("d", vec!["a", "b"]);
         let e = ("e", vec!["b", "c"]);
 

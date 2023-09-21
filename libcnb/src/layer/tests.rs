@@ -903,7 +903,9 @@ fn build_context(temp_dir: &TempDir) -> BuildContext<TestBuildpack> {
         buildpack_dir,
         stack_id: stack_id!("heroku-20"),
         platform: GenericPlatform::new(Env::new()),
-        buildpack_plan: BuildpackPlan { entries: vec![] },
+        buildpack_plan: BuildpackPlan {
+            entries: Vec::new(),
+        },
         buildpack_descriptor: SingleBuildpackDescriptor {
             api: LIBCNB_SUPPORTED_BUILDPACK_API,
             buildpack: crate::data::buildpack::Buildpack {
@@ -913,8 +915,8 @@ fn build_context(temp_dir: &TempDir) -> BuildContext<TestBuildpack> {
                 homepage: None,
                 clear_env: true,
                 description: None,
-                keywords: vec![],
-                licenses: vec![],
+                keywords: Vec::new(),
+                licenses: Vec::new(),
                 sbom_formats: HashSet::new(),
             },
             stacks: vec![Stack::Any],

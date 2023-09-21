@@ -16,7 +16,7 @@ pub fn mapped<W: io::Write, F: (Fn(Vec<u8>) -> Vec<u8>) + Sync + Send + 'static>
     MappedWrite {
         inner: w,
         marker_byte,
-        buffer: vec![],
+        buffer: Vec::new(),
         mapping_fn: Arc::new(f),
     }
 }
@@ -122,8 +122,8 @@ mod test {
 
     #[test]
     fn test_tee_write() {
-        let mut a = vec![];
-        let mut b = vec![];
+        let mut a = Vec::new();
+        let mut b = Vec::new();
 
         let mut input = "foo bar baz".as_bytes();
         std::io::copy(&mut input, &mut tee(&mut a, &mut b)).unwrap();
@@ -134,7 +134,7 @@ mod test {
 
     #[test]
     fn test_mapped_write() {
-        let mut output = vec![];
+        let mut output = Vec::new();
 
         let mut input = "foo\nbar\nbaz".as_bytes();
         std::io::copy(

@@ -59,7 +59,7 @@ impl BuildConfig {
     /// use libcnb_test::{BuildConfig, BuildpackReference, TestRunner};
     ///
     /// TestRunner::default().build(
-    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app").buildpacks(vec![
+    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app").buildpacks([
     ///         BuildpackReference::CurrentCrate,
     ///         BuildpackReference::WorkspaceBuildpack(buildpack_id!("my-project/buildpack")),
     ///         BuildpackReference::Other(String::from("heroku/another-buildpack")),
@@ -149,7 +149,7 @@ impl BuildConfig {
     /// use libcnb_test::{BuildConfig, TestRunner};
     ///
     /// TestRunner::default().build(
-    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app").envs(vec![
+    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app").envs([
     ///         ("ENV_VAR_ONE", "VALUE ONE"),
     ///         ("ENV_VAR_TWO", "SOME OTHER VALUE"),
     ///     ]),

@@ -242,13 +242,13 @@ mod tests {
 
     #[test]
     fn join() {
-        let names = vec![capitalized_name!("A"), capitalized_name!("B")];
+        let names = [capitalized_name!("A"), capitalized_name!("B")];
         assert_eq!("A, B", names.join(", "));
     }
 
     #[test]
     fn ord() {
-        let mut names = vec![
+        let mut names = [
             capitalized_name!("A"),
             capitalized_name!("C"),
             capitalized_name!("B"),
@@ -256,7 +256,7 @@ mod tests {
         names.sort();
 
         assert_eq!(
-            vec![
+            [
                 capitalized_name!("A"),
                 capitalized_name!("B"),
                 capitalized_name!("C")

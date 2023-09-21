@@ -80,7 +80,7 @@ where
 
     stream.write_all(format!("{}\n", payload.as_ref()).as_bytes())?;
 
-    let mut buffer = vec![];
+    let mut buffer = Vec::new();
     stream.read_to_end(&mut buffer)?;
 
     Ok(String::from_utf8_lossy(&buffer).to_string())

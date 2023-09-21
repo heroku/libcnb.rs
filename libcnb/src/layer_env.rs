@@ -284,7 +284,7 @@ impl LayerEnv {
         let include_path = layer_dir.as_ref().join("include");
         let pkgconfig_path = layer_dir.as_ref().join("pkgconfig");
 
-        let layer_path_specs = vec![
+        let layer_path_specs = [
             ("PATH", Scope::Build, &bin_path),
             ("LIBRARY_PATH", Scope::Build, &lib_path),
             ("LD_LIBRARY_PATH", Scope::Build, &lib_path),
@@ -822,7 +822,7 @@ mod tests {
 
     #[test]
     fn modification_behavior_order() {
-        let tests = vec![
+        let tests = [
             (
                 ModificationBehavior::Append,
                 ModificationBehavior::Default,

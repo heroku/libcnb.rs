@@ -197,7 +197,7 @@ use libcnb_test::{BuildConfig, BuildpackReference, TestRunner};
 // #[test]
 fn additional_buildpacks() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "test-fixtures/app").buildpacks(vec![
+        BuildConfig::new("heroku/builder:22", "test-fixtures/app").buildpacks([
             BuildpackReference::CurrentCrate,
             BuildpackReference::WorkspaceBuildpack(buildpack_id!("my-project/buildpack")),
             BuildpackReference::Other(String::from("heroku/another-buildpack")),

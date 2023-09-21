@@ -40,7 +40,7 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<(), Error> {
 
     eprintln!("🖥️ Gathering Cargo configuration (for {})", args.target);
     let cargo_build_env = if args.no_cross_compile_assistance {
-        vec![]
+        Vec::new()
     } else {
         match cross_compile_assistance(&args.target) {
             CrossCompileAssistance::Configuration { cargo_env } => cargo_env,
@@ -51,7 +51,7 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<(), Error> {
                 );
                 eprintln!("This is not an error, but without proper cross-compile settings in your Cargo manifest and locally installed toolchains, compilation might fail.");
                 eprintln!("To disable this warning, pass --no-cross-compile-assistance.");
-                vec![]
+                Vec::new()
             }
             CrossCompileAssistance::HelpText(help_text) => {
                 eprintln!("{help_text}");

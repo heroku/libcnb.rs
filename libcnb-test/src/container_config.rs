@@ -180,7 +180,7 @@ impl ContainerConfig {
     ///     |context| {
     ///         // ...
     ///         context.start_container(
-    ///             ContainerConfig::new().envs(vec![("PORT", "5678"), ("DEBUG", "true")]),
+    ///             ContainerConfig::new().envs([("PORT", "5678"), ("DEBUG", "true")]),
     ///             |container| {
     ///                 // ...
     ///             },
