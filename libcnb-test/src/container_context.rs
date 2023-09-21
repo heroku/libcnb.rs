@@ -27,7 +27,7 @@ impl ContainerContext {
     /// use libcnb_test::{assert_contains, assert_empty, BuildConfig, ContainerConfig, TestRunner};
     ///
     /// TestRunner::default().build(
-    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
+    ///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app"),
     ///     |context| {
     ///         // ...
     ///         context.start_container(ContainerConfig::new(), |container| {
@@ -61,7 +61,7 @@ impl ContainerContext {
     /// use libcnb_test::{assert_contains, assert_empty, BuildConfig, ContainerConfig, TestRunner};
     ///
     /// TestRunner::default().build(
-    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
+    ///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app"),
     ///     |context| {
     ///         // ...
     ///         context.start_container(ContainerConfig::new(), |container| {
@@ -91,7 +91,7 @@ impl ContainerContext {
     /// use libcnb_test::{BuildConfig, ContainerConfig, TestRunner};
     ///
     /// TestRunner::default().build(
-    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
+    ///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app"),
     ///     |context| {
     ///         // ...
     ///         context.start_container(
@@ -146,7 +146,7 @@ impl ContainerContext {
     /// use libcnb_test::{assert_contains, BuildConfig, ContainerConfig, TestRunner};
     ///
     /// TestRunner::default().build(
-    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
+    ///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app"),
     ///     |context| {
     ///         // ...
     ///         context.start_container(ContainerConfig::new(), |container| {

@@ -307,7 +307,7 @@ fn validate_packaged_meta_buildpack(
 
 fn copy_fixture_to_temp_dir(name: &str) -> Result<TempDir, std::io::Error> {
     let fixture_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("fixtures")
+        .join("tests/fixtures")
         .join(name);
 
     // Instead of using `tempfile::tempdir` directly, we get the temporary directory ourselves and

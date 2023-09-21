@@ -14,7 +14,7 @@ use tempfile::tempdir;
 /// use libcnb_test::{assert_contains, assert_empty, BuildConfig, TestRunner};
 ///
 /// TestRunner::default().build(
-///     BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
+///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app"),
 ///     |context| {
 ///         assert_empty!(context.pack_stderr);
 ///         assert_contains!(context.pack_stdout, "Expected build output");
@@ -40,7 +40,7 @@ impl TestRunner {
     /// use libcnb_test::{assert_contains, assert_empty, BuildConfig, TestRunner};
     ///
     /// TestRunner::default().build(
-    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
+    ///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app"),
     ///     |context| {
     ///         assert_empty!(context.pack_stderr);
     ///         assert_contains!(context.pack_stdout, "Expected build output");
