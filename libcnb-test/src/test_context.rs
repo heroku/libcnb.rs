@@ -32,7 +32,7 @@ impl<'a> TestContext<'a> {
     /// use libcnb_test::{BuildConfig, ContainerConfig, TestRunner};
     ///
     /// TestRunner::default().build(
-    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
+    ///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app"),
     ///     |context| {
     ///         // Start the container using the default process-type:
     ///         // https://buildpacks.io/docs/app-developer-guide/run-an-app/#default-process-type
@@ -126,7 +126,7 @@ impl<'a> TestContext<'a> {
     /// use libcnb_test::{BuildConfig, ContainerConfig, TestRunner};
     ///
     /// TestRunner::default().build(
-    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
+    ///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app"),
     ///     |context| {
     ///         // ...
     ///         let command_output =
@@ -141,7 +141,7 @@ impl<'a> TestContext<'a> {
     /// use libcnb_test::{BuildConfig, ContainerConfig, TestRunner};
     ///
     /// TestRunner::default().build(
-    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
+    ///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app"),
     ///     |context| {
     ///         // ...
     ///         context.start_container(
@@ -203,7 +203,7 @@ impl<'a> TestContext<'a> {
     /// use libcnb_test::{BuildConfig, ContainerConfig, SbomType, TestRunner};
     ///
     /// TestRunner::default().build(
-    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
+    ///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app"),
     ///     |context| {
     ///         context.download_sbom_files(|sbom_files| {
     ///             assert!(sbom_files
@@ -254,7 +254,7 @@ impl<'a> TestContext<'a> {
     /// use libcnb_test::{assert_contains, BuildConfig, TestRunner};
     ///
     /// TestRunner::default().build(
-    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
+    ///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app"),
     ///     |context| {
     ///         assert_contains!(context.pack_stdout, "---> Installing dependencies");
     ///
