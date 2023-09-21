@@ -65,20 +65,20 @@ fn rebuild() {
 #[test]
 #[ignore = "integration test"]
 fn buildpack_packaging_failure() {
-    let result = std::panic::catch_unwind(|| {
+    let err = std::panic::catch_unwind(|| {
         TestRunner::default().build(BuildConfig::new("invalid!", "test-fixtures/empty"), |_| {
             unreachable!("The test should panic prior to the TestContext being invoked.");
         });
-    });
-    match result {
-        Ok(_) => panic!("expected a failure"),
-        Err(error) => {
-            assert_eq!(
-                error.downcast_ref::<String>().unwrap().to_string(),
-                format!("Could not package directory as buildpack! No `buildpack.toml` file exists at {}", env::var("CARGO_MANIFEST_DIR").unwrap())
-            );
-        }
-    }
+    })
+    .unwrap_err();
+
+    assert_eq!(
+        err.downcast_ref::<String>().unwrap().to_string(),
+        format!(
+            "Could not package directory as buildpack! No `buildpack.toml` file exists at {}",
+            env::var("CARGO_MANIFEST_DIR").unwrap()
+        )
+    );
 }
 
 #[test]
@@ -141,7 +141,7 @@ fn expected_pack_failure() {
 #[test]
 #[ignore = "integration test"]
 fn expected_pack_failure_still_panics_for_non_pack_failure() {
-    let result = std::panic::catch_unwind(|| {
+    let err = std::panic::catch_unwind(|| {
         TestRunner::default().build(
             BuildConfig::new("invalid!", "test-fixtures/empty")
                 .expected_pack_result(PackResult::Failure),
@@ -149,16 +149,16 @@ fn expected_pack_failure_still_panics_for_non_pack_failure() {
                 unreachable!("The test should panic prior to the TestContext being invoked.");
             },
         );
-    });
-    match result {
-        Ok(_) => panic!("expected a failure"),
-        Err(error) => {
-            assert_eq!(
-                error.downcast_ref::<String>().unwrap().to_string(),
-                format!("Could not package directory as buildpack! No `buildpack.toml` file exists at {}", env::var("CARGO_MANIFEST_DIR").unwrap())
-            );
-        }
-    }
+    })
+    .unwrap_err();
+
+    assert_eq!(
+        err.downcast_ref::<String>().unwrap().to_string(),
+        format!(
+            "Could not package directory as buildpack! No `buildpack.toml` file exists at {}",
+            env::var("CARGO_MANIFEST_DIR").unwrap()
+        )
+    );
 }
 
 #[test]
