@@ -42,12 +42,17 @@ fn package_buildpack_in_single_buildpack_project() {
 
 #[test]
 #[ignore = "integration test"]
-fn package_single_meta_buildpack_in_monorepo_buildpack_project() {
+fn package_single_composite_buildpack_in_monorepo_buildpack_project() {
     let fixture_dir = copy_fixture_to_temp_dir("multiple_buildpacks").unwrap();
 
     let output = Command::new(CARGO_LIBCNB_BINARY_UNDER_TEST)
         .args(["libcnb", "package", "--release"])
-        .current_dir(fixture_dir.path().join("meta-buildpacks").join("meta-one"))
+        .current_dir(
+            fixture_dir
+                .path()
+                .join("composite-buildpacks")
+                .join("composite-one"),
+        )
         .output()
         .unwrap();
 
@@ -61,14 +66,14 @@ fn package_single_meta_buildpack_in_monorepo_buildpack_project() {
         String::from_utf8_lossy(&output.stdout),
         format!(
             "{}\n",
-            packaged_buildpack_dir_resolver(&buildpack_id!("multiple-buildpacks/meta-one"))
+            packaged_buildpack_dir_resolver(&buildpack_id!("multiple-buildpacks/composite-one"))
                 .to_string_lossy()
         )
     );
 
-    validate_packaged_meta_buildpack(
-        &packaged_buildpack_dir_resolver(&buildpack_id!("multiple-buildpacks/meta-one")),
-        &buildpack_id!("multiple-buildpacks/meta-one"),
+    validate_packaged_composite_buildpack(
+        &packaged_buildpack_dir_resolver(&buildpack_id!("multiple-buildpacks/composite-one")),
+        &buildpack_id!("multiple-buildpacks/composite-one"),
         &[
             PackageDescriptorDependency::try_from(packaged_buildpack_dir_resolver(&buildpack_id!(
                 "multiple-buildpacks/one"
@@ -148,7 +153,9 @@ fn package_all_buildpacks_in_monorepo_buildpack_project() {
         format!(
             "{}\n",
             [
-                packaged_buildpack_dir_resolver(&buildpack_id!("multiple-buildpacks/meta-one")),
+                packaged_buildpack_dir_resolver(&buildpack_id!(
+                    "multiple-buildpacks/composite-one"
+                )),
                 packaged_buildpack_dir_resolver(&buildpack_id!("multiple-buildpacks/one")),
                 packaged_buildpack_dir_resolver(&buildpack_id!("multiple-buildpacks/two")),
             ]
@@ -157,9 +164,9 @@ fn package_all_buildpacks_in_monorepo_buildpack_project() {
         )
     );
 
-    validate_packaged_meta_buildpack(
-        &packaged_buildpack_dir_resolver(&buildpack_id!("multiple-buildpacks/meta-one")),
-        &buildpack_id!("multiple-buildpacks/meta-one"),
+    validate_packaged_composite_buildpack(
+        &packaged_buildpack_dir_resolver(&buildpack_id!("multiple-buildpacks/composite-one")),
+        &buildpack_id!("multiple-buildpacks/composite-one"),
         &[
             PackageDescriptorDependency::try_from(packaged_buildpack_dir_resolver(&buildpack_id!(
                 "multiple-buildpacks/one"
@@ -185,7 +192,7 @@ fn package_all_buildpacks_in_monorepo_buildpack_project() {
 
 #[test]
 #[ignore = "integration test"]
-fn package_non_libcnb_buildpack_in_meta_buildpack_project() {
+fn package_non_libcnb_buildpack_in_composite_buildpack_project() {
     let fixture_dir = copy_fixture_to_temp_dir("multiple_buildpacks").unwrap();
 
     let output = Command::new(CARGO_LIBCNB_BINARY_UNDER_TEST)
@@ -227,7 +234,7 @@ fn package_command_respects_ignore_files() {
     // The `ignore` crate supports `.ignore` files. So this first `cargo libcnb package` execution
     // just sanity checks that our ignore rules will be respected.
     let ignore_file = fixture_dir.path().join(".ignore");
-    fs::write(&ignore_file, "meta-buildpacks\nbuildpacks\n").unwrap();
+    fs::write(&ignore_file, "composite-buildpacks\nbuildpacks\n").unwrap();
 
     let output = Command::new(CARGO_LIBCNB_BINARY_UNDER_TEST)
         .args(["libcnb", "package", "--release"])
@@ -251,7 +258,7 @@ fn package_command_respects_ignore_files() {
     // in a git repository will be respected.
     fs::create_dir(fixture_dir.path().join(".git")).unwrap();
     let ignore_file = fixture_dir.path().join(".gitignore");
-    fs::write(ignore_file, "meta-buildpacks\nbuildpacks\n").unwrap();
+    fs::write(ignore_file, "composite-buildpacks\nbuildpacks\n").unwrap();
 
     let output = Command::new(CARGO_LIBCNB_BINARY_UNDER_TEST)
         .args(["libcnb", "package", "--release"])
@@ -281,7 +288,7 @@ fn validate_packaged_buildpack(packaged_buildpack_dir: &Path, buildpack_id: &Bui
     );
 }
 
-fn validate_packaged_meta_buildpack(
+fn validate_packaged_composite_buildpack(
     packaged_buildpack_dir: &Path,
     buildpack_id: &BuildpackId,
     expected_package_descriptor_dependencies: &[PackageDescriptorDependency],

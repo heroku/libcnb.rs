@@ -1,8 +1,8 @@
 api = "0.8"
 
 [buildpack]
-id = "libcnb-test/meta"
-name = "Meta-buildpack Test"
+id = "libcnb-test/composite"
+name = "Composite Buildpack Test"
 version = "0.0.0"
 homepage = "https://example.com"
 description = "Official test example"

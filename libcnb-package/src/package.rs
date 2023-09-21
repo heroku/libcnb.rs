@@ -11,7 +11,7 @@ use std::ffi::OsString;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-/// Packages either a libcnb.rs or a meta-buildpack.
+/// Packages either a libcnb.rs or a composite buildpack.
 ///
 /// # Errors
 ///
@@ -33,9 +33,9 @@ pub fn package_buildpack(
             destination,
         )
         .map_err(PackageBuildpackError::PackageLibcnbBuildpackError),
-        Some(BuildpackKind::Meta) => {
-            package_meta_buildpack(buildpack_directory, destination, dependencies)
-                .map_err(PackageBuildpackError::PackageMetaBuildpackError)
+        Some(BuildpackKind::Composite) => {
+            package_composite_buildpack(buildpack_directory, destination, dependencies)
+                .map_err(PackageBuildpackError::PackageCompositeBuildpackError)
         }
         _ => Err(PackageBuildpackError::UnsupportedBuildpack),
     }
@@ -44,7 +44,7 @@ pub fn package_buildpack(
 #[derive(thiserror::Error, Debug)]
 pub enum PackageBuildpackError {
     #[error("{0}")]
-    PackageMetaBuildpackError(PackageMetaBuildpackError),
+    PackageCompositeBuildpackError(PackageCompositeBuildpackError),
     #[error("{0}")]
     PackageLibcnbBuildpackError(PackageLibcnbBuildpackError),
     #[error("Buildpack is not supported to be packaged")]
@@ -103,7 +103,7 @@ pub enum PackageLibcnbBuildpackError {
     CargoMetadataError(cargo_metadata::Error),
 }
 
-/// Packages a meta-buildpack.
+/// Packages a composite buildpack.
 ///
 /// Packaging consists of copying `buildpack.toml` as well as `package.toml` to the given
 /// destination path.
@@ -116,40 +116,40 @@ pub enum PackageLibcnbBuildpackError {
 ///
 /// Returns `Err` if a `libcnb:` URI refers to a buildpack not in `buildpack_paths` or packaging
 /// otherwise failed (i.e. IO errors).
-pub fn package_meta_buildpack(
+pub fn package_composite_buildpack(
     buildpack_directory: &Path,
     destination: &Path,
     buildpack_paths: &BTreeMap<BuildpackId, PathBuf>,
-) -> Result<(), PackageMetaBuildpackError> {
+) -> Result<(), PackageCompositeBuildpackError> {
     fs::copy(
         buildpack_directory.join("buildpack.toml"),
         destination.join("buildpack.toml"),
     )
-    .map_err(PackageMetaBuildpackError::CouldNotCopyBuildpackToml)?;
+    .map_err(PackageCompositeBuildpackError::CouldNotCopyBuildpackToml)?;
 
     let package_descriptor_path = buildpack_directory.join("package.toml");
 
     let normalized_package_descriptor =
         read_toml_file::<PackageDescriptor>(&package_descriptor_path)
-            .map_err(PackageMetaBuildpackError::CouldNotReadPackageDescriptor)
+            .map_err(PackageCompositeBuildpackError::CouldNotReadPackageDescriptor)
             .and_then(|package_descriptor| {
                 normalize_package_descriptor(
                     &package_descriptor,
                     &package_descriptor_path,
                     buildpack_paths,
                 )
-                .map_err(PackageMetaBuildpackError::NormalizePackageDescriptorError)
+                .map_err(PackageCompositeBuildpackError::NormalizePackageDescriptorError)
             })?;
 
     write_toml_file(
         &normalized_package_descriptor,
         destination.join("package.toml"),
     )
-    .map_err(PackageMetaBuildpackError::CouldNotWritePackageDescriptor)
+    .map_err(PackageCompositeBuildpackError::CouldNotWritePackageDescriptor)
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum PackageMetaBuildpackError {
+pub enum PackageCompositeBuildpackError {
     #[error("Could not copy buildpack.toml: {0}")]
     CouldNotCopyBuildpackToml(std::io::Error),
     #[error("Could not read package.toml: {0}")]

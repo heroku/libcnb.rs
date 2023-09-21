@@ -21,7 +21,7 @@ use crate::layer::{
 };
 use crate::layer_env::{LayerEnv, ModificationBehavior, Scope};
 use crate::{read_toml_file, Buildpack, Env, LIBCNB_SUPPORTED_BUILDPACK_API};
-use libcnb_data::buildpack::{BuildpackVersion, SingleBuildpackDescriptor, Stack};
+use libcnb_data::buildpack::{BuildpackVersion, ComponentBuildpackDescriptor, Stack};
 use libcnb_data::buildpack_plan::BuildpackPlan;
 use libcnb_data::layer::LayerName;
 use libcnb_data::layer_content_metadata::LayerContentMetadata;
@@ -906,7 +906,7 @@ fn build_context(temp_dir: &TempDir) -> BuildContext<TestBuildpack> {
         buildpack_plan: BuildpackPlan {
             entries: Vec::new(),
         },
-        buildpack_descriptor: SingleBuildpackDescriptor {
+        buildpack_descriptor: ComponentBuildpackDescriptor {
             api: LIBCNB_SUPPORTED_BUILDPACK_API,
             buildpack: crate::data::buildpack::Buildpack {
                 id: buildpack_id!("libcnb/test"),

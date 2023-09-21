@@ -7,19 +7,19 @@ pub fn determine_buildpack_kind(buildpack_dir: &Path) -> Option<BuildpackKind> {
     read_toml_file::<BuildpackDescriptor>(buildpack_dir.join("buildpack.toml"))
         .ok()
         .map(|buildpack_descriptor| match buildpack_descriptor {
-            BuildpackDescriptor::Single(_) => {
+            BuildpackDescriptor::Component(_) => {
                 if buildpack_dir.join("Cargo.toml").is_file() {
                     BuildpackKind::LibCnbRs
                 } else {
                     BuildpackKind::Other
                 }
             }
-            BuildpackDescriptor::Meta(_) => BuildpackKind::Meta,
+            BuildpackDescriptor::Composite(_) => BuildpackKind::Composite,
         })
 }
 
 pub enum BuildpackKind {
+    Composite,
     LibCnbRs,
-    Meta,
     Other,
 }

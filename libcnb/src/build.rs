@@ -5,7 +5,7 @@ use crate::data::buildpack::StackId;
 use crate::data::layer::LayerName;
 use crate::data::store::Store;
 use crate::data::{
-    buildpack::SingleBuildpackDescriptor, buildpack_plan::BuildpackPlan, launch::Launch,
+    buildpack::ComponentBuildpackDescriptor, buildpack_plan::BuildpackPlan, launch::Launch,
 };
 use crate::layer::{HandleLayerErrorOrBuildpackError, Layer, LayerData};
 use crate::sbom::Sbom;
@@ -19,7 +19,7 @@ pub struct BuildContext<B: Buildpack + ?Sized> {
     pub stack_id: StackId,
     pub platform: B::Platform,
     pub buildpack_plan: BuildpackPlan,
-    pub buildpack_descriptor: SingleBuildpackDescriptor<B::Metadata>,
+    pub buildpack_descriptor: ComponentBuildpackDescriptor<B::Metadata>,
     pub store: Option<Store>,
 }
 
