@@ -46,8 +46,8 @@ impl BuildPlanBuilder {
     pub fn or(mut self) -> Self {
         self.acc
             .push_back((self.current_provides, self.current_requires));
-        self.current_provides = vec![];
-        self.current_requires = vec![];
+        self.current_provides = Vec::new();
+        self.current_requires = Vec::new();
 
         self
     }

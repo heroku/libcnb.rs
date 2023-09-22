@@ -19,7 +19,7 @@ use std::{fs, io};
 #[test]
 #[ignore = "integration test"]
 fn basic() {
-    let config = BuildConfig::new("heroku/buildpacks:20", "test-fixtures/simple-ruby-app");
+    let config = BuildConfig::new("heroku/buildpacks:20", "tests/fixtures/simple-ruby-app");
 
     TestRunner::default().build(&config, |context| {
         assert_contains!(context.pack_stdout, "---> Ruby Buildpack");
@@ -60,7 +60,7 @@ fn basic() {
 #[ignore = "integration test"]
 fn missing_gemfile_lock() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/buildpacks:20", "test-fixtures/simple-ruby-app")
+        BuildConfig::new("heroku/buildpacks:20", "tests/fixtures/simple-ruby-app")
             .app_dir_preprocessor(|path| fs::remove_file(path.join("Gemfile.lock")).unwrap())
             .expected_pack_result(PackResult::Failure),
         |context| {
@@ -80,7 +80,7 @@ where
 
     stream.write_all(format!("{}\n", payload.as_ref()).as_bytes())?;
 
-    let mut buffer = vec![];
+    let mut buffer = Vec::new();
     stream.read_to_end(&mut buffer)?;
 
     Ok(String::from_utf8_lossy(&buffer).to_string())

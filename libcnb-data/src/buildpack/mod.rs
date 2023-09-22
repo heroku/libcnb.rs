@@ -19,8 +19,9 @@ pub use version::*;
 /// For parsing of [buildpack.toml](https://github.com/buildpacks/spec/blob/main/buildpack.md#buildpacktoml-toml)
 /// files when support for multiple types of buildpack is required.
 ///
-/// When a specific buildpack type is expected, use [`SingleBuildpackDescriptor`] or [`MetaBuildpackDescriptor`] directly instead,
-/// since it allows for more detailed error messages if parsing fails.
+/// When a specific buildpack type is expected, use [`ComponentBuildpackDescriptor`] or
+/// [`CompositeBuildpackDescriptor`] directly instead, since they allow for more detailed
+/// error messages if parsing fails.
 ///
 /// # Example:
 /// ```
@@ -49,40 +50,41 @@ pub use version::*;
 ///     toml::from_str::<BuildpackDescriptor>(toml_str)
 ///         .expect("buildpack.toml did not match a known type!");
 /// match buildpack_descriptor {
-///     BuildpackDescriptor::Single(buildpack) => {
-///         println!("Found buildpack: {}", buildpack.buildpack.id);
+///     BuildpackDescriptor::Component(buildpack) => {
+///         println!("Found component buildpack: {}", buildpack.buildpack.id);
 ///     }
-///     BuildpackDescriptor::Meta(buildpack) => {
-///         println!("Found meta-buildpack: {}", buildpack.buildpack.id);
+///     BuildpackDescriptor::Composite(buildpack) => {
+///         println!("Found composite buildpack: {}", buildpack.buildpack.id);
 ///     }
 /// };
 /// ```
 #[derive(Deserialize, Debug)]
 #[serde(untagged)]
 pub enum BuildpackDescriptor<BM = GenericMetadata> {
-    Single(SingleBuildpackDescriptor<BM>),
-    Meta(MetaBuildpackDescriptor<BM>),
+    Component(ComponentBuildpackDescriptor<BM>),
+    Composite(CompositeBuildpackDescriptor<BM>),
 }
 
 impl<BM> BuildpackDescriptor<BM> {
     pub fn buildpack(&self) -> &Buildpack {
         match self {
-            BuildpackDescriptor::Single(descriptor) => &descriptor.buildpack,
-            BuildpackDescriptor::Meta(descriptor) => &descriptor.buildpack,
+            BuildpackDescriptor::Component(descriptor) => &descriptor.buildpack,
+            BuildpackDescriptor::Composite(descriptor) => &descriptor.buildpack,
         }
     }
 }
 
-/// Data structure for the Buildpack descriptor (buildpack.toml) of a single buildpack.
+/// Data structure for the Buildpack descriptor (buildpack.toml) of a component buildpack.
 ///
 /// Representation of [buildpack.toml](https://github.com/buildpacks/spec/blob/main/buildpack.md#buildpacktoml-toml)
-/// when the buildpack is a single buildpack that implements the Buildpack Interface (ie: not a meta-buildpack).
+/// when the buildpack is a component buildpack - one that implements the Buildpack Interface
+/// (ie: contains `/bin/detect` and `/bin/build` executables).
 ///
 /// If support for multiple buildpack types is required, use [`BuildpackDescriptor`] instead.
 ///
 /// # Example:
 /// ```
-/// use libcnb_data::buildpack::{SingleBuildpackDescriptor, Stack};
+/// use libcnb_data::buildpack::{ComponentBuildpackDescriptor, Stack};
 /// use libcnb_data::buildpack_id;
 ///
 /// let toml_str = r#"
@@ -105,29 +107,31 @@ impl<BM> BuildpackDescriptor<BM> {
 /// "#;
 ///
 /// let buildpack_descriptor =
-///     toml::from_str::<SingleBuildpackDescriptor>(toml_str).unwrap();
+///     toml::from_str::<ComponentBuildpackDescriptor>(toml_str).unwrap();
 /// assert_eq!(buildpack_descriptor.buildpack.id, buildpack_id!("foo/bar"));
-/// assert_eq!(buildpack_descriptor.stacks, vec![Stack::Any]);
+/// assert_eq!(buildpack_descriptor.stacks, [Stack::Any]);
 /// ```
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct SingleBuildpackDescriptor<BM = GenericMetadata> {
+pub struct ComponentBuildpackDescriptor<BM = GenericMetadata> {
     pub api: BuildpackApi,
     pub buildpack: Buildpack,
     pub stacks: Vec<Stack>,
     pub metadata: BM,
 }
 
-/// Data structure for the Buildpack descriptor (buildpack.toml) of a meta-buildpack.
+/// Data structure for the Buildpack descriptor (buildpack.toml) of a composite buildpack.
 ///
 /// Representation of [buildpack.toml](https://github.com/buildpacks/spec/blob/main/buildpack.md#buildpacktoml-toml)
-/// when the buildpack is a meta-buildpack.
+/// when the buildpack is a composite buildpack - one that does not implement the Buildpack Interface
+/// itself (ie: does not contain `/bin/detect` and `/bin/build` executables) but instead references
+/// other buildpacks via an order definition.
 ///
 /// If support for multiple buildpack types is required, use [`BuildpackDescriptor`] instead.
 ///
 /// # Example:
 /// ```
-/// use libcnb_data::buildpack::MetaBuildpackDescriptor;
+/// use libcnb_data::buildpack::CompositeBuildpackDescriptor;
 /// use libcnb_data::buildpack_id;
 ///
 /// let toml_str = r#"
@@ -153,12 +157,12 @@ pub struct SingleBuildpackDescriptor<BM = GenericMetadata> {
 /// "#;
 ///
 /// let buildpack_descriptor =
-///     toml::from_str::<MetaBuildpackDescriptor>(toml_str).unwrap();
+///     toml::from_str::<CompositeBuildpackDescriptor>(toml_str).unwrap();
 /// assert_eq!(buildpack_descriptor.buildpack.id, buildpack_id!("foo/bar"));
 /// ```
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct MetaBuildpackDescriptor<BM = GenericMetadata> {
+pub struct CompositeBuildpackDescriptor<BM = GenericMetadata> {
     pub api: BuildpackApi,
     pub buildpack: Buildpack,
     pub order: Vec<Order>,
@@ -216,7 +220,7 @@ mod tests {
 
     #[test]
     #[allow(clippy::too_many_lines)]
-    fn deserialize_singlebuildpack() {
+    fn deserialize_component_buildpack() {
         let toml_str = r#"
 api = "0.9"
 
@@ -261,7 +265,8 @@ id = "*"
 checksum = "abc123"
         "#;
 
-        let buildpack_descriptor = toml::from_str::<SingleBuildpackDescriptor>(toml_str).unwrap();
+        let buildpack_descriptor =
+            toml::from_str::<ComponentBuildpackDescriptor>(toml_str).unwrap();
 
         assert_eq!(
             buildpack_descriptor.api,
@@ -290,11 +295,11 @@ checksum = "abc123"
         );
         assert_eq!(
             buildpack_descriptor.buildpack.keywords,
-            vec![String::from("foo"), String::from("bar")]
+            [String::from("foo"), String::from("bar")]
         );
         assert_eq!(
             buildpack_descriptor.buildpack.licenses,
-            vec![
+            [
                 License {
                     r#type: Some(String::from("BSD-3-Clause")),
                     uri: None
@@ -319,7 +324,7 @@ checksum = "abc123"
         );
         assert_eq!(
             buildpack_descriptor.stacks,
-            vec![
+            [
                 Stack::Specific {
                     // Cannot use the `stack_id!` macro due to: https://github.com/heroku/libcnb.rs/issues/179
                     id: "heroku-20".parse().unwrap(),
@@ -343,7 +348,7 @@ checksum = "abc123"
     }
 
     #[test]
-    fn deserialize_metabuildpack() {
+    fn deserialize_composite_buildpack() {
         let toml_str = r#"
 api = "0.9"
 
@@ -381,7 +386,8 @@ optional = true
 checksum = "abc123"
         "#;
 
-        let buildpack_descriptor = toml::from_str::<MetaBuildpackDescriptor>(toml_str).unwrap();
+        let buildpack_descriptor =
+            toml::from_str::<CompositeBuildpackDescriptor>(toml_str).unwrap();
 
         assert_eq!(
             buildpack_descriptor.api,
@@ -410,11 +416,11 @@ checksum = "abc123"
         );
         assert_eq!(
             buildpack_descriptor.buildpack.keywords,
-            vec![String::from("foo"), String::from("bar")]
+            [String::from("foo"), String::from("bar")]
         );
         assert_eq!(
             buildpack_descriptor.buildpack.licenses,
-            vec![
+            [
                 License {
                     r#type: Some(String::from("BSD-3-Clause")),
                     uri: None
@@ -431,7 +437,7 @@ checksum = "abc123"
         );
         assert_eq!(
             buildpack_descriptor.order,
-            vec![Order {
+            [Order {
                 group: vec![
                     Group {
                         id: "foo/bar".parse().unwrap(),
@@ -453,7 +459,7 @@ checksum = "abc123"
     }
 
     #[test]
-    fn deserialize_minimal_singlebuildpack() {
+    fn deserialize_minimal_component_buildpack() {
         let toml_str = r#"
 api = "0.9"
 
@@ -465,7 +471,8 @@ version = "0.0.1"
 id = "*"
         "#;
 
-        let buildpack_descriptor = toml::from_str::<SingleBuildpackDescriptor>(toml_str).unwrap();
+        let buildpack_descriptor =
+            toml::from_str::<ComponentBuildpackDescriptor>(toml_str).unwrap();
 
         assert_eq!(
             buildpack_descriptor.api,
@@ -489,12 +496,12 @@ id = "*"
         );
         assert_eq!(buildpack_descriptor.buildpack.licenses, Vec::new());
         assert_eq!(buildpack_descriptor.buildpack.sbom_formats, HashSet::new());
-        assert_eq!(buildpack_descriptor.stacks, vec![Stack::Any]);
+        assert_eq!(buildpack_descriptor.stacks, [Stack::Any]);
         assert_eq!(buildpack_descriptor.metadata, None);
     }
 
     #[test]
-    fn deserialize_minimal_metabuildpack() {
+    fn deserialize_minimal_composite_buildpack() {
         let toml_str = r#"
 api = "0.9"
 
@@ -509,7 +516,8 @@ id = "foo/bar"
 version = "0.0.1"
 "#;
 
-        let buildpack_descriptor = toml::from_str::<MetaBuildpackDescriptor>(toml_str).unwrap();
+        let buildpack_descriptor =
+            toml::from_str::<CompositeBuildpackDescriptor>(toml_str).unwrap();
 
         assert_eq!(
             buildpack_descriptor.api,
@@ -534,7 +542,7 @@ version = "0.0.1"
         assert_eq!(buildpack_descriptor.buildpack.licenses, Vec::new());
         assert_eq!(
             buildpack_descriptor.order,
-            vec![Order {
+            [Order {
                 group: vec![Group {
                     id: "foo/bar".parse().unwrap(),
                     version: BuildpackVersion::new(0, 0, 1),
@@ -546,7 +554,7 @@ version = "0.0.1"
     }
 
     #[test]
-    fn deserialize_buildpackdescriptor_single() {
+    fn deserialize_buildpackdescriptor_component() {
         let toml_str = r#"
 api = "0.9"
 
@@ -561,12 +569,12 @@ id = "*"
         let buildpack_descriptor = toml::from_str::<BuildpackDescriptor>(toml_str).unwrap();
         assert!(matches!(
             buildpack_descriptor,
-            BuildpackDescriptor::Single(_)
+            BuildpackDescriptor::Component(_)
         ));
     }
 
     #[test]
-    fn deserialize_buildpackdescriptor_meta() {
+    fn deserialize_buildpackdescriptor_composite() {
         let toml_str = r#"
 api = "0.9"
 
@@ -582,7 +590,10 @@ version = "0.0.1"
         "#;
 
         let buildpack_descriptor = toml::from_str::<BuildpackDescriptor>(toml_str).unwrap();
-        assert!(matches!(buildpack_descriptor, BuildpackDescriptor::Meta(_)));
+        assert!(matches!(
+            buildpack_descriptor,
+            BuildpackDescriptor::Composite(_)
+        ));
     }
 
     #[test]
@@ -610,10 +621,10 @@ version = "0.0.1"
             "data did not match any variant of untagged enum BuildpackDescriptor\n"
         );
 
-        let err = toml::from_str::<SingleBuildpackDescriptor>(toml_str).unwrap_err();
+        let err = toml::from_str::<ComponentBuildpackDescriptor>(toml_str).unwrap_err();
         assert!(err.to_string().contains("unknown field `order`"));
 
-        let err = toml::from_str::<MetaBuildpackDescriptor>(toml_str).unwrap_err();
+        let err = toml::from_str::<CompositeBuildpackDescriptor>(toml_str).unwrap_err();
         assert!(err.to_string().contains("unknown field `stacks`"));
     }
 }

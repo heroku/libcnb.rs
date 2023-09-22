@@ -37,7 +37,9 @@ pub struct PackageDescriptor {
     /// The buildpack to package.
     pub buildpack: PackageDescriptorBuildpackReference,
 
-    /// A set of dependent buildpack locations, for packaging a meta-buildpack. Each dependent buildpack location must correspond to an order group within the meta-buildpack being packaged.
+    /// A set of dependent buildpack locations, for packaging a composite buildpack.
+    ///
+    /// Each dependent buildpack location must correspond to an order group within the composite buildpack being packaged.
     #[serde(default)]
     pub dependencies: Vec<PackageDescriptorDependency>,
 
@@ -51,7 +53,7 @@ impl Default for PackageDescriptor {
         PackageDescriptor {
             buildpack: PackageDescriptorBuildpackReference::try_from(".")
                 .expect("a package.toml with buildpack.uri=\".\" should be valid"),
-            dependencies: vec![],
+            dependencies: Vec::new(),
             platform: Platform::default(),
         }
     }
@@ -62,6 +64,7 @@ impl Default for PackageDescriptor {
 #[serde(deny_unknown_fields)]
 pub struct PackageDescriptorBuildpackReference {
     /// A URL or path to an archive, or a path to a directory.
+    ///
     /// If the `uri` field is a relative path it will be relative to the `package.toml` file.
     #[serde(deserialize_with = "deserialize_uri_reference")]
     #[serde(serialize_with = "serialize_uri_reference")]
@@ -83,7 +86,7 @@ impl TryFrom<&str> for PackageDescriptorBuildpackReference {
     }
 }
 
-/// A dependent buildpack location for packaging a meta-buildpack.
+/// A dependent buildpack location for packaging a composite buildpack.
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct PackageDescriptorDependency {
@@ -218,7 +221,7 @@ os = "windows"
         assert_eq!(package_descriptor.platform.os, Windows);
         assert_eq!(
             package_descriptor.dependencies,
-            vec![
+            [
                 PackageDescriptorDependency::try_from("libcnb:buildpack-id").unwrap(),
                 PackageDescriptorDependency::try_from("../relative/path").unwrap(),
                 PackageDescriptorDependency::try_from("/absolute/path").unwrap(),

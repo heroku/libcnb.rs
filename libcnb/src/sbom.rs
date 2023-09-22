@@ -45,7 +45,7 @@ impl TryFrom<cyclonedx_bom::models::bom::Bom> for Sbom {
     type Error = cyclonedx_bom::errors::JsonWriteError;
 
     fn try_from(cyclonedx_bom: cyclonedx_bom::models::bom::Bom) -> Result<Self, Self::Error> {
-        let mut data = vec![];
+        let mut data = Vec::new();
 
         cyclonedx_bom.output_as_json_v1_3(&mut data)?;
 

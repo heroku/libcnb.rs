@@ -192,7 +192,7 @@ mod tests {
 
         assert_eq!(
             command.get_args().collect::<Vec<&OsStr>>(),
-            vec![
+            [
                 "build",
                 "my-image",
                 "--builder",
@@ -214,7 +214,7 @@ mod tests {
             ]
         );
 
-        assert_eq!(command.get_envs().collect::<Vec<_>>(), vec![]);
+        assert_eq!(command.get_envs().collect::<Vec<_>>(), Vec::new());
 
         // Assert conditional '--trust-builder' flag works as expected:
         input.trust_builder = false;
@@ -242,10 +242,10 @@ mod tests {
 
         assert_eq!(
             command.get_args().collect::<Vec<&OsStr>>(),
-            vec!["sbom", "download", "my-image"]
+            ["sbom", "download", "my-image"]
         );
 
-        assert_eq!(command.get_envs().collect::<Vec<_>>(), vec![]);
+        assert_eq!(command.get_envs().collect::<Vec<_>>(), Vec::new());
 
         // Assert conditional '--output-dir' flag works as expected:
         input.output_dir = Some(PathBuf::from("/tmp/sboms"));
@@ -255,9 +255,9 @@ mod tests {
 
         assert_eq!(
             command.get_args().collect::<Vec<&OsStr>>(),
-            vec!["sbom", "download", "my-image", "--output-dir", "/tmp/sboms"]
+            ["sbom", "download", "my-image", "--output-dir", "/tmp/sboms"]
         );
 
-        assert_eq!(command.get_envs().collect::<Vec<_>>(), vec![]);
+        assert_eq!(command.get_envs().collect::<Vec<_>>(), Vec::new());
     }
 }

@@ -1,0 +1,22 @@
+api = "0.8"
+
+[buildpack]
+id = "libcnb-test/composite"
+name = "Composite Buildpack Test"
+version = "0.0.0"
+homepage = "https://example.com"
+description = "Official test example"
+keywords = ["test"]
+
+[[buildpack.licenses]]
+type = "BSD-3-Clause"
+
+[[order]]
+
+[[order.group]]
+id = "libcnb-test/a"
+version = "0.0.0"
+
+[[order.group]]
+id = "libcnb-test/b"
+version = "0.0.0"

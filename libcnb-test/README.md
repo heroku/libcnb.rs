@@ -37,7 +37,7 @@ use libcnb_test::{assert_contains, assert_empty, BuildConfig, TestRunner};
 // #[test]
 fn basic() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
+        BuildConfig::new("heroku/builder:22", "tests/fixtures/app"),
         |context| {
             assert_empty!(context.pack_stderr);
             assert_contains!(context.pack_stdout, "Expected build output");
@@ -54,7 +54,7 @@ use libcnb_test::{assert_contains, BuildConfig, TestRunner};
 // #[test]
 fn rebuild() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
+        BuildConfig::new("heroku/builder:22", "tests/fixtures/app"),
         |context| {
             assert_contains!(context.pack_stdout, "Installing dependencies");
 
@@ -75,7 +75,7 @@ use libcnb_test::{assert_contains, BuildConfig, PackResult, TestRunner};
 // #[test]
 fn expected_pack_failure() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "test-fixtures/invalid-app")
+        BuildConfig::new("heroku/builder:22", "tests/fixtures/invalid-app")
             .expected_pack_result(PackResult::Failure),
         |context| {
             assert_contains!(context.pack_stderr, "ERROR: Invalid Procfile!");
@@ -92,7 +92,7 @@ use libcnb_test::{assert_empty, BuildConfig, TestRunner};
 // #[test]
 fn run_shell_command() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
+        BuildConfig::new("heroku/builder:22", "tests/fixtures/app"),
         |context| {
             // ...
             let command_output = context.run_shell_command("python --version");
@@ -115,7 +115,7 @@ const TEST_PORT: u16 = 12345;
 // #[test]
 fn starting_web_server_container() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
+        BuildConfig::new("heroku/builder:22", "tests/fixtures/app"),
         |context| {
             // ...
             context.start_container(
@@ -154,7 +154,7 @@ use libcnb_test::{assert_contains, BuildConfig, ContainerConfig, TestRunner};
 // #[test]
 fn shell_exec() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
+        BuildConfig::new("heroku/builder:22", "tests/fixtures/app"),
         |context| {
             // ...
             context.start_container(ContainerConfig::new(), |container| {
@@ -176,7 +176,7 @@ use std::fs;
 // #[test]
 fn dynamic_fixture() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "test-fixtures/app").app_dir_preprocessor(
+        BuildConfig::new("heroku/builder:22", "tests/fixtures/app").app_dir_preprocessor(
             |app_dir| {
                 fs::write(app_dir.join("runtime.txt"), "python-3.10").unwrap();
             },
@@ -191,13 +191,15 @@ fn dynamic_fixture() {
 Building with multiple buildpacks, using [`BuildConfig::buildpacks`]:
 
 ```rust,no_run
+use libcnb::data::buildpack_id;
 use libcnb_test::{BuildConfig, BuildpackReference, TestRunner};
 
 // #[test]
 fn additional_buildpacks() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "test-fixtures/app").buildpacks(vec![
-            BuildpackReference::Crate,
+        BuildConfig::new("heroku/builder:22", "tests/fixtures/app").buildpacks([
+            BuildpackReference::CurrentCrate,
+            BuildpackReference::WorkspaceBuildpack(buildpack_id!("my-project/buildpack")),
             BuildpackReference::Other(String::from("heroku/another-buildpack")),
         ]),
         |context| {
@@ -211,7 +213,7 @@ fn additional_buildpacks() {
 
 - Rust tests are automatically run in parallel, however only if they are in the same crate.
   For integration tests Rust compiles each file as a separate crate. As such, make sure to
-  include all integration  tests in a single file (either inlined or by including additional
+  include all integration tests in a single file (either inlined or by including additional
   test modules) to ensure they run in parallel.
 - If you would like to be able to more easily run your unit tests and integration tests
   separately, annotate each integration test with `#[ignore = "integration test"]`, which

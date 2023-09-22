@@ -29,4 +29,6 @@ pub use crate::test_runner::*;
 #[cfg(test)]
 use indoc as _;
 #[cfg(test)]
+use libcnb as _;
+#[cfg(test)]
 use ureq as _;

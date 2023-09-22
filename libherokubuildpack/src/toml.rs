@@ -131,7 +131,7 @@ mod test {
         hash_map.insert(String::from("foo"), String::from("bar"));
 
         assert_eq!(
-            toml_select_value::<&str, Vec<&str>>(vec![], &toml.into()),
+            toml_select_value::<&str, Vec<&str>>(Vec::new(), &toml.into()),
             Some(&toml::Value::from(hash_map))
         );
     }

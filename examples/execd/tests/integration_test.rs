@@ -13,7 +13,7 @@ use libcnb_test::{assert_contains, assert_empty, BuildConfig, TestRunner};
 #[ignore = "integration test"]
 fn basic() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "test-fixtures/empty-app"),
+        BuildConfig::new("heroku/builder:22", "tests/fixtures/empty-app"),
         |context| {
             let command_output = context.run_shell_command("env");
             assert_empty!(command_output.stderr);

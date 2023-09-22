@@ -187,7 +187,7 @@ impl<M> LayerResultBuilder<M> {
             metadata,
             env: None,
             exec_d_programs: HashMap::new(),
-            sboms: vec![],
+            sboms: Vec::new(),
         }
     }
 

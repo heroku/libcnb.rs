@@ -1,7 +1,10 @@
-/target/
-/packaged/
+target/
 .DS_Store
 .idea
+
+# Since libcnb.rs is a library, we don't commit the lockfile so that CI tests the latest
+# in-range dependencies, which is what users will use when installing from scratch.
 Cargo.lock
-**/fixtures/*/target/
-**/fixtures/*/packaged/
+
+# The default output directory of `cargo libcnb package`.
+packaged/

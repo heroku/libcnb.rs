@@ -1,3 +1,4 @@
+use libcnb_data::buildpack::BuildpackId;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
@@ -29,7 +30,7 @@ impl BuildConfig {
     /// use libcnb_test::{BuildConfig, TestRunner};
     ///
     /// TestRunner::default().build(
-    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app"),
+    ///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app"),
     ///     |context| {
     ///         // ...
     ///     },
@@ -41,7 +42,7 @@ impl BuildConfig {
             cargo_profile: CargoProfile::Dev,
             target_triple: String::from("x86_64-unknown-linux-musl"),
             builder_name: builder_name.into(),
-            buildpacks: vec![BuildpackReference::Crate],
+            buildpacks: vec![BuildpackReference::CurrentCrate],
             env: HashMap::new(),
             app_dir_preprocessor: None,
             expected_pack_result: PackResult::Success,
@@ -50,16 +51,18 @@ impl BuildConfig {
 
     /// Sets the buildpacks (and their ordering) to use when building the app.
     ///
-    /// Defaults to [`BuildpackReference::Crate`].
+    /// Defaults to [`BuildpackReference::CurrentCrate`].
     ///
     /// # Example
     /// ```no_run
+    /// use libcnb::data::buildpack_id;
     /// use libcnb_test::{BuildConfig, BuildpackReference, TestRunner};
     ///
     /// TestRunner::default().build(
-    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app").buildpacks(vec![
+    ///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app").buildpacks([
+    ///         BuildpackReference::CurrentCrate,
+    ///         BuildpackReference::WorkspaceBuildpack(buildpack_id!("my-project/buildpack")),
     ///         BuildpackReference::Other(String::from("heroku/another-buildpack")),
-    ///         BuildpackReference::Crate,
     ///     ]),
     ///     |context| {
     ///         // ...
@@ -80,7 +83,7 @@ impl BuildConfig {
     /// use libcnb_test::{BuildConfig, CargoProfile, TestRunner};
     ///
     /// TestRunner::default().build(
-    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app")
+    ///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app")
     ///         .cargo_profile(CargoProfile::Release),
     ///     |context| {
     ///         // ...
@@ -101,7 +104,7 @@ impl BuildConfig {
     /// use libcnb_test::{BuildConfig, TestRunner};
     ///
     /// TestRunner::default().build(
-    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app")
+    ///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app")
     ///         .target_triple("x86_64-unknown-linux-musl"),
     ///     |context| {
     ///         // ...
@@ -123,7 +126,7 @@ impl BuildConfig {
     /// use libcnb_test::{BuildConfig, TestRunner};
     ///
     /// TestRunner::default().build(
-    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app")
+    ///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app")
     ///         .env("ENV_VAR_ONE", "VALUE ONE")
     ///         .env("ENV_VAR_TWO", "SOME OTHER VALUE"),
     ///     |context| {
@@ -146,7 +149,7 @@ impl BuildConfig {
     /// use libcnb_test::{BuildConfig, TestRunner};
     ///
     /// TestRunner::default().build(
-    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app").envs(vec![
+    ///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app").envs([
     ///         ("ENV_VAR_ONE", "VALUE ONE"),
     ///         ("ENV_VAR_TWO", "SOME OTHER VALUE"),
     ///     ]),
@@ -179,7 +182,7 @@ impl BuildConfig {
     /// use libcnb_test::{BuildConfig, TestRunner};
     ///
     /// TestRunner::default().build(
-    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app").app_dir_preprocessor(
+    ///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app").app_dir_preprocessor(
     ///         |app_dir| {
     ///             std::fs::remove_file(app_dir.join("Procfile")).unwrap();
     ///         },
@@ -205,11 +208,11 @@ impl BuildConfig {
     /// use libcnb_test::{BuildConfig, TestRunner};
     ///
     /// fn default_config() -> BuildConfig {
-    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app")
+    ///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app")
     /// }
     ///
     /// TestRunner::default().build(
-    ///     default_config().app_dir("test-fixtures/a-different-app"),
+    ///     default_config().app_dir("tests/fixtures/a-different-app"),
     ///     |context| {
     ///         // ...
     ///     },
@@ -233,7 +236,7 @@ impl BuildConfig {
     /// use libcnb_test::{assert_contains, BuildConfig, PackResult, TestRunner};
     ///
     /// TestRunner::default().build(
-    ///     BuildConfig::new("heroku/builder:22", "test-fixtures/app")
+    ///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app")
     ///         .expected_pack_result(PackResult::Failure),
     ///     |context| {
     ///         assert_contains!(context.pack_stderr, "ERROR: Invalid Procfile!");
@@ -250,7 +253,11 @@ impl BuildConfig {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum BuildpackReference {
     /// References the buildpack in the Rust Crate currently being tested.
-    Crate,
+    ///
+    /// Is equivalent to `BuildpackReference::WorkspaceBuildpack(buildpack_id!("<buildpack ID of current crate"))`.
+    CurrentCrate,
+    /// References a libcnb.rs or composite buildpack within the Cargo workspace that needs to be packaged into a buildpack.
+    WorkspaceBuildpack(BuildpackId),
     /// References another buildpack by id, local directory or tarball.
     Other(String),
 }
