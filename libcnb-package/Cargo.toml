@@ -12,7 +12,7 @@ readme = "README.md"
 include = ["src/**/*", "LICENSE", "README.md"]
 
 [dependencies]
-cargo_metadata = "0.17.0"
+cargo_metadata = "0.18.0"
 ignore = "0.4"
 libcnb-common.workspace = true
 libcnb-data.workspace = true
