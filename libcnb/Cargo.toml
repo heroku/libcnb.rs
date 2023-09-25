@@ -17,10 +17,10 @@ cyclonedx-bom = { version = "0.4.0", optional = true }
 libcnb-common.workspace = true
 libcnb-data.workspace = true
 libcnb-proc-macros.workspace = true
-serde = { version = "1.0.183", features = ["derive"] }
-thiserror = "1.0.47"
+serde = { version = "1.0.188", features = ["derive"] }
+thiserror = "1.0.48"
 toml.workspace = true
 
 [dev-dependencies]
 fastrand = "2.0.0"
-tempfile = "3.7.1"
+tempfile = "3.8.0"
