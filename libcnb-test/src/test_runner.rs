@@ -32,7 +32,7 @@ impl TestRunner {
     /// to build a new Docker image with the buildpacks specified by the passed [`BuildConfig`].
     ///
     /// Since this function is supposed to only be used in integration tests, failures are not
-    /// signalled via [`Result`](Result) values. Instead, this function panics whenever an unexpected error
+    /// signalled via [`Result`] values. Instead, this function panics whenever an unexpected error
     /// occurred to simplify testing code.
     ///
     /// # Example

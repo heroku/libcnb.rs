@@ -18,14 +18,14 @@ pub fn cross_compile_assistance(target_triple: impl AsRef<str>) -> CrossCompileA
             .iter()
             .find_map(|binary_name| which(binary_name).ok())
             .map_or_else(|| CrossCompileAssistance::HelpText(String::from(
-                r#"For cross-compilation from macOS to x86_64-unknown-linux-musl, a C compiler and
+                r"For cross-compilation from macOS to x86_64-unknown-linux-musl, a C compiler and
 linker for the target platform must be installed on your computer.
 
 The easiest way to install the required cross-compilation toolchain is to run:
 brew install messense/macos-cross-toolchains/x86_64-unknown-linux-musl
 
 For more information, see:
-https://github.com/messense/homebrew-macos-cross-toolchains"#,
+https://github.com/messense/homebrew-macos-cross-toolchains",
             )), |gcc_binary_path| {
                 CrossCompileAssistance::Configuration {
                     cargo_env: vec![
@@ -52,12 +52,12 @@ https://github.com/messense/homebrew-macos-cross-toolchains"#,
                 cargo_env: Vec::new(),
             },
             Err(_) => CrossCompileAssistance::HelpText(String::from(
-                r#"For cross-compilation from Linux to x86_64-unknown-linux-musl, a C compiler and
+                r"For cross-compilation from Linux to x86_64-unknown-linux-musl, a C compiler and
 linker for the target platform must be installed on your computer.
 
 The easiest way to install 'musl-gcc' is to install the 'musl-tools' package:
 - https://packages.ubuntu.com/focal/musl-tools
-- https://packages.debian.org/bullseye/musl-tools"#,
+- https://packages.debian.org/bullseye/musl-tools",
             )),
         }
     } else if target_triple.as_ref() == AARCH64_UNKNOWN_LINUX_MUSL && cfg!(target_os = "linux") {
@@ -76,13 +76,13 @@ The easiest way to install 'musl-gcc' is to install the 'musl-tools' package:
                 ],
             },
             Err(_) => CrossCompileAssistance::HelpText(String::from(
-                r#"For cross-compilation from Linux to aarch64-unknown-linux-musl, a C compiler and
+                r"For cross-compilation from Linux to aarch64-unknown-linux-musl, a C compiler and
 linker for the target platform must installed on your computer.
 
 The easiest way to install the 'g++-aarch64-linux-gnu', 'libc6-dev-arm64-cross', and 'musl-tools' packages:
 - https://packages.ubuntu.com/focal/g++-aarch64-linux-gnu
 - https://packages.ubuntu.com/focal/musl-tools
-- https://packages.ubuntu.com/focal/libc6-dev-arm64-cross"#,
+- https://packages.ubuntu.com/focal/libc6-dev-arm64-cross",
             )),
         }
     } else {
