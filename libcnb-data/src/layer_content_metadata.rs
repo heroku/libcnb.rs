@@ -76,9 +76,9 @@ mod tests {
 
     #[test]
     fn types_table_with_no_entries_has_defaults() {
-        let toml_str = r#"
+        let toml_str = r"
         [types]
-        "#;
+        ";
         let layer = toml::from_str::<LayerContentMetadata>(toml_str).unwrap();
         assert_eq!(
             layer.types,

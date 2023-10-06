@@ -21,7 +21,7 @@ pub trait Layer {
     type Buildpack: Buildpack;
 
     /// The metadata type for this layer. This is the data within `[metadata]` of the layer content
-    /// metadata. If you wish to use raw, untyped, TOML data instead, use [`GenericMetadata`](crate::generic::GenericMetadata).
+    /// metadata. If you wish to use raw, untyped, TOML data instead, use [`GenericMetadata`].
     ///
     /// If the layer metadata cannot be parsed into this type, libcnb will call [`migrate_incompatible_metadata`](Self::migrate_incompatible_metadata)
     /// with the layer's metadata as raw TOML. This allows migration of older metadata.
@@ -89,10 +89,10 @@ pub trait Layer {
     /// automatically.
     ///
     /// The return value of this method is the canonical value for metadata and environment variables.
-    /// If the returned [`LayerResult`](LayerResult) does not contain metadata or environment
+    /// If the returned [`LayerResult`] does not contain metadata or environment
     /// variables, the resulting layer will not have either. To keep the values from the cached
     /// version they must be explicitly added to the result. This can be done by reading the env
-    /// data from the given [`LayerData`](LayerData) value.
+    /// data from the given [`LayerData`] value.
     ///
     /// The default implementation will copy both the previous metadata and environment and not
     /// change the layer data itself, making the default implementation a no-op.

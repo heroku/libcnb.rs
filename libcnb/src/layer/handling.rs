@@ -406,12 +406,12 @@ mod tests {
         fs::create_dir_all(&layer_dir).unwrap();
         fs::write(
             layers_dir.join(format!("{layer_name}.toml")),
-            r#"
+            r"
             [types]
             launch = true
             build = false
             cache = true
-            "#,
+            ",
         )
         .unwrap();
 
@@ -430,12 +430,12 @@ mod tests {
 
         fs::write(
             layers_dir.join(format!("{layer_name}.toml")),
-            r#"
+            r"
             [types]
             launch = true
             build = false
             cache = true
-            "#,
+            ",
         )
         .unwrap();
 
@@ -877,12 +877,12 @@ mod tests {
         fs::create_dir_all(layer_dir).unwrap();
         fs::write(
             layers_dir.join(format!("{layer_name}.toml")),
-            r#"
+            r"
             [types
             build = true
             launch = true
             cache = true
-            "#,
+            ",
         )
         .unwrap();
 
