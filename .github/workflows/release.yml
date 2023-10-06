@@ -46,6 +46,8 @@ jobs:
             echo "If you are sure you want to recreate the release, delete the existing one first." >&2
             exit 1
           fi
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.app_token }}
 
       - name: Extract changelog entry
         id: changelog-entry
