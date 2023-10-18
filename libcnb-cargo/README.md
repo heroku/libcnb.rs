@@ -5,7 +5,7 @@ A Cargo command for managing buildpacks written with [libcnb.rs](https://github.
 ## Installation
 
 ```shell
-$ cargo install libcnb-cargo
+cargo install libcnb-cargo
 ```
 
 ## Usage
@@ -13,7 +13,7 @@ $ cargo install libcnb-cargo
 Currently, there is only one sub-command: `package`. It allows users to package their
 Rust buildpack in a spec-compliant manner and helps with cross-compilation.
 
-```shell
+```console
 $ cargo libcnb package --help
 Packages a libcnb.rs Cargo project as a Cloud Native Buildpack
 
@@ -30,7 +30,7 @@ Options:
 Using it is fairly simple, run `cargo libcnb package` inside the buildpack's
 project directory:
 
-```shell
+```console
 $ cargo libcnb package
 🚚 Preparing package directory...
 🖥️ Gathering Cargo configuration (for x86_64-unknown-linux-musl)

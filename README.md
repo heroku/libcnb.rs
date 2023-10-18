@@ -23,7 +23,7 @@ demonstrate how to package your buildpack and how to build an application image 
 ### Development Environment Setup
 
 In addition to the libcnb crate, we need some tools to compile, package and run the buildpack. These steps only need to
-be carried out once and don't need to be repeated for each buildpack you will write. 
+be carried out once and don't need to be repeated for each buildpack you will write.
 
 #### libcnb Cargo Command
 
@@ -31,7 +31,7 @@ Start by installing [libcnb-cargo](https://crates.io/crates/libcnb-cargo), which
 that we will use later to package our buildpack:
 
 ```shell
-$ cargo install libcnb-cargo
+cargo install libcnb-cargo
 ```
 
 #### Cross-compilation prerequisites
@@ -42,7 +42,7 @@ up your environment depending on your host platform, but we always need the appr
 we can install with `rustup`:
 
 ```shell
-$ rustup target add x86_64-unknown-linux-musl
+rustup target add x86_64-unknown-linux-musl
 ```
 
 #### Docker
@@ -62,14 +62,13 @@ After we've successfully set up our development environment, we can move on and 
 buildpack. First, we create a new binary crate with Cargo:
 
 ```shell
-$ cargo new my-buildpack
-     Created binary (application) `my-buildpack` package
+cargo new my-buildpack
 ```
 
 Then, add the `libcnb` dependency to your project's `Cargo.toml`:
 
 ```shell
-$ cargo add libcnb
+cargo add libcnb
 ```
 
 Note: If you get an error about `cargo add` not being a supported command, make sure you are
@@ -177,7 +176,7 @@ your development environment, you have access to the `libcnb` Cargo command that
 
 In your project directory, run `cargo libcnb package` to start packaging:
 
-```shell
+```console
 $ cargo libcnb package
 🚚 Preparing package directory...
 🖥️ Gathering Cargo configuration (for x86_64-unknown-linux-musl)
@@ -208,7 +207,7 @@ You might have seen in the output that we're now ready to run our buildpack loca
 with `pack`. Before we can do this, we need an application to build. Since our buildpack does not interact with the
 application code at all, we just create an empty directory and use that as our application:
 
-```shell
+```console
 $ mkdir bogus-app
 $ pack build my-image --buildpack packaged/x86_64-unknown-linux-musl/debug/libcnb-examples_my-buildpack --path bogus-app --builder heroku/builder:22
 ...
@@ -241,7 +240,7 @@ Successfully built image my-image
 The newly created Docker image can be run in the same way as you would a Docker image created via `docker build`.
 If all went well, you should see our "Hello World!" message in your terminal:
 
-```shell
+```console
 $ docker run my-image
 Hello World!
 ```
