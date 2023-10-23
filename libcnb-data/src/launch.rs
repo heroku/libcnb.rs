@@ -143,7 +143,7 @@ impl WorkingDirectory {
 
 // Custom Serialize implementation since we want to always serialize as a string. Serde's untagged
 // enum representation does not work here since App would serialize as null, but we want a default
-// string value. #[serde(rename = ".")] doesnt work here. There are more generic solutions that can
+// string value. #[serde(rename = ".")] doesn't work here. There are more generic solutions that can
 // be found on the web, but they're much more heavyweight than this simple Serialize implementation.
 impl Serialize for WorkingDirectory {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

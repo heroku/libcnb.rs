@@ -111,14 +111,14 @@ impl TestRunner {
                     pack_command.buildpack(crate_buildpack_dir);
                 }
 
-                BuildpackReference::WorkspaceBuildpack(builpack_id) => {
+                BuildpackReference::WorkspaceBuildpack(buildpack_id) => {
                     let buildpack_dir = build::package_buildpack(
-                        builpack_id,
+                        buildpack_id,
                         config.cargo_profile,
                         &config.target_triple,
                         &cargo_manifest_dir,
                         buildpacks_target_dir.path()
-                    ).unwrap_or_else(|_| panic!("Test references buildpack `{builpack_id}`, but this directory wasn't packaged as a buildpack. This is an internal libcnb-test error, please report any occurrences"));
+                    ).unwrap_or_else(|_| panic!("Test references buildpack `{buildpack_id}`, but this directory wasn't packaged as a buildpack. This is an internal libcnb-test error, please report any occurrences"));
                     pack_command.buildpack(buildpack_dir);
                 }
 
