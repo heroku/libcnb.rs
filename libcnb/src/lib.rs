@@ -24,6 +24,7 @@ mod error;
 mod exit_code;
 mod platform;
 mod runtime;
+mod tracing;
 mod util;
 
 pub use buildpack::Buildpack;

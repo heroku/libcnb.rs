@@ -5,10 +5,14 @@ use crate::detect::{DetectContext, InnerDetectResult};
 use crate::error::Error;
 use crate::platform::Platform;
 use crate::sbom::cnb_sbom_path;
+use crate::tracing::{set_buildpack_span_attributes, with_tracing};
 use crate::util::is_not_found_error_kind;
 use crate::{exit_code, TomlFileError, LIBCNB_SUPPORTED_BUILDPACK_API};
 use libcnb_common::toml_file::{read_toml_file, write_toml_file};
 use libcnb_data::store::Store;
+use opentelemetry::global::{self, shutdown_tracer_provider, tracer};
+use opentelemetry::trace::{Span, TraceContextExt, Tracer};
+use opentelemetry::KeyValue;
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use std::ffi::OsStr;
@@ -138,17 +142,37 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
         buildpack_descriptor: read_buildpack_descriptor()?,
     };
 
-    match buildpack.detect(detect_context)?.0 {
-        InnerDetectResult::Fail => Ok(exit_code::DETECT_DETECTION_FAILED),
-        InnerDetectResult::Pass { build_plan } => {
-            if let Some(build_plan) = build_plan {
-                write_toml_file(&build_plan, build_plan_path)
-                    .map_err(Error::CannotWriteBuildPlan)?;
+    with_tracing(
+        "detect",
+        detect_context.buildpack_descriptor.buildpack.id.clone(),
+        |trace_ctx| {
+            let span = trace_ctx.span();
+            set_buildpack_span_attributes::<B>(&span, &detect_context.buildpack_descriptor);
+            let detect_result = buildpack.detect(detect_context);
+            if let Err(err) = detect_result {
+                span.record_error(&err);
+                span.set_status(opentelemetry::trace::Status::Error {
+                    description: std::borrow::Cow::Borrowed("detect error"),
+                });
+                return Err(err);
             }
 
-            Ok(exit_code::DETECT_DETECTION_PASSED)
-        }
-    }
+            match detect_result.unwrap().0 {
+                InnerDetectResult::Fail => {
+                    span.add_event("detect-fail", vec![]);
+                    Ok(exit_code::DETECT_DETECTION_FAILED)
+                }
+                InnerDetectResult::Pass { build_plan } => {
+                    if let Some(build_plan) = build_plan {
+                        write_toml_file(&build_plan, build_plan_path)
+                            .map_err(Error::CannotWriteBuildPlan)?;
+                    }
+                    span.add_event("detect-pass", vec![]);
+                    Ok(exit_code::DETECT_DETECTION_PASSED)
+                }
+            }
+        },
+    )
 }
 
 /// Build entry point for this framework.
