@@ -2,15 +2,13 @@ use crate::Buildpack;
 use libcnb_data::buildpack::{BuildpackId, ComponentBuildpackDescriptor};
 use opentelemetry::{
     global::{self},
-    sdk::trace::{Span, TracerProvider},
-    trace::{
-        Span as SpanImpl, SpanRef, TraceContextExt, Tracer, TracerProvider as TracerProviderImpl,
-    },
+    sdk::trace::TracerProvider,
+    trace::{SpanRef, TraceContextExt, Tracer, TracerProvider as TracerProviderImpl},
     Context, KeyValue,
 };
 use opentelemetry_stdout::SpanExporter;
 use std::{
-    fmt::{Debug, Display},
+    fmt::Display,
     fs::{create_dir_all, File},
     io::sink,
     path::Path,
@@ -99,10 +97,10 @@ mod tests {
     use crate::{
         build::{BuildContext, BuildResult, BuildResultBuilder},
         detect::{DetectContext, DetectResult, DetectResultBuilder},
-        generic::GenericPlatform,
+        generic::{GenericMetadata, GenericPlatform},
         Buildpack, Error,
     };
-    use libcnb_data::{buildpack::BuildpackId, generic::GenericMetadata};
+    use libcnb_data::buildpack::BuildpackId;
     use opentelemetry::trace::TraceContextExt;
     use std::fs;
 
