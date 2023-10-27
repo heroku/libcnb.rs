@@ -142,22 +142,13 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
         buildpack_descriptor: read_buildpack_descriptor()?,
     };
 
-    with_tracing(
-        "detect",
-        detect_context.buildpack_descriptor.buildpack.id.clone(),
+    with_tracing::<B>(
+        &"detect",
+        &detect_context.buildpack_descriptor.buildpack.id.clone(),
         |trace_ctx| {
             let span = trace_ctx.span();
             set_buildpack_span_attributes::<B>(&span, &detect_context.buildpack_descriptor);
-            let detect_result = buildpack.detect(detect_context);
-            if let Err(err) = detect_result {
-                span.record_error(&err);
-                span.set_status(opentelemetry::trace::Status::Error {
-                    description: std::borrow::Cow::Borrowed("detect error"),
-                });
-                return Err(err);
-            }
-
-            match detect_result.unwrap().0 {
+            match buildpack.detect(detect_context)?.0 {
                 InnerDetectResult::Fail => {
                     span.add_event("detect-fail", vec![]);
                     Ok(exit_code::DETECT_DETECTION_FAILED)
@@ -203,7 +194,7 @@ pub fn libcnb_runtime_build<B: Buildpack>(
     }
     .map_err(Error::CannotReadStore)?;
 
-    let build_result = buildpack.build(BuildContext {
+    let build_context = BuildContext {
         layers_dir: layers_dir.clone(),
         app_dir,
         stack_id,
@@ -212,44 +203,53 @@ pub fn libcnb_runtime_build<B: Buildpack>(
         buildpack_dir: read_buildpack_dir()?,
         buildpack_descriptor: read_buildpack_descriptor()?,
         store,
-    })?;
+    };
 
-    match build_result.0 {
-        InnerBuildResult::Pass {
-            launch,
-            store,
-            build_sboms,
-            launch_sboms,
-        } => {
-            if let Some(launch) = launch {
-                write_toml_file(&launch, layers_dir.join("launch.toml"))
-                    .map_err(Error::CannotWriteLaunch)?;
-            };
+    with_tracing::<B>(
+        "build",
+        &build_context.buildpack_descriptor.buildpack.id.clone(),
+        |trace_ctx| {
+            let span = trace_ctx.span();
+            set_buildpack_span_attributes::<B>(&span, &build_context.buildpack_descriptor);
+            match buildpack.build(build_context)?.0 {
+                InnerBuildResult::Pass {
+                    launch,
+                    store,
+                    build_sboms,
+                    launch_sboms,
+                } => {
+                    if let Some(launch) = launch {
+                        write_toml_file(&launch, layers_dir.join("launch.toml"))
+                            .map_err(Error::CannotWriteLaunch)?;
+                    };
 
-            if let Some(store) = store {
-                write_toml_file(&store, layers_dir.join("store.toml"))
-                    .map_err(Error::CannotWriteStore)?;
-            };
+                    if let Some(store) = store {
+                        write_toml_file(&store, layers_dir.join("store.toml"))
+                            .map_err(Error::CannotWriteStore)?;
+                    };
 
-            for build_sbom in build_sboms {
-                fs::write(
-                    cnb_sbom_path(&build_sbom.format, &layers_dir, "build"),
-                    &build_sbom.data,
-                )
-                .map_err(Error::CannotWriteBuildSbom)?;
+                    for build_sbom in build_sboms {
+                        fs::write(
+                            cnb_sbom_path(&build_sbom.format, &layers_dir, "build"),
+                            &build_sbom.data,
+                        )
+                        .map_err(Error::CannotWriteBuildSbom)?;
+                    }
+
+                    for launch_sbom in launch_sboms {
+                        fs::write(
+                            cnb_sbom_path(&launch_sbom.format, &layers_dir, "launch"),
+                            &launch_sbom.data,
+                        )
+                        .map_err(Error::CannotWriteLaunchSbom)?;
+                    }
+
+                    span.add_event("build-success", vec![]);
+                    Ok(exit_code::GENERIC_SUCCESS)
+                }
             }
-
-            for launch_sbom in launch_sboms {
-                fs::write(
-                    cnb_sbom_path(&launch_sbom.format, &layers_dir, "launch"),
-                    &launch_sbom.data,
-                )
-                .map_err(Error::CannotWriteLaunchSbom)?;
-            }
-
-            Ok(exit_code::GENERIC_SUCCESS)
-        }
-    }
+        },
+    )
 }
 
 // A partial representation of buildpack.toml that contains only the Buildpack API version,
