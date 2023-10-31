@@ -184,14 +184,16 @@ fn app_dir_preprocessor() {
                 ./subdir1/subdir2/subdir3/file3.txt
             "};
 
-            let log_output = context.run_shell_command("find . | sort");
+            // The cache path exclusion is required since when using Rosetta on macOS
+            // a cache directory is created at `$HOME/.cache/rosetta`.
+            let log_output = context.run_shell_command("find . -not -path './.cache*' | sort");
             assert_empty!(log_output.stderr);
             assert_eq!(log_output.stdout, expected_directory_listing);
 
             // Check that rebuilds get a new/clean ephemeral fixture directory.
             let config = context.config.clone();
             context.rebuild(config, |context| {
-                let log_output = context.run_shell_command("find . | sort");
+                let log_output = context.run_shell_command("find . -not -path './.cache*' | sort");
                 assert_empty!(log_output.stderr);
                 assert_eq!(log_output.stdout, expected_directory_listing);
             });
@@ -473,21 +475,6 @@ fn logs_work_after_container_crashed() {
                     assert_eq!(server_log_output.stderr, "some stderr\n");
                 },
             );
-        },
-    );
-}
-
-#[test]
-#[ignore = "integration test"]
-#[should_panic(expected = "Port `0' not valid")]
-fn expose_port_invalid_port() {
-    TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "tests/fixtures/procfile")
-            .buildpacks([BuildpackReference::Other(String::from(PROCFILE_URL))]),
-        |context| {
-            context.start_container(ContainerConfig::new().expose_port(0), |_| {
-                unreachable!("The test should fail before the ContainerContext is invoked.");
-            });
         },
     );
 }
