@@ -17,11 +17,7 @@ use std::path::PathBuf;
 use std::time::Duration;
 use std::{env, fs, thread};
 
-// We're referencing the procfile buildpack via Docker URL to pin the version for the tests. This also
-// prevents issues when the builder contains multiple heroku/procfile versions. We don't use CNB
-// registry URLs since, as of August 2022, pack fails when another pack instance is resolving such
-// an URL in parallel.
-const PROCFILE_URL: &str = "docker://docker.io/heroku/procfile-cnb:2.0.1";
+const PROCFILE_URL: &str = "heroku/procfile";
 const TEST_PORT: u16 = 12345;
 
 #[test]
