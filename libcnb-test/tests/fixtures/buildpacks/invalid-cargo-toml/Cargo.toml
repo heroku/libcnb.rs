@@ -1,0 +1,4 @@
+[package]
+# `name` and `version` are a required fields, but are missing.
+
+[workspace]

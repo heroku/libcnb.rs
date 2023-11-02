@@ -24,9 +24,13 @@ use std::{env, fs, panic, thread};
 const PROCFILE_URL: &str = "heroku/procfile";
 const TEST_PORT: u16 = 12345;
 
+// Note: Since the `libcnb-test` crate isn't a buildpack itself, we can't test a successful
+// build using `BuildpackReference::CurrentCrate` here, but we still have test coverage of it
+// thanks to the integration tests under `examples/` and `test-buildpacks/`.
+
 #[test]
 #[ignore = "integration test"]
-fn basic_build() {
+fn build_other_buildpack() {
     TestRunner::default().build(
         BuildConfig::new("heroku/builder:22", "tests/fixtures/procfile")
             .buildpacks([BuildpackReference::Other(String::from(PROCFILE_URL))]),
@@ -37,6 +41,73 @@ fn basic_build() {
                 indoc! {"
                     [Discovering process types]
                     Procfile declares types -> web, worker, echo-args
+                "}
+            );
+        },
+    );
+}
+
+#[test]
+#[ignore = "integration test"]
+fn build_workspace_component_buildpack() {
+    TestRunner::default().build(
+        BuildConfig::new("heroku/builder:22", "tests/fixtures/empty").buildpacks([
+            BuildpackReference::WorkspaceBuildpack(buildpack_id!("libcnb-test/a")),
+        ]),
+        |context| {
+            assert_empty!(context.pack_stderr);
+            assert_contains!(
+                context.pack_stdout,
+                indoc! {"
+                    Buildpack A
+                "}
+            );
+        },
+    );
+}
+
+#[test]
+#[ignore = "integration test"]
+fn build_workspace_composite_buildpack() {
+    TestRunner::default().build(
+        BuildConfig::new("heroku/builder:22", "tests/fixtures/procfile").buildpacks([
+            BuildpackReference::WorkspaceBuildpack(buildpack_id!("libcnb-test/composite")),
+        ]),
+        |context| {
+            assert_empty!(context.pack_stderr);
+            assert_contains!(
+                context.pack_stdout,
+                indoc! {"
+                    Buildpack A
+                    Buildpack B
+                    
+                    [Discovering process types]
+                    Procfile declares types -> web, worker, echo-args
+                "}
+            );
+        },
+    );
+}
+
+#[test]
+#[ignore = "integration test"]
+fn build_multiple_buildpacks() {
+    TestRunner::default().build(
+        BuildConfig::new("heroku/builder:22", "tests/fixtures/procfile").buildpacks([
+            BuildpackReference::WorkspaceBuildpack(buildpack_id!("libcnb-test/b")),
+            BuildpackReference::Other(String::from(PROCFILE_URL)),
+            BuildpackReference::WorkspaceBuildpack(buildpack_id!("libcnb-test/a")),
+        ]),
+        |context| {
+            assert_empty!(context.pack_stderr);
+            assert_contains!(
+                context.pack_stdout,
+                indoc! {"
+                    Buildpack B
+                    
+                    [Discovering process types]
+                    Procfile declares types -> web, worker, echo-args
+                    Buildpack A
                 "}
             );
         },
@@ -64,7 +135,7 @@ fn rebuild() {
 
 #[test]
 #[ignore = "integration test"]
-fn buildpack_packaging_failure() {
+fn packaging_failure_missing_buildpack_toml() {
     let err = panic::catch_unwind(|| {
         TestRunner::default().build(BuildConfig::new("invalid!", "tests/fixtures/empty"), |_| {
             unreachable!("The test should panic prior to the TestContext being invoked.");
@@ -77,6 +148,114 @@ fn buildpack_packaging_failure() {
         &format!(
             "Could not package directory as buildpack! No `buildpack.toml` file exists at {}",
             env::var("CARGO_MANIFEST_DIR").unwrap()
+        )
+    );
+}
+
+#[test]
+#[ignore = "integration test"]
+// TODO: Fix the implementation to return the correct error message (that the buildpack.toml doesn't match the schema):
+// https://github.com/heroku/libcnb.rs/issues/708
+#[should_panic(
+    expected = "Could not package directory as buildpack! No buildpack with id `libcnb-test/invalid-buildpack-toml` exists in the workspace at"
+)]
+fn packaging_failure_invalid_buildpack_toml() {
+    TestRunner::default().build(
+        BuildConfig::new("invalid!", "tests/fixtures/empty").buildpacks([
+            BuildpackReference::WorkspaceBuildpack(buildpack_id!(
+                "libcnb-test/invalid-buildpack-toml"
+            )),
+        ]),
+        |_| {
+            unreachable!("The test should panic prior to the TestContext being invoked.");
+        },
+    );
+}
+
+#[test]
+#[ignore = "integration test"]
+// TODO: Fix the implementation to return the correct error message. Has the same cause as:
+// https://github.com/heroku/libcnb.rs/issues/704
+#[should_panic(
+    expected = "Test references buildpack `libcnb-test/composite-missing-package-toml`, but this directory wasn't packaged as a buildpack. This is an internal libcnb-test error, please report any occurrences"
+)]
+fn packaging_failure_composite_buildpack_missing_package_toml() {
+    TestRunner::default().build(
+        BuildConfig::new("invalid!", "tests/fixtures/empty").buildpacks([
+            BuildpackReference::WorkspaceBuildpack(buildpack_id!(
+                "libcnb-test/composite-missing-package-toml"
+            )),
+        ]),
+        |_| {
+            unreachable!("The test should panic prior to the TestContext being invoked.");
+        },
+    );
+}
+
+#[test]
+#[ignore = "integration test"]
+// TODO: Fix the implementation to return the correct error message. Has the same cause as:
+// https://github.com/heroku/libcnb.rs/issues/704
+#[should_panic(
+    expected = "Test references buildpack `libcnb-test/invalid-cargo-toml`, but this directory wasn't packaged as a buildpack. This is an internal libcnb-test error, please report any occurrences"
+)]
+fn packaging_failure_invalid_cargo_toml() {
+    TestRunner::default().build(
+        BuildConfig::new("invalid!", "tests/fixtures/empty").buildpacks([
+            BuildpackReference::WorkspaceBuildpack(buildpack_id!("libcnb-test/invalid-cargo-toml")),
+        ]),
+        |_| {
+            unreachable!("The test should panic prior to the TestContext being invoked.");
+        },
+    );
+}
+
+#[test]
+#[ignore = "integration test"]
+// TODO: Fix the implementation to return the correct error message. Has the same cause as:
+// https://github.com/heroku/libcnb.rs/issues/704
+#[should_panic(
+    expected = "Test references buildpack `libcnb-test/compile-error`, but this directory wasn't packaged as a buildpack. This is an internal libcnb-test error, please report any occurrences"
+)]
+fn packaging_failure_compile_error() {
+    TestRunner::default().build(
+        BuildConfig::new("invalid!", "tests/fixtures/empty").buildpacks([
+            BuildpackReference::WorkspaceBuildpack(buildpack_id!("libcnb-test/compile-error")),
+        ]),
+        |_| {
+            unreachable!("The test should panic prior to the TestContext being invoked.");
+        },
+    );
+}
+
+#[test]
+#[ignore = "integration test"]
+fn packaging_failure_non_existent_workspace_buildpack() {
+    let err = panic::catch_unwind(|| {
+        TestRunner::default().build(
+            BuildConfig::new("invalid!", "tests/fixtures/empty").buildpacks([
+                BuildpackReference::WorkspaceBuildpack(buildpack_id!("non-existent")),
+            ]),
+            |_| {
+                unreachable!("The test should panic prior to the TestContext being invoked.");
+            },
+        );
+    })
+    .unwrap_err();
+
+    assert_eq!(
+        err.downcast_ref::<String>().unwrap(),
+        &format!(
+            "Could not package directory as buildpack! No buildpack with id `non-existent` exists in the workspace at {}",
+            // There is currently no env var for determining the workspace root directly:
+            // https://github.com/rust-lang/cargo/issues/3946
+            env::var("CARGO_MANIFEST_DIR")
+                .map(PathBuf::from)
+                .unwrap()
+                .join("../")
+                .canonicalize()
+                .unwrap()
+                .display()
         )
     );
 }
@@ -257,7 +436,7 @@ pack command failed with exit code 1!
 ERROR: image 'libcnbtest_")]
 fn download_sbom_files_failure() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "tests/fixtures/empty")
+        BuildConfig::new("invalid!", "tests/fixtures/empty")
             .buildpacks(Vec::new())
             .expected_pack_result(PackResult::Failure),
         |context| {
@@ -524,44 +703,5 @@ fn address_for_port_when_container_crashed() {
             some stdout
             
         "}
-    );
-}
-
-#[test]
-#[ignore = "integration test"]
-fn basic_build_with_libcnb_reference_to_single_buildpack() {
-    TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "tests/fixtures/empty").buildpacks([
-            BuildpackReference::WorkspaceBuildpack(buildpack_id!("libcnb-test/a")),
-        ]),
-        |context| {
-            assert_empty!(context.pack_stderr);
-            assert_contains!(
-                context.pack_stdout,
-                indoc! {"
-                    Buildpack A
-                "}
-            );
-        },
-    );
-}
-
-#[test]
-#[ignore = "integration test"]
-fn basic_build_with_libcnb_reference_to_composite_buildpack() {
-    TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "tests/fixtures/empty").buildpacks([
-            BuildpackReference::WorkspaceBuildpack(buildpack_id!("libcnb-test/composite")),
-        ]),
-        |context| {
-            assert_empty!(context.pack_stderr);
-            assert_contains!(
-                context.pack_stdout,
-                indoc! {"
-                    Buildpack A
-                    Buildpack B
-                "}
-            );
-        },
     );
 }

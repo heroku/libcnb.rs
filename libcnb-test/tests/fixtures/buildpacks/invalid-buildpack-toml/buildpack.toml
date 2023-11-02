@@ -1,0 +1,11 @@
+api = "0.8"
+
+[buildpack]
+id = "libcnb-test/invalid-buildpack-toml"
+version = "0.0.0"
+
+[[order]]
+
+[[order.group]]
+id = "libcnb-test/a"
+# `version` is a required field, but is missing.
