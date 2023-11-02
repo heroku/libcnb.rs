@@ -1,5 +1,6 @@
 [package]
-name = "one"
+name = "component-b"
 version = "0.0.0"
+publish = false
 
 [workspace]

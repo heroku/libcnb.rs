@@ -1,0 +1,6 @@
+[package]
+name = "compile-error"
+version = "0.0.0"
+publish = false
+
+[workspace]

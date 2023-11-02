@@ -7,3 +7,5 @@ uri = "libcnb:libcnb-test/a"
 [[dependencies]]
 uri = "libcnb:libcnb-test/b"
 
+[[dependencies]]
+uri = "docker://docker.io/heroku/procfile-cnb:2.0.2"
