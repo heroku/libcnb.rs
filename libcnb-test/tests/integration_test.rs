@@ -2,12 +2,16 @@
 //!
 //! All integration tests are skipped by default (using the `ignore` attribute),
 //! since performing builds is slow. To run the tests use: `cargo test -- --ignored`
+//!
+//! When testing panics, prefer using `#[should_panic(expected = "...")]`, unless you need
+//! to test dynamic values, in which case the only option is to use `panic::catch_unwind`
+//! since `should_panic` doesn't support globs/regular expressions/compile time macros.
 
 // Enable Clippy lints that are disabled by default.
 // https://rust-lang.github.io/rust-clippy/stable/index.html
 #![warn(clippy::pedantic)]
 
-use indoc::indoc;
+use indoc::{formatdoc, indoc};
 use libcnb_data::buildpack_id;
 use libcnb_test::{
     assert_contains, assert_empty, assert_not_contains, BuildConfig, BuildpackReference,
@@ -15,7 +19,7 @@ use libcnb_test::{
 };
 use std::path::PathBuf;
 use std::time::Duration;
-use std::{env, fs, thread};
+use std::{env, fs, panic, thread};
 
 const PROCFILE_URL: &str = "heroku/procfile";
 const TEST_PORT: u16 = 12345;
@@ -61,7 +65,7 @@ fn rebuild() {
 #[test]
 #[ignore = "integration test"]
 fn buildpack_packaging_failure() {
-    let err = std::panic::catch_unwind(|| {
+    let err = panic::catch_unwind(|| {
         TestRunner::default().build(BuildConfig::new("invalid!", "tests/fixtures/empty"), |_| {
             unreachable!("The test should panic prior to the TestContext being invoked.");
         });
@@ -69,8 +73,8 @@ fn buildpack_packaging_failure() {
     .unwrap_err();
 
     assert_eq!(
-        err.downcast_ref::<String>().unwrap().to_string(),
-        format!(
+        err.downcast_ref::<String>().unwrap(),
+        &format!(
             "Could not package directory as buildpack! No `buildpack.toml` file exists at {}",
             env::var("CARGO_MANIFEST_DIR").unwrap()
         )
@@ -136,24 +140,16 @@ fn expected_pack_failure() {
 
 #[test]
 #[ignore = "integration test"]
+#[should_panic(
+    expected = "Could not package directory as buildpack! No `buildpack.toml` file exists at"
+)]
 fn expected_pack_failure_still_panics_for_non_pack_failure() {
-    let err = std::panic::catch_unwind(|| {
-        TestRunner::default().build(
-            BuildConfig::new("invalid!", "tests/fixtures/empty")
-                .expected_pack_result(PackResult::Failure),
-            |_| {
-                unreachable!("The test should panic prior to the TestContext being invoked.");
-            },
-        );
-    })
-    .unwrap_err();
-
-    assert_eq!(
-        err.downcast_ref::<String>().unwrap().to_string(),
-        format!(
-            "Could not package directory as buildpack! No `buildpack.toml` file exists at {}",
-            env::var("CARGO_MANIFEST_DIR").unwrap()
-        )
+    TestRunner::default().build(
+        BuildConfig::new("invalid!", "tests/fixtures/empty")
+            .expected_pack_result(PackResult::Failure),
+        |_| {
+            unreachable!("The test should panic prior to the TestContext being invoked.");
+        },
     );
 }
 
@@ -224,24 +220,29 @@ fn app_dir_absolute_path() {
 
 #[test]
 #[ignore = "integration test"]
-// The full panic message looks like this:
-// `"App dir is not a valid directory: /.../libcnb-test/tests/fixtures/non-existent-fixture"`
-// It's intentionally an absolute path to make debugging failures easier when a relative path has been
-// passed (the common case). However, since the absolute path is system/environment dependent, we would
-// need to either construct the expected string dynamically in `should_panic` (but cannot due to
-// https://github.com/rust-lang/rust/issues/88430), or else use regex (which isn't supported either).
-// As such we test the most important part, the fact that the error message lists the non-existent
-// fixture directory path. We intentionally include the `libcnb-test/` crate directory prefix, since
-// that only appears in the absolute path, not the relative path passed to `BuildConfig::new`.
-#[should_panic(expected = "libcnb-test/tests/fixtures/non-existent-fixture")]
 fn app_dir_invalid_path() {
-    TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "tests/fixtures/non-existent-fixture")
-            .buildpacks(Vec::new())
-            .app_dir_preprocessor(|_| {
-                unreachable!("The app dir should be validated before the preprocessor is run.");
-            }),
-        |_| {},
+    let err = panic::catch_unwind(|| {
+        TestRunner::default().build(
+            BuildConfig::new("invalid!", "tests/fixtures/non-existent-fixture")
+                .buildpacks(Vec::new())
+                .app_dir_preprocessor(|_| {
+                    unreachable!("The app dir should be validated before the preprocessor is run.");
+                }),
+            |_| {},
+        );
+    })
+    .unwrap_err();
+
+    assert_eq!(
+        err.downcast_ref::<String>().unwrap(),
+        &format!(
+            "App dir is not a valid directory: {}",
+            env::var("CARGO_MANIFEST_DIR")
+                .map(PathBuf::from)
+                .unwrap()
+                .join("tests/fixtures/non-existent-fixture")
+                .display()
+        )
     );
 }
 
@@ -480,34 +481,49 @@ fn address_for_port_when_port_not_exposed() {
 
 #[test]
 #[ignore = "integration test"]
-#[should_panic(expected = "
-This normally means that the container crashed. Container logs:
-
-## stderr:
-
-some stderr
-
-## stdout:
-
-some stdout
-")]
 fn address_for_port_when_container_crashed() {
-    TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "tests/fixtures/procfile")
-            .buildpacks([BuildpackReference::Other(String::from(PROCFILE_URL))]),
-        |context| {
-            context.start_container(
-                ContainerConfig::new()
-                    .entrypoint("launcher")
-                    .command(["echo 'some stdout'; echo 'some stderr' >&2; exit 1"])
-                    .expose_port(TEST_PORT),
-                |container| {
-                    // Wait for the container to actually exit, otherwise `address_for_port()` will succeed.
-                    thread::sleep(Duration::from_secs(1));
-                    let _ = container.address_for_port(TEST_PORT);
-                },
-            );
-        },
+    let mut container_name = String::new();
+
+    // AssertUnwindSafe is required so that `container_name`` can be mutated across the unwind boundary.
+    let err = panic::catch_unwind(panic::AssertUnwindSafe(|| {
+        TestRunner::default().build(
+            BuildConfig::new("heroku/builder:22", "tests/fixtures/procfile")
+                .buildpacks([BuildpackReference::Other(String::from(PROCFILE_URL))]),
+            |context| {
+                context.start_container(
+                    ContainerConfig::new()
+                        .entrypoint("launcher")
+                        .command(["echo 'some stdout'; echo 'some stderr' >&2; exit 1"])
+                        .expose_port(TEST_PORT),
+                    |container| {
+                        container_name = container.container_name.clone();
+                        // Wait for the container to actually exit, otherwise `address_for_port()` will succeed.
+                        thread::sleep(Duration::from_secs(1));
+                        let _ = container.address_for_port(TEST_PORT);
+                    },
+                );
+            },
+        );
+    }))
+    .unwrap_err();
+
+    assert_eq!(
+        err.downcast_ref::<String>().unwrap(),
+        &formatdoc! {"
+            Error obtaining container port mapping:
+            Error: No public port '12345' published for {container_name}
+
+            This normally means that the container crashed. Container logs:
+            
+            ## stderr:
+            
+            some stderr
+            
+            ## stdout:
+            
+            some stdout
+            
+        "}
     );
 }
 
