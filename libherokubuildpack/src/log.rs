@@ -5,6 +5,9 @@ use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 ///
 /// Will panic if there was a problem setting the color settings, or all bytes could
 /// not be written due to either I/O errors or EOF being reached.
+// TODO: Replace `.unwrap()` usages with `.expect()` to give a clearer error message:
+// https://github.com/heroku/libcnb.rs/issues/712
+#[allow(clippy::unwrap_used)]
 pub fn log_error(header: impl AsRef<str>, body: impl AsRef<str>) {
     let mut stream = StandardStream::stderr(ColorChoice::Always);
     stream
@@ -24,6 +27,9 @@ pub fn log_error(header: impl AsRef<str>, body: impl AsRef<str>) {
 ///
 /// Will panic if there was a problem setting the color settings, or all bytes could
 /// not be written due to either I/O errors or EOF being reached.
+// TODO: Replace `.unwrap()` usages with `.expect()` to give a clearer error message:
+// https://github.com/heroku/libcnb.rs/issues/712
+#[allow(clippy::unwrap_used)]
 pub fn log_warning(header: impl AsRef<str>, body: impl AsRef<str>) {
     let mut stream = StandardStream::stderr(ColorChoice::Always);
     stream
@@ -43,6 +49,9 @@ pub fn log_warning(header: impl AsRef<str>, body: impl AsRef<str>) {
 ///
 /// Will panic if there was a problem setting the color settings, or all bytes could
 /// not be written due to either I/O errors or EOF being reached.
+// TODO: Replace `.unwrap()` usages with `.expect()` to give a clearer error message:
+// https://github.com/heroku/libcnb.rs/issues/712
+#[allow(clippy::unwrap_used)]
 pub fn log_header(title: impl AsRef<str>) {
     let mut stream = StandardStream::stdout(ColorChoice::Always);
     stream
@@ -56,6 +65,9 @@ pub fn log_header(title: impl AsRef<str>) {
 /// # Panics
 ///
 /// Will panic if all bytes could not be written due to I/O errors or EOF being reached.
+// TODO: Replace `.unwrap()` usages with `.expect()` to give a clearer error message:
+// https://github.com/heroku/libcnb.rs/issues/712
+#[allow(clippy::unwrap_used)]
 pub fn log_info(message: impl AsRef<str>) {
     println!("{}", message.as_ref());
     std::io::stdout().flush().unwrap();

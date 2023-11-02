@@ -1,7 +1,9 @@
 #![doc = include_str!("../README.md")]
 // Enable lints that are disabled by default.
-#![warn(clippy::pedantic)]
 #![warn(unused_crate_dependencies)]
+#![warn(clippy::pedantic)]
+#![warn(clippy::panic_in_result_fn)]
+#![warn(clippy::unwrap_used)]
 // In most cases adding error docs provides little value.
 #![allow(clippy::missing_errors_doc)]
 // This lint is too noisy and enforces a style that reduces readability in many cases.
