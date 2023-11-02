@@ -824,6 +824,7 @@ fn layer_env_read_write() {
         expected_layer_env: LayerEnv,
     }
 
+    #[allow(clippy::panic_in_result_fn)]
     impl Layer for LayerDataTestLayer {
         type Buildpack = TestBuildpack;
         type Metadata = GenericMetadata;

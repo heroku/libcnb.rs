@@ -11,7 +11,10 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-/// Packages the current crate as a buildpack into a temporary directory.
+/// Packages the current crate as a buildpack into the provided directory.
+// TODO: Convert the `assert!` usages to an additional `PackageBuildpackError` variant instead:
+// https://github.com/heroku/libcnb.rs/issues/709
+#[allow(clippy::panic_in_result_fn)]
 pub(crate) fn package_crate_buildpack(
     cargo_profile: CargoProfile,
     target_triple: impl AsRef<str>,
@@ -38,6 +41,9 @@ pub(crate) fn package_crate_buildpack(
     )
 }
 
+// TODO: Convert the `assert!` usages to an additional `PackageBuildpackError` variant instead:
+// https://github.com/heroku/libcnb.rs/issues/709
+#[allow(clippy::panic_in_result_fn)]
 pub(crate) fn package_buildpack(
     buildpack_id: &BuildpackId,
     cargo_profile: CargoProfile,
@@ -87,6 +93,9 @@ pub(crate) fn package_buildpack(
     for node in &build_order {
         let buildpack_destination_dir = buildpack_dir_resolver(&node.buildpack_id);
 
+        // TODO: Convert the `unwrap()` to an additional `PackageBuildpackError` variant instead:
+        // https://github.com/heroku/libcnb.rs/issues/710
+        #[allow(clippy::unwrap_used)]
         fs::create_dir_all(&buildpack_destination_dir).unwrap();
 
         libcnb_package::package::package_buildpack(
