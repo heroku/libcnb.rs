@@ -237,20 +237,6 @@ fn app_dir_absolute_path() {
 fn app_dir_invalid_path() {
     TestRunner::default().build(
         BuildConfig::new("heroku/builder:22", "tests/fixtures/non-existent-fixture")
-            .buildpacks(Vec::new()),
-        |_| {},
-    );
-}
-
-#[test]
-#[ignore = "integration test"]
-// The full panic message looks like this:
-// `"App dir is not a valid directory: /.../libcnb-test/tests/fixtures/non-existent-fixture"`
-// See above for why we only test this substring.
-#[should_panic(expected = "libcnb-test/tests/fixtures/non-existent-fixture")]
-fn app_dir_invalid_path_checked_before_applying_preprocessor() {
-    TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "tests/fixtures/non-existent-fixture")
             .buildpacks(Vec::new())
             .app_dir_preprocessor(|_| {
                 unreachable!("The app dir should be validated before the preprocessor is run.");
