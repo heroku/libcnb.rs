@@ -18,6 +18,7 @@ libcnb-common.workspace = true
 libcnb-data.workspace = true
 libcnb-package.workspace = true
 tempfile = "3.8.0"
+thiserror = "1.0.48"
 
 [dev-dependencies]
 indoc = "2.0.4"
