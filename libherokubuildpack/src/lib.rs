@@ -12,9 +12,16 @@ pub mod error;
 pub mod fs;
 #[cfg(feature = "log")]
 pub mod log;
+#[cfg(feature = "output")]
+pub mod output;
 #[cfg(feature = "tar")]
 pub mod tar;
 #[cfg(feature = "toml")]
 pub mod toml;
 #[cfg(feature = "write")]
 pub mod write;
+
+#[cfg(test)]
+use ascii_table as _;
+#[cfg(test)]
+use fun_run as _;
