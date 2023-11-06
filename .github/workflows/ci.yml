@@ -93,3 +93,21 @@ jobs:
         # TODO: Switch this back to using the `alpine` tag once the stable Pack CLI release supports
         # image extensions (currently newer sample alpine images fail to build with stable Pack).
         run: pack build example-basics --builder cnbs/sample-builder@sha256:da5ff69191919f1ff30d5e28859affff8e39f23038137c7751e24a42e919c1ab --trust-builder --buildpack packaged/x86_64-unknown-linux-musl/debug/libcnb-examples_basics --path examples/
+
+  print-style-guide:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install musl-tools
+        run: sudo apt-get install musl-tools --no-install-recommends
+      - name: Update Rust toolchain
+        run: rustup update
+      - name: Install Rust linux-musl target
+        run: rustup target add x86_64-unknown-linux-musl
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2.7.1
+      - name: Install Pack CLI
+        uses: buildpacks/github-actions/setup-pack@v5.5.0
+      - name: PRINT style guide
+        run: cargo run --example print_style_guide

@@ -17,8 +17,11 @@ all-features = true
 [lints]
 workspace = true
 
+[[example]]
+name = "print_style_guide"
+
 [features]
-default = ["command", "download", "digest", "error", "log", "tar", "toml", "fs", "write"]
+default = ["command", "download", "digest", "error", "log", "tar", "toml", "fs", "write", "output"]
 download = ["dep:ureq", "dep:thiserror"]
 digest = ["dep:sha2"]
 error = ["log", "dep:libcnb"]
@@ -27,6 +30,7 @@ tar = ["dep:tar", "dep:flate2"]
 toml = ["dep:toml"]
 fs = ["dep:pathdiff"]
 command = ["write", "dep:crossbeam-utils"]
+output = ["dep:lazy_static", "dep:regex", "dep:const_format"]
 write = []
 
 [dependencies]
@@ -45,6 +49,14 @@ termcolor = { version = "1.4.0", optional = true }
 thiserror = { version = "1.0.50", optional = true }
 toml = { workspace = true, optional = true }
 ureq = { version = "2.9.1", default-features = false, features = ["tls"], optional = true }
+lazy_static = { version = "1", optional = true }
+regex = { version = "1", optional = true }
+const_format = { version = "0.2", optional = true }
 
 [dev-dependencies]
 tempfile = "3.8.1"
+libcnb-test = {workspace = true}
+indoc = "2"
+pretty_assertions = "1"
+fun_run = "0.1.1"
+ascii_table = { version = "4", features = ["color_codes"] }
