@@ -21,40 +21,40 @@ pub enum Error<E> {
     #[error("Stack ID error: {0}")]
     StackIdError(#[from] StackIdError),
 
-    #[error("Could not determine app directory: {0}")]
+    #[error("Couldn't determine app directory: {0}")]
     CannotDetermineAppDirectory(std::io::Error),
 
-    #[error("Could not determine buildpack directory: {0}")]
+    #[error("Couldn't determine buildpack directory: {0}")]
     CannotDetermineBuildpackDirectory(std::env::VarError),
 
-    #[error("Could not determine stack id: {0}")]
+    #[error("Couldn't determine stack id: {0}")]
     CannotDetermineStackId(std::env::VarError),
 
-    #[error("Cannot create platform from platform path: {0}")]
+    #[error("Couldn't create platform from platform path: {0}")]
     CannotCreatePlatformFromPath(std::io::Error),
 
-    #[error("Cannot read buildpack plan: {0}")]
+    #[error("Couldn't read buildpack plan: {0}")]
     CannotReadBuildpackPlan(TomlFileError),
 
-    #[error("Cannot read buildpack descriptor (buildpack.toml): {0}")]
+    #[error("Couldn't read buildpack.toml: {0}")]
     CannotReadBuildpackDescriptor(TomlFileError),
 
-    #[error("Cannot read store (store.toml): {0}")]
+    #[error("Couldn't read store.toml: {0}")]
     CannotReadStore(TomlFileError),
 
-    #[error("Cannot write build plan: {0}")]
+    #[error("Couldn't write build plan: {0}")]
     CannotWriteBuildPlan(TomlFileError),
 
-    #[error("Cannot write launch.toml: {0}")]
+    #[error("Couldn't write launch.toml: {0}")]
     CannotWriteLaunch(TomlFileError),
 
-    #[error("Cannot write store.toml: {0}")]
+    #[error("Couldn't write store.toml: {0}")]
     CannotWriteStore(TomlFileError),
 
-    #[error("Cannot write build SBOM files: {0}")]
+    #[error("Couldn't write build SBOM files: {0}")]
     CannotWriteBuildSbom(std::io::Error),
 
-    #[error("Cannot write launch SBOM files: {0}")]
+    #[error("Couldn't write launch SBOM files: {0}")]
     CannotWriteLaunchSbom(std::io::Error),
 
     #[error("Buildpack error: {0:?}")]

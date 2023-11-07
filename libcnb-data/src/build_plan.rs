@@ -119,7 +119,7 @@ impl Require {
             Ok(())
         } else {
             Err(toml::ser::Error::custom(String::from(
-                "Could not be serialized as a TOML Table.",
+                "Couldn't be serialized as a TOML Table.",
             )))
         }
     }

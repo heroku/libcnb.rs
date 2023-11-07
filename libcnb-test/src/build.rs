@@ -113,7 +113,7 @@ pub(crate) enum PackageBuildpackError {
     BuildpackDescriptorNotFound(PathBuf),
     #[error("Couldn't find a buildpack with ID '{0}' in the workspace at {1}")]
     BuildpackIdNotFound(BuildpackId, PathBuf),
-    #[error("I/O error creating directory {0}: {1}")]
+    #[error("Couldn't create directory {0}: {1}")]
     CannotCreateDirectory(PathBuf, io::Error),
     #[error("Couldn't read buildpack.toml: {0}")]
     CannotReadBuildpackDescriptor(TomlFileError),

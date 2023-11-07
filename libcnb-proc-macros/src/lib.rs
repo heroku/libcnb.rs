@@ -44,7 +44,7 @@ pub fn verify_regex(input: TokenStream) -> TokenStream {
         }
         Err(err) => syn::Error::new(
             input.regex.span(),
-            format!("Could not compile regular expression: {err}"),
+            format!("Couldn't compile regular expression: {err}"),
         )
         .to_compile_error(),
     };
@@ -110,12 +110,12 @@ pub fn verify_bin_target_exists(input: TokenStream) -> TokenStream {
             }
         } else {
             quote! {
-                compile_error!("Cannot read root package for this crate!")
+                compile_error!("Couldn't read root package for this crate!")
             }
         }
     } else {
         quote! {
-            compile_error!("Cannot read Cargo metadata!")
+            compile_error!("Couldn't read Cargo metadata!")
         }
     };
 

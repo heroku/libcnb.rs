@@ -24,7 +24,7 @@ use std::path::{Path, PathBuf};
 /// # Errors
 ///
 /// Returns `Err` if a buildpack declares an invalid dependency, has an invalid buildpack.toml or
-/// package.toml or an IO error occurred while traversing the given directory.
+/// package.toml or an I/O error occurred while traversing the given directory.
 pub fn build_libcnb_buildpacks_dependency_graph(
     cargo_workspace_root: &Path,
 ) -> Result<Graph<BuildpackDependencyGraphNode, ()>, BuildBuildpackDependencyGraphError> {
@@ -86,9 +86,9 @@ fn build_libcnb_buildpack_dependency_graph_node(
 pub enum BuildBuildpackDependencyGraphError {
     #[error("Error while finding buildpack directories: {0}")]
     FindBuildpackDirectories(ignore::Error),
-    #[error("Cannot read buildpack descriptor: {0}")]
+    #[error("Couldn't read buildpack.toml: {0}")]
     ReadBuildpackDescriptorError(TomlFileError),
-    #[error("Cannot read package descriptor: {0}")]
+    #[error("Couldn't read package.toml: {0}")]
     ReadPackageDescriptorError(TomlFileError),
     #[error("Dependency uses an invalid buildpack id: {0}")]
     InvalidDependencyBuildpackId(BuildpackIdError),

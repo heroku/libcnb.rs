@@ -4,7 +4,7 @@ use which::which;
 /// Provides assistance for cross-compiling from the user's host platform to the desired target platform.
 ///
 /// This function will not install required toolchains, linkers or compilers automatically. It will
-/// look for the required tools and returns a human-readable help text if they cannot be found or
+/// look for the required tools and returns a human-readable help text if they can't be found or
 /// any other issue has been detected.
 pub fn cross_compile_assistance(target_triple: impl AsRef<str>) -> CrossCompileAssistance {
     // Background: https://omarkhawaja.com/cross-compiling-rust-from-macos-to-linux/

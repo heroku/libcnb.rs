@@ -112,7 +112,7 @@ macro_rules! additional_buildpack_binary_path {
             {
                 ::std::env::var("CNB_BUILDPACK_DIR")
                     .map(::std::path::PathBuf::from)
-                    .expect("Could not read CNB_BUILDPACK_DIR environment variable")
+                    .expect("Couldn't read CNB_BUILDPACK_DIR environment variable")
                     .join(".libcnb-cargo")
                     .join("additional-bin")
                     .join($target_name)

@@ -21,10 +21,10 @@ pub(crate) fn normalize_package_descriptor(
 
 #[derive(thiserror::Error, Debug)]
 pub enum NormalizePackageDescriptorError {
-    #[error("{0}")]
-    ReplaceLibcnbUriError(#[source] ReplaceLibcnbUriError),
-    #[error("{0}")]
-    PackageDescriptorDependencyError(#[source] PackageDescriptorDependencyError),
+    #[error(transparent)]
+    ReplaceLibcnbUriError(ReplaceLibcnbUriError),
+    #[error(transparent)]
+    PackageDescriptorDependencyError(PackageDescriptorDependencyError),
 }
 
 fn replace_libcnb_uris(

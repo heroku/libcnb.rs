@@ -179,7 +179,7 @@ fn packaging_failure_invalid_buildpack_toml() {
 #[test]
 #[ignore = "integration test"]
 #[should_panic(
-    expected = "Error packaging buildpack 'libcnb-test/composite-missing-package-toml': Could not read package.toml: IO error while reading/writing TOML file: No such file or directory (os error 2)"
+    expected = "Error packaging buildpack 'libcnb-test/composite-missing-package-toml': Couldn't read package.toml: I/O error while reading/writing TOML file: No such file or directory (os error 2)"
 )]
 fn packaging_failure_composite_buildpack_missing_package_toml() {
     TestRunner::default().build(

@@ -18,7 +18,7 @@ use std::process::{Command, ExitStatus};
 ///
 /// # Errors
 ///
-/// Will return `Err` if any build did not finish successfully, the configuration cannot be
+/// Will return `Err` if any build did not finish successfully, the configuration can't be
 /// read or the configured main buildpack binary does not exist.
 pub fn build_buildpack_binaries(
     project_path: impl AsRef<Path>,
@@ -167,7 +167,7 @@ pub struct BuildpackBinaries {
 
 #[derive(thiserror::Error, Debug)]
 pub enum BuildError {
-    #[error("Error while running Cargo build process: {0}")]
+    #[error("I/O error while running Cargo build process: {0}")]
     CargoProcessIoError(#[source] std::io::Error),
     #[error("Cargo unexpectedly exited with status {0}")]
     UnexpectedCargoExitStatus(ExitStatus),
@@ -179,6 +179,6 @@ pub enum BuildBinariesError {
     CannotDetermineBuildpackCargoTargetName(#[source] DetermineBuildpackCargoTargetNameError),
     #[error("Failed to build binary target {0}: {1}")]
     BuildError(String, #[source] BuildError),
-    #[error("Binary target {0} could not be found")]
+    #[error("Binary target {0} couldn't be found")]
     MissingBuildpackTarget(String),
 }

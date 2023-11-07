@@ -75,7 +75,7 @@ impl<'a> TestContext<'a> {
     ///
     /// # Panics
     ///
-    /// Panics if there was an error starting the container, such as when the specified entrypoint/command cannot be found.
+    /// Panics if there was an error starting the container, such as when the specified entrypoint/command can't be found.
     ///
     /// Note: Does not panic if the container exits after starting (including if it crashes and exits non-zero).
     pub fn start_container<C: Borrow<ContainerConfig>, F: FnOnce(ContainerContext)>(
@@ -223,7 +223,7 @@ impl<'a> TestContext<'a> {
     /// Panics if there was an error creating the temporary directory used to store the
     /// SBOM files, or if the Pack CLI command used to download the SBOM files failed.
     pub fn download_sbom_files<R, F: Fn(SbomFiles) -> R>(&self, f: F) -> R {
-        let temp_dir = tempdir().expect("Could not create temporary directory for SBOM files");
+        let temp_dir = tempdir().expect("Couldn't create temporary directory for SBOM files");
 
         let mut command = PackSbomDownloadCommand::new(&self.image_name);
         command.output_dir(temp_dir.path());

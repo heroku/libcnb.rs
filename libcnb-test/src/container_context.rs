@@ -125,7 +125,7 @@ impl ContainerContext {
                 .stdout
                 .trim()
                 .parse()
-                .expect("Couldn't parse `docker port` output"),
+                .unwrap_or_else(|error| panic!("Error parsing `docker port` output: {error}")),
             Err(CommandError::NonZeroExitCode { log_output, .. }) => {
                 panic!(
                     "Error obtaining container port mapping:\n{}\nThis normally means that the container crashed. Container logs:\n\n{}",

@@ -4,7 +4,7 @@ use std::path::{Component, Path, PathBuf};
 ///
 /// # Errors
 ///
-/// Returns `Err` if an IO error occurred during the size calculation.
+/// Returns `Err` if an I/O error occurred during the size calculation.
 pub fn calculate_dir_size(path: impl AsRef<Path>) -> std::io::Result<u64> {
     let mut size_in_bytes = 0;
 

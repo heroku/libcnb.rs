@@ -53,7 +53,7 @@ pub(crate) fn sha256_checksum(path: impl AsRef<Path>) -> Result<String, std::io:
     fs::read(path).map(|bytes| format!("{:x}", sha2::Sha256::digest(bytes)))
 }
 
-/// Helper to run very simple commands where we just need to handle IO errors and non-zero exit
+/// Helper to run very simple commands where we just need to handle I/O errors and non-zero exit
 /// codes. Not very useful in complex scenarios, but can cut down the amount of code in simple
 /// cases.
 pub(crate) fn run_simple_command<E, F: FnOnce(std::io::Error) -> E, F2: FnOnce(ExitStatus) -> E>(

@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Improved the consistency of all user-facing libcnb.rs error message wordings. ([#722](https://github.com/heroku/libcnb.rs/pull/722))
+
 ### Fixed
 
 - `libcnb-test`:

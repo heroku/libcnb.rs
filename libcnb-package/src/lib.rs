@@ -44,7 +44,7 @@ pub enum CargoProfile {
 ///
 /// # Errors
 ///
-/// Will return `Err` if the buildpack directory could not be assembled.
+/// Will return `Err` if the buildpack directory couldn't be assembled.
 pub fn assemble_buildpack_directory(
     destination_path: impl AsRef<Path>,
     buildpack_descriptor_path: impl AsRef<Path>,
@@ -132,7 +132,7 @@ pub fn find_buildpack_dirs(start_dir: &Path) -> Result<Vec<PathBuf>, ignore::Err
 ///
 /// # Errors
 ///
-/// Will return an `Err` if the root workspace directory cannot be located due to:
+/// Will return an `Err` if the root workspace directory can't be located due to:
 /// - no `CARGO` environment variable with the path to the `cargo` binary
 /// - executing this function with a directory that is not within a Cargo project
 /// - any other file or system error that might occur
@@ -167,13 +167,13 @@ pub fn find_cargo_workspace_root_dir(
 
 #[derive(thiserror::Error, Debug)]
 pub enum FindCargoWorkspaceRootError {
-    #[error("Cannot get value of CARGO environment variable: {0}")]
+    #[error("Couldn't get value of CARGO environment variable: {0}")]
     GetCargoEnv(#[source] std::env::VarError),
     #[error("Error while spawning Cargo process: {0}")]
     SpawnCommand(#[source] std::io::Error),
     #[error("Unexpected Cargo exit status ({}) while attempting to read workspace root", exit_code_or_unknown(*.0))]
     CommandFailure(std::process::ExitStatus),
-    #[error("Could not locate a Cargo workspace within {0} or its parent directories")]
+    #[error("Couldn't locate a Cargo workspace within {0} or its parent directories")]
     GetParentDirectory(PathBuf),
 }
 

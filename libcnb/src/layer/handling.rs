@@ -199,7 +199,7 @@ impl<E> From<std::io::Error> for HandleLayerErrorOrBuildpackError<E> {
 
 #[derive(thiserror::Error, Debug)]
 pub enum HandleLayerError {
-    #[error("Unexpected IoError while handling layer: {0}")]
+    #[error("Unexpected I/O error while handling layer: {0}")]
     IoError(#[from] std::io::Error),
 
     #[error("Unexpected DeleteLayerError while handling layer: {0}")]
@@ -217,28 +217,28 @@ pub enum HandleLayerError {
 
 #[derive(thiserror::Error, Debug)]
 pub enum DeleteLayerError {
-    #[error("IOError while deleting existing layer: {0}")]
+    #[error("I/O error while deleting existing layer: {0}")]
     IoError(#[from] std::io::Error),
 }
 
 #[derive(thiserror::Error, Debug)]
 pub enum ReadLayerError {
-    #[error("Layer content metadata could not be parsed!")]
+    #[error("Layer content metadata couldn't be parsed!")]
     LayerContentMetadataParseError(toml::de::Error),
 
-    #[error("Unexpected IoError while reading layer: {0}")]
+    #[error("Unexpected I/O error while reading layer: {0}")]
     IoError(#[from] std::io::Error),
 }
 
 #[derive(thiserror::Error, Debug)]
 pub enum WriteLayerError {
-    #[error("Unexpected IoError while writing layer metadata: {0}")]
+    #[error("Unexpected I/O error while writing layer metadata: {0}")]
     IoError(#[from] std::io::Error),
 
     #[error("Error while writing layer content metadata TOML: {0}")]
     TomlFileError(#[from] TomlFileError),
 
-    #[error("Cannot find exec.d file for copying: {0}")]
+    #[error("Couldn't find exec.d file for copying: {0}")]
     MissingExecDFile(PathBuf),
 }
 
@@ -317,7 +317,7 @@ fn write_layer<M: Serialize, P: AsRef<Path>>(
 
                 for (name, path) in exec_d_programs {
                     // We could just try to copy the file here and let the call-site deal with the
-                    // IO errors when the path does not exist. We're using an explicit error variant
+                    // I/O errors when the path does not exist. We're using an explicit error variant
                     // for a missing exec.d binary makes it easier to debug issues with packaging
                     // since the usage of exec.d binaries often relies on implicit packaging the
                     // buildpack author might not be aware of.
