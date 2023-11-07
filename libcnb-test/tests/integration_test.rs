@@ -146,8 +146,12 @@ fn packaging_failure_missing_buildpack_toml() {
     assert_eq!(
         err.downcast_ref::<String>().unwrap(),
         &format!(
-            "Could not package directory as buildpack! No `buildpack.toml` file exists at {}",
-            env::var("CARGO_MANIFEST_DIR").unwrap()
+            "Error packaging current crate as buildpack: Couldn't find a buildpack.toml file at {}",
+            env::var("CARGO_MANIFEST_DIR")
+                .map(PathBuf::from)
+                .unwrap()
+                .join("buildpack.toml")
+                .display()
         )
     );
 }
@@ -157,7 +161,7 @@ fn packaging_failure_missing_buildpack_toml() {
 // TODO: Fix the implementation to return the correct error message (that the buildpack.toml doesn't match the schema):
 // https://github.com/heroku/libcnb.rs/issues/708
 #[should_panic(
-    expected = "Could not package directory as buildpack! No buildpack with id `libcnb-test/invalid-buildpack-toml` exists in the workspace at"
+    expected = "Error packaging buildpack 'libcnb-test/invalid-buildpack-toml': Couldn't find a buildpack with ID 'libcnb-test/invalid-buildpack-toml' in the workspace at"
 )]
 fn packaging_failure_invalid_buildpack_toml() {
     TestRunner::default().build(
@@ -174,10 +178,8 @@ fn packaging_failure_invalid_buildpack_toml() {
 
 #[test]
 #[ignore = "integration test"]
-// TODO: Fix the implementation to return the correct error message. Has the same cause as:
-// https://github.com/heroku/libcnb.rs/issues/704
 #[should_panic(
-    expected = "Test references buildpack `libcnb-test/composite-missing-package-toml`, but this directory wasn't packaged as a buildpack. This is an internal libcnb-test error, please report any occurrences"
+    expected = "Error packaging buildpack 'libcnb-test/composite-missing-package-toml': Could not read package.toml: IO error while reading/writing TOML file: No such file or directory (os error 2)"
 )]
 fn packaging_failure_composite_buildpack_missing_package_toml() {
     TestRunner::default().build(
@@ -194,10 +196,8 @@ fn packaging_failure_composite_buildpack_missing_package_toml() {
 
 #[test]
 #[ignore = "integration test"]
-// TODO: Fix the implementation to return the correct error message. Has the same cause as:
-// https://github.com/heroku/libcnb.rs/issues/704
 #[should_panic(
-    expected = "Test references buildpack `libcnb-test/invalid-cargo-toml`, but this directory wasn't packaged as a buildpack. This is an internal libcnb-test error, please report any occurrences"
+    expected = "Error packaging buildpack 'libcnb-test/invalid-cargo-toml': Obtaining Cargo metadata failed: `cargo metadata` exited with an error: "
 )]
 fn packaging_failure_invalid_cargo_toml() {
     TestRunner::default().build(
@@ -212,10 +212,8 @@ fn packaging_failure_invalid_cargo_toml() {
 
 #[test]
 #[ignore = "integration test"]
-// TODO: Fix the implementation to return the correct error message. Has the same cause as:
-// https://github.com/heroku/libcnb.rs/issues/704
 #[should_panic(
-    expected = "Test references buildpack `libcnb-test/compile-error`, but this directory wasn't packaged as a buildpack. This is an internal libcnb-test error, please report any occurrences"
+    expected = "Error packaging buildpack 'libcnb-test/compile-error': Building buildpack binaries failed: Failed to build binary target compile-error: Cargo unexpectedly exited with status exit status: 101"
 )]
 fn packaging_failure_compile_error() {
     TestRunner::default().build(
@@ -246,7 +244,7 @@ fn packaging_failure_non_existent_workspace_buildpack() {
     assert_eq!(
         err.downcast_ref::<String>().unwrap(),
         &format!(
-            "Could not package directory as buildpack! No buildpack with id `non-existent` exists in the workspace at {}",
+            "Error packaging buildpack 'non-existent': Couldn't find a buildpack with ID 'non-existent' in the workspace at {}",
             // There is currently no env var for determining the workspace root directly:
             // https://github.com/rust-lang/cargo/issues/3946
             env::var("CARGO_MANIFEST_DIR")
@@ -320,7 +318,7 @@ fn expected_pack_failure() {
 #[test]
 #[ignore = "integration test"]
 #[should_panic(
-    expected = "Could not package directory as buildpack! No `buildpack.toml` file exists at"
+    expected = "Error packaging current crate as buildpack: Couldn't find a buildpack.toml file"
 )]
 fn expected_pack_failure_still_panics_for_non_pack_failure() {
     TestRunner::default().build(

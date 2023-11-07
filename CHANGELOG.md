@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `libcnb-test`:
+  - Fixed incorrect error messages being shown for buildpack compilation/packaging failures. ([#720](https://github.com/heroku/libcnb.rs/pull/720))
 
 ## [0.15.0] - 2023-09-25
 

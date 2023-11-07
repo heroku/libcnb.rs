@@ -107,7 +107,10 @@ impl TestRunner {
                         &config.target_triple,
                         &cargo_manifest_dir,
                         buildpacks_target_dir.path(),
-                    ).expect("Test references crate buildpack, but crate wasn't packaged as a buildpack. This is an internal libcnb-test error, please report any occurrences");
+                    )
+                    .unwrap_or_else(|error| {
+                        panic!("Error packaging current crate as buildpack: {error}")
+                    });
                     pack_command.buildpack(crate_buildpack_dir);
                 }
 
@@ -117,8 +120,11 @@ impl TestRunner {
                         config.cargo_profile,
                         &config.target_triple,
                         &cargo_manifest_dir,
-                        buildpacks_target_dir.path()
-                    ).unwrap_or_else(|_| panic!("Test references buildpack `{buildpack_id}`, but this directory wasn't packaged as a buildpack. This is an internal libcnb-test error, please report any occurrences"));
+                        buildpacks_target_dir.path(),
+                    )
+                    .unwrap_or_else(|error| {
+                        panic!("Error packaging buildpack '{buildpack_id}': {error}")
+                    });
                     pack_command.buildpack(buildpack_dir);
                 }
 
