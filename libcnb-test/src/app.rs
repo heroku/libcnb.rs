@@ -21,9 +21,11 @@ pub(crate) fn copy_app(app_dir: impl AsRef<Path>) -> Result<AppDir, PrepareAppEr
         })
 }
 
-#[derive(Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum PrepareAppError {
+    #[error("Couldn't create temporary directory: {0}")]
     CreateTempDirError(std::io::Error),
+    #[error("Couldn't copy directory: {0}")]
     CopyAppError(fs_extra::error::Error),
 }
 

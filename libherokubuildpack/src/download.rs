@@ -6,7 +6,7 @@ pub enum DownloadError {
     #[error("HTTP error while downloading file: {0}")]
     HttpError(#[from] Box<ureq::Error>),
 
-    #[error("IO error while downloading file: {0}")]
+    #[error("I/O error while downloading file: {0}")]
     IoError(#[from] std::io::Error),
 }
 

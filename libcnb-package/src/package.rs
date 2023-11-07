@@ -43,9 +43,9 @@ pub fn package_buildpack(
 
 #[derive(thiserror::Error, Debug)]
 pub enum PackageBuildpackError {
-    #[error("{0}")]
+    #[error(transparent)]
     PackageCompositeBuildpackError(PackageCompositeBuildpackError),
-    #[error("{0}")]
+    #[error(transparent)]
     PackageLibcnbBuildpackError(PackageLibcnbBuildpackError),
     #[error("Buildpack is not supported to be packaged")]
     UnsupportedBuildpack,
@@ -95,7 +95,7 @@ pub fn package_libcnb_buildpack(
 pub enum PackageLibcnbBuildpackError {
     #[error("Assembling buildpack directory failed: {0}")]
     AssembleBuildpackDirectory(std::io::Error),
-    #[error("IO error while writing package descriptor: {0}")]
+    #[error("Couldn't write package.toml: {0}")]
     WritePackageDescriptor(std::io::Error),
     #[error("Building buildpack binaries failed: {0}")]
     BuildBinariesError(crate::build::BuildBinariesError),
@@ -115,7 +115,7 @@ pub enum PackageLibcnbBuildpackError {
 /// # Errors
 ///
 /// Returns `Err` if a `libcnb:` URI refers to a buildpack not in `buildpack_paths` or packaging
-/// otherwise failed (i.e. IO errors).
+/// otherwise failed (i.e. I/O errors).
 pub fn package_composite_buildpack(
     buildpack_directory: &Path,
     destination: &Path,
@@ -150,12 +150,12 @@ pub fn package_composite_buildpack(
 
 #[derive(thiserror::Error, Debug)]
 pub enum PackageCompositeBuildpackError {
-    #[error("Could not copy buildpack.toml: {0}")]
+    #[error("Couldn't copy buildpack.toml: {0}")]
     CouldNotCopyBuildpackToml(std::io::Error),
-    #[error("Could not read package.toml: {0}")]
+    #[error("Couldn't read package.toml: {0}")]
     CouldNotReadPackageDescriptor(TomlFileError),
     #[error("Error while normalizing package.toml: {0}")]
     NormalizePackageDescriptorError(NormalizePackageDescriptorError),
-    #[error("Could not write package descriptor: {0}")]
+    #[error("Couldn't write package.toml: {0}")]
     CouldNotWritePackageDescriptor(TomlFileError),
 }

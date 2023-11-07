@@ -29,7 +29,7 @@ use std::fmt::Debug;
 ///             log_error("Invalid foo.toml", "Your app's foo.toml is invalid!");
 ///         }
 ///         FooBuildpackError::CannotExecuteFooBuildTool(inner) => {
-///             log_error("Cannot execute foo build tool", format!("Cause: {}", &inner));
+///             log_error("Couldn't execute foo build tool", format!("Cause: {}", &inner));
 ///         }
 ///     }
 /// }

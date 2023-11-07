@@ -46,7 +46,7 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<(), Error> {
             CrossCompileAssistance::Configuration { cargo_env } => cargo_env,
             CrossCompileAssistance::NoAssistance => {
                 eprintln!(
-                    "Could not determine automatic cross-compile settings for target triple {}.",
+                    "Couldn't determine automatic cross-compile settings for target triple {}.",
                     args.target
                 );
                 eprintln!("This is not an error, but without proper cross-compile settings in your Cargo manifest and locally installed toolchains, compilation might fail.");

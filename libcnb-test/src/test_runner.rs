@@ -59,9 +59,10 @@ impl TestRunner {
     ) {
         let config = config.borrow();
 
-        let cargo_manifest_dir = env::var("CARGO_MANIFEST_DIR")
-            .map(PathBuf::from)
-            .expect("Could not determine Cargo manifest directory");
+        let cargo_manifest_dir = env::var("CARGO_MANIFEST_DIR").map_or_else(
+            |error| panic!("Error determining Cargo manifest directory: {error}"),
+            PathBuf::from,
+        );
 
         let app_dir = {
             let normalized_app_dir_path = if config.app_dir.is_relative() {
@@ -80,7 +81,7 @@ impl TestRunner {
             // preprocessor. Skip app copying if no changes to the app will be made.
             if let Some(app_dir_preprocessor) = &config.app_dir_preprocessor {
                 let temporary_app_dir = app::copy_app(&normalized_app_dir_path)
-                    .expect("Could not copy app to temporary location");
+                    .expect("Error copying app fixture to temporary location");
 
                 (app_dir_preprocessor)(temporary_app_dir.as_path().to_owned());
 
@@ -91,7 +92,7 @@ impl TestRunner {
         };
 
         let buildpacks_target_dir =
-            tempdir().expect("Could not create a temporary directory for compiled buildpacks");
+            tempdir().expect("Error creating temporary directory for compiled buildpacks");
 
         let mut pack_command = PackBuildCommand::new(&config.builder_name, &app_dir, &image_name);
 

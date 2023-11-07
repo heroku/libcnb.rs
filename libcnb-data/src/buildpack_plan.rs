@@ -25,7 +25,11 @@ impl Entry {
     where
         T: Deserialize<'de>,
     {
-        // All toml `Value`s have `try_into()` which converts them to a `T` if `Deserialize` and `Deserializer` is implemented for `T`. Sadly, the `Table` type we use in `Entry` is not a `Value` so we need to make it one by wrapping it. We cannot wrap directly in `Entry` since that would allow users to put non-table TOML values as metadata. As outlined earlier, we can't get around the clone since we're only borrowing the metadata.
+        // All toml `Value`s have `try_into()` which converts them to a `T` if `Deserialize` and
+        // `Deserializer` is implemented for `T`. Sadly, the `Table` type we use in `Entry` is not
+        // a `Value` so we need to make it one by wrapping it. We can't wrap directly in `Entry`
+        // since that would allow users to put non-table TOML values as metadata. As outlined
+        // earlier, we can't get around the clone since we're only borrowing the metadata.
         toml::Value::Table(self.metadata.clone()).try_into()
     }
 }

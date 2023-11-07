@@ -23,7 +23,7 @@ pub trait Layer {
     /// The metadata type for this layer. This is the data within `[metadata]` of the layer content
     /// metadata. If you wish to use raw, untyped, TOML data instead, use [`GenericMetadata`].
     ///
-    /// If the layer metadata cannot be parsed into this type, libcnb will call [`migrate_incompatible_metadata`](Self::migrate_incompatible_metadata)
+    /// If the layer metadata can't be parsed into this type, libcnb will call [`migrate_incompatible_metadata`](Self::migrate_incompatible_metadata)
     /// with the layer's metadata as raw TOML. This allows migration of older metadata.
     type Metadata: DeserializeOwned + Serialize + Clone;
 

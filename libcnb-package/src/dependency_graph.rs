@@ -24,7 +24,7 @@ where
 /// # Errors
 ///
 /// Will return an `Err` if the graph contains references to missing dependencies or the
-/// dependencies of a [`DependencyNode`] could not be gathered.
+/// dependencies of a [`DependencyNode`] couldn't be gathered.
 pub fn create_dependency_graph<T, I, E>(
     nodes: Vec<T>,
 ) -> Result<Graph<T, ()>, CreateDependencyGraphError<I, E>>

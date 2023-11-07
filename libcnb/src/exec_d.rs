@@ -26,11 +26,11 @@ pub fn write_exec_d_program_output<O: Into<ExecDProgramOutput>>(o: O) {
         // validation in this context.
         let output_file = unsafe { File::from_raw_fd(3) };
 
-        let serialized_output =
-            toml::to_string(&o.into()).expect("Could not TOML serialize exec.d program output: ");
+        let serialized_output = toml::to_string(&o.into())
+            .expect("Couldn't TOML serialize the exec.d program output: ");
 
         BufWriter::new(output_file)
             .write_all(serialized_output.as_bytes())
-            .expect("Could not write exec.d program output: ");
+            .expect("Couldn't write exec.d program output: ");
     }
 }
