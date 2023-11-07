@@ -125,6 +125,6 @@ pub(crate) enum PackageBuildpackError {
     FindCargoWorkspaceRoot(FindCargoWorkspaceRootError),
     #[error("Couldn't get buildpack dependencies: {0}")]
     GetDependencies(GetDependenciesError<BuildpackId>),
-    #[error("{0}")]
+    #[error(transparent)]
     PackageBuildpack(libcnb_package::package::PackageBuildpackError),
 }
