@@ -18,6 +18,8 @@ mod error;
 mod exit_code;
 mod platform;
 mod runtime;
+#[cfg(feature = "trace")]
+mod tracing;
 mod util;
 
 pub use buildpack::Buildpack;

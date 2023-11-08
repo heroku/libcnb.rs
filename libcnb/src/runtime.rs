@@ -5,6 +5,8 @@ use crate::detect::{DetectContext, InnerDetectResult};
 use crate::error::Error;
 use crate::platform::Platform;
 use crate::sbom::cnb_sbom_path;
+#[cfg(feature = "trace")]
+use crate::tracing::start_trace;
 use crate::util::is_not_found_error_kind;
 use crate::{exit_code, TomlFileError, LIBCNB_SUPPORTED_BUILDPACK_API};
 use libcnb_common::toml_file::{read_toml_file, write_toml_file};
@@ -138,14 +140,32 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
         buildpack_descriptor: read_buildpack_descriptor()?,
     };
 
-    match buildpack.detect(detect_context)?.0 {
-        InnerDetectResult::Fail => Ok(exit_code::DETECT_DETECTION_FAILED),
+    #[cfg(feature = "trace")]
+    let mut trace = start_trace(&detect_context.buildpack_descriptor.buildpack, "detect");
+
+    let detect_result = buildpack.detect(detect_context);
+
+    #[cfg(feature = "trace")]
+    if let Err(ref err) = detect_result {
+        trace.set_error(err);
+    }
+
+    match detect_result?.0 {
+        InnerDetectResult::Fail => {
+            #[cfg(feature = "trace")]
+            trace.add_event("detect-failed");
+            Ok(exit_code::DETECT_DETECTION_FAILED)
+        }
         InnerDetectResult::Pass { build_plan } => {
             if let Some(build_plan) = build_plan {
-                write_toml_file(&build_plan, build_plan_path)
-                    .map_err(Error::CannotWriteBuildPlan)?;
+                write_toml_file(&build_plan, build_plan_path).map_err(|err| {
+                    #[cfg(feature = "trace")]
+                    trace.set_error(&err);
+                    Error::CannotWriteBuildPlan(err)
+                })?;
             }
-
+            #[cfg(feature = "trace")]
+            trace.add_event("detect-passed");
             Ok(exit_code::DETECT_DETECTION_PASSED)
         }
     }
