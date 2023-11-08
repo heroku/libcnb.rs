@@ -10,6 +10,8 @@ use opentelemetry::{
 };
 use std::path::Path;
 
+const TELEMETRY_EXPORT_ROOT: &str = "/tmp/cnb-telemetry";
+
 pub(crate) struct BuildpackTrace {
     provider: TracerProvider,
     span: Span,
@@ -17,9 +19,7 @@ pub(crate) struct BuildpackTrace {
 
 pub(crate) fn start_trace(buildpack: &Buildpack, phase_name: &'static str) -> BuildpackTrace {
     let trace_name = format!("{}-{phase_name}", buildpack.id.replace(['/', '.'], "_"));
-    let tracing_file_path = Path::new("/tmp")
-        .join("cnb-telemetry")
-        .join(format!("{trace_name}.jsonl"));
+    let tracing_file_path = Path::new(TELEMETRY_EXPORT_ROOT).join(format!("{trace_name}.jsonl"));
 
     // Ensure tracing file path parent exists by creating it.
     if let Some(parent_dir) = tracing_file_path.parent() {
@@ -39,23 +39,19 @@ pub(crate) fn start_trace(buildpack: &Buildpack, phase_name: &'static str) -> Bu
     };
 
     let lib_name = option_env!("CARGO_PKG_NAME").unwrap_or("libcnb");
+    let lib_version = option_env!("CARGO_PKG_VERSION");
 
     let provider = opentelemetry::sdk::trace::TracerProvider::builder()
         .with_simple_exporter(exporter)
-        .with_config(
-            Config::default()
-                .with_resource(Resource::new(vec![KeyValue::new("service.name", lib_name)])),
-        )
+        .with_config(Config::default().with_resource(Resource::new(vec![
+            KeyValue::new("service.name", lib_name),
+            KeyValue::new("service.version", lib_version.unwrap_or_default()),
+        ])))
         .build();
 
     global::set_tracer_provider(provider.clone());
 
-    let tracer = provider.versioned_tracer(
-        lib_name,
-        option_env!("CARGO_PKG_VERSION"),
-        None as Option<&str>,
-        None,
-    );
+    let tracer = provider.versioned_tracer(lib_name, lib_version, None as Option<&str>, None);
 
     let mut span = tracer.start(trace_name);
     span.set_attributes(vec![
