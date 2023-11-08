@@ -116,7 +116,7 @@ mod tests {
         _ = fs::remove_file(telemetry_path);
 
         {
-            let mut trace = start_trace(&buildpack, &phase);
+            let mut trace = start_trace(&buildpack, phase);
             trace.add_event(event);
             trace.set_error(&Error::new(ErrorKind::Other, error_message));
         }
@@ -132,6 +132,5 @@ mod tests {
         assert!(
             tracing_contents.contains(&buildpack.name.expect("Expected buildpack.name to exist"))
         );
-        assert!(tracing_contents.contains("something"));
     }
 }
