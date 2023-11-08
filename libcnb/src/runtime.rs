@@ -199,7 +199,7 @@ pub fn libcnb_runtime_build<B: Buildpack>(
     }
     .map_err(Error::CannotReadStore)?;
 
-    let build_result = buildpack.build(BuildContext {
+    let build_context = BuildContext {
         layers_dir: layers_dir.clone(),
         app_dir,
         stack_id,
@@ -208,9 +208,18 @@ pub fn libcnb_runtime_build<B: Buildpack>(
         buildpack_dir: read_buildpack_dir()?,
         buildpack_descriptor: read_buildpack_descriptor()?,
         store,
-    })?;
+    };
+    #[cfg(feature = "trace")]
+    let mut trace = start_trace(&build_context.buildpack_descriptor.buildpack, "build");
 
-    match build_result.0 {
+    let build_result = buildpack.build(build_context);
+
+    #[cfg(feature = "trace")]
+    if let Err(ref err) = build_result {
+        trace.set_error(err);
+    }
+
+    match build_result?.0 {
         InnerBuildResult::Pass {
             launch,
             store,
@@ -218,13 +227,21 @@ pub fn libcnb_runtime_build<B: Buildpack>(
             launch_sboms,
         } => {
             if let Some(launch) = launch {
-                write_toml_file(&launch, layers_dir.join("launch.toml"))
-                    .map_err(Error::CannotWriteLaunch)?;
+                write_toml_file(&launch, layers_dir.join("launch.toml")).map_err(|inner_err| {
+                    let err = Error::CannotWriteLaunch(inner_err);
+                    #[cfg(feature = "trace")]
+                    trace.set_error(&err);
+                    err
+                })?;
             };
 
             if let Some(store) = store {
-                write_toml_file(&store, layers_dir.join("store.toml"))
-                    .map_err(Error::CannotWriteStore)?;
+                write_toml_file(&store, layers_dir.join("store.toml")).map_err(|inner_err| {
+                    let err = Error::CannotWriteStore(inner_err);
+                    #[cfg(feature = "trace")]
+                    trace.set_error(&err);
+                    err
+                })?;
             };
 
             for build_sbom in build_sboms {
@@ -232,7 +249,12 @@ pub fn libcnb_runtime_build<B: Buildpack>(
                     cnb_sbom_path(&build_sbom.format, &layers_dir, "build"),
                     &build_sbom.data,
                 )
-                .map_err(Error::CannotWriteBuildSbom)?;
+                .map_err(|inner_err| {
+                    let err = Error::CannotWriteBuildSbom(inner_err);
+                    #[cfg(feature = "trace")]
+                    trace.set_error(&err);
+                    err
+                })?;
             }
 
             for launch_sbom in launch_sboms {
@@ -243,6 +265,8 @@ pub fn libcnb_runtime_build<B: Buildpack>(
                 .map_err(Error::CannotWriteLaunchSbom)?;
             }
 
+            #[cfg(feature = "trace")]
+            trace.add_event("build-success");
             Ok(exit_code::GENERIC_SUCCESS)
         }
     }
