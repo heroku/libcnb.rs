@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `libcnb`:
+  - An optional `trace` feature has been added that emits OpenTelemetry tracing
+    data to a [File Export](https://opentelemetry.io/docs/specs/otel/protocol/file-exporter/). ([#723](https://github.com/heroku/libcnb.rs/pull/723))
 
 ## [0.16.0] - 2023-11-17
 
