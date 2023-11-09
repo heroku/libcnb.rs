@@ -1,12 +1,12 @@
 use libcnb_data::buildpack::Buildpack;
 use opentelemetry::{
     global,
-    sdk::{
-        trace::{Config, Span, TracerProvider},
-        Resource,
-    },
     trace::{Span as SpanTrait, Status, Tracer, TracerProvider as TracerProviderTrait},
     KeyValue,
+};
+use opentelemetry_sdk::{
+    trace::{Config, Span, TracerProvider},
+    Resource,
 };
 use std::path::Path;
 
@@ -41,7 +41,7 @@ pub(crate) fn start_trace(buildpack: &Buildpack, phase_name: &'static str) -> Bu
     let lib_name = option_env!("CARGO_PKG_NAME").unwrap_or("libcnb");
     let lib_version = option_env!("CARGO_PKG_VERSION");
 
-    let provider = opentelemetry::sdk::trace::TracerProvider::builder()
+    let provider = TracerProvider::builder()
         .with_simple_exporter(exporter)
         .with_config(Config::default().with_resource(Resource::new(vec![
             KeyValue::new("service.name", lib_name),
