@@ -25,7 +25,10 @@ The easiest way to install the required cross-compilation toolchain is to run:
 brew install messense/macos-cross-toolchains/x86_64-unknown-linux-musl
 
 For more information, see:
-https://github.com/messense/homebrew-macos-cross-toolchains",
+https://github.com/messense/homebrew-macos-cross-toolchains
+
+You will also need to install the Rust target, using:
+rustup target add x86_64-unknown-linux-musl",
             )), |gcc_binary_path| {
                 CrossCompileAssistance::Configuration {
                     cargo_env: vec![
@@ -57,7 +60,10 @@ linker for the target platform must be installed on your computer.
 
 The easiest way to install 'musl-gcc' is to install the 'musl-tools' package:
 - https://packages.ubuntu.com/focal/musl-tools
-- https://packages.debian.org/bullseye/musl-tools",
+- https://packages.debian.org/bullseye/musl-tools
+
+You will also need to install the Rust target, using:
+rustup target add x86_64-unknown-linux-musl",
             )),
         }
     } else if target_triple.as_ref() == AARCH64_UNKNOWN_LINUX_MUSL && cfg!(target_os = "linux") {
@@ -82,7 +88,10 @@ linker for the target platform must installed on your computer.
 The easiest way to install the 'g++-aarch64-linux-gnu', 'libc6-dev-arm64-cross', and 'musl-tools' packages:
 - https://packages.ubuntu.com/focal/g++-aarch64-linux-gnu
 - https://packages.ubuntu.com/focal/musl-tools
-- https://packages.ubuntu.com/focal/libc6-dev-arm64-cross",
+- https://packages.ubuntu.com/focal/libc6-dev-arm64-cross
+
+You will also need to install the Rust target, using:
+rustup target add aarch64-unknown-linux-musl",
             )),
         }
     } else {
