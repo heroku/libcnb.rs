@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Improved the consistency of all user-facing libcnb.rs error message wordings. ([#722](https://github.com/heroku/libcnb.rs/pull/722))
+- The assistance error message shown when the necessary cross-compilation tools are not found now also includes the `rustup target add` step. ([#729](https://github.com/heroku/libcnb.rs/pull/729))
 
 ### Fixed
 
