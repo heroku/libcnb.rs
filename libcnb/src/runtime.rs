@@ -158,10 +158,11 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
         }
         InnerDetectResult::Pass { build_plan } => {
             if let Some(build_plan) = build_plan {
-                write_toml_file(&build_plan, build_plan_path).map_err(|err| {
+                write_toml_file(&build_plan, build_plan_path).map_err(|inner_err| {
+                    let err = Error::CannotWriteBuildPlan(inner_err);
                     #[cfg(feature = "trace")]
                     trace.set_error(&err);
-                    Error::CannotWriteBuildPlan(err)
+                    err
                 })?;
             }
             #[cfg(feature = "trace")]
