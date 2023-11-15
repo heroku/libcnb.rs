@@ -31,7 +31,7 @@ Start by installing [libcnb-cargo](https://crates.io/crates/libcnb-cargo), which
 that we will use later to package our buildpack:
 
 ```shell
-cargo install libcnb-cargo
+cargo install --locked libcnb-cargo
 ```
 
 #### Cross-compilation prerequisites
