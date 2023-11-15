@@ -17,7 +17,7 @@ use std::{io::BufWriter, path::Path};
 // to prevent conflicts with the CNB spec and /tmp is commonly available and
 // writable on base images.
 #[cfg(target_family = "unix")]
-const TELEMETRY_EXPORT_ROOT: &str = "/tmp/cnb-telemetry";
+const TELEMETRY_EXPORT_ROOT: &str = "/tmp/libcnb-telemetry";
 
 /// `BuildpackTrace` represents an Open Telemetry tracer provider and single span.
 /// It's designed to support tracing a CNB build or detect phase as a singular
@@ -142,7 +142,7 @@ mod tests {
         let phase = "bar";
         let event = "baz-event";
         let error_message = "its broken";
-        let telemetry_path = "/tmp/cnb-telemetry/company_com_foo-bar.jsonl";
+        let telemetry_path = "/tmp/libcnb-telemetry/company_com_foo-bar.jsonl";
         _ = fs::remove_file(telemetry_path);
 
         {
