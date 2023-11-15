@@ -1,7 +1,6 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::process::Command;
-use tempfile::TempDir;
 
 /// Represents a `pack build` command.
 #[derive(Clone, Debug)]
@@ -25,12 +24,6 @@ pub(crate) enum BuildpackReference {
 impl From<PathBuf> for BuildpackReference {
     fn from(path: PathBuf) -> Self {
         Self::Path(path)
-    }
-}
-
-impl From<&TempDir> for BuildpackReference {
-    fn from(path: &TempDir) -> Self {
-        Self::Path(path.path().into())
     }
 }
 
