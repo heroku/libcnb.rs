@@ -5,7 +5,7 @@ A Cargo command for managing buildpacks written with [libcnb.rs](https://github.
 ## Installation
 
 ```shell
-cargo install libcnb-cargo
+cargo install --locked libcnb-cargo
 ```
 
 ## Usage
