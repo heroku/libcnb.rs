@@ -13,7 +13,6 @@ pub(crate) struct PackBuildCommand {
     path: PathBuf,
     pull_policy: PullPolicy,
     trust_builder: bool,
-    verbose: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -67,7 +66,6 @@ impl PackBuildCommand {
             // Prevent redundant image-pulling, which slows tests and risks hitting registry rate limits.
             pull_policy: PullPolicy::IfNotPresent,
             trust_builder: true,
-            verbose: false,
         }
     }
 
@@ -117,10 +115,6 @@ impl From<PackBuildCommand> for Command {
 
         if pack_build_command.trust_builder {
             command.arg("--trust-builder");
-        }
-
-        if pack_build_command.verbose {
-            command.arg("--verbose");
         }
 
         command
@@ -183,7 +177,6 @@ mod tests {
             path: PathBuf::from("/tmp/foo/bar"),
             pull_policy: PullPolicy::IfNotPresent,
             trust_builder: true,
-            verbose: true,
         };
 
         let command: Command = input.clone().into();
@@ -210,7 +203,6 @@ mod tests {
                 "--env",
                 "ENV_FOO=FOO_VALUE",
                 "--trust-builder",
-                "--verbose"
             ]
         );
 
@@ -222,11 +214,6 @@ mod tests {
         assert!(!command
             .get_args()
             .any(|arg| arg == OsStr::new("--trust-builder")));
-
-        // Assert conditional '--verbose' flag works as expected:
-        input.verbose = false;
-        let command: Command = input.into();
-        assert!(!command.get_args().any(|arg| arg == OsStr::new("--verbose")));
     }
 
     #[test]
