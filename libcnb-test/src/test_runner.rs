@@ -48,7 +48,13 @@ impl TestRunner {
     /// )
     /// ```
     pub fn build<C: Borrow<BuildConfig>, F: FnOnce(TestContext)>(&self, config: C, f: F) {
-        self.build_internal(TemporaryDockerResources::new(), config, f);
+        let image_name = util::random_docker_identifier();
+        let docker_resources = TemporaryDockerResources {
+            build_cache_volume_name: format!("{image_name}.build-cache"),
+            launch_cache_volume_name: format!("{image_name}.launch-cache"),
+            image_name,
+        };
+        self.build_internal(docker_resources, config, f);
     }
 
     pub(crate) fn build_internal<C: Borrow<BuildConfig>, F: FnOnce(TestContext)>(
@@ -172,17 +178,6 @@ pub(crate) struct TemporaryDockerResources {
     pub(crate) build_cache_volume_name: String,
     pub(crate) image_name: String,
     pub(crate) launch_cache_volume_name: String,
-}
-
-impl TemporaryDockerResources {
-    pub fn new() -> Self {
-        let image_name = util::random_docker_identifier();
-        Self {
-            build_cache_volume_name: format!("{image_name}.build-cache"),
-            launch_cache_volume_name: format!("{image_name}.launch-cache"),
-            image_name,
-        }
-    }
 }
 
 impl Drop for TemporaryDockerResources {
