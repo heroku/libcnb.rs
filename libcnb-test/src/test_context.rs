@@ -1,6 +1,9 @@
-use crate::docker::{DockerRemoveImageCommand, DockerRunCommand};
+use crate::docker::DockerRunCommand;
 use crate::pack::PackSbomDownloadCommand;
-use crate::{util, BuildConfig, ContainerConfig, ContainerContext, LogOutput, TestRunner};
+use crate::{
+    util, BuildConfig, ContainerConfig, ContainerContext, LogOutput, TemporaryDockerResources,
+    TestRunner,
+};
 use libcnb_data::buildpack::BuildpackId;
 use libcnb_data::layer::LayerName;
 use libcnb_data::sbom::SbomFormat;
@@ -17,7 +20,7 @@ pub struct TestContext<'a> {
     /// The configuration used for this integration test.
     pub config: BuildConfig,
 
-    pub(crate) image_name: String,
+    pub(crate) docker_resources: TemporaryDockerResources,
     pub(crate) runner: &'a TestRunner,
 }
 
@@ -86,7 +89,8 @@ impl<'a> TestContext<'a> {
         let config = config.borrow();
         let container_name = util::random_docker_identifier();
 
-        let mut docker_run_command = DockerRunCommand::new(&self.image_name, &container_name);
+        let mut docker_run_command =
+            DockerRunCommand::new(&self.docker_resources.image_name, &container_name);
         docker_run_command.detach(true);
         docker_run_command.platform(self.determine_container_platform());
 
@@ -170,8 +174,10 @@ impl<'a> TestContext<'a> {
     /// Panics if there was an error starting the container, or the command exited with a non-zero
     /// exit code.
     pub fn run_shell_command(&self, command: impl Into<String>) -> LogOutput {
-        let mut docker_run_command =
-            DockerRunCommand::new(&self.image_name, util::random_docker_identifier());
+        let mut docker_run_command = DockerRunCommand::new(
+            &self.docker_resources.image_name,
+            util::random_docker_identifier(),
+        );
         docker_run_command
             .remove(true)
             .platform(self.determine_container_platform())
@@ -229,7 +235,7 @@ impl<'a> TestContext<'a> {
     pub fn download_sbom_files<R, F: Fn(SbomFiles) -> R>(&self, f: F) -> R {
         let temp_dir = tempdir().expect("Couldn't create temporary directory for SBOM files");
 
-        let mut command = PackSbomDownloadCommand::new(&self.image_name);
+        let mut command = PackSbomDownloadCommand::new(&self.docker_resources.image_name);
         command.output_dir(temp_dir.path());
 
         util::run_command(command)
@@ -270,15 +276,7 @@ impl<'a> TestContext<'a> {
     /// );
     /// ```
     pub fn rebuild<C: Borrow<BuildConfig>, F: FnOnce(TestContext)>(self, config: C, f: F) {
-        self.runner
-            .build_internal(self.image_name.clone(), config, f);
-    }
-}
-
-impl<'a> Drop for TestContext<'a> {
-    fn drop(&mut self) {
-        util::run_command(DockerRemoveImageCommand::new(&self.image_name))
-            .unwrap_or_else(|command_err| panic!("Error removing Docker image:\n\n{command_err}"));
+        self.runner.build_internal(self.docker_resources, config, f);
     }
 }
 

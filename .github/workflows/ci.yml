@@ -77,9 +77,7 @@ jobs:
           if [[ -n "$(docker volume ls --quiet)" ]]; then
             docker volume ls
             echo "Unexpected Docker volumes left behind!"
-            # TODO: Fix volume cleanup and make this fail
-            # https://github.com/heroku/libcnb.rs/issues/570
-            # exit 1
+            exit 1
           fi
 
           if [[ -n "$(docker images --all --quiet '*libcnb*')" ]]; then

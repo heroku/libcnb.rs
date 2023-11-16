@@ -1,4 +1,4 @@
-use crate::docker::DockerRemoveImageCommand;
+use crate::docker::{DockerRemoveImageCommand, DockerRemoveVolumeCommand};
 use crate::pack::PackBuildCommand;
 use crate::util::CommandError;
 use crate::{app, build, util, BuildConfig, BuildpackReference, PackResult, TestContext};
@@ -48,12 +48,12 @@ impl TestRunner {
     /// )
     /// ```
     pub fn build<C: Borrow<BuildConfig>, F: FnOnce(TestContext)>(&self, config: C, f: F) {
-        self.build_internal(util::random_docker_identifier(), config, f);
+        self.build_internal(TemporaryDockerResources::new(), config, f);
     }
 
     pub(crate) fn build_internal<C: Borrow<BuildConfig>, F: FnOnce(TestContext)>(
         &self,
-        image_name: String,
+        docker_resources: TemporaryDockerResources,
         config: C,
         f: F,
     ) {
@@ -94,7 +94,13 @@ impl TestRunner {
         let buildpacks_target_dir =
             tempdir().expect("Error creating temporary directory for compiled buildpacks");
 
-        let mut pack_command = PackBuildCommand::new(&config.builder_name, &app_dir, &image_name);
+        let mut pack_command = PackBuildCommand::new(
+            &config.builder_name,
+            &app_dir,
+            &docker_resources.image_name,
+            &docker_resources.build_cache_volume_name,
+            &docker_resources.launch_cache_volume_name,
+        );
 
         config.env.iter().for_each(|(key, value)| {
             pack_command.env(key, value);
@@ -143,13 +149,6 @@ impl TestRunner {
                 log_output
             }
             (PackResult::Failure, Ok(log_output)) => {
-                // Ordinarily the Docker image created by `pack build` will either be cleaned up by
-                // `TestContext::Drop` later on, or will not have been created in the first place,
-                // if the `pack build` was not successful. However, in the case of an unexpectedly
-                // successful `pack build` we have to clean this image up manually before `panic`ing.
-                util::run_command(DockerRemoveImageCommand::new(image_name)).unwrap_or_else(
-                    |command_err| panic!("Error removing Docker image:\n\n{command_err}"),
-                );
                 panic!("The pack build was expected to fail, but did not:\n\n{log_output}");
             }
             (_, Err(command_err)) => {
@@ -160,11 +159,42 @@ impl TestRunner {
         let test_context = TestContext {
             pack_stdout: output.stdout,
             pack_stderr: output.stderr,
-            image_name,
+            docker_resources,
             config: config.clone(),
             runner: self,
         };
 
         f(test_context);
+    }
+}
+
+pub(crate) struct TemporaryDockerResources {
+    pub(crate) build_cache_volume_name: String,
+    pub(crate) image_name: String,
+    pub(crate) launch_cache_volume_name: String,
+}
+
+impl TemporaryDockerResources {
+    pub fn new() -> Self {
+        let image_name = util::random_docker_identifier();
+        Self {
+            build_cache_volume_name: format!("{image_name}.build-cache"),
+            launch_cache_volume_name: format!("{image_name}.launch-cache"),
+            image_name,
+        }
+    }
+}
+
+impl Drop for TemporaryDockerResources {
+    fn drop(&mut self) {
+        // Ignoring errors here since we don't want to panic inside Drop.
+        // We don't emit a warning to stderr since that gets too noisy in some common
+        // cases (such as running a test suite when Docker isn't started) where the tests
+        // themselves will also report the same error message.
+        let _ = util::run_command(DockerRemoveImageCommand::new(&self.image_name));
+        let _ = util::run_command(DockerRemoveVolumeCommand::new([
+            &self.build_cache_volume_name,
+            &self.launch_cache_volume_name,
+        ]));
     }
 }
