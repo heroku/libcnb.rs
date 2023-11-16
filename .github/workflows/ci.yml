@@ -66,6 +66,29 @@ jobs:
       - name: Run integration tests
         # Runs only tests annotated with the `ignore` attribute (which in this repo, are the integration tests).
         run: cargo test -- --ignored
+      - name: Check libcnb-test has cleaned up test containers, volumes and images
+        run: |
+          if [[ -n "$(docker ps --all --quiet)" ]]; then
+            docker ps --all
+            echo "Unexpected Docker containers left behind!"
+            # TODO: Fix container cleanup and make this fail
+            # https://github.com/heroku/libcnb.rs/issues/737
+            # exit 1
+          fi
+
+          if [[ -n "$(docker volume ls --quiet)" ]]; then
+            docker volume ls
+            echo "Unexpected Docker volumes left behind!"
+            # TODO: Fix volume cleanup and make this fail
+            # https://github.com/heroku/libcnb.rs/issues/570
+            # exit 1
+          fi
+
+          if [[ -n "$(docker images --all --quiet '*libcnb*')" ]]; then
+            docker images --all '*libcnb*'
+            echo "Unexpected Docker images left behind!"
+            exit 1
+          fi
       - name: Compile and package examples/basics
         run: cargo run --package libcnb-cargo -- libcnb package
         working-directory: ./examples/basics
