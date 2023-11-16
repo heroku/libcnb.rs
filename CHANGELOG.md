@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `libcnb-test`:
   - Fixed incorrect error messages being shown for buildpack compilation/packaging failures. ([#720](https://github.com/heroku/libcnb.rs/pull/720))
+  - Containers created by `TestContext::start_container` are now correctly cleaned up if the container failed to start. ([#742](https://github.com/heroku/libcnb.rs/pull/742))
 
 ## [0.15.0] - 2023-09-25
 

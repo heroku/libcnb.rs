@@ -71,9 +71,7 @@ jobs:
           if [[ -n "$(docker ps --all --quiet)" ]]; then
             docker ps --all
             echo "Unexpected Docker containers left behind!"
-            # TODO: Fix container cleanup and make this fail
-            # https://github.com/heroku/libcnb.rs/issues/737
-            # exit 1
+            exit 1
           fi
 
           if [[ -n "$(docker volume ls --quiet)" ]]; then
