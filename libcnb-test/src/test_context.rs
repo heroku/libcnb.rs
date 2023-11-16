@@ -106,13 +106,17 @@ impl<'a> TestContext<'a> {
             docker_run_command.expose_port(*port);
         });
 
+        // We create the ContainerContext early to ensure the cleanup in ContainerContext::drop
+        // is still performed even if the Docker command panics.
+        let container_context = ContainerContext {
+            container_name,
+            config: config.clone(),
+        };
+
         util::run_command(docker_run_command)
             .unwrap_or_else(|command_err| panic!("Error starting container:\n\n{command_err}"));
 
-        f(ContainerContext {
-            container_name,
-            config: config.clone(),
-        });
+        f(container_context);
     }
 
     /// Run the provided shell command.
