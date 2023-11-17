@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `libcnb-test`:
   - Fixed incorrect error messages being shown for buildpack compilation/packaging failures. ([#720](https://github.com/heroku/libcnb.rs/pull/720))
+  - The Docker volumes created by Pack for the build and launch layer caches are now cleaned up after each test. ([#741](https://github.com/heroku/libcnb.rs/pull/741))
+  - The Docker image cleanup process no longer makes duplicate attempts to remove images when using `TestContext::rebuild`. ([#741](https://github.com/heroku/libcnb.rs/pull/741))
+  - Test failures due to the Docker daemon not being installed or started no longer cause a non-unwinding panic abort with noisy traceback. ([#741](https://github.com/heroku/libcnb.rs/pull/741))
   - Containers created by `TestContext::start_container` are now correctly cleaned up if the container failed to start. ([#742](https://github.com/heroku/libcnb.rs/pull/742))
 
 ## [0.15.0] - 2023-09-25

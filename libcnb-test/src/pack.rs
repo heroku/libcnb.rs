@@ -5,10 +5,12 @@ use std::process::Command;
 /// Represents a `pack build` command.
 #[derive(Clone, Debug)]
 pub(crate) struct PackBuildCommand {
+    build_cache_volume_name: String,
     builder: String,
     buildpacks: Vec<BuildpackReference>,
     env: BTreeMap<String, String>,
     image_name: String,
+    launch_cache_volume_name: String,
     path: PathBuf,
     pull_policy: PullPolicy,
     trust_builder: bool,
@@ -49,12 +51,16 @@ impl PackBuildCommand {
         builder: impl Into<String>,
         path: impl Into<PathBuf>,
         image_name: impl Into<String>,
+        build_cache_volume_name: impl Into<String>,
+        launch_cache_volume_name: impl Into<String>,
     ) -> Self {
         Self {
+            build_cache_volume_name: build_cache_volume_name.into(),
             builder: builder.into(),
             buildpacks: Vec::new(),
             env: BTreeMap::new(),
             image_name: image_name.into(),
+            launch_cache_volume_name: launch_cache_volume_name.into(),
             path: path.into(),
             // Prevent redundant image-pulling, which slows tests and risks hitting registry rate limits.
             pull_policy: PullPolicy::IfNotPresent,
@@ -82,6 +88,16 @@ impl From<PackBuildCommand> for Command {
             &pack_build_command.image_name,
             "--builder",
             &pack_build_command.builder,
+            "--cache",
+            &format!(
+                "type=build;format=volume;name={}",
+                pack_build_command.build_cache_volume_name
+            ),
+            "--cache",
+            &format!(
+                "type=launch;format=volume;name={}",
+                pack_build_command.launch_cache_volume_name
+            ),
             "--path",
             &pack_build_command.path.to_string_lossy(),
             "--pull-policy",
@@ -157,6 +173,7 @@ mod tests {
     #[test]
     fn from_pack_build_command_to_command() {
         let mut input = PackBuildCommand {
+            build_cache_volume_name: String::from("build-cache-volume"),
             builder: String::from("builder:20"),
             buildpacks: vec![
                 BuildpackReference::Id(String::from("libcnb/buildpack1")),
@@ -167,6 +184,7 @@ mod tests {
                 (String::from("ENV_BAR"), String::from("WHITESPACE VALUE")),
             ]),
             image_name: String::from("my-image"),
+            launch_cache_volume_name: String::from("launch-cache-volume"),
             path: PathBuf::from("/tmp/foo/bar"),
             pull_policy: PullPolicy::IfNotPresent,
             trust_builder: true,
@@ -183,6 +201,10 @@ mod tests {
                 "my-image",
                 "--builder",
                 "builder:20",
+                "--cache",
+                "type=build;format=volume;name=build-cache-volume",
+                "--cache",
+                "type=launch;format=volume;name=launch-cache-volume",
                 "--path",
                 "/tmp/foo/bar",
                 "--pull-policy",

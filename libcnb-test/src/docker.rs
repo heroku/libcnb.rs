@@ -254,6 +254,37 @@ impl From<DockerRemoveImageCommand> for Command {
     }
 }
 
+/// Represents a `docker volume remove` command.
+#[derive(Clone, Debug)]
+pub(crate) struct DockerRemoveVolumeCommand {
+    force: bool,
+    volume_names: Vec<String>,
+}
+
+impl DockerRemoveVolumeCommand {
+    pub fn new<I: IntoIterator<Item = S>, S: Into<String>>(volume_names: I) -> Self {
+        Self {
+            force: true,
+            volume_names: volume_names.into_iter().map(S::into).collect(),
+        }
+    }
+}
+
+impl From<DockerRemoveVolumeCommand> for Command {
+    fn from(docker_remove_volume_command: DockerRemoveVolumeCommand) -> Self {
+        let mut command = Command::new("docker");
+        command
+            .args(["volume", "remove"])
+            .args(&docker_remove_volume_command.volume_names);
+
+        if docker_remove_volume_command.force {
+            command.arg("--force");
+        }
+
+        command
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -373,6 +404,17 @@ mod tests {
         assert_eq!(
             command.get_args().collect::<Vec<&OsStr>>(),
             ["rmi", "my-image", "--force"]
+        );
+    }
+
+    #[test]
+    fn from_docker_remove_volume_command_to_command() {
+        let docker_remove_volume_command = DockerRemoveVolumeCommand::new(["volume1", "volume2"]);
+        let command: Command = docker_remove_volume_command.into();
+        assert_eq!(command.get_program(), "docker");
+        assert_eq!(
+            command.get_args().collect::<Vec<&OsStr>>(),
+            ["volume", "remove", "volume1", "volume2", "--force"]
         );
     }
 }
