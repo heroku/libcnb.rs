@@ -24,6 +24,7 @@ pub fn write_exec_d_program_output<O: Into<ExecDProgramOutput>>(o: O) {
         // actually mapped to something. Since we're implementing the CNB spec and it explicitly
         // tells us to write to that file descriptor, this is safe to do without additional
         // validation in this context.
+        #[allow(unsafe_code)]
         let output_file = unsafe { File::from_raw_fd(3) };
 
         let serialized_output = toml::to_string(&o.into())
