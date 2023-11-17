@@ -10,6 +10,9 @@ documentation = "https://docs.rs/libcnb-common"
 readme = "README.md"
 include = ["src/**/*", "LICENSE", "README.md"]
 
+[lints]
+workspace = true
+
 [dependencies]
 serde = { version = "1.0.188", features = ["derive"] }
 thiserror = "1.0.48"

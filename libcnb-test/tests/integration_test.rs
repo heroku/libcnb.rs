@@ -5,9 +5,8 @@
 //! to test dynamic values, in which case the only option is to use `panic::catch_unwind`
 //! since `should_panic` doesn't support globs/regular expressions/compile time macros.
 
-// Enable Clippy lints that are disabled by default.
-// https://rust-lang.github.io/rust-clippy/stable/index.html
-#![warn(clippy::pedantic)]
+// Required due to: https://github.com/rust-lang/rust/issues/95513
+#![allow(unused_crate_dependencies)]
 
 use indoc::{formatdoc, indoc};
 use libcnb_data::buildpack_id;

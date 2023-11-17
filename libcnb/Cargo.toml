@@ -11,6 +11,9 @@ documentation = "https://docs.rs/libcnb"
 readme = "README.md"
 include = ["src/**/*", "LICENSE", "README.md"]
 
+[lints]
+workspace = true
+
 [dependencies]
 anyhow = { version = "1.0.75", optional = true }
 cyclonedx-bom = { version = "0.4.0", optional = true }

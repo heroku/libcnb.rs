@@ -1,9 +1,3 @@
-// Enable Clippy lints that are disabled by default.
-// https://rust-lang.github.io/rust-clippy/stable/index.html
-#![warn(clippy::pedantic)]
-// This lint is too noisy and enforces a style that reduces readability in many cases.
-#![allow(clippy::module_name_repetitions)]
-
 use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
 use libcnb::data::store::Store;
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
@@ -11,6 +5,10 @@ use libcnb::generic::{GenericMetadata, GenericPlatform};
 use libcnb::{buildpack_main, Buildpack};
 use std::io::Error;
 use toml::toml;
+
+// Suppress warnings due to the `unused_crate_dependencies` lint not handling integration tests well.
+#[cfg(test)]
+use libcnb_test as _;
 
 pub struct TestBuildpack;
 

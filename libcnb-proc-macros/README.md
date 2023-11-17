@@ -9,5 +9,5 @@ depending on this crate directly.
 [docs.rs]: https://docs.rs/libcnb-proc-macros/latest/libcnb_proc_macros/
 [Latest Version]: https://img.shields.io/crates/v/libcnb-proc-macros.svg
 [crates.io]: https://crates.io/crates/libcnb-proc-macros
-[MSRV]: https://img.shields.io/badge/MSRV-rustc_1.64+-lightgray.svg
+[MSRV]: https://img.shields.io/badge/MSRV-rustc_1.74+-lightgray.svg
 [install-rust]: https://www.rust-lang.org/tools/install
