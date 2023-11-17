@@ -25,7 +25,9 @@ pub struct TestContext<'a> {
 }
 
 impl<'a> TestContext<'a> {
-    /// Starts a container using the provided [`ContainerConfig`].
+    /// Starts a detached container using the provided [`ContainerConfig`].
+    ///
+    /// After the passed function has returned, the Docker container is removed.
     ///
     /// If you wish to run a shell command and don't need to customise the configuration, use
     /// the convenience function [`TestContext::run_shell_command`] instead.
