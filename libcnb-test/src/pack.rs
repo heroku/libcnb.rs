@@ -47,7 +47,7 @@ pub(crate) enum PullPolicy {
 }
 
 impl PackBuildCommand {
-    pub fn new(
+    pub(crate) fn new(
         builder: impl Into<String>,
         path: impl Into<PathBuf>,
         image_name: impl Into<String>,
@@ -68,12 +68,12 @@ impl PackBuildCommand {
         }
     }
 
-    pub fn buildpack(&mut self, b: impl Into<BuildpackReference>) -> &mut Self {
+    pub(crate) fn buildpack(&mut self, b: impl Into<BuildpackReference>) -> &mut Self {
         self.buildpacks.push(b.into());
         self
     }
 
-    pub fn env(&mut self, k: impl Into<String>, v: impl Into<String>) -> &mut Self {
+    pub(crate) fn env(&mut self, k: impl Into<String>, v: impl Into<String>) -> &mut Self {
         self.env.insert(k.into(), v.into());
         self
     }
@@ -138,14 +138,14 @@ pub(crate) struct PackSbomDownloadCommand {
 
 /// Represents a `pack sbom download` command.
 impl PackSbomDownloadCommand {
-    pub fn new(image_name: impl Into<String>) -> Self {
+    pub(crate) fn new(image_name: impl Into<String>) -> Self {
         Self {
             image_name: image_name.into(),
             output_dir: None,
         }
     }
 
-    pub fn output_dir(&mut self, output_dir: impl Into<PathBuf>) -> &mut Self {
+    pub(crate) fn output_dir(&mut self, output_dir: impl Into<PathBuf>) -> &mut Self {
         self.output_dir = Some(output_dir.into());
         self
     }

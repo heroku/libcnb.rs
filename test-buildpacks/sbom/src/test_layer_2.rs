@@ -7,7 +7,7 @@ use libcnb::sbom::Sbom;
 use libcnb::Buildpack;
 use std::path::Path;
 
-pub struct TestLayer2;
+pub(crate) struct TestLayer2;
 
 impl Layer for TestLayer2 {
     type Buildpack = TestBuildpack;

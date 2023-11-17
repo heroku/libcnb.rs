@@ -22,7 +22,7 @@ pub(crate) fn copy_app(app_dir: impl AsRef<Path>) -> Result<AppDir, PrepareAppEr
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum PrepareAppError {
+pub(crate) enum PrepareAppError {
     #[error("Couldn't create temporary directory: {0}")]
     CreateTempDirError(std::io::Error),
     #[error("Couldn't copy directory: {0}")]
@@ -35,7 +35,7 @@ pub(crate) enum AppDir {
 }
 
 impl AppDir {
-    pub fn as_path(&self) -> &Path {
+    pub(crate) fn as_path(&self) -> &Path {
         match self {
             Self::Temporary(temp_dir) => temp_dir.path(),
             Self::Unmanaged(path) => path,

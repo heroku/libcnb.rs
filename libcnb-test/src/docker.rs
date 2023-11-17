@@ -16,7 +16,7 @@ pub(crate) struct DockerRunCommand {
 }
 
 impl DockerRunCommand {
-    pub fn new(image_name: impl Into<String>, container_name: impl Into<String>) -> Self {
+    pub(crate) fn new(image_name: impl Into<String>, container_name: impl Into<String>) -> Self {
         Self {
             command: None,
             container_name: container_name.into(),
@@ -30,37 +30,40 @@ impl DockerRunCommand {
         }
     }
 
-    pub fn command<I: IntoIterator<Item = S>, S: Into<String>>(&mut self, command: I) -> &mut Self {
+    pub(crate) fn command<I: IntoIterator<Item = S>, S: Into<String>>(
+        &mut self,
+        command: I,
+    ) -> &mut Self {
         self.command = Some(command.into_iter().map(S::into).collect());
         self
     }
 
-    pub fn detach(&mut self, detach: bool) -> &mut Self {
+    pub(crate) fn detach(&mut self, detach: bool) -> &mut Self {
         self.detach = detach;
         self
     }
 
-    pub fn entrypoint(&mut self, entrypoint: impl Into<String>) -> &mut Self {
+    pub(crate) fn entrypoint(&mut self, entrypoint: impl Into<String>) -> &mut Self {
         self.entrypoint = Some(entrypoint.into());
         self
     }
 
-    pub fn env(&mut self, k: impl Into<String>, v: impl Into<String>) -> &mut Self {
+    pub(crate) fn env(&mut self, k: impl Into<String>, v: impl Into<String>) -> &mut Self {
         self.env.insert(k.into(), v.into());
         self
     }
 
-    pub fn expose_port(&mut self, port: u16) -> &mut Self {
+    pub(crate) fn expose_port(&mut self, port: u16) -> &mut Self {
         self.exposed_ports.insert(port);
         self
     }
 
-    pub fn platform(&mut self, platform: impl Into<String>) -> &mut Self {
+    pub(crate) fn platform(&mut self, platform: impl Into<String>) -> &mut Self {
         self.platform = Some(platform.into());
         self
     }
 
-    pub fn remove(&mut self, remove: bool) -> &mut Self {
+    pub(crate) fn remove(&mut self, remove: bool) -> &mut Self {
         self.remove = remove;
         self
     }
@@ -113,7 +116,7 @@ pub(crate) struct DockerExecCommand {
 }
 
 impl DockerExecCommand {
-    pub fn new<I: IntoIterator<Item = S>, S: Into<String>>(
+    pub(crate) fn new<I: IntoIterator<Item = S>, S: Into<String>>(
         container_name: impl Into<String>,
         command: I,
     ) -> Self {
@@ -142,14 +145,14 @@ pub(crate) struct DockerLogsCommand {
 }
 
 impl DockerLogsCommand {
-    pub fn new(container_name: impl Into<String>) -> Self {
+    pub(crate) fn new(container_name: impl Into<String>) -> Self {
         Self {
             container_name: container_name.into(),
             follow: false,
         }
     }
 
-    pub fn follow(&mut self, follow: bool) -> &mut Self {
+    pub(crate) fn follow(&mut self, follow: bool) -> &mut Self {
         self.follow = follow;
         self
     }
@@ -176,7 +179,7 @@ pub(crate) struct DockerPortCommand {
 }
 
 impl DockerPortCommand {
-    pub fn new(container_name: impl Into<String>, port: u16) -> Self {
+    pub(crate) fn new(container_name: impl Into<String>, port: u16) -> Self {
         Self {
             container_name: container_name.into(),
             port,
@@ -204,7 +207,7 @@ pub(crate) struct DockerRemoveContainerCommand {
 }
 
 impl DockerRemoveContainerCommand {
-    pub fn new(container_name: impl Into<String>) -> Self {
+    pub(crate) fn new(container_name: impl Into<String>) -> Self {
         Self {
             container_name: container_name.into(),
             force: true,
@@ -233,7 +236,7 @@ pub(crate) struct DockerRemoveImageCommand {
 }
 
 impl DockerRemoveImageCommand {
-    pub fn new(container_name: impl Into<String>) -> Self {
+    pub(crate) fn new(container_name: impl Into<String>) -> Self {
         Self {
             force: true,
             image_name: container_name.into(),
@@ -262,7 +265,7 @@ pub(crate) struct DockerRemoveVolumeCommand {
 }
 
 impl DockerRemoveVolumeCommand {
-    pub fn new<I: IntoIterator<Item = S>, S: Into<String>>(volume_names: I) -> Self {
+    pub(crate) fn new<I: IntoIterator<Item = S>, S: Into<String>>(volume_names: I) -> Self {
         Self {
             force: true,
             volume_names: volume_names.into_iter().map(S::into).collect(),
