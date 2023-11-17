@@ -1,8 +1,4 @@
 #![doc = include_str!("../README.md")]
-#![warn(unused_crate_dependencies)]
-#![warn(clippy::pedantic)]
-#![warn(clippy::panic_in_result_fn)]
-#![warn(clippy::unwrap_used)]
 
 use proc_macro::TokenStream;
 use quote::quote;

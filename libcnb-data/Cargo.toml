@@ -11,6 +11,9 @@ documentation = "https://docs.rs/libcnb-data"
 readme = "README.md"
 include = ["src/**/*", "LICENSE", "README.md"]
 
+[lints]
+workspace = true
+
 [dependencies]
 fancy-regex = { version = "0.12.0", default-features = false, features = ["std"] }
 libcnb-proc-macros.workspace = true

@@ -14,6 +14,9 @@ include = ["src/**/*", "LICENSE", "README.md"]
 [package.metadata.docs.rs]
 all-features = true
 
+[lints]
+workspace = true
+
 [features]
 default = ["command", "download", "digest", "error", "log", "tar", "toml", "fs", "write"]
 download = ["dep:ureq", "dep:thiserror"]

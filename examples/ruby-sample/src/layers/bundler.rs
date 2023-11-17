@@ -30,6 +30,8 @@ impl Layer for BundlerLayer {
         }
     }
 
+    // TODO: Remove use of unwrap(): https://github.com/heroku/libcnb.rs/issues/746
+    #[allow(clippy::unwrap_used)]
     fn create(
         &self,
         context: &BuildContext<Self::Buildpack>,
@@ -84,6 +86,8 @@ impl Layer for BundlerLayer {
             })
     }
 
+    // TODO: Remove use of unwrap(): https://github.com/heroku/libcnb.rs/issues/746
+    #[allow(clippy::unwrap_used)]
     fn update(
         &self,
         context: &BuildContext<Self::Buildpack>,

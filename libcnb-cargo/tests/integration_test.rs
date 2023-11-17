@@ -1,9 +1,8 @@
 //! All integration tests are skipped by default (using the `ignore` attribute)
 //! since performing builds is slow. To run them use: `cargo test -- --ignored`.
 
-// Enable Clippy lints that are disabled by default.
-// https://rust-lang.github.io/rust-clippy/stable/index.html
-#![warn(clippy::pedantic)]
+// Required due to: https://github.com/rust-lang/rust/issues/95513
+#![allow(unused_crate_dependencies)]
 
 use libcnb_common::toml_file::read_toml_file;
 use libcnb_data::buildpack::{BuildpackDescriptor, BuildpackId};
@@ -276,6 +275,8 @@ fn package_command_respects_ignore_files() {
     );
 }
 
+// Allow required due to: https://github.com/rust-lang/rust-clippy/issues/11119
+#[allow(clippy::unwrap_used)]
 fn validate_packaged_buildpack(packaged_buildpack_dir: &Path, buildpack_id: &BuildpackId) {
     assert!(packaged_buildpack_dir.join("buildpack.toml").exists());
     assert!(packaged_buildpack_dir.join("package.toml").exists());
@@ -291,6 +292,8 @@ fn validate_packaged_buildpack(packaged_buildpack_dir: &Path, buildpack_id: &Bui
     );
 }
 
+// Allow required due to: https://github.com/rust-lang/rust-clippy/issues/11119
+#[allow(clippy::unwrap_used)]
 fn validate_packaged_composite_buildpack(
     packaged_buildpack_dir: &Path,
     buildpack_id: &BuildpackId,

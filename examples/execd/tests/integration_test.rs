@@ -1,9 +1,8 @@
 //! All integration tests are skipped by default (using the `ignore` attribute)
 //! since performing builds is slow. To run them use: `cargo test -- --ignored`.
 
-// Enable Clippy lints that are disabled by default.
-// https://rust-lang.github.io/rust-clippy/stable/index.html
-#![warn(clippy::pedantic)]
+// Required due to: https://github.com/rust-lang/rust/issues/95513
+#![allow(unused_crate_dependencies)]
 
 use libcnb_test::{assert_contains, assert_empty, BuildConfig, TestRunner};
 

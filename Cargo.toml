@@ -19,9 +19,21 @@ members = [
 
 [workspace.package]
 version = "0.15.0"
-rust-version = "1.64"
+rust-version = "1.74"
 edition = "2021"
 license = "BSD-3-Clause"
+
+[workspace.lints.rust]
+unused_crate_dependencies = "warn"
+
+[workspace.lints.clippy]
+panic_in_result_fn = "warn"
+pedantic = "warn"
+unwrap_used = "warn"
+# In most cases adding error docs provides little value.
+missing_errors_doc = "allow"
+# This lint is too noisy and enforces a style that reduces readability in many cases.
+module_name_repetitions = "allow"
 
 [workspace.dependencies]
 libcnb = { version = "=0.15.0", path = "libcnb" }
