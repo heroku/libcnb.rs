@@ -16,7 +16,7 @@ use std::io::Error;
 #[cfg(test)]
 use libcnb_test as _;
 
-pub struct TestBuildpack;
+pub(crate) struct TestBuildpack;
 
 impl Buildpack for TestBuildpack {
     type Platform = GenericPlatform;
@@ -61,7 +61,7 @@ impl Buildpack for TestBuildpack {
 }
 
 #[derive(Debug)]
-pub enum TestBuildpackError {
+pub(crate) enum TestBuildpackError {
     IOError(std::io::Error),
 }
 

@@ -24,6 +24,7 @@ edition = "2021"
 license = "BSD-3-Clause"
 
 [workspace.lints.rust]
+unreachable_pub = "warn"
 unsafe_code = "warn"
 unused_crate_dependencies = "warn"
 

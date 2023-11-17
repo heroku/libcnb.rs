@@ -233,7 +233,7 @@ pub fn libcnb_runtime_build<B: Buildpack>(
 // supported spec version.
 #[derive(Deserialize)]
 struct BuildpackDescriptorApiOnly {
-    pub api: BuildpackApi,
+    api: BuildpackApi,
 }
 
 #[doc(hidden)]

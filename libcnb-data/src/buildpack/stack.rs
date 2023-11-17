@@ -7,9 +7,9 @@ use serde::Deserialize;
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct StackUnchecked {
-    pub id: String,
+    id: String,
     #[serde(default)]
-    pub mixins: Vec<String>,
+    mixins: Vec<String>,
 }
 
 #[derive(Deserialize, Debug, Eq, PartialEq)]

@@ -62,10 +62,12 @@ macro_rules! libcnb_newtype {
     ) => {
         #[derive(Debug, Eq, PartialEq, ::serde::Serialize, Clone, Hash)]
         $(#[$type_attributes])*
+        #[allow(unreachable_pub)]
         pub struct $name(String);
 
         #[derive(::thiserror::Error, Debug, Eq, PartialEq)]
         $(#[$error_type_attributes])*
+        #[allow(unreachable_pub)]
         pub enum $error_name {
             InvalidValue(String),
         }
@@ -155,6 +157,7 @@ macro_rules! libcnb_newtype {
             /// can be used by the compile-time validation macro.
             #[must_use]
             #[doc(hidden)]
+            #[allow(unreachable_pub)]
             pub fn new_unchecked(value: &str) -> Self {
                 Self(String::from(value))
             }

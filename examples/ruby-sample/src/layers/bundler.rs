@@ -15,7 +15,7 @@ pub(crate) struct BundlerLayerMetadata {
 }
 
 pub(crate) struct BundlerLayer {
-    pub ruby_env: Env,
+    pub(crate) ruby_env: Env,
 }
 
 impl Layer for BundlerLayer {

@@ -9,7 +9,7 @@ use std::fs::Permissions;
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 
-pub struct TestLayer;
+pub(crate) struct TestLayer;
 
 impl Layer for TestLayer {
     type Buildpack = TestBuildpack;

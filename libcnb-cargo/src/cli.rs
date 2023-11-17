@@ -19,16 +19,16 @@ pub(crate) enum LibcnbSubcommand {
 pub(crate) struct PackageArgs {
     /// Disable cross-compile assistance
     #[arg(long)]
-    pub no_cross_compile_assistance: bool,
+    pub(crate) no_cross_compile_assistance: bool,
     /// Build in release mode, with optimizations
     #[arg(long)]
-    pub release: bool,
+    pub(crate) release: bool,
     /// Build for the target triple
     #[arg(long, default_value = "x86_64-unknown-linux-musl")]
-    pub target: String,
+    pub(crate) target: String,
     /// Directory for packaged buildpacks, defaults to 'packaged' in Cargo workspace root
     #[arg(long)]
-    pub package_dir: Option<PathBuf>,
+    pub(crate) package_dir: Option<PathBuf>,
 }
 
 #[cfg(test)]
