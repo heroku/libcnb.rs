@@ -1,7 +1,5 @@
-//! Integration tests using libcnb-test.
-//!
-//! All integration tests are skipped by default (using the `ignore` attribute),
-//! since performing builds is slow. To run the tests use: `cargo test -- --ignored`
+//! All integration tests are skipped by default (using the `ignore` attribute)
+//! since performing builds is slow. To run them use: `cargo test -- --ignored`.
 //!
 //! When testing panics, prefer using `#[should_panic(expected = "...")]`, unless you need
 //! to test dynamic values, in which case the only option is to use `panic::catch_unwind`

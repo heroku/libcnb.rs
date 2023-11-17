@@ -1,3 +1,6 @@
+//! All integration tests are skipped by default (using the `ignore` attribute)
+//! since performing builds is slow. To run them use: `cargo test -- --ignored`.
+
 // Enable Clippy lints that are disabled by default.
 // https://rust-lang.github.io/rust-clippy/stable/index.html
 #![warn(clippy::pedantic)]
