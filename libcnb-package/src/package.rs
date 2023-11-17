@@ -56,7 +56,7 @@ pub enum PackageBuildpackError {
 /// # Errors
 ///
 /// Returns `Err` if compilation or packaging failed.
-pub fn package_libcnb_buildpack(
+fn package_libcnb_buildpack(
     buildpack_directory: &Path,
     cargo_profile: CargoProfile,
     target_triple: &str,

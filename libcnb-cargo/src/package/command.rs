@@ -5,7 +5,7 @@ use libcnb_package::buildpack_dependency_graph::build_libcnb_buildpacks_dependen
 use libcnb_package::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
 use libcnb_package::dependency_graph::get_dependencies;
 use libcnb_package::output::create_packaged_buildpack_dir_resolver;
-use libcnb_package::util::{absolutize_path, calculate_dir_size};
+use libcnb_package::util::absolutize_path;
 use libcnb_package::{find_cargo_workspace_root_dir, CargoProfile};
 use std::collections::BTreeMap;
 use std::fs;
@@ -169,4 +169,25 @@ fn eprint_compiled_buildpack_success(current_dir: &Path, target_dir: &Path) {
         "Successfully wrote buildpack directory: {} ({size_string} MiB)",
         relative_output_path.to_string_lossy(),
     );
+}
+
+/// Recursively calculate the size of a directory and its contents in bytes.
+fn calculate_dir_size(path: impl AsRef<Path>) -> std::io::Result<u64> {
+    let mut size_in_bytes = 0;
+
+    // The size of the directory entry (ie: its metadata only, not the directory contents).
+    size_in_bytes += path.as_ref().metadata()?.len();
+
+    for entry in std::fs::read_dir(&path)? {
+        let entry = entry?;
+        let metadata = entry.metadata()?;
+
+        if metadata.is_dir() {
+            size_in_bytes += calculate_dir_size(entry.path())?;
+        } else {
+            size_in_bytes += metadata.len();
+        }
+    }
+
+    Ok(size_in_bytes)
 }

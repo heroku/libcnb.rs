@@ -3,7 +3,7 @@ use libcnb_data::buildpack::BuildpackDescriptor;
 use std::path::Path;
 
 #[must_use]
-pub fn determine_buildpack_kind(buildpack_dir: &Path) -> Option<BuildpackKind> {
+pub(crate) fn determine_buildpack_kind(buildpack_dir: &Path) -> Option<BuildpackKind> {
     read_toml_file::<BuildpackDescriptor>(buildpack_dir.join("buildpack.toml"))
         .ok()
         .map(|buildpack_descriptor| match buildpack_descriptor {
@@ -18,7 +18,7 @@ pub fn determine_buildpack_kind(buildpack_dir: &Path) -> Option<BuildpackKind> {
         })
 }
 
-pub enum BuildpackKind {
+pub(crate) enum BuildpackKind {
     Composite,
     LibCnbRs,
     Other,
