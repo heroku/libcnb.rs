@@ -20,7 +20,7 @@ use std::process::{Command, ExitStatus};
 ///
 /// Will return `Err` if any build did not finish successfully, the configuration can't be
 /// read or the configured main buildpack binary does not exist.
-pub fn build_buildpack_binaries(
+pub(crate) fn build_buildpack_binaries(
     project_path: impl AsRef<Path>,
     cargo_metadata: &Metadata,
     cargo_profile: CargoProfile,
@@ -95,7 +95,7 @@ pub fn build_buildpack_binaries(
 /// # Errors
 ///
 /// Will return `Err` if the build did not finish successfully.
-pub fn build_binary(
+fn build_binary(
     project_path: impl AsRef<Path>,
     cargo_metadata: &Metadata,
     cargo_profile: CargoProfile,
@@ -158,11 +158,11 @@ pub fn build_binary(
 }
 
 #[derive(Debug)]
-pub struct BuildpackBinaries {
+pub(crate) struct BuildpackBinaries {
     /// The path to the main buildpack binary
-    pub buildpack_target_binary_path: PathBuf,
+    pub(crate) buildpack_target_binary_path: PathBuf,
     /// Paths to additional binaries from the buildpack
-    pub additional_target_binary_paths: HashMap<String, PathBuf>,
+    pub(crate) additional_target_binary_paths: HashMap<String, PathBuf>,
 }
 
 #[derive(thiserror::Error, Debug)]

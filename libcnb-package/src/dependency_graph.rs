@@ -3,8 +3,6 @@ use petgraph::Graph;
 use std::error::Error;
 
 /// A node of a dependency graph.
-///
-/// See: [`create_dependency_graph`]
 pub trait DependencyNode<T, E>
 where
     T: PartialEq,
@@ -25,7 +23,7 @@ where
 ///
 /// Will return an `Err` if the graph contains references to missing dependencies or the
 /// dependencies of a [`DependencyNode`] couldn't be gathered.
-pub fn create_dependency_graph<T, I, E>(
+pub(crate) fn create_dependency_graph<T, I, E>(
     nodes: Vec<T>,
 ) -> Result<Graph<T, ()>, CreateDependencyGraphError<I, E>>
 where
@@ -59,7 +57,7 @@ where
     Ok(graph)
 }
 
-/// An error from [`create_dependency_graph`]
+/// An error that occurred while creating the dependency graph.
 #[derive(thiserror::Error, Debug)]
 pub enum CreateDependencyGraphError<I, E: Error> {
     #[error("Error while determining dependencies of a node: {0}")]

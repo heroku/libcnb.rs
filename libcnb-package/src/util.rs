@@ -1,30 +1,5 @@
 use std::path::{Component, Path, PathBuf};
 
-/// Recursively calculate the size of a directory and its contents in bytes.
-///
-/// # Errors
-///
-/// Returns `Err` if an I/O error occurred during the size calculation.
-pub fn calculate_dir_size(path: impl AsRef<Path>) -> std::io::Result<u64> {
-    let mut size_in_bytes = 0;
-
-    // The size of the directory entry (ie: its metadata only, not the directory contents).
-    size_in_bytes += path.as_ref().metadata()?.len();
-
-    for entry in std::fs::read_dir(&path)? {
-        let entry = entry?;
-        let metadata = entry.metadata()?;
-
-        if metadata.is_dir() {
-            size_in_bytes += calculate_dir_size(entry.path())?;
-        } else {
-            size_in_bytes += metadata.len();
-        }
-    }
-
-    Ok(size_in_bytes)
-}
-
 #[must_use]
 pub fn absolutize_path(path: &Path, parent: &Path) -> PathBuf {
     if path.is_relative() {
@@ -40,7 +15,7 @@ pub fn absolutize_path(path: &Path, parent: &Path) -> PathBuf {
 /// symbolic links will not be resolved. In return, it can be used before creating a path on the
 /// file system.
 #[must_use]
-pub fn normalize_path(path: &Path) -> PathBuf {
+fn normalize_path(path: &Path) -> PathBuf {
     let mut components = path.components().peekable();
 
     let mut result = if let Some(component @ Component::Prefix(..)) = components.peek().copied() {

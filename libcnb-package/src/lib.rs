@@ -39,7 +39,7 @@ pub enum CargoProfile {
 /// # Errors
 ///
 /// Will return `Err` if the buildpack directory couldn't be assembled.
-pub fn assemble_buildpack_directory(
+fn assemble_buildpack_directory(
     destination_path: impl AsRef<Path>,
     buildpack_descriptor_path: impl AsRef<Path>,
     buildpack_binaries: &BuildpackBinaries,
