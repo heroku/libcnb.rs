@@ -12,9 +12,6 @@ use std::path::{Path, PathBuf};
 use std::{fs, io};
 
 /// Packages the current crate as a buildpack into the provided directory.
-// TODO: Convert the `assert!` usages to an additional `PackageBuildpackError` variant instead:
-// https://github.com/heroku/libcnb.rs/issues/709
-#[allow(clippy::panic_in_result_fn)]
 pub(crate) fn package_crate_buildpack(
     cargo_profile: CargoProfile,
     target_triple: impl AsRef<str>,
@@ -41,9 +38,6 @@ pub(crate) fn package_crate_buildpack(
     )
 }
 
-// TODO: Convert the `assert!` usages to an additional `PackageBuildpackError` variant instead:
-// https://github.com/heroku/libcnb.rs/issues/709
-#[allow(clippy::panic_in_result_fn)]
 pub(crate) fn package_buildpack(
     buildpack_id: &BuildpackId,
     cargo_profile: CargoProfile,
