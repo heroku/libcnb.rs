@@ -10,7 +10,7 @@ workspace = true
 
 [dependencies]
 libcnb.workspace = true
-fastrand = "2.0.0"
+fastrand = "2.0.1"
 
 [dev-dependencies]
 libcnb-test.workspace = true
