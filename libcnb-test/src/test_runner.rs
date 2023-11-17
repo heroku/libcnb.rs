@@ -31,6 +31,8 @@ impl TestRunner {
     /// crate, packages it as a buildpack and then invokes [pack](https://buildpacks.io/docs/tools/pack/)
     /// to build a new Docker image with the buildpacks specified by the passed [`BuildConfig`].
     ///
+    /// After the passed test function has returned, the Docker image and volumes created by Pack are removed.
+    ///
     /// Since this function is supposed to only be used in integration tests, failures are not
     /// signalled via [`Result`] values. Instead, this function panics whenever an unexpected error
     /// occurred to simplify testing code.
