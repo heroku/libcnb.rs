@@ -31,7 +31,10 @@ pub(crate) struct BuildpackTrace {
 /// Open Telemetry file export. The resulting trace provider and span are
 /// enriched with data from the buildpack and the rust environment.
 pub(crate) fn start_trace(buildpack: &Buildpack, phase_name: &'static str) -> BuildpackTrace {
-    let trace_name = format!("{}-{phase_name}", buildpack.id.replace(['/', '.'], "_"));
+    let trace_name = format!(
+        "{}-{phase_name}",
+        buildpack.id.replace(['/', '.', '-'], "_")
+    );
     let tracing_file_path = Path::new(TELEMETRY_EXPORT_ROOT).join(format!("{trace_name}.jsonl"));
 
     // Ensure tracing file path parent exists by creating it.
