@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -eo pipefail
+
+echo "---> Tracing Reader Buildpack"
+
+# Report the contents of previous buildpack tracing file exports.
+# Useful for testing the contents of tracing file contents, which aren't
+# available in the resulting image of a CNB build.
+for tracing_file in /tmp/libcnb-telemetry/*.jsonl; do
+  cat $tracing_file
+done
+
+exit 0
