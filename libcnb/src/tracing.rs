@@ -118,6 +118,7 @@ impl Drop for BuildpackTrace {
 mod tests {
     use super::start_trace;
     use libcnb_data::buildpack::{Buildpack, BuildpackVersion};
+    use serde_json::Value;
     use std::{
         collections::HashSet,
         fs,
@@ -154,6 +155,8 @@ mod tests {
             .expect("Expected telemetry file to exist, but couldn't read it");
 
         println!("tracing_contents: {tracing_contents}");
+        let _tracing_data: Value = serde_json::from_str(&tracing_contents)
+            .expect("Expected tracing export file contents to be valid json");
         assert!(tracing_contents.contains(phase));
         assert!(tracing_contents.contains(event));
         assert!(tracing_contents.contains(error_message));
