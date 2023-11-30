@@ -6,8 +6,8 @@ use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};
 use libcnb::{buildpack_main, Buildpack};
 
-/// TestTracingBuildpack is a basic buildpack compiled with the libcnb.rs
-/// `tracing` flag, which should emit opentelemetry file exports to the build
+/// `TestTracingBuildpack` is a basic buildpack compiled with the libcnb.rs
+/// `trace` flag, which should emit opentelemetry file exports to the build
 /// file system (but not the final image).
 pub struct TestTracingBuildpack;
 
