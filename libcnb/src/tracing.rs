@@ -10,7 +10,7 @@ use opentelemetry_sdk::{
 };
 use std::{io::BufWriter, path::Path};
 
-// This is the diretory in which `BuildpackTrace` stores Open Telemetry File
+// This is the directory in which `BuildpackTrace` stores Open Telemetry File
 // Exports. Services which intend to export the tracing data from libcnb.rs
 // (such as [cnb-otel-collector](https://github.com/heroku/cnb-otel-collector))
 // should look for `.jsonl` file exports in this directory. This path was chosen
