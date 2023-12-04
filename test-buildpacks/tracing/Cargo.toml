@@ -9,7 +9,7 @@ publish = false
 workspace = true
 
 [dependencies]
-libcnb = { path = "../../libcnb", features = ["trace"] }
+libcnb = { workspace = true, features = ["trace"] }
 
 [dev-dependencies]
 libcnb-test.workspace = true
