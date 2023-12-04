@@ -1,6 +1,3 @@
-#![warn(clippy::pedantic)]
-#![allow(clippy::module_name_repetitions)]
-
 use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};
