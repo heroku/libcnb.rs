@@ -263,7 +263,12 @@ pub fn libcnb_runtime_build<B: Buildpack>(
                     cnb_sbom_path(&launch_sbom.format, &layers_dir, "launch"),
                     &launch_sbom.data,
                 )
-                .map_err(Error::CannotWriteLaunchSbom)?;
+                .map_err(|inner_err| {
+                    let err = Error::CannotWriteLaunchSbom(inner_err);
+                    #[cfg(feature = "trace")]
+                    trace.set_error(&err);
+                    err
+                })?;
             }
 
             #[cfg(feature = "trace")]
