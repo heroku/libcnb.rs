@@ -85,7 +85,7 @@ pub(crate) fn start_trace(buildpack: &Buildpack, phase_name: &'static str) -> Bu
 
     let mut span = tracer.start(trace_name);
     span.set_attributes(vec![
-        KeyValue::new("buildpack_id", buildpack.id.to_string().clone()),
+        KeyValue::new("buildpack_id", buildpack.id.to_string()),
         KeyValue::new("buildpack_name", buildpack.name.clone().unwrap_or_default()),
         KeyValue::new("buildpack_version", buildpack.version.to_string()),
         KeyValue::new(
