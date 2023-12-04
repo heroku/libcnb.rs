@@ -1,5 +1,3 @@
-#![warn(clippy::pedantic)]
-
 use libcnb_test::{assert_contains, BuildConfig, BuildpackReference, TestRunner};
 use std::env::temp_dir;
 use std::fs;
