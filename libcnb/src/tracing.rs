@@ -72,12 +72,12 @@ pub(crate) fn start_trace(buildpack: &Buildpack, phase_name: &'static str) -> Bu
     // Set the global tracer provider so that buildpacks may use it.
     global::set_tracer_provider(provider.clone());
 
-    // Get a tracer identified by the instrumentation scope/library. The libcnb crate
-    // name/version seems to map well to the suggestion here:
+    // Get a tracer identified by the instrumentation scope/library. The libcnb
+    // crate name/version seems to map well to the suggestion here:
     // https://opentelemetry.io/docs/specs/otel/trace/api/#get-a-tracer.
     let tracer = provider.versioned_tracer(
-        option_env!("CARGO_PKG_NAME").unwrap_or("libcnb.rs"),
-        option_env!("CARGO_PKG_VERSION"),
+        env!("CARGO_PKG_NAME"),
+        Some(env!("CARGO_PKG_VERSION")),
         None as Option<&str>,
         None,
     );
