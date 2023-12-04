@@ -13,7 +13,7 @@ fn test_tracing_export_file() {
     // Telemetry file exports are not persisted to the build's resulting image,
     // so to test that contents are emitted, a second buildpack is used to read
     // the contents during the build.
-    build_config.buildpacks(vec![
+    build_config.buildpacks([
         BuildpackReference::CurrentCrate,
         BuildpackReference::Other(format!(
             "file://{}/tests/fixtures/buildpacks/tracing-reader",
