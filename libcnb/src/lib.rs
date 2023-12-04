@@ -29,6 +29,9 @@ pub use libcnb_common::toml_file::*;
 pub use platform::*;
 pub use runtime::*;
 
+#[cfg(all(test, not(feature = "trace")))]
+use serde_json as _;
+
 /// Provides types for CNB data formats. Is a re-export of the `libcnb-data` crate.
 #[doc(inline)]
 pub use libcnb_data as data;
