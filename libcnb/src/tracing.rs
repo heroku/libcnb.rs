@@ -10,25 +10,24 @@ use opentelemetry_sdk::{
 };
 use std::{io::BufWriter, path::Path};
 
-// This is the directory in which `BuildpackTrace` stores Open Telemetry File
+// This is the directory in which `BuildpackTrace` stores OpenTelemetry File
 // Exports. Services which intend to export the tracing data from libcnb.rs
-// (such as [cnb-otel-collector](https://github.com/heroku/cnb-otel-collector))
+// (such as https://github.com/heroku/cnb-otel-collector)
 // should look for `.jsonl` file exports in this directory. This path was chosen
 // to prevent conflicts with the CNB spec and /tmp is commonly available and
 // writable on base images.
 #[cfg(target_family = "unix")]
 const TELEMETRY_EXPORT_ROOT: &str = "/tmp/libcnb-telemetry";
 
-/// `BuildpackTrace` represents an Open Telemetry tracer provider and single span.
-/// It's designed to support tracing a CNB build or detect phase as a singular
-/// span.
+/// Represents an OpenTelemetry tracer provider and single span tracing
+/// a single CNB build or detect phase.
 pub(crate) struct BuildpackTrace {
     provider: TracerProvider,
     span: Span,
 }
 
-/// `start_trace` starts an Open Telemetry trace and span that exports to an
-/// Open Telemetry file export. The resulting trace provider and span are
+/// Start an OpenTelemetry trace and span that exports to an
+/// OpenTelemetry file export. The resulting trace provider and span are
 /// enriched with data from the buildpack and the rust environment.
 pub(crate) fn start_trace(buildpack: &Buildpack, phase_name: &'static str) -> BuildpackTrace {
     let trace_name = format!(
@@ -63,8 +62,8 @@ pub(crate) fn start_trace(buildpack: &Buildpack, phase_name: &'static str) -> Bu
         .with_simple_exporter(exporter)
         .with_config(Config::default().with_resource(Resource::new(vec![
             // Associate the tracer provider with service attributes. The buildpack
-            // name/version seems to map well to the suggestion
-            // [here](https://opentelemetry.io/docs/specs/semconv/resource/#service).
+            // name/version seems to map well to the suggestion here
+            // https://opentelemetry.io/docs/specs/semconv/resource/#service.
             KeyValue::new("service.name", buildpack.id.to_string()),
             KeyValue::new("service.version", buildpack.version.to_string()),
         ])))
@@ -74,8 +73,8 @@ pub(crate) fn start_trace(buildpack: &Buildpack, phase_name: &'static str) -> Bu
     global::set_tracer_provider(provider.clone());
 
     // Get a tracer identified by the instrumentation scope/library. The libcnb crate
-    // name/version seems to map well to the suggestion
-    // [here](https://opentelemetry.io/docs/specs/otel/trace/api/#get-a-tracer).
+    // name/version seems to map well to the suggestion here:
+    // https://opentelemetry.io/docs/specs/otel/trace/api/#get-a-tracer.
     let tracer = provider.versioned_tracer(
         option_env!("CARGO_PKG_NAME").unwrap_or("libcnb.rs"),
         option_env!("CARGO_PKG_VERSION"),
@@ -97,13 +96,13 @@ pub(crate) fn start_trace(buildpack: &Buildpack, phase_name: &'static str) -> Bu
 }
 
 impl BuildpackTrace {
-    /// `set_error` sets the status for the underlying span to error, and
-    /// also records an exception on the span.
+    /// Set the status for the underlying span to error, and record
+    /// an exception on the span.
     pub(crate) fn set_error(&mut self, err: &dyn std::error::Error) {
         self.span.set_status(Status::error(format!("{err:?}")));
         self.span.record_error(err);
     }
-    /// `add_event` adds a named event to the underlying span.
+    /// Add a named event to the underlying span.
     pub(crate) fn add_event(&mut self, name: &'static str) {
         self.span.add_event(name, vec![]);
     }
@@ -120,7 +119,10 @@ impl Drop for BuildpackTrace {
 #[cfg(test)]
 mod tests {
     use super::start_trace;
-    use libcnb_data::buildpack::{Buildpack, BuildpackVersion};
+    use libcnb_data::{
+        buildpack::{Buildpack, BuildpackVersion},
+        buildpack_id,
+    };
     use serde_json::Value;
     use std::{
         collections::HashSet,
@@ -131,9 +133,7 @@ mod tests {
     #[test]
     fn test_tracing() {
         let buildpack = Buildpack {
-            id: "company.com/foo"
-                .parse()
-                .expect("Valid BuildpackId should parse"),
+            id: buildpack_id!("company.com/foo"),
             version: BuildpackVersion::new(0, 0, 0),
             name: Some("Foo buildpack for company.com".to_string()),
             homepage: None,
