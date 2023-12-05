@@ -1,4 +1,3 @@
-#![allow(clippy::doc_markdown)]
 use libcnb_data::buildpack::Buildpack;
 use opentelemetry::{
     global,
