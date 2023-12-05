@@ -135,7 +135,7 @@ mod tests {
     fn test_tracing() {
         let buildpack = Buildpack {
             id: buildpack_id!("company.com/foo"),
-            version: BuildpackVersion::new(0, 0, 0),
+            version: BuildpackVersion::new(0, 0, 99),
             name: Some("Foo buildpack for company.com".to_string()),
             homepage: None,
             clear_env: false,
@@ -144,16 +144,13 @@ mod tests {
             licenses: vec![],
             sbom_formats: HashSet::new(),
         };
-        let phase = "bar";
-        let event = "baz-event";
-        let error_message = "its broken";
         let telemetry_path = "/tmp/libcnb-telemetry/company_com_foo-bar.jsonl";
         _ = fs::remove_file(telemetry_path);
 
         {
-            let mut trace = start_trace(&buildpack, phase);
-            trace.add_event(event);
-            trace.set_error(&Error::new(ErrorKind::Other, error_message));
+            let mut trace = start_trace(&buildpack, "bar");
+            trace.add_event("baz-event");
+            trace.set_error(&Error::new(ErrorKind::Other, "it's broken"));
         }
         let tracing_contents = fs::read_to_string(telemetry_path)
             .expect("Expected telemetry file to exist, but couldn't read it");
@@ -161,13 +158,39 @@ mod tests {
         println!("tracing_contents: {tracing_contents}");
         let _tracing_data: Value = serde_json::from_str(&tracing_contents)
             .expect("Expected tracing export file contents to be valid json");
-        assert!(tracing_contents.contains(phase));
-        assert!(tracing_contents.contains(event));
-        assert!(tracing_contents.contains(error_message));
-        assert!(tracing_contents.contains(buildpack.id.as_str()));
-        assert!(tracing_contents.contains(&buildpack.version.to_string()));
-        assert!(
-            tracing_contents.contains(&buildpack.name.expect("Expected buildpack.name to exist"))
-        );
+
+        // Check resource attributes
+        assert!(tracing_contents.contains(
+            "{\"key\":\"service.name\",\"value\":{\"stringValue\":\"company.com/foo\"}}"
+        ));
+        assert!(tracing_contents
+            .contains("{\"key\":\"service.version\",\"value\":{\"stringValue\":\"0.0.99\"}}"));
+
+        // Check span name
+        assert!(tracing_contents.contains("\"name\":\"company_com_foo-bar\""));
+
+        // Check span attributes
+        assert!(tracing_contents.contains(
+            "{\"key\":\"buildpack_id\",\"value\":{\"stringValue\":\"company.com/foo\"}}"
+        ));
+        assert!(tracing_contents
+            .contains("{\"key\":\"buildpack_version\",\"value\":{\"stringValue\":\"0.0.99\"}}"));
+        assert!(tracing_contents.contains(
+                "{\"key\":\"buildpack_name\",\"value\":{\"stringValue\":\"Foo buildpack for company.com\"}}"
+        ));
+
+        // Check event name
+        assert!(tracing_contents.contains("\"name\":\"baz-event\""));
+
+        // Check exception event
+        assert!(tracing_contents.contains("\"name\":\"exception\""));
+        assert!(tracing_contents.contains(
+            "{\"key\":\"exception.message\",\"value\":{\"stringValue\":\"it's broken\"}}"
+        ));
+
+        // Check error status
+        assert!(tracing_contents
+            .contains("\"message\":\"Custom { kind: Other, error: \\\"it's broken\\\" }"));
+        assert!(tracing_contents.contains("\"code\":1"));
     }
 }
