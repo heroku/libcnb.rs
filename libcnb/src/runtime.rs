@@ -10,6 +10,7 @@ use crate::tracing::start_trace;
 use crate::util::is_not_found_error_kind;
 use crate::{exit_code, TomlFileError, LIBCNB_SUPPORTED_BUILDPACK_API};
 use libcnb_common::toml_file::{read_toml_file, write_toml_file};
+use libcnb_data::buildpack::ComponentBuildpackDescriptor;
 use libcnb_data::store::Store;
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
@@ -123,12 +124,29 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
 ) -> crate::Result<i32, B::Error> {
     let app_dir = env::current_dir().map_err(Error::CannotDetermineAppDirectory)?;
 
+    let buildpack_dir = read_buildpack_dir()?;
+
+    let buildpack_descriptor: ComponentBuildpackDescriptor<<B as Buildpack>::Metadata> =
+        read_buildpack_descriptor()?;
+
+    #[cfg(feature = "trace")]
+    let mut trace = start_trace(&buildpack_descriptor.buildpack, "detect");
+
     let stack_id: StackId = env::var("CNB_STACK_ID")
         .map_err(Error::CannotDetermineStackId)
-        .and_then(|stack_id_string| stack_id_string.parse().map_err(Error::StackIdError))?;
+        .and_then(|stack_id_string| stack_id_string.parse().map_err(Error::StackIdError))
+        .map_err(|err| {
+            #[cfg(feature = "trace")]
+            trace.set_error(err);
+            err
+        })?;
 
-    let platform = B::Platform::from_path(&args.platform_dir_path)
-        .map_err(Error::CannotCreatePlatformFromPath)?;
+    let platform = B::Platform::from_path(&args.platform_dir_path).map_err(|inner_err| {
+        let err = Error::CannotCreatePlatformFromPath(inner_err);
+        #[cfg(feature = "trace")]
+        trace.set_error(err);
+        err
+    })?;
 
     let build_plan_path = args.build_plan_path;
 
@@ -136,12 +154,9 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
         app_dir,
         stack_id,
         platform,
-        buildpack_dir: read_buildpack_dir()?,
-        buildpack_descriptor: read_buildpack_descriptor()?,
+        buildpack_dir,
+        buildpack_descriptor,
     };
-
-    #[cfg(feature = "trace")]
-    let mut trace = start_trace(&detect_context.buildpack_descriptor.buildpack, "detect");
 
     let detect_result = buildpack.detect(detect_context);
 
@@ -184,21 +199,47 @@ pub fn libcnb_runtime_build<B: Buildpack>(
 
     let app_dir = env::current_dir().map_err(Error::CannotDetermineAppDirectory)?;
 
+    let buildpack_dir = read_buildpack_dir()?;
+
+    let buildpack_descriptor: ComponentBuildpackDescriptor<<B as Buildpack>::Metadata> =
+        read_buildpack_descriptor()?;
+
+    #[cfg(feature = "trace")]
+    let mut trace = start_trace(&buildpack_descriptor.buildpack, "build");
+
     let stack_id: StackId = env::var("CNB_STACK_ID")
         .map_err(Error::CannotDetermineStackId)
-        .and_then(|stack_id_string| stack_id_string.parse().map_err(Error::StackIdError))?;
+        .and_then(|stack_id_string| stack_id_string.parse().map_err(Error::StackIdError))
+        .map_err(|err| {
+            #[cfg(feature = "trace")]
+            trace.set_error(&err);
+            err
+        })?;
 
-    let platform = Platform::from_path(&args.platform_dir_path)
-        .map_err(Error::CannotCreatePlatformFromPath)?;
+    let platform = Platform::from_path(&args.platform_dir_path).map_err(|inner_err| {
+        let err = Error::CannotCreatePlatformFromPath(inner_err);
+        #[cfg(feature = "trace")]
+        trace.set_error(&err);
+        err
+    })?;
 
-    let buildpack_plan =
-        read_toml_file(&args.buildpack_plan_path).map_err(Error::CannotReadBuildpackPlan)?;
+    let buildpack_plan = read_toml_file(&args.buildpack_plan_path).map_err(|inner_err| {
+        let err = Error::CannotReadBuildpackPlan(inner_err);
+        #[cfg(feature = "trace")]
+        trace.set_error(&err);
+        err
+    })?;
 
     let store = match read_toml_file::<Store>(layers_dir.join("store.toml")) {
         Err(TomlFileError::IoError(io_error)) if is_not_found_error_kind(&io_error) => Ok(None),
         other => other.map(Some),
     }
-    .map_err(Error::CannotReadStore)?;
+    .map_err(|inner_err| {
+        let err = Error::CannotReadStore(inner_err);
+        #[cfg(feature = "trace")]
+        trace.set_error(&err);
+        err
+    })?;
 
     let build_context = BuildContext {
         layers_dir: layers_dir.clone(),
@@ -206,12 +247,10 @@ pub fn libcnb_runtime_build<B: Buildpack>(
         stack_id,
         platform,
         buildpack_plan,
-        buildpack_dir: read_buildpack_dir()?,
-        buildpack_descriptor: read_buildpack_descriptor()?,
+        buildpack_dir,
+        buildpack_descriptor,
         store,
     };
-    #[cfg(feature = "trace")]
-    let mut trace = start_trace(&build_context.buildpack_descriptor.buildpack, "build");
 
     let build_result = buildpack.build(build_context);
 
