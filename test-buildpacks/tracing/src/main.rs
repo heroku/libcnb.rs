@@ -3,6 +3,10 @@ use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};
 use libcnb::{buildpack_main, Buildpack};
 
+// Suppress warnings due to the `unused_crate_dependencies` lint not handling integration tests well.
+#[cfg(test)]
+use libcnb_test as _;
+
 /// `TestTracingBuildpack` is a basic buildpack compiled with the libcnb.rs
 /// `trace` flag, which should emit opentelemetry file exports to the build
 /// file system (but not the final image).
