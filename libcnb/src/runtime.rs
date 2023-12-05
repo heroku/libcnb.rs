@@ -132,7 +132,7 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
     #[cfg(feature = "trace")]
     let mut trace = start_trace(&buildpack_descriptor.buildpack, "detect");
 
-    let mut record_trace_err = |err: &dyn std::error::Error| {
+    let mut trace_error = |err: &dyn std::error::Error| {
         #[cfg(feature = "trace")]
         trace.set_error(err);
     };
@@ -140,13 +140,13 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
         .map_err(Error::CannotDetermineStackId)
         .and_then(|stack_id_string| stack_id_string.parse().map_err(Error::StackIdError))
         .map_err(|err| {
-            record_trace_err(&err);
+            trace_error(&err);
             err
         })?;
 
     let platform = B::Platform::from_path(&args.platform_dir_path).map_err(|inner_err| {
         let err = Error::CannotCreatePlatformFromPath(inner_err);
-        record_trace_err(&err);
+        trace_error(&err);
         err
     })?;
 
@@ -161,7 +161,7 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
     };
 
     let detect_result = buildpack.detect(detect_context).map_err(|err| {
-        record_trace_err(&err);
+        trace_error(&err);
         err
     });
 
@@ -175,7 +175,7 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
             if let Some(build_plan) = build_plan {
                 write_toml_file(&build_plan, build_plan_path).map_err(|inner_err| {
                     let err = Error::CannotWriteBuildPlan(inner_err);
-                    record_trace_err(&err);
+                    trace_error(&err);
                     err
                 })?;
             }
@@ -206,7 +206,7 @@ pub fn libcnb_runtime_build<B: Buildpack>(
     #[cfg(feature = "trace")]
     let mut trace = start_trace(&buildpack_descriptor.buildpack, "build");
 
-    let mut record_trace_err = |err: &dyn std::error::Error| {
+    let mut trace_error = |err: &dyn std::error::Error| {
         #[cfg(feature = "trace")]
         trace.set_error(err);
     };
@@ -215,19 +215,19 @@ pub fn libcnb_runtime_build<B: Buildpack>(
         .map_err(Error::CannotDetermineStackId)
         .and_then(|stack_id_string| stack_id_string.parse().map_err(Error::StackIdError))
         .map_err(|err| {
-            record_trace_err(&err);
+            trace_error(&err);
             err
         })?;
 
     let platform = Platform::from_path(&args.platform_dir_path).map_err(|inner_err| {
         let err = Error::CannotCreatePlatformFromPath(inner_err);
-        record_trace_err(&err);
+        trace_error(&err);
         err
     })?;
 
     let buildpack_plan = read_toml_file(&args.buildpack_plan_path).map_err(|inner_err| {
         let err = Error::CannotReadBuildpackPlan(inner_err);
-        record_trace_err(&err);
+        trace_error(&err);
         err
     })?;
 
@@ -237,7 +237,7 @@ pub fn libcnb_runtime_build<B: Buildpack>(
     }
     .map_err(Error::CannotReadStore)
     .map_err(|err| {
-        record_trace_err(&err);
+        trace_error(&err);
         err
     })?;
 
@@ -253,7 +253,7 @@ pub fn libcnb_runtime_build<B: Buildpack>(
     };
 
     let build_result = buildpack.build(build_context).map_err(|err| {
-        record_trace_err(&err);
+        trace_error(&err);
         err
     });
 
@@ -267,7 +267,7 @@ pub fn libcnb_runtime_build<B: Buildpack>(
             if let Some(launch) = launch {
                 write_toml_file(&launch, layers_dir.join("launch.toml")).map_err(|inner_err| {
                     let err = Error::CannotWriteLaunch(inner_err);
-                    record_trace_err(&err);
+                    trace_error(&err);
                     err
                 })?;
             };
@@ -275,7 +275,7 @@ pub fn libcnb_runtime_build<B: Buildpack>(
             if let Some(store) = store {
                 write_toml_file(&store, layers_dir.join("store.toml")).map_err(|inner_err| {
                     let err = Error::CannotWriteStore(inner_err);
-                    record_trace_err(&err);
+                    trace_error(&err);
                     err
                 })?;
             };
@@ -287,7 +287,7 @@ pub fn libcnb_runtime_build<B: Buildpack>(
                 )
                 .map_err(Error::CannotWriteBuildSbom)
                 .map_err(|err| {
-                    record_trace_err(&err);
+                    trace_error(&err);
                     err
                 })?;
             }
@@ -299,7 +299,7 @@ pub fn libcnb_runtime_build<B: Buildpack>(
                 )
                 .map_err(Error::CannotWriteLaunchSbom)
                 .map_err(|err| {
-                    record_trace_err(&err);
+                    trace_error(&err);
                     err
                 })?;
             }
