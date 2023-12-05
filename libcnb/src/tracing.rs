@@ -60,7 +60,7 @@ pub(crate) fn start_trace(buildpack: &Buildpack, phase_name: &'static str) -> Bu
 
     let provider = TracerProvider::builder()
         .with_simple_exporter(exporter)
-        .with_config(Config::default().with_resource(Resource::new(vec![
+        .with_config(Config::default().with_resource(Resource::new([
             // Associate the tracer provider with service attributes. The buildpack
             // name/version seems to map well to the suggestion here
             // https://opentelemetry.io/docs/specs/semconv/resource/#service.
@@ -83,7 +83,7 @@ pub(crate) fn start_trace(buildpack: &Buildpack, phase_name: &'static str) -> Bu
     );
 
     let mut span = tracer.start(trace_name);
-    span.set_attributes(vec![
+    span.set_attributes([
         KeyValue::new("buildpack_id", buildpack.id.to_string()),
         KeyValue::new("buildpack_name", buildpack.name.clone().unwrap_or_default()),
         KeyValue::new("buildpack_version", buildpack.version.to_string()),

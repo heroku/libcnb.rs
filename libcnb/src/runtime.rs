@@ -137,14 +137,14 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
         .and_then(|stack_id_string| stack_id_string.parse().map_err(Error::StackIdError))
         .map_err(|err| {
             #[cfg(feature = "trace")]
-            trace.set_error(err);
+            trace.set_error(&err);
             err
         })?;
 
     let platform = B::Platform::from_path(&args.platform_dir_path).map_err(|inner_err| {
         let err = Error::CannotCreatePlatformFromPath(inner_err);
         #[cfg(feature = "trace")]
-        trace.set_error(err);
+        trace.set_error(&err);
         err
     })?;
 
