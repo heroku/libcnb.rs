@@ -152,9 +152,9 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
 
     let detect_context = DetectContext {
         app_dir,
+        buildpack_dir,
         stack_id,
         platform,
-        buildpack_dir,
         buildpack_descriptor,
     };
 
