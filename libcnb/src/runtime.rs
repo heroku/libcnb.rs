@@ -163,9 +163,9 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
     let detect_result = buildpack.detect(detect_context).map_err(|err| {
         trace_error(&err);
         err
-    });
+    })?;
 
-    match detect_result?.0 {
+    match detect_result.0 {
         InnerDetectResult::Fail => {
             #[cfg(feature = "trace")]
             trace.add_event("detect-failed");
@@ -255,9 +255,9 @@ pub fn libcnb_runtime_build<B: Buildpack>(
     let build_result = buildpack.build(build_context).map_err(|err| {
         trace_error(&err);
         err
-    });
+    })?;
 
-    match build_result?.0 {
+    match build_result.0 {
         InnerBuildResult::Pass {
             launch,
             store,
