@@ -1,0 +1,9 @@
+api = "0.9"
+
+[buildpack]
+id = "libcnb-test-buildpacks/tracing-reader"
+version = "0.1.0"
+name = "libcnb test buildpack fixture: tracing-reader"
+
+[[stacks]]
+id = "*"
