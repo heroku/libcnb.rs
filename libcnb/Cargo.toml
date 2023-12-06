@@ -24,9 +24,9 @@ libcnb-common.workspace = true
 libcnb-data.workspace = true
 libcnb-proc-macros.workspace = true
 opentelemetry = { version = "0.21.0", optional = true }
-opentelemetry_sdk = { version = "0.21.0", optional = true }
+opentelemetry_sdk = { version = "0.21.1", optional = true }
 opentelemetry-stdout = { version = "0.2.0", optional = true, features = ["trace"] }
-serde = { version = "1.0.192", features = ["derive"] }
+serde = { version = "1.0.193", features = ["derive"] }
 thiserror = "1.0.50"
 toml.workspace = true
 

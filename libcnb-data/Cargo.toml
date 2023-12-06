@@ -17,7 +17,7 @@ workspace = true
 [dependencies]
 fancy-regex = { version = "0.12.0", default-features = false, features = ["std"] }
 libcnb-proc-macros.workspace = true
-serde = { version = "1.0.192", features = ["derive"] }
+serde = { version = "1.0.193", features = ["derive"] }
 thiserror = "1.0.50"
 toml.workspace = true
 uriparse = "0.6.4"
