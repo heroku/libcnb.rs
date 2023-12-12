@@ -1,4 +1,4 @@
-use crate::output::background_timer::{start_timer, StopJoinGuard, StopTimer};
+use crate::output::background::{print_interval, state::PrintGuard};
 #[allow(clippy::wildcard_imports)]
 pub use crate::output::interface::*;
 use crate::output::style;
@@ -156,17 +156,23 @@ where
     }
 
     fn step_timed(self: Box<Self>, s: &str) -> Box<dyn TimedStepLogger> {
-        let start = style::step(format!("{s}{}", style::background_timer_start()));
-        let tick = style::background_timer_tick();
-        let end = style::background_timer_end();
+        let mut io = self.io;
+        let data = self.data;
+        let timer = Instant::now();
 
-        let arc_io = Arc::new(Mutex::new(self.io));
-        let background = start_timer(&arc_io, Duration::from_secs(1), start, tick, end);
+        write_now(&mut io, style::step(s));
+        let dot_printer = print_interval(
+            io,
+            Duration::from_secs(1),
+            style::background_timer_start(),
+            style::background_timer_tick(),
+            style::background_timer_end(),
+        );
 
         Box::new(FinishTimedStep {
-            arc_io,
-            background,
-            data: self.data,
+            data,
+            timer,
+            dot_printer,
         })
     }
 
@@ -448,10 +454,13 @@ where
 ///
 /// Used to end a background inline timer i.e. Installing ...... (<0.1s)
 #[derive(Debug)]
-struct FinishTimedStep<W> {
+struct FinishTimedStep<W>
+where
+    W: Write + Debug,
+{
     data: BuildData,
-    arc_io: Arc<Mutex<W>>,
-    background: StopJoinGuard<StopTimer>,
+    timer: Instant,
+    dot_printer: PrintGuard<W>,
 }
 
 impl<W> TimedStepLogger for FinishTimedStep<W>
@@ -460,14 +469,20 @@ where
 {
     fn finish_timed_step(self: Box<Self>) -> Box<dyn SectionLogger> {
         // Must stop background writing thread before retrieving IO
-        let duration = self.background.stop().elapsed();
-        let mut io = try_unwrap_arc_io(self.arc_io);
+        let data = self.data;
+        let timer = self.timer;
+
+        let mut io = match self.dot_printer.stop() {
+            Ok(io) => io,
+            Err(e) => std::panic::resume_unwind(e),
+        };
+        let duration = timer.elapsed();
 
         writeln_now(&mut io, style::details(style::time::human(&duration)));
 
         Box::new(BuildLog {
             io,
-            data: self.data,
+            data,
             state: PhantomData::<state::InSection>,
         })
     }
