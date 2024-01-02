@@ -594,6 +594,12 @@ impl LayerEnvDelta {
     }
 }
 
+#[cfg(target_family = "unix")]
+const PATH_LIST_SEPARATOR: &str = ":";
+
+#[cfg(target_family = "windows")]
+const PATH_LIST_SEPARATOR: &str = ";";
+
 #[cfg(test)]
 mod tests {
     use std::cmp::Ordering;
@@ -925,9 +931,3 @@ mod tests {
         result
     }
 }
-
-#[cfg(target_family = "unix")]
-const PATH_LIST_SEPARATOR: &str = ":";
-
-#[cfg(target_family = "windows")]
-const PATH_LIST_SEPARATOR: &str = ";";
