@@ -176,6 +176,7 @@ impl TestRunner {
     }
 }
 
+#[allow(clippy::struct_field_names)]
 pub(crate) struct TemporaryDockerResources {
     pub(crate) build_cache_volume_name: String,
     pub(crate) image_name: String,
