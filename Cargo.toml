@@ -19,7 +19,7 @@ members = [
 
 [workspace.package]
 version = "0.17.0"
-rust-version = "1.74"
+rust-version = "1.75"
 edition = "2021"
 license = "BSD-3-Clause"
 

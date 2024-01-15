@@ -3,6 +3,3 @@ members = [
     "buildpacks/one",
     "buildpacks/two"
 ]
-
-[workspace.package]
-version = "0.0.0"
