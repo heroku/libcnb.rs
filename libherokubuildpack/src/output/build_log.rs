@@ -242,19 +242,6 @@ where
         writeln_now(&mut self.io, style::important(s.trim()));
         writeln_now(&mut self.io, "");
     }
-
-    fn log_warn_later_shared(&mut self, s: &str) {
-        let mut formatted = style::warning(s.trim());
-        formatted.push('\n');
-
-        match crate::output::warn_later::try_push(formatted) {
-            Ok(()) => {}
-            Err(error) => {
-                eprintln!("[Buildpack Warning]: Cannot use the delayed warning feature due to error: {error}");
-                self.log_warning_shared(s);
-            }
-        };
-    }
 }
 
 impl<T, W> ErrorLogger for AnnounceBuildLog<T, W>
@@ -279,15 +266,6 @@ where
 
     fn warning(mut self: Box<Self>, s: &str) -> Box<dyn AnnounceLogger<ReturnTo = Self::ReturnTo>> {
         self.log_warning_shared(s);
-
-        self
-    }
-
-    fn warn_later(
-        mut self: Box<Self>,
-        s: &str,
-    ) -> Box<dyn AnnounceLogger<ReturnTo = Self::ReturnTo>> {
-        self.log_warn_later_shared(s);
 
         self
     }
@@ -318,14 +296,6 @@ where
 
     fn warning(mut self: Box<Self>, s: &str) -> Box<dyn AnnounceLogger<ReturnTo = Self::ReturnTo>> {
         self.log_warning_shared(s);
-        self
-    }
-
-    fn warn_later(
-        mut self: Box<Self>,
-        s: &str,
-    ) -> Box<dyn AnnounceLogger<ReturnTo = Self::ReturnTo>> {
-        self.log_warn_later_shared(s);
         self
     }
 
@@ -514,7 +484,6 @@ mod test {
     use crate::command::CommandExt;
     use crate::output::style::{self, strip_control_codes};
     use crate::output::util::{strip_trailing_whitespace, ReadYourWrite};
-    use crate::output::warn_later::WarnGuard;
     use indoc::formatdoc;
     use libcnb_test::assert_contains;
     use pretty_assertions::assert_eq;
@@ -651,47 +620,6 @@ mod test {
               - The jumping fountains are great
               - The music is nice here
             - Done (finished in < 0.1s)
-        "};
-
-        assert_eq!(expected, strip_control_codes(reader.read_lossy().unwrap()));
-    }
-
-    #[test]
-    fn warn_later_doesnt_output_newline() {
-        let writer = ReadYourWrite::writer(Vec::new());
-        let reader = writer.reader();
-
-        let warn_later = WarnGuard::new(writer.clone());
-        BuildLog::new(writer)
-            .buildpack_name("Walkin' on the Sun")
-            .section("So don't delay, act now, supplies are running out")
-            .step("Allow if you're still alive, six to eight years to arrive")
-            .step("And if you follow, there may be a tomorrow")
-            .announce()
-            .warn_later("And all that glitters is gold")
-            .warn_later("Only shooting stars break the mold")
-            .end_announce()
-            .step("But if the offer's shunned")
-            .step("You might as well be walking on the Sun")
-            .end_section()
-            .finish_logging();
-
-        drop(warn_later);
-
-        let expected = formatdoc! {"
-
-            # Walkin' on the Sun
-
-            - So don't delay, act now, supplies are running out
-              - Allow if you're still alive, six to eight years to arrive
-              - And if you follow, there may be a tomorrow
-              - But if the offer's shunned
-              - You might as well be walking on the Sun
-            - Done (finished in < 0.1s)
-
-            ! And all that glitters is gold
-
-            ! Only shooting stars break the mold
         "};
 
         assert_eq!(expected, strip_control_codes(reader.read_lossy().unwrap()));
