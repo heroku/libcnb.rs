@@ -34,7 +34,6 @@ pub trait AnnounceLogger: ErrorLogger + Debug {
     type ReturnTo;
 
     fn warning(self: Box<Self>, s: &str) -> Box<dyn AnnounceLogger<ReturnTo = Self::ReturnTo>>;
-    fn warn_later(self: Box<Self>, s: &str) -> Box<dyn AnnounceLogger<ReturnTo = Self::ReturnTo>>;
     fn important(self: Box<Self>, s: &str) -> Box<dyn AnnounceLogger<ReturnTo = Self::ReturnTo>>;
 
     fn end_announce(self: Box<Self>) -> Self::ReturnTo;
