@@ -1,4 +1,4 @@
-use crate::output::background_timer::{start_timer, StopJoinGuard, StopTimer};
+use crate::output::background::{print_interval, state::PrintGuard};
 #[allow(clippy::wildcard_imports)]
 pub use crate::output::interface::*;
 use crate::output::style;
@@ -156,17 +156,23 @@ where
     }
 
     fn step_timed(self: Box<Self>, s: &str) -> Box<dyn TimedStepLogger> {
-        let start = style::step(format!("{s}{}", style::background_timer_start()));
-        let tick = style::background_timer_tick();
-        let end = style::background_timer_end();
+        let mut io = self.io;
+        let data = self.data;
+        let timer = Instant::now();
 
-        let arc_io = Arc::new(Mutex::new(self.io));
-        let background = start_timer(&arc_io, Duration::from_secs(1), start, tick, end);
+        write_now(&mut io, style::step(s));
+        let dot_printer = print_interval(
+            io,
+            Duration::from_secs(1),
+            style::background_timer_start(),
+            style::background_timer_tick(),
+            style::background_timer_end(),
+        );
 
         Box::new(FinishTimedStep {
-            arc_io,
-            background,
-            data: self.data,
+            data,
+            timer,
+            dot_printer,
         })
     }
 
@@ -236,19 +242,6 @@ where
         writeln_now(&mut self.io, style::important(s.trim()));
         writeln_now(&mut self.io, "");
     }
-
-    fn log_warn_later_shared(&mut self, s: &str) {
-        let mut formatted = style::warning(s.trim());
-        formatted.push('\n');
-
-        match crate::output::warn_later::try_push(formatted) {
-            Ok(()) => {}
-            Err(error) => {
-                eprintln!("[Buildpack Warning]: Cannot use the delayed warning feature due to error: {error}");
-                self.log_warning_shared(s);
-            }
-        };
-    }
 }
 
 impl<T, W> ErrorLogger for AnnounceBuildLog<T, W>
@@ -273,15 +266,6 @@ where
 
     fn warning(mut self: Box<Self>, s: &str) -> Box<dyn AnnounceLogger<ReturnTo = Self::ReturnTo>> {
         self.log_warning_shared(s);
-
-        self
-    }
-
-    fn warn_later(
-        mut self: Box<Self>,
-        s: &str,
-    ) -> Box<dyn AnnounceLogger<ReturnTo = Self::ReturnTo>> {
-        self.log_warn_later_shared(s);
 
         self
     }
@@ -312,14 +296,6 @@ where
 
     fn warning(mut self: Box<Self>, s: &str) -> Box<dyn AnnounceLogger<ReturnTo = Self::ReturnTo>> {
         self.log_warning_shared(s);
-        self
-    }
-
-    fn warn_later(
-        mut self: Box<Self>,
-        s: &str,
-    ) -> Box<dyn AnnounceLogger<ReturnTo = Self::ReturnTo>> {
-        self.log_warn_later_shared(s);
         self
     }
 
@@ -448,10 +424,13 @@ where
 ///
 /// Used to end a background inline timer i.e. Installing ...... (<0.1s)
 #[derive(Debug)]
-struct FinishTimedStep<W> {
+struct FinishTimedStep<W>
+where
+    W: Write + Debug,
+{
     data: BuildData,
-    arc_io: Arc<Mutex<W>>,
-    background: StopJoinGuard<StopTimer>,
+    timer: Instant,
+    dot_printer: PrintGuard<W>,
 }
 
 impl<W> TimedStepLogger for FinishTimedStep<W>
@@ -460,14 +439,20 @@ where
 {
     fn finish_timed_step(self: Box<Self>) -> Box<dyn SectionLogger> {
         // Must stop background writing thread before retrieving IO
-        let duration = self.background.stop().elapsed();
-        let mut io = try_unwrap_arc_io(self.arc_io);
+        let data = self.data;
+        let timer = self.timer;
+
+        let mut io = match self.dot_printer.stop() {
+            Ok(io) => io,
+            Err(e) => std::panic::resume_unwind(e),
+        };
+        let duration = timer.elapsed();
 
         writeln_now(&mut io, style::details(style::time::human(&duration)));
 
         Box::new(BuildLog {
             io,
-            data: self.data,
+            data,
             state: PhantomData::<state::InSection>,
         })
     }
@@ -499,7 +484,6 @@ mod test {
     use crate::command::CommandExt;
     use crate::output::style::{self, strip_control_codes};
     use crate::output::util::{strip_trailing_whitespace, ReadYourWrite};
-    use crate::output::warn_later::WarnGuard;
     use indoc::formatdoc;
     use libcnb_test::assert_contains;
     use pretty_assertions::assert_eq;
@@ -636,47 +620,6 @@ mod test {
               - The jumping fountains are great
               - The music is nice here
             - Done (finished in < 0.1s)
-        "};
-
-        assert_eq!(expected, strip_control_codes(reader.read_lossy().unwrap()));
-    }
-
-    #[test]
-    fn warn_later_doesnt_output_newline() {
-        let writer = ReadYourWrite::writer(Vec::new());
-        let reader = writer.reader();
-
-        let warn_later = WarnGuard::new(writer.clone());
-        BuildLog::new(writer)
-            .buildpack_name("Walkin' on the Sun")
-            .section("So don't delay, act now, supplies are running out")
-            .step("Allow if you're still alive, six to eight years to arrive")
-            .step("And if you follow, there may be a tomorrow")
-            .announce()
-            .warn_later("And all that glitters is gold")
-            .warn_later("Only shooting stars break the mold")
-            .end_announce()
-            .step("But if the offer's shunned")
-            .step("You might as well be walking on the Sun")
-            .end_section()
-            .finish_logging();
-
-        drop(warn_later);
-
-        let expected = formatdoc! {"
-
-            # Walkin' on the Sun
-
-            - So don't delay, act now, supplies are running out
-              - Allow if you're still alive, six to eight years to arrive
-              - And if you follow, there may be a tomorrow
-              - But if the offer's shunned
-              - You might as well be walking on the Sun
-            - Done (finished in < 0.1s)
-
-            ! And all that glitters is gold
-
-            ! Only shooting stars break the mold
         "};
 
         assert_eq!(expected, strip_control_codes(reader.read_lossy().unwrap()));

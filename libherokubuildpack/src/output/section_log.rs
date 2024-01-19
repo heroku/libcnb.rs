@@ -108,11 +108,6 @@ pub fn log_warning(s: impl AsRef<str>) {
     logger().announce().warning(s.as_ref());
 }
 
-/// Print an warning block to the output at a later time
-pub fn log_warning_later(s: impl AsRef<str>) {
-    logger().announce().warn_later(s.as_ref());
-}
-
 /// Print an important block to the output
 pub fn log_important(s: impl AsRef<str>) {
     logger().announce().important(s.as_ref());
