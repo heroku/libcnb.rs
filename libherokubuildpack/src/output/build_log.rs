@@ -114,11 +114,17 @@ where
         }
     }
 
-    pub fn finish_logging(mut self) {
+    #[must_use]
+    fn finish_logging_writer(mut self) -> W {
         let elapsed = style::time::human(&self.data.started.elapsed());
         let details = style::details(format!("finished in {elapsed}"));
 
         writeln_now(&mut self.io, style::section(format!("Done {details}")));
+        self.io
+    }
+
+    pub fn finish_logging(self) {
+        let _ = self.finish_logging_writer();
     }
 
     pub fn announce(self) -> AnnounceLog<state::Started, W> {
@@ -461,17 +467,15 @@ fn writeln_now<D: Write>(destination: &mut D, msg: impl AsRef<str>) {
 mod test {
     use super::*;
     use crate::command::CommandExt;
-    use crate::output::style::{self, strip_control_codes};
-    use crate::output::util::{strip_trailing_whitespace, ReadYourWrite};
+    use crate::output::style::strip_control_codes;
+    use crate::output::util::strip_trailing_whitespace;
     use indoc::formatdoc;
     use libcnb_test::assert_contains;
     use pretty_assertions::assert_eq;
 
     #[test]
     fn test_captures() {
-        let writer = ReadYourWrite::writer(Vec::new());
-        let reader = writer.reader();
-
+        let writer = Vec::new();
         let mut stream = BuildLog::new(writer)
             .buildpack_name("Heroku Ruby Buildpack")
             .section("Ruby version `3.1.3` from `Gemfile.lock`")
@@ -484,7 +488,10 @@ mod test {
         let value = "stuff".to_string();
         writeln!(stream.io(), "{value}").unwrap();
 
-        stream.finish_timed_stream().end_section().finish_logging();
+        let io = stream
+            .finish_timed_stream()
+            .end_section()
+            .finish_logging_writer();
 
         let expected = formatdoc! {"
 
@@ -503,15 +510,13 @@ mod test {
 
         assert_eq!(
             expected,
-            strip_trailing_whitespace(style::strip_control_codes(reader.read_lossy().unwrap()))
+            strip_trailing_whitespace(strip_control_codes(String::from_utf8_lossy(&io)))
         );
     }
 
     #[test]
     fn test_streaming_a_command() {
-        let writer = ReadYourWrite::writer(Vec::new());
-        let reader = writer.reader();
-
+        let writer = Vec::new();
         let mut stream = BuildLog::new(writer)
             .buildpack_name("Streaming buildpack demo")
             .section("Command streaming")
@@ -522,20 +527,20 @@ mod test {
             .output_and_write_streams(stream.io(), stream.io())
             .unwrap();
 
-        stream.finish_timed_stream().end_section().finish_logging();
+        let io = stream
+            .finish_timed_stream()
+            .end_section()
+            .finish_logging_writer();
 
-        let actual =
-            strip_trailing_whitespace(style::strip_control_codes(reader.read_lossy().unwrap()));
+        let actual = strip_trailing_whitespace(strip_control_codes(String::from_utf8_lossy(&io)));
 
         assert_contains!(actual, "      hello world\n");
     }
 
     #[test]
     fn warning_step_padding() {
-        let writer = ReadYourWrite::writer(Vec::new());
-        let reader = writer.reader();
-
-        BuildLog::new(writer)
+        let writer = Vec::new();
+        let io = BuildLog::new(writer)
             .buildpack_name("RCT")
             .section("Guest thoughs")
             .step("The scenery here is wonderful")
@@ -545,7 +550,7 @@ mod test {
             .step("The jumping fountains are great")
             .step("The music is nice here")
             .end_section()
-            .finish_logging();
+            .finish_logging_writer();
 
         let expected = formatdoc! {"
 
@@ -562,28 +567,26 @@ mod test {
             - Done (finished in < 0.1s)
         "};
 
-        assert_eq!(expected, strip_control_codes(reader.read_lossy().unwrap()));
+        assert_eq!(expected, strip_control_codes(String::from_utf8_lossy(&io)));
     }
 
     #[test]
     fn double_warning_step_padding() {
-        let writer = ReadYourWrite::writer(Vec::new());
-        let reader = writer.reader();
-
+        let writer = Vec::new();
         let logger = BuildLog::new(writer)
             .buildpack_name("RCT")
             .section("Guest thoughs")
             .step("The scenery here is wonderful")
             .announce();
 
-        logger
+        let io = logger
             .warning("It's too crowded here")
             .warning("I'm tired")
             .end_announce()
             .step("The jumping fountains are great")
             .step("The music is nice here")
             .end_section()
-            .finish_logging();
+            .finish_logging_writer();
 
         let expected = formatdoc! {"
 
@@ -601,22 +604,20 @@ mod test {
             - Done (finished in < 0.1s)
         "};
 
-        assert_eq!(expected, strip_control_codes(reader.read_lossy().unwrap()));
+        assert_eq!(expected, strip_control_codes(String::from_utf8_lossy(&io)));
     }
 
     #[test]
     fn announce_and_exit_makes_no_whitespace() {
-        let writer = ReadYourWrite::writer(Vec::new());
-        let reader = writer.reader();
-
-        BuildLog::new(writer)
+        let writer = Vec::new();
+        let io = BuildLog::new(writer)
             .buildpack_name("Quick and simple")
             .section("Start")
             .step("Step")
             .announce() // <== Here
             .end_announce() // <== Here
             .end_section()
-            .finish_logging();
+            .finish_logging_writer();
 
         let expected = formatdoc! {"
 
@@ -627,6 +628,6 @@ mod test {
             - Done (finished in < 0.1s)
         "};
 
-        assert_eq!(expected, strip_control_codes(reader.read_lossy().unwrap()));
+        assert_eq!(expected, strip_control_codes(String::from_utf8_lossy(&io)));
     }
 }
