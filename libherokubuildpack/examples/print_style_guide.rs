@@ -4,7 +4,7 @@ use indoc::formatdoc;
 use libherokubuildpack::output::style::{self, DEBUG_INFO, HELP};
 #[allow(clippy::wildcard_imports)]
 use libherokubuildpack::output::{
-    build_log::*,
+    build_log::BuildLog,
     section_log::{log_step, log_step_stream, log_step_timed},
 };
 use std::io::stdout;
@@ -81,8 +81,7 @@ fn main() {
         command
             .stream_output(stream.io(), stream.io())
             .expect("Implement real error handling in real apps");
-        log = stream.finish_timed_stream().end_section();
-        drop(log);
+        stream.finish_timed_stream().end_section();
     }
 
     {
@@ -174,10 +173,8 @@ fn main() {
     }
 
     {
-        let mut log = BuildLog::new(stdout()).buildpack_name("Formatting helpers");
-
-        log = log
-            .section("The style module")
+        let log = BuildLog::new(stdout()).buildpack_name("Formatting helpers");
+        log.section("The style module")
             .step(&formatdoc! {"
                 Formatting helpers can be used to enhance log output:
             "})
@@ -223,6 +220,5 @@ fn main() {
         ];
 
         table.print(data);
-        drop(log);
     }
 }

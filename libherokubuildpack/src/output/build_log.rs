@@ -1,6 +1,26 @@
+//! # Build output logging
+//!
+//! Use the `BuildLog` to output structured text as a buildpack is executing
+//!
+//! ```
+//! use libherokubuildpack::output::build_log::BuildLog;
+//!
+//! let mut logger = BuildLog::new(std::io::stdout())
+//!     .buildpack_name("Heroku Ruby Buildpack");
+//!
+//! logger = logger
+//!     .section("Ruby version")
+//!     .step_timed("Installing")
+//!     .finish_timed_step()
+//!     .end_section();
+//!
+//! logger.finish_logging();
+//! ```
+//!
+//! To log inside of a layer see `section_log`.
+//!
+//! For usage details run `cargo run --bin print_style_guide`
 use crate::output::background::{print_interval, state::PrintGuard};
-#[allow(clippy::wildcard_imports)]
-pub use crate::output::interface::*;
 use crate::output::style;
 use std::fmt::Debug;
 use std::io::Write;
@@ -8,29 +28,7 @@ use std::marker::PhantomData;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-/// # Build output logging
-///
-/// Use the `BuildLog` to output structured text as a buildpack is executing
-///
-/// ```
-/// use libherokubuildpack::output::build_log::*;
-///
-/// let mut logger = BuildLog::new(std::io::stdout())
-///     .buildpack_name("Heroku Ruby Buildpack");
-///
-/// logger = logger
-///     .section("Ruby version")
-///     .step_timed("Installing")
-///     .finish_timed_step()
-///     .end_section();
-///
-/// logger.finish_logging();
-/// ```
-///
-/// To log inside of a layer see `section_log`.
-///
-/// For usage details run `cargo run --bin print_style_guide`
-
+/// See the module docs for example usage
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug)]
 pub struct BuildLog<T, W: Debug> {
@@ -79,83 +77,76 @@ where
             data: BuildData::default(),
         }
     }
-}
 
-impl<W> Logger for BuildLog<state::NotStarted, W>
-where
-    W: Write + Send + Sync + Debug + 'static,
-{
-    fn buildpack_name(mut self, buildpack_name: &str) -> Box<dyn StartedLogger> {
+    pub fn buildpack_name(mut self, buildpack_name: &str) -> BuildLog<state::Started, W> {
         write_now(
             &mut self.io,
             format!("{}\n\n", style::header(buildpack_name)),
         );
 
-        Box::new(BuildLog {
+        BuildLog {
             io: self.io,
             data: self.data,
             state: PhantomData::<state::Started>,
-        })
+        }
     }
 
-    fn without_buildpack_name(self) -> Box<dyn StartedLogger> {
-        Box::new(BuildLog {
+    pub fn without_buildpack_name(self) -> BuildLog<state::Started, W> {
+        BuildLog {
             io: self.io,
             data: self.data,
             state: PhantomData::<state::Started>,
-        })
+        }
     }
 }
 
-impl<W> StartedLogger for BuildLog<state::Started, W>
+impl<W> BuildLog<state::Started, W>
 where
     W: Write + Send + Sync + Debug + 'static,
 {
-    fn section(mut self: Box<Self>, s: &str) -> Box<dyn SectionLogger> {
+    pub fn section(mut self, s: &str) -> BuildLog<state::InSection, W> {
         writeln_now(&mut self.io, style::section(s));
 
-        Box::new(BuildLog {
+        BuildLog {
             io: self.io,
             data: self.data,
             state: PhantomData::<state::InSection>,
-        })
+        }
     }
 
-    fn finish_logging(mut self: Box<Self>) {
+    pub fn finish_logging(mut self) {
         let elapsed = style::time::human(&self.data.started.elapsed());
         let details = style::details(format!("finished in {elapsed}"));
 
         writeln_now(&mut self.io, style::section(format!("Done {details}")));
     }
 
-    fn announce(self: Box<Self>) -> Box<dyn AnnounceLogger<ReturnTo = Box<dyn StartedLogger>>> {
-        Box::new(AnnounceBuildLog {
+    pub fn announce(self) -> AnnounceLog<state::Started, W> {
+        AnnounceLog {
             io: self.io,
             data: self.data,
             state: PhantomData::<state::Started>,
             leader: Some("\n".to_string()),
-        })
+        }
     }
 }
-impl<W> SectionLogger for BuildLog<state::InSection, W>
+
+impl<W> BuildLog<state::InSection, W>
 where
     W: Write + Send + Sync + Debug + 'static,
 {
-    fn mut_step(&mut self, s: &str) {
+    pub fn mut_step(&mut self, s: &str) {
         writeln_now(&mut self.io, style::step(s));
     }
 
-    fn step(mut self: Box<Self>, s: &str) -> Box<dyn SectionLogger> {
+    #[must_use]
+    pub fn step(mut self, s: &str) -> BuildLog<state::InSection, W> {
         self.mut_step(s);
 
-        Box::new(BuildLog {
-            io: self.io,
-            state: PhantomData::<state::InSection>,
-            data: self.data,
-        })
+        self
     }
 
-    fn step_timed(self: Box<Self>, s: &str) -> Box<dyn TimedStepLogger> {
+    pub fn step_timed(self, s: &str) -> BackgroundLog<W> {
         let mut io = self.io;
         let data = self.data;
         let timer = Instant::now();
@@ -169,49 +160,49 @@ where
             style::background_timer_end(),
         );
 
-        Box::new(FinishTimedStep {
+        BackgroundLog {
             data,
             timer,
             dot_printer,
-        })
+        }
     }
 
-    fn step_timed_stream(mut self: Box<Self>, s: &str) -> Box<dyn StreamLogger> {
+    pub fn step_timed_stream(mut self, s: &str) -> StreamLog<W> {
         self.mut_step(s);
 
         let started = Instant::now();
         let arc_io = Arc::new(Mutex::new(self.io));
-        let mut stream = StreamTimed {
+        let mut stream = StreamLog {
             arc_io,
             data: self.data,
             started,
         };
         stream.start();
 
-        Box::new(stream)
+        stream
     }
 
-    fn end_section(self: Box<Self>) -> Box<dyn StartedLogger> {
-        Box::new(BuildLog {
+    pub fn end_section(self) -> BuildLog<state::Started, W> {
+        BuildLog {
             io: self.io,
             data: self.data,
             state: PhantomData::<state::Started>,
-        })
+        }
     }
 
-    fn announce(self: Box<Self>) -> Box<dyn AnnounceLogger<ReturnTo = Box<dyn SectionLogger>>> {
-        Box::new(AnnounceBuildLog {
+    pub fn announce(self) -> AnnounceLog<state::InSection, W> {
+        AnnounceLog {
             io: self.io,
             data: self.data,
             state: PhantomData::<state::InSection>,
             leader: Some("\n".to_string()),
-        })
+        }
     }
 }
 
 // Store internal state, print leading character exactly once on warning or important
 #[derive(Debug)]
-struct AnnounceBuildLog<T, W>
+pub struct AnnounceLog<T, W>
 where
     W: Write + Send + Sync + Debug + 'static,
 {
@@ -221,7 +212,7 @@ where
     leader: Option<String>,
 }
 
-impl<T, W> AnnounceBuildLog<T, W>
+impl<T, W> AnnounceLog<T, W>
 where
     T: Debug,
     W: Write + Send + Sync + Debug + 'static,
@@ -244,12 +235,12 @@ where
     }
 }
 
-impl<T, W> ErrorLogger for AnnounceBuildLog<T, W>
+impl<T, W> AnnounceLog<T, W>
 where
     T: Debug,
     W: Write + Send + Sync + Debug + 'static,
 {
-    fn error(mut self: Box<Self>, s: &str) {
+    pub fn error(mut self, s: &str) {
         if let Some(leader) = self.leader.take() {
             write_now(&mut self.io, leader);
         }
@@ -258,61 +249,56 @@ where
     }
 }
 
-impl<W> AnnounceLogger for AnnounceBuildLog<state::InSection, W>
+impl<W> AnnounceLog<state::InSection, W>
 where
     W: Write + Send + Sync + Debug + 'static,
 {
-    type ReturnTo = Box<dyn SectionLogger>;
-
-    fn warning(mut self: Box<Self>, s: &str) -> Box<dyn AnnounceLogger<ReturnTo = Self::ReturnTo>> {
+    #[must_use]
+    pub fn warning(mut self, s: &str) -> AnnounceLog<state::InSection, W> {
         self.log_warning_shared(s);
 
         self
     }
 
-    fn important(
-        mut self: Box<Self>,
-        s: &str,
-    ) -> Box<dyn AnnounceLogger<ReturnTo = Self::ReturnTo>> {
+    #[must_use]
+    pub fn important(mut self, s: &str) -> AnnounceLog<state::InSection, W> {
         self.log_important_shared(s);
 
         self
     }
 
-    fn end_announce(self: Box<Self>) -> Box<dyn SectionLogger> {
-        Box::new(BuildLog {
+    pub fn end_announce(self) -> BuildLog<state::InSection, W> {
+        BuildLog {
             io: self.io,
             data: self.data,
             state: PhantomData::<state::InSection>,
-        })
+        }
     }
 }
 
-impl<W> AnnounceLogger for AnnounceBuildLog<state::Started, W>
+impl<W> AnnounceLog<state::Started, W>
 where
     W: Write + Send + Sync + Debug + 'static,
 {
-    type ReturnTo = Box<dyn StartedLogger>;
-
-    fn warning(mut self: Box<Self>, s: &str) -> Box<dyn AnnounceLogger<ReturnTo = Self::ReturnTo>> {
+    #[must_use]
+    pub fn warning(mut self, s: &str) -> AnnounceLog<state::Started, W> {
         self.log_warning_shared(s);
         self
     }
 
-    fn important(
-        mut self: Box<Self>,
-        s: &str,
-    ) -> Box<dyn AnnounceLogger<ReturnTo = Self::ReturnTo>> {
+    #[must_use]
+    pub fn important(mut self, s: &str) -> AnnounceLog<state::Started, W> {
         self.log_important_shared(s);
         self
     }
 
-    fn end_announce(self: Box<Self>) -> Box<dyn StartedLogger> {
-        Box::new(BuildLog {
+    #[must_use]
+    pub fn end_announce(self) -> BuildLog<state::Started, W> {
+        BuildLog {
             io: self.io,
             data: self.data,
             state: PhantomData::<state::Started>,
-        })
+        }
     }
 }
 
@@ -322,7 +308,7 @@ where
 /// by wrapping in a mutex.
 ///
 /// It implements writing by unlocking and delegating to the internal writer.
-/// Can be used for `Box<dyn StreamLogger>::io()`
+/// Can be used for streaming stdout and stderr to the same writer.
 #[derive(Debug)]
 struct LockedWriter<W> {
     arc: Arc<Mutex<W>>,
@@ -343,53 +329,30 @@ where
     }
 }
 
-/// Used to implement `Box<dyn StreamLogger>` interface
+/// Stream output to the user
 ///
 /// Mostly used for logging a running command
 #[derive(Debug)]
-struct StreamTimed<W> {
+pub struct StreamLog<W> {
     data: BuildData,
     arc_io: Arc<Mutex<W>>,
     started: Instant,
 }
 
-impl<W> StreamTimed<W>
+impl<W> StreamLog<W>
 where
-    W: Write + Send + Sync + Debug,
+    W: Write + Send + Sync + Debug + 'static,
 {
     fn start(&mut self) {
         let mut guard = self.arc_io.lock().expect("Logging mutex posioned");
         let mut io = guard.by_ref();
-        // Newline before stream
+        // Newline before stream https://github.com/heroku/libcnb.rs/issues/582
         writeln_now(&mut io, "");
     }
-}
 
-// Need a trait that is both write a debug
-trait WriteDebug: Write + Debug {}
-impl<T> WriteDebug for T where T: Write + Debug {}
-
-/// Attempt to unwrap an io inside of an `Arc<Mutex>` if this fails because there is more
-/// than a single reference don't panic, return the original IO instead.
-///
-/// This prevents a runtime panic and allows us to continue logging
-fn try_unwrap_arc_io<W>(arc_io: Arc<Mutex<W>>) -> Box<dyn WriteDebug + Send + Sync + 'static>
-where
-    W: Write + Send + Sync + Debug + 'static,
-{
-    match Arc::try_unwrap(arc_io) {
-        Ok(mutex) => Box::new(mutex.into_inner().expect("Logging mutex was poisioned")),
-        Err(original) => Box::new(LockedWriter { arc: original }),
-    }
-}
-
-impl<W> StreamLogger for StreamTimed<W>
-where
-    W: Write + Send + Sync + Debug + 'static,
-{
     /// Yield boxed writer that can be used for formatting and streaming contents
     /// back to the logger.
-    fn io(&mut self) -> Box<dyn Write + Send + Sync> {
+    pub fn io(&mut self) -> Box<dyn Write + Send + Sync> {
         Box::new(crate::write::line_mapped(
             LockedWriter {
                 arc: self.arc_io.clone(),
@@ -398,9 +361,24 @@ where
         ))
     }
 
-    fn finish_timed_stream(self: Box<Self>) -> Box<dyn SectionLogger> {
+    /// # Panics
+    ///
+    /// Ensure that the return of any calls to the `io` function
+    /// are not retained before calling this function.
+    ///
+    /// This struct yields a `Box<dyn Write>` which is effectively an
+    /// `Arc<Write>` to allow using the same writer for streaming stdout and stderr.
+    ///
+    /// If any of those boxed writers are retained then the `W` cannot
+    /// be reclaimed and returned. This will cause a panic.
+    #[must_use]
+    pub fn finish_timed_stream(self) -> BuildLog<state::InSection, W> {
         let duration = self.started.elapsed();
-        let mut io = try_unwrap_arc_io(self.arc_io);
+
+        let mut io = Arc::try_unwrap(self.arc_io)
+            .expect("Expected buildpack author to not retain any IO streaming IO instances")
+            .into_inner()
+            .expect("Logging mutex was poisioned");
 
         // // Newline after stream
         writeln_now(&mut io, "");
@@ -416,15 +394,15 @@ where
             style::details(style::time::human(&duration))
         ));
 
-        Box::new(section)
+        section
     }
 }
 
-/// Implements `Box<dyn FinishTimedStep>`
+/// Logs to the user while work is being performed in the background
 ///
 /// Used to end a background inline timer i.e. Installing ...... (<0.1s)
 #[derive(Debug)]
-struct FinishTimedStep<W>
+pub struct BackgroundLog<W>
 where
     W: Write + Debug,
 {
@@ -433,11 +411,12 @@ where
     dot_printer: PrintGuard<W>,
 }
 
-impl<W> TimedStepLogger for FinishTimedStep<W>
+impl<W> BackgroundLog<W>
 where
     W: Write + Send + Sync + Debug + 'static,
 {
-    fn finish_timed_step(self: Box<Self>) -> Box<dyn SectionLogger> {
+    #[must_use]
+    pub fn finish_timed_step(self) -> BuildLog<state::InSection, W> {
         // Must stop background writing thread before retrieving IO
         let data = self.data;
         let timer = self.timer;
@@ -450,11 +429,11 @@ where
 
         writeln_now(&mut io, style::details(style::time::human(&duration)));
 
-        Box::new(BuildLog {
+        BuildLog {
             io,
             data,
             state: PhantomData::<state::InSection>,
-        })
+        }
     }
 }
 
