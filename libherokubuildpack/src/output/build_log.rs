@@ -5,14 +5,14 @@
 //! ```
 //! use libherokubuildpack::output::build_log::BuildpackOutput;
 //!
-//! let mut logger = BuildpackOutput::new(std::io::stdout())
+//! let mut output = BuildpackOutput::new(std::io::stdout())
 //!     .start("Heroku Ruby Buildpack");
 //!
-//! logger = logger
+//! output = output
 //!     .section("Ruby version")
 //!     .end_section();
 //!
-//! logger.finish_logging();
+//! output.finish();
 //! ```
 //!
 //! To log inside of a layer see `section_log`.
@@ -30,7 +30,7 @@ use std::time::Instant;
 pub struct BuildpackOutput<T, W: Debug> {
     pub(crate) io: W,
     pub(crate) data: BuildData,
-    pub(crate) state: T,
+    pub(crate) _state: T,
 }
 
 /// A bag of data passed throughout the lifecycle of a `BuildLog`
@@ -69,7 +69,7 @@ where
     pub fn new(io: W) -> Self {
         Self {
             io,
-            state: state::NotStarted,
+            _state: state::NotStarted,
             data: BuildData::default(),
         }
     }
@@ -87,7 +87,7 @@ where
         BuildpackOutput {
             io: self.io,
             data: self.data,
-            state: state::Started,
+            _state: state::Started,
         }
     }
 }
@@ -102,11 +102,11 @@ where
         BuildpackOutput {
             io: self.io,
             data: self.data,
-            state: state::InSection,
+            _state: state::InSection,
         }
     }
 
-    fn finish(mut self) -> W {
+    pub fn finish(mut self) -> W {
         let elapsed = style::time::human(&self.data.started.elapsed());
         let details = style::details(format!("finished in {elapsed}"));
 
@@ -118,7 +118,7 @@ where
         AnnounceLog {
             io: self.io,
             data: self.data,
-            state: state::Started,
+            _state: state::Started,
             leader: Some("\n".to_string()),
         }
     }
@@ -158,7 +158,7 @@ where
         BuildpackOutput {
             io: self.io,
             data: self.data,
-            state: state::Started,
+            _state: state::Started,
         }
     }
 
@@ -166,7 +166,7 @@ where
         AnnounceLog {
             io: self.io,
             data: self.data,
-            state: state::InSection,
+            _state: state::InSection,
             leader: Some("\n".to_string()),
         }
     }
@@ -180,7 +180,7 @@ where
 {
     io: W,
     data: BuildData,
-    state: T,
+    _state: T,
     leader: Option<String>,
 }
 
@@ -237,7 +237,7 @@ where
         BuildpackOutput {
             io: self.io,
             data: self.data,
-            state: state::InSection,
+            _state: state::InSection,
         }
     }
 }
@@ -263,7 +263,7 @@ where
         BuildpackOutput {
             io: self.io,
             data: self.data,
-            state: state::Started,
+            _state: state::Started,
         }
     }
 }
@@ -346,7 +346,7 @@ where
         let mut section = BuildpackOutput {
             io,
             data: self.data,
-            state: state::InSection,
+            _state: state::InSection,
         };
 
         section.mut_step(&format!(
