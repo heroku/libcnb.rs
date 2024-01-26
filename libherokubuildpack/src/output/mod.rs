@@ -1,4 +1,3 @@
-pub mod build_log;
-pub mod section_log;
+pub mod buildpack_output;
 pub mod style;
 mod util;
