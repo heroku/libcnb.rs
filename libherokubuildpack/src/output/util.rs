@@ -1,8 +1,3 @@
-use lazy_static::lazy_static;
-lazy_static! {
-    static ref TRAILING_WHITESPACE_RE: regex::Regex = regex::Regex::new(r"\s+$").expect("clippy");
-}
-
 /// Iterator yielding every line in a string. The line includes newline character(s).
 ///
 /// <https://stackoverflow.com/a/40457615>
@@ -13,6 +8,7 @@ lazy_static! {
 ///
 /// There's another option to `lines().fold(String::new(), |s, l| s + l + "\n")`, but that
 /// always adds a trailing newline even if the original string doesn't have one.
+///
 pub(crate) struct LinesWithEndings<'a> {
     input: &'a str,
 }
@@ -39,19 +35,22 @@ impl<'a> Iterator for LinesWithEndings<'a> {
     }
 }
 
-/// Removes trailing whitespace from lines
-///
-/// Useful because most editors strip trailing whitespace (in test fixtures)
-/// but commands <https://github.com/heroku/libcnb.rs/issues/582> emit newlines
-/// with leading spaces. These can be sanitized by removing trailing whitespace.
-#[allow(dead_code)]
-pub(crate) fn strip_trailing_whitespace(s: impl AsRef<str>) -> String {
-    LinesWithEndings::from(s.as_ref())
-        .map(|line| {
-            // Remove empty indented lines
-            TRAILING_WHITESPACE_RE.replace(line, "\n").to_string()
+#[cfg(test)]
+pub(crate) mod test_helpers {
+    use super::*;
+    use std::fmt::Write;
+
+    /// Removes trailing whitespace from lines
+    ///
+    /// Useful because most editors strip trailing whitespace (in test fixtures)
+    /// but commands <https://github.com/heroku/libcnb.rs/issues/582> emit newlines
+    /// with leading spaces. These can be sanitized by removing trailing whitespace.
+    pub(crate) fn trim_end_lines(s: impl AsRef<str>) -> String {
+        LinesWithEndings::from(s.as_ref()).fold(String::new(), |mut output, line| {
+            let _ = writeln!(output, "{}", line.trim_end());
+            output
         })
-        .collect::<String>()
+    }
 }
 
 #[cfg(test)]
@@ -60,11 +59,11 @@ mod test {
     use std::fmt::Write;
 
     #[test]
-    fn test_trailing_whitespace() {
-        let actual = strip_trailing_whitespace("hello \n");
+    fn test_trim_end_lines() {
+        let actual = test_helpers::trim_end_lines("hello \n");
         assert_eq!("hello\n", &actual);
 
-        let actual = strip_trailing_whitespace("hello\n    \nworld\n");
+        let actual = test_helpers::trim_end_lines("hello\n    \nworld\n");
         assert_eq!("hello\n\nworld\n", &actual);
     }
 

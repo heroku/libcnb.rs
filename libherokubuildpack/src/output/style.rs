@@ -98,16 +98,28 @@ pub(crate) fn header(contents: impl AsRef<str>) -> String {
     colorize(HEROKU_COLOR, format!("\n# {contents}"))
 }
 
+pub(crate) fn replace_chars_preserve_whitespace(input: &str, replacement: &str) -> String {
+    input
+        .chars()
+        .map(|c| {
+            if c.is_whitespace() {
+                c.to_string()
+            } else {
+                replacement.to_string()
+            }
+        })
+        .collect()
+}
+
 // Prefix is expected to be a single line
 //
 // If contents is multi line then indent additional lines to align with the end of the prefix.
 pub(crate) fn prefix_indent(prefix: impl AsRef<str>, contents: impl AsRef<str>) -> String {
     let prefix = prefix.as_ref();
     let contents = contents.as_ref();
-    let non_whitespace_re = regex::Regex::new("\\S").expect("Clippy");
     let clean_prefix = strip_control_codes(prefix);
 
-    let indent_str = non_whitespace_re.replace_all(&clean_prefix, " "); // Preserve whitespace characters like tab and space, replace all characters with spaces
+    let indent_str = replace_chars_preserve_whitespace(&clean_prefix, " ");
     let lines = LinesWithEndings::from(contents).collect::<Vec<_>>();
 
     if let Some((first, rest)) = lines.split_first() {
