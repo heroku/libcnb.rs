@@ -93,7 +93,7 @@ pub(crate) mod state {
             //
             // When that happens the output can appear in the middle of another output, such
             // as an error message if a global writer is being used such as stdout.
-            // As a result we have to signal AND ensure the thread is stoped before
+            // As a result we have to signal AND ensure the thread is stopped before
             // continuing.
             if let Some(join_handle) = self.join_handle.take() {
                 let _ = self.stop_signal.send(());
@@ -122,7 +122,7 @@ pub(crate) mod state {
         ///
         /// # Panics
         ///
-        /// This code can panic if it encounters an unexpedcted internal state.
+        /// This code can panic if it encounters an unexpected internal state.
         /// If that happens it means there is an internal bug in this logic.
         /// To avoid a panic, developers modifying this file must obey the following
         /// rules:

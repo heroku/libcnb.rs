@@ -43,7 +43,7 @@ impl<'a> Iterator for LinesWithEndings<'a> {
 ///
 /// Useful because most editors strip trailing whitespace (in test fixtures)
 /// but commands <https://github.com/heroku/libcnb.rs/issues/582> emit newlines
-/// with leading spaces. These can be sanatized by removing trailing whitespace.
+/// with leading spaces. These can be sanitized by removing trailing whitespace.
 #[allow(dead_code)]
 pub(crate) fn strip_trailing_whitespace(s: impl AsRef<str>) -> String {
     LinesWithEndings::from(s.as_ref())
