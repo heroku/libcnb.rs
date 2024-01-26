@@ -18,26 +18,13 @@
 //! The main use case is logging inside of a layer:
 //!
 //! ```no_run
-//! use libherokubuildpack::output::section_log::log_step_timed;
+//! use libherokubuildpack::output::section_log::log_step;
 //!
-//! // fn create(
-//! //     &self,
-//! //     context: &libcnb::build::BuildContext<Self::Buildpack>,
-//! //     layer_path: &std::path::Path,
-//! // ) -> Result<
-//! //     libcnb::layer::LayerResult<Self::Metadata>,
-//! //     <Self::Buildpack as libcnb::Buildpack>::Error,
-//! // > {
-//! log_step_timed("Installing", || {
-//!         // Install logic here
-//!         todo!()
-//!     })
-//! // }
+//! log_step("Clearing the cache")
 //! ```
 use crate::output::build_log::StreamLog;
 use crate::output::build_log::{state, BuildData, BuildpackOutput};
 use std::io::Stdout;
-use std::marker::PhantomData;
 
 /// Output a message as a single step, ideally a short message
 ///
@@ -95,6 +82,6 @@ fn logger() -> BuildpackOutput<state::InSection, Stdout> {
         // Be careful not to do anything that might access this state
         // as it's ephemeral data (i.e. not passed in from the start of the build)
         data: BuildData::default(),
-        state: state::InSection,
+        _state: state::InSection,
     }
 }
