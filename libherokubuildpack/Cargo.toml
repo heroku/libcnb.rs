@@ -17,9 +17,6 @@ all-features = true
 [lints]
 workspace = true
 
-[[example]]
-name = "print_style_guide"
-
 [features]
 default = ["command", "download", "digest", "error", "log", "tar", "toml", "fs", "write", "output"]
 download = ["dep:ureq", "dep:thiserror"]

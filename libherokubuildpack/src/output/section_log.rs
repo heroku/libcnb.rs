@@ -35,7 +35,7 @@
 //! // }
 //! ```
 use crate::output::build_log::StreamLog;
-use crate::output::build_log::{state, BuildData, BuildLog};
+use crate::output::build_log::{state, BuildData, BuildpackOutput};
 use std::io::Stdout;
 use std::marker::PhantomData;
 
@@ -48,25 +48,6 @@ use std::marker::PhantomData;
 /// ```
 pub fn log_step(s: impl AsRef<str>) {
     let _ = logger().step(s.as_ref());
-}
-
-/// Will print the input string followed by a background timer
-/// that will emit to the UI until the passed in function ends
-///
-/// ```
-/// use libherokubuildpack::output::section_log::log_step_timed;
-///
-/// log_step_timed("Installing", || {
-///     // Install logic here
-/// });
-/// ```
-///
-/// Timing information will be output at the end of the step.
-pub fn log_step_timed<T>(s: impl AsRef<str>, f: impl FnOnce() -> T) -> T {
-    let timer = logger().step_timed(s.as_ref());
-    let out = f();
-    let _ = timer.finish_timed_step();
-    out
 }
 
 /// Will print the input string and yield a `Box<dyn StreamLogger>` that can be used to print
@@ -108,12 +89,12 @@ pub fn log_important(s: impl AsRef<str>) {
     let _ = logger().announce().important(s.as_ref());
 }
 
-fn logger() -> BuildLog<state::InSection, Stdout> {
-    BuildLog::<state::InSection, Stdout> {
+fn logger() -> BuildpackOutput<state::InSection, Stdout> {
+    BuildpackOutput::<state::InSection, Stdout> {
         io: std::io::stdout(),
         // Be careful not to do anything that might access this state
         // as it's ephemeral data (i.e. not passed in from the start of the build)
         data: BuildData::default(),
-        state: PhantomData,
+        state: state::InSection,
     }
 }

@@ -3,15 +3,13 @@
 //! Use the `BuildLog` to output structured text as a buildpack is executing
 //!
 //! ```
-//! use libherokubuildpack::output::build_log::BuildLog;
+//! use libherokubuildpack::output::build_log::BuildpackOutput;
 //!
-//! let mut logger = BuildLog::new(std::io::stdout())
-//!     .buildpack_name("Heroku Ruby Buildpack");
+//! let mut logger = BuildpackOutput::new(std::io::stdout())
+//!     .start("Heroku Ruby Buildpack");
 //!
 //! logger = logger
 //!     .section("Ruby version")
-//!     .step_timed("Installing")
-//!     .finish_timed_step()
 //!     .end_section();
 //!
 //! logger.finish_logging();
@@ -20,21 +18,19 @@
 //! To log inside of a layer see `section_log`.
 //!
 //! For usage details run `cargo run --bin print_style_guide`
-use crate::output::background::{print_interval, state::PrintGuard};
 use crate::output::style;
 use std::fmt::Debug;
 use std::io::Write;
-use std::marker::PhantomData;
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 /// See the module docs for example usage
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug)]
-pub struct BuildLog<T, W: Debug> {
+pub struct BuildpackOutput<T, W: Debug> {
     pub(crate) io: W,
     pub(crate) data: BuildData,
-    pub(crate) state: PhantomData<T>,
+    pub(crate) state: T,
 }
 
 /// A bag of data passed throughout the lifecycle of a `BuildLog`
@@ -51,7 +47,7 @@ impl Default for BuildData {
     }
 }
 
-/// Various states for `BuildLog` to contain
+/// Various states for `BuildOutput` to contain
 ///
 /// The `BuildLog` struct acts as a logging state machine. These structs
 /// are meant to represent those states
@@ -66,56 +62,51 @@ pub(crate) mod state {
     pub struct InSection;
 }
 
-impl<W> BuildLog<state::NotStarted, W>
+impl<W> BuildpackOutput<state::NotStarted, W>
 where
     W: Write + Debug,
 {
     pub fn new(io: W) -> Self {
         Self {
             io,
-            state: PhantomData::<state::NotStarted>,
+            state: state::NotStarted,
             data: BuildData::default(),
         }
     }
 
-    pub fn buildpack_name(mut self, buildpack_name: &str) -> BuildLog<state::Started, W> {
+    pub fn start(mut self, buildpack_name: &str) -> BuildpackOutput<state::Started, W> {
         write_now(
             &mut self.io,
             format!("{}\n\n", style::header(buildpack_name)),
         );
 
-        BuildLog {
-            io: self.io,
-            data: self.data,
-            state: PhantomData::<state::Started>,
-        }
+        self.start_silent()
     }
 
-    pub fn without_buildpack_name(self) -> BuildLog<state::Started, W> {
-        BuildLog {
+    pub fn start_silent(self) -> BuildpackOutput<state::Started, W> {
+        BuildpackOutput {
             io: self.io,
             data: self.data,
-            state: PhantomData::<state::Started>,
+            state: state::Started,
         }
     }
 }
 
-impl<W> BuildLog<state::Started, W>
+impl<W> BuildpackOutput<state::Started, W>
 where
     W: Write + Send + Sync + Debug + 'static,
 {
-    pub fn section(mut self, s: &str) -> BuildLog<state::InSection, W> {
+    pub fn section(mut self, s: &str) -> BuildpackOutput<state::InSection, W> {
         writeln_now(&mut self.io, style::section(s));
 
-        BuildLog {
+        BuildpackOutput {
             io: self.io,
             data: self.data,
-            state: PhantomData::<state::InSection>,
+            state: state::InSection,
         }
     }
 
-    #[must_use]
-    fn finish_logging_writer(mut self) -> W {
+    fn finish(mut self) -> W {
         let elapsed = style::time::human(&self.data.started.elapsed());
         let details = style::details(format!("finished in {elapsed}"));
 
@@ -123,21 +114,17 @@ where
         self.io
     }
 
-    pub fn finish_logging(self) {
-        let _ = self.finish_logging_writer();
-    }
-
     pub fn announce(self) -> AnnounceLog<state::Started, W> {
         AnnounceLog {
             io: self.io,
             data: self.data,
-            state: PhantomData::<state::Started>,
+            state: state::Started,
             leader: Some("\n".to_string()),
         }
     }
 }
 
-impl<W> BuildLog<state::InSection, W>
+impl<W> BuildpackOutput<state::InSection, W>
 where
     W: Write + Send + Sync + Debug + 'static,
 {
@@ -146,31 +133,10 @@ where
     }
 
     #[must_use]
-    pub fn step(mut self, s: &str) -> BuildLog<state::InSection, W> {
+    pub fn step(mut self, s: &str) -> BuildpackOutput<state::InSection, W> {
         self.mut_step(s);
 
         self
-    }
-
-    pub fn step_timed(self, s: &str) -> BackgroundLog<W> {
-        let mut io = self.io;
-        let data = self.data;
-        let timer = Instant::now();
-
-        write_now(&mut io, style::step(s));
-        let dot_printer = print_interval(
-            io,
-            Duration::from_secs(1),
-            style::background_timer_start(),
-            style::background_timer_tick(),
-            style::background_timer_end(),
-        );
-
-        BackgroundLog {
-            data,
-            timer,
-            dot_printer,
-        }
     }
 
     pub fn step_timed_stream(mut self, s: &str) -> StreamLog<W> {
@@ -188,11 +154,11 @@ where
         stream
     }
 
-    pub fn end_section(self) -> BuildLog<state::Started, W> {
-        BuildLog {
+    pub fn end_section(self) -> BuildpackOutput<state::Started, W> {
+        BuildpackOutput {
             io: self.io,
             data: self.data,
-            state: PhantomData::<state::Started>,
+            state: state::Started,
         }
     }
 
@@ -200,7 +166,7 @@ where
         AnnounceLog {
             io: self.io,
             data: self.data,
-            state: PhantomData::<state::InSection>,
+            state: state::InSection,
             leader: Some("\n".to_string()),
         }
     }
@@ -214,7 +180,7 @@ where
 {
     io: W,
     data: BuildData,
-    state: PhantomData<T>,
+    state: T,
     leader: Option<String>,
 }
 
@@ -223,7 +189,7 @@ where
     T: Debug,
     W: Write + Send + Sync + Debug + 'static,
 {
-    fn log_warning_shared(&mut self, s: &str) {
+    fn log_warning(&mut self, s: &str) {
         if let Some(leader) = self.leader.take() {
             write_now(&mut self.io, leader);
         }
@@ -232,20 +198,14 @@ where
         writeln_now(&mut self.io, "");
     }
 
-    fn log_important_shared(&mut self, s: &str) {
+    fn log_important(&mut self, s: &str) {
         if let Some(leader) = self.leader.take() {
             write_now(&mut self.io, leader);
         }
         writeln_now(&mut self.io, style::important(s.trim()));
         writeln_now(&mut self.io, "");
     }
-}
 
-impl<T, W> AnnounceLog<T, W>
-where
-    T: Debug,
-    W: Write + Send + Sync + Debug + 'static,
-{
     pub fn error(mut self, s: &str) {
         if let Some(leader) = self.leader.take() {
             write_now(&mut self.io, leader);
@@ -261,23 +221,23 @@ where
 {
     #[must_use]
     pub fn warning(mut self, s: &str) -> AnnounceLog<state::InSection, W> {
-        self.log_warning_shared(s);
+        self.log_warning(s);
 
         self
     }
 
     #[must_use]
     pub fn important(mut self, s: &str) -> AnnounceLog<state::InSection, W> {
-        self.log_important_shared(s);
+        self.log_important(s);
 
         self
     }
 
-    pub fn end_announce(self) -> BuildLog<state::InSection, W> {
-        BuildLog {
+    pub fn end_announce(self) -> BuildpackOutput<state::InSection, W> {
+        BuildpackOutput {
             io: self.io,
             data: self.data,
-            state: PhantomData::<state::InSection>,
+            state: state::InSection,
         }
     }
 }
@@ -288,33 +248,27 @@ where
 {
     #[must_use]
     pub fn warning(mut self, s: &str) -> AnnounceLog<state::Started, W> {
-        self.log_warning_shared(s);
+        self.log_warning(s);
         self
     }
 
     #[must_use]
     pub fn important(mut self, s: &str) -> AnnounceLog<state::Started, W> {
-        self.log_important_shared(s);
+        self.log_important(s);
         self
     }
 
     #[must_use]
-    pub fn end_announce(self) -> BuildLog<state::Started, W> {
-        BuildLog {
+    pub fn end_announce(self) -> BuildpackOutput<state::Started, W> {
+        BuildpackOutput {
             io: self.io,
             data: self.data,
-            state: PhantomData::<state::Started>,
+            state: state::Started,
         }
     }
 }
 
-/// Implements Box<dyn Write + Send + Sync>
-///
-/// Ensures that the `W` can be passed across thread boundaries
-/// by wrapping in a mutex.
-///
-/// It implements writing by unlocking and delegating to the internal writer.
-/// Can be used for streaming stdout and stderr to the same writer.
+// TODO: Decide if we need documentation for this
 #[derive(Debug)]
 struct LockedWriter<W> {
     arc: Arc<Mutex<W>>,
@@ -350,7 +304,7 @@ where
     W: Write + Send + Sync + Debug + 'static,
 {
     fn start(&mut self) {
-        let mut guard = self.arc_io.lock().expect("Logging mutex posioned");
+        let mut guard = self.arc_io.lock().expect("Logging mutex poisoned");
         let mut io = guard.by_ref();
         // Newline before stream https://github.com/heroku/libcnb.rs/issues/582
         writeln_now(&mut io, "");
@@ -378,7 +332,7 @@ where
     /// If any of those boxed writers are retained then the `W` cannot
     /// be reclaimed and returned. This will cause a panic.
     #[must_use]
-    pub fn finish_timed_stream(self) -> BuildLog<state::InSection, W> {
+    pub fn finish_timed_stream(self) -> BuildpackOutput<state::InSection, W> {
         let duration = self.started.elapsed();
 
         let mut io = Arc::try_unwrap(self.arc_io)
@@ -389,10 +343,10 @@ where
         // // Newline after stream
         writeln_now(&mut io, "");
 
-        let mut section = BuildLog {
+        let mut section = BuildpackOutput {
             io,
             data: self.data,
-            state: PhantomData::<state::InSection>,
+            state: state::InSection,
         };
 
         section.mut_step(&format!(
@@ -401,45 +355,6 @@ where
         ));
 
         section
-    }
-}
-
-/// Logs to the user while work is being performed in the background
-///
-/// Used to end a background inline timer i.e. Installing ...... (<0.1s)
-#[derive(Debug)]
-pub struct BackgroundLog<W>
-where
-    W: Write + Debug,
-{
-    data: BuildData,
-    timer: Instant,
-    dot_printer: PrintGuard<W>,
-}
-
-impl<W> BackgroundLog<W>
-where
-    W: Write + Send + Sync + Debug + 'static,
-{
-    #[must_use]
-    pub fn finish_timed_step(self) -> BuildLog<state::InSection, W> {
-        // Must stop background writing thread before retrieving IO
-        let data = self.data;
-        let timer = self.timer;
-
-        let mut io = match self.dot_printer.stop() {
-            Ok(io) => io,
-            Err(e) => std::panic::resume_unwind(e),
-        };
-        let duration = timer.elapsed();
-
-        writeln_now(&mut io, style::details(style::time::human(&duration)));
-
-        BuildLog {
-            io,
-            data,
-            state: PhantomData::<state::InSection>,
-        }
     }
 }
 
@@ -476,11 +391,9 @@ mod test {
     #[test]
     fn test_captures() {
         let writer = Vec::new();
-        let mut stream = BuildLog::new(writer)
-            .buildpack_name("Heroku Ruby Buildpack")
+        let mut stream = BuildpackOutput::new(writer)
+            .start("Heroku Ruby Buildpack")
             .section("Ruby version `3.1.3` from `Gemfile.lock`")
-            .step_timed("Installing")
-            .finish_timed_step()
             .end_section()
             .section("Hello world")
             .step_timed_stream("Streaming stuff");
@@ -488,17 +401,13 @@ mod test {
         let value = "stuff".to_string();
         writeln!(stream.io(), "{value}").unwrap();
 
-        let io = stream
-            .finish_timed_stream()
-            .end_section()
-            .finish_logging_writer();
+        let io = stream.finish_timed_stream().end_section().finish();
 
         let expected = formatdoc! {"
 
             # Heroku Ruby Buildpack
 
             - Ruby version `3.1.3` from `Gemfile.lock`
-              - Installing ... (< 0.1s)
             - Hello world
               - Streaming stuff
 
@@ -517,8 +426,8 @@ mod test {
     #[test]
     fn test_streaming_a_command() {
         let writer = Vec::new();
-        let mut stream = BuildLog::new(writer)
-            .buildpack_name("Streaming buildpack demo")
+        let mut stream = BuildpackOutput::new(writer)
+            .start("Streaming buildpack demo")
             .section("Command streaming")
             .step_timed_stream("Streaming stuff");
 
@@ -527,10 +436,7 @@ mod test {
             .output_and_write_streams(stream.io(), stream.io())
             .unwrap();
 
-        let io = stream
-            .finish_timed_stream()
-            .end_section()
-            .finish_logging_writer();
+        let io = stream.finish_timed_stream().end_section().finish();
 
         let actual = strip_trailing_whitespace(strip_control_codes(String::from_utf8_lossy(&io)));
 
@@ -540,8 +446,8 @@ mod test {
     #[test]
     fn warning_step_padding() {
         let writer = Vec::new();
-        let io = BuildLog::new(writer)
-            .buildpack_name("RCT")
+        let io = BuildpackOutput::new(writer)
+            .start("RCT")
             .section("Guest thoughs")
             .step("The scenery here is wonderful")
             .announce()
@@ -550,7 +456,7 @@ mod test {
             .step("The jumping fountains are great")
             .step("The music is nice here")
             .end_section()
-            .finish_logging_writer();
+            .finish();
 
         let expected = formatdoc! {"
 
@@ -573,8 +479,8 @@ mod test {
     #[test]
     fn double_warning_step_padding() {
         let writer = Vec::new();
-        let logger = BuildLog::new(writer)
-            .buildpack_name("RCT")
+        let logger = BuildpackOutput::new(writer)
+            .start("RCT")
             .section("Guest thoughs")
             .step("The scenery here is wonderful")
             .announce();
@@ -586,7 +492,7 @@ mod test {
             .step("The jumping fountains are great")
             .step("The music is nice here")
             .end_section()
-            .finish_logging_writer();
+            .finish();
 
         let expected = formatdoc! {"
 
@@ -610,14 +516,14 @@ mod test {
     #[test]
     fn announce_and_exit_makes_no_whitespace() {
         let writer = Vec::new();
-        let io = BuildLog::new(writer)
-            .buildpack_name("Quick and simple")
+        let io = BuildpackOutput::new(writer)
+            .start("Quick and simple")
             .section("Start")
             .step("Step")
             .announce() // <== Here
             .end_announce() // <== Here
             .end_section()
-            .finish_logging_writer();
+            .finish();
 
         let expected = formatdoc! {"
 
