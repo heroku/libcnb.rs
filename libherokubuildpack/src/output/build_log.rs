@@ -20,13 +20,12 @@
 //! To log inside of a layer see `section_log`.
 //!
 //! For usage details run `cargo run --bin print_style_guide`
-use crate::output::background::{print_interval, state::PrintGuard};
 use crate::output::style;
 use std::fmt::Debug;
 use std::io::Write;
 use std::marker::PhantomData;
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 /// See the module docs for example usage
 #[allow(clippy::module_name_repetitions)]
@@ -150,27 +149,6 @@ where
         self.mut_step(s);
 
         self
-    }
-
-    pub fn step_timed(self, s: &str) -> BackgroundLog<W> {
-        let mut io = self.io;
-        let data = self.data;
-        let timer = Instant::now();
-
-        write_now(&mut io, style::step(s));
-        let dot_printer = print_interval(
-            io,
-            Duration::from_secs(1),
-            style::background_timer_start(),
-            style::background_timer_tick(),
-            style::background_timer_end(),
-        );
-
-        BackgroundLog {
-            data,
-            timer,
-            dot_printer,
-        }
     }
 
     pub fn step_timed_stream(mut self, s: &str) -> StreamLog<W> {
@@ -404,45 +382,6 @@ where
     }
 }
 
-/// Logs to the user while work is being performed in the background
-///
-/// Used to end a background inline timer i.e. Installing ...... (<0.1s)
-#[derive(Debug)]
-pub struct BackgroundLog<W>
-where
-    W: Write + Debug,
-{
-    data: BuildData,
-    timer: Instant,
-    dot_printer: PrintGuard<W>,
-}
-
-impl<W> BackgroundLog<W>
-where
-    W: Write + Send + Sync + Debug + 'static,
-{
-    #[must_use]
-    pub fn finish_timed_step(self) -> BuildLog<state::InSection, W> {
-        // Must stop background writing thread before retrieving IO
-        let data = self.data;
-        let timer = self.timer;
-
-        let mut io = match self.dot_printer.stop() {
-            Ok(io) => io,
-            Err(e) => std::panic::resume_unwind(e),
-        };
-        let duration = timer.elapsed();
-
-        writeln_now(&mut io, style::details(style::time::human(&duration)));
-
-        BuildLog {
-            io,
-            data,
-            state: PhantomData::<state::InSection>,
-        }
-    }
-}
-
 /// Internal helper, ensures that all contents are always flushed (never buffered)
 ///
 /// This is especially important for writing individual characters to the same line
@@ -479,8 +418,6 @@ mod test {
         let mut stream = BuildLog::new(writer)
             .buildpack_name("Heroku Ruby Buildpack")
             .section("Ruby version `3.1.3` from `Gemfile.lock`")
-            .step_timed("Installing")
-            .finish_timed_step()
             .end_section()
             .section("Hello world")
             .step_timed_stream("Streaming stuff");
@@ -498,7 +435,6 @@ mod test {
             # Heroku Ruby Buildpack
 
             - Ruby version `3.1.3` from `Gemfile.lock`
-              - Installing ... (< 0.1s)
             - Hello world
               - Streaming stuff
 

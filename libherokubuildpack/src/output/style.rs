@@ -82,21 +82,6 @@ pub(crate) fn cmd_stream_format(mut input: Vec<u8>) -> Vec<u8> {
 }
 
 #[must_use]
-pub(crate) fn background_timer_start() -> String {
-    colorize(DEFAULT_DIM, " .")
-}
-
-#[must_use]
-pub(crate) fn background_timer_tick() -> String {
-    colorize(DEFAULT_DIM, ".")
-}
-
-#[must_use]
-pub(crate) fn background_timer_end() -> String {
-    colorize(DEFAULT_DIM, ". ")
-}
-
-#[must_use]
 pub(crate) fn section(topic: impl AsRef<str>) -> String {
     prefix_indent(SECTION_PREFIX, topic)
 }
@@ -327,10 +312,10 @@ pub(crate) mod time {
             let duration = Duration::from_millis(1024);
             assert_eq!("1.024s", human(&duration).as_str());
 
-            let duration = std::time::Duration::from_millis(60 * 1024);
+            let duration = Duration::from_millis(60 * 1024);
             assert_eq!("1m 1s", human(&duration).as_str());
 
-            let duration = std::time::Duration::from_millis(3600 * 1024);
+            let duration = Duration::from_millis(3600 * 1024);
             assert_eq!("1h 1m 26s", human(&duration).as_str());
         }
     }
