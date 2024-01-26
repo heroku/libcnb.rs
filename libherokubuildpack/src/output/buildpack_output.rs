@@ -481,7 +481,7 @@ mod test {
         let writer = Vec::new();
         let logger = BuildpackOutput::new(writer)
             .start("RCT")
-            .section("Guest thoughs")
+            .section("Guest thoughts")
             .step("The scenery here is wonderful")
             .announce();
 
@@ -498,7 +498,7 @@ mod test {
 
             # RCT
 
-            - Guest thoughs
+            - Guest thoughts
               - The scenery here is wonderful
 
             ! It's too crowded here
