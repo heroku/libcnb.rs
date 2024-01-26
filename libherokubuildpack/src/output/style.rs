@@ -272,7 +272,7 @@ mod test {
 pub(crate) mod time {
     use std::time::Duration;
 
-    // Returns the part of a duration only in miliseconds
+    // Returns the part of a duration only in milliseconds
     pub(crate) fn milliseconds(duration: &Duration) -> u32 {
         duration.subsec_millis()
     }

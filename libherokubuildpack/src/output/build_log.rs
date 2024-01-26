@@ -310,7 +310,7 @@ where
 
 /// Implements Box<dyn Write + Send + Sync>
 ///
-/// Ensures that the `W` can be passed across thread boundries
+/// Ensures that the `W` can be passed across thread boundaries
 /// by wrapping in a mutex.
 ///
 /// It implements writing by unlocking and delegating to the internal writer.
