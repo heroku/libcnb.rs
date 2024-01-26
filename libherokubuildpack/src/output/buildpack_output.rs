@@ -15,7 +15,6 @@
 //! output.finish();
 //! ```
 //!
-//! To output inside of a layer see [`inline_output`].
 use crate::output::style;
 use std::fmt::Debug;
 use std::io::Write;
@@ -28,7 +27,7 @@ use std::time::Instant;
 pub struct BuildpackOutput<T, W: Debug> {
     pub(crate) io: W,
     pub(crate) data: BuildData,
-    pub(crate) _state: T,
+    pub(crate) state: T,
 }
 
 /// A bag of data passed throughout the lifecycle of a [`BuildpackOutput`]
@@ -58,6 +57,89 @@ pub(crate) mod state {
 
     #[derive(Debug)]
     pub struct Section;
+
+    #[derive(Debug)]
+    pub struct Announce<T>(pub T);
+}
+
+#[doc(hidden)]
+pub trait StartedMarker {}
+impl StartedMarker for state::Started {}
+impl<S> StartedMarker for state::Announce<S> where S: StartedMarker + IntoAnnounceMarker {}
+
+#[doc(hidden)]
+pub trait SectionMarker {}
+impl SectionMarker for state::Section {}
+impl<S> SectionMarker for state::Announce<S> where S: SectionMarker + IntoAnnounceMarker {}
+
+#[doc(hidden)]
+pub trait IntoAnnounceMarker {}
+impl IntoAnnounceMarker for state::Section {}
+impl IntoAnnounceMarker for state::Started {}
+
+impl<T, W> BuildpackOutput<state::Announce<T>, W>
+where
+    W: Write + Send + Sync + Debug + 'static,
+{
+    #[must_use]
+    pub fn warning(mut self, s: &str) -> BuildpackOutput<state::Announce<T>, W> {
+        writeln_now(&mut self.io, style::warning(s.trim()));
+        writeln_now(&mut self.io, "");
+
+        self
+    }
+
+    #[must_use]
+    pub fn important(mut self, s: &str) -> BuildpackOutput<state::Announce<T>, W> {
+        writeln_now(&mut self.io, style::important(s.trim()));
+        writeln_now(&mut self.io, "");
+
+        self
+    }
+
+    pub fn error(mut self, s: &str) {
+        writeln_now(&mut self.io, style::error(s.trim()));
+        writeln_now(&mut self.io, "");
+    }
+}
+
+impl<S, W> BuildpackOutput<S, W>
+where
+    S: IntoAnnounceMarker,
+    W: Write + Send + Sync + Debug + 'static,
+{
+    #[must_use]
+    pub fn warning(mut self, s: &str) -> BuildpackOutput<state::Announce<S>, W> {
+        writeln_now(&mut self.io, "");
+
+        let announce = BuildpackOutput {
+            io: self.io,
+            data: self.data,
+            state: state::Announce(self.state),
+        };
+        announce.warning(s)
+    }
+
+    #[must_use]
+    pub fn important(mut self, s: &str) -> BuildpackOutput<state::Announce<S>, W> {
+        writeln_now(&mut self.io, "");
+
+        let announce = BuildpackOutput {
+            io: self.io,
+            data: self.data,
+            state: state::Announce(self.state),
+        };
+        announce.important(s)
+    }
+
+    pub fn error(self, s: &str) {
+        let announce = BuildpackOutput {
+            io: self.io,
+            data: self.data,
+            state: state::Announce(self.state),
+        };
+        announce.error(s);
+    }
 }
 
 impl<W> BuildpackOutput<state::NotStarted, W>
@@ -67,7 +149,7 @@ where
     pub fn new(io: W) -> Self {
         Self {
             io,
-            _state: state::NotStarted,
+            state: state::NotStarted,
             data: BuildData::default(),
         }
     }
@@ -85,13 +167,14 @@ where
         BuildpackOutput {
             io: self.io,
             data: self.data,
-            _state: state::Started,
+            state: state::Started,
         }
     }
 }
 
-impl<W> BuildpackOutput<state::Started, W>
+impl<S, W> BuildpackOutput<S, W>
 where
+    S: StartedMarker,
     W: Write + Send + Sync + Debug + 'static,
 {
     pub fn section(mut self, s: &str) -> BuildpackOutput<state::Section, W> {
@@ -100,7 +183,7 @@ where
         BuildpackOutput {
             io: self.io,
             data: self.data,
-            _state: state::Section,
+            state: state::Section,
         }
     }
 
@@ -111,15 +194,6 @@ where
         writeln_now(&mut self.io, style::section(format!("Done {details}")));
         self.io
     }
-
-    pub fn announce(self) -> Announce<state::Started, W> {
-        Announce {
-            io: self.io,
-            data: self.data,
-            _state: state::Started,
-            leader: Some("\n".to_string()),
-        }
-    }
 }
 
 impl<W> BuildpackOutput<state::Section, W>
@@ -129,16 +203,26 @@ where
     pub fn mut_step(&mut self, s: &str) {
         writeln_now(&mut self.io, style::step(s));
     }
+}
 
+impl<S, W> BuildpackOutput<S, W>
+where
+    S: SectionMarker,
+    W: Write + Send + Sync + Debug + 'static,
+{
     #[must_use]
     pub fn step(mut self, s: &str) -> BuildpackOutput<state::Section, W> {
-        self.mut_step(s);
+        writeln_now(&mut self.io, style::step(s));
 
-        self
+        BuildpackOutput {
+            io: self.io,
+            data: self.data,
+            state: state::Section,
+        }
     }
 
     pub fn step_timed_stream(mut self, s: &str) -> Stream<W> {
-        self.mut_step(s);
+        writeln_now(&mut self.io, style::step(s));
 
         let started = Instant::now();
         let arc_io = Arc::new(Mutex::new(self.io));
@@ -156,112 +240,7 @@ where
         BuildpackOutput {
             io: self.io,
             data: self.data,
-            _state: state::Started,
-        }
-    }
-
-    pub fn announce(self) -> Announce<state::Section, W> {
-        Announce {
-            io: self.io,
-            data: self.data,
-            _state: state::Section,
-            leader: Some("\n".to_string()),
-        }
-    }
-}
-
-// Store internal state, print leading character exactly once on warning or important
-#[derive(Debug)]
-pub struct Announce<T, W>
-where
-    W: Write + Send + Sync + Debug + 'static,
-{
-    io: W,
-    data: BuildData,
-    _state: T,
-    leader: Option<String>,
-}
-
-impl<T, W> Announce<T, W>
-where
-    T: Debug,
-    W: Write + Send + Sync + Debug + 'static,
-{
-    fn shared_warning(&mut self, s: &str) {
-        if let Some(leader) = self.leader.take() {
-            write_now(&mut self.io, leader);
-        }
-
-        writeln_now(&mut self.io, style::warning(s.trim()));
-        writeln_now(&mut self.io, "");
-    }
-
-    fn shared_important(&mut self, s: &str) {
-        if let Some(leader) = self.leader.take() {
-            write_now(&mut self.io, leader);
-        }
-        writeln_now(&mut self.io, style::important(s.trim()));
-        writeln_now(&mut self.io, "");
-    }
-
-    pub fn error(mut self, s: &str) {
-        if let Some(leader) = self.leader.take() {
-            write_now(&mut self.io, leader);
-        }
-        writeln_now(&mut self.io, style::error(s.trim()));
-        writeln_now(&mut self.io, "");
-    }
-}
-
-impl<W> Announce<state::Section, W>
-where
-    W: Write + Send + Sync + Debug + 'static,
-{
-    #[must_use]
-    pub fn warning(mut self, s: &str) -> Announce<state::Section, W> {
-        self.shared_warning(s);
-
-        self
-    }
-
-    #[must_use]
-    pub fn important(mut self, s: &str) -> Announce<state::Section, W> {
-        self.shared_important(s);
-
-        self
-    }
-
-    pub fn end_announce(self) -> BuildpackOutput<state::Section, W> {
-        BuildpackOutput {
-            io: self.io,
-            data: self.data,
-            _state: state::Section,
-        }
-    }
-}
-
-impl<W> Announce<state::Started, W>
-where
-    W: Write + Send + Sync + Debug + 'static,
-{
-    #[must_use]
-    pub fn warning(mut self, s: &str) -> Announce<state::Started, W> {
-        self.shared_warning(s);
-        self
-    }
-
-    #[must_use]
-    pub fn important(mut self, s: &str) -> Announce<state::Started, W> {
-        self.shared_important(s);
-        self
-    }
-
-    #[must_use]
-    pub fn end_announce(self) -> BuildpackOutput<state::Started, W> {
-        BuildpackOutput {
-            io: self.io,
-            data: self.data,
-            _state: state::Started,
+            state: state::Started,
         }
     }
 }
@@ -344,7 +323,7 @@ where
         let mut section = BuildpackOutput {
             io,
             data: self.data,
-            _state: state::Section,
+            state: state::Section,
         };
 
         section.mut_step(&format!(
@@ -444,9 +423,7 @@ mod test {
             .start("RCT")
             .section("Guest thoughs")
             .step("The scenery here is wonderful")
-            .announce()
             .warning("It's too crowded here\nI'm tired")
-            .end_announce()
             .step("The jumping fountains are great")
             .step("The music is nice here")
             .end_section()
@@ -476,13 +453,11 @@ mod test {
         let output = BuildpackOutput::new(writer)
             .start("RCT")
             .section("Guest thoughts")
-            .step("The scenery here is wonderful")
-            .announce();
+            .step("The scenery here is wonderful");
 
         let io = output
             .warning("It's too crowded here")
             .warning("I'm tired")
-            .end_announce()
             .step("The jumping fountains are great")
             .step("The music is nice here")
             .end_section()
@@ -501,30 +476,6 @@ mod test {
 
               - The jumping fountains are great
               - The music is nice here
-            - Done (finished in < 0.1s)
-        "};
-
-        assert_eq!(expected, strip_control_codes(String::from_utf8_lossy(&io)));
-    }
-
-    #[test]
-    fn announce_and_exit_makes_no_whitespace() {
-        let writer = Vec::new();
-        let io = BuildpackOutput::new(writer)
-            .start("Quick and simple")
-            .section("Start")
-            .step("Step")
-            .announce() // <== Here
-            .end_announce() // <== Here
-            .end_section()
-            .finish();
-
-        let expected = formatdoc! {"
-
-            # Quick and simple
-
-            - Start
-              - Step
             - Done (finished in < 0.1s)
         "};
 
