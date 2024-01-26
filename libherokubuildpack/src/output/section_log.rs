@@ -35,7 +35,7 @@
 //! // }
 //! ```
 use crate::output::build_log::StreamLog;
-use crate::output::build_log::{state, BuildData, BuildLog};
+use crate::output::build_log::{state, BuildData, BuildpackOutput};
 use std::io::Stdout;
 use std::marker::PhantomData;
 
@@ -89,12 +89,12 @@ pub fn log_important(s: impl AsRef<str>) {
     let _ = logger().announce().important(s.as_ref());
 }
 
-fn logger() -> BuildLog<state::InSection, Stdout> {
-    BuildLog::<state::InSection, Stdout> {
+fn logger() -> BuildpackOutput<state::InSection, Stdout> {
+    BuildpackOutput::<state::InSection, Stdout> {
         io: std::io::stdout(),
         // Be careful not to do anything that might access this state
         // as it's ephemeral data (i.e. not passed in from the start of the build)
         data: BuildData::default(),
-        state: PhantomData,
+        state: state::InSection,
     }
 }
