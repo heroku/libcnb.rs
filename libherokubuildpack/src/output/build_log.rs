@@ -383,7 +383,7 @@ mod test {
     use super::*;
     use crate::command::CommandExt;
     use crate::output::style::strip_control_codes;
-    use crate::output::util::strip_trailing_whitespace;
+    use crate::output::util::test_helpers::trim_end_lines;
     use indoc::formatdoc;
     use libcnb_test::assert_contains;
     use pretty_assertions::assert_eq;
@@ -419,7 +419,7 @@ mod test {
 
         assert_eq!(
             expected,
-            strip_trailing_whitespace(strip_control_codes(String::from_utf8_lossy(&io)))
+            trim_end_lines(strip_control_codes(String::from_utf8_lossy(&io)))
         );
     }
 
@@ -438,7 +438,7 @@ mod test {
 
         let io = stream.finish_timed_stream().end_section().finish();
 
-        let actual = strip_trailing_whitespace(strip_control_codes(String::from_utf8_lossy(&io)));
+        let actual = trim_end_lines(strip_control_codes(String::from_utf8_lossy(&io)));
 
         assert_contains!(actual, "      hello world\n");
     }
