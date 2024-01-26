@@ -59,7 +59,7 @@ pub(crate) mod state {
     pub struct Started;
 
     #[derive(Debug)]
-    pub struct InSection;
+    pub struct Section;
 }
 
 impl<W> BuildpackOutput<state::NotStarted, W>
@@ -96,13 +96,13 @@ impl<W> BuildpackOutput<state::Started, W>
 where
     W: Write + Send + Sync + Debug + 'static,
 {
-    pub fn section(mut self, s: &str) -> BuildpackOutput<state::InSection, W> {
+    pub fn section(mut self, s: &str) -> BuildpackOutput<state::Section, W> {
         writeln_now(&mut self.io, style::section(s));
 
         BuildpackOutput {
             io: self.io,
             data: self.data,
-            _state: state::InSection,
+            _state: state::Section,
         }
     }
 
@@ -124,7 +124,7 @@ where
     }
 }
 
-impl<W> BuildpackOutput<state::InSection, W>
+impl<W> BuildpackOutput<state::Section, W>
 where
     W: Write + Send + Sync + Debug + 'static,
 {
@@ -133,7 +133,7 @@ where
     }
 
     #[must_use]
-    pub fn step(mut self, s: &str) -> BuildpackOutput<state::InSection, W> {
+    pub fn step(mut self, s: &str) -> BuildpackOutput<state::Section, W> {
         self.mut_step(s);
 
         self
@@ -162,11 +162,11 @@ where
         }
     }
 
-    pub fn announce(self) -> AnnounceLog<state::InSection, W> {
+    pub fn announce(self) -> AnnounceLog<state::Section, W> {
         AnnounceLog {
             io: self.io,
             data: self.data,
-            _state: state::InSection,
+            _state: state::Section,
             leader: Some("\n".to_string()),
         }
     }
@@ -215,29 +215,29 @@ where
     }
 }
 
-impl<W> AnnounceLog<state::InSection, W>
+impl<W> AnnounceLog<state::Section, W>
 where
     W: Write + Send + Sync + Debug + 'static,
 {
     #[must_use]
-    pub fn warning(mut self, s: &str) -> AnnounceLog<state::InSection, W> {
+    pub fn warning(mut self, s: &str) -> AnnounceLog<state::Section, W> {
         self.log_warning(s);
 
         self
     }
 
     #[must_use]
-    pub fn important(mut self, s: &str) -> AnnounceLog<state::InSection, W> {
+    pub fn important(mut self, s: &str) -> AnnounceLog<state::Section, W> {
         self.log_important(s);
 
         self
     }
 
-    pub fn end_announce(self) -> BuildpackOutput<state::InSection, W> {
+    pub fn end_announce(self) -> BuildpackOutput<state::Section, W> {
         BuildpackOutput {
             io: self.io,
             data: self.data,
-            _state: state::InSection,
+            _state: state::Section,
         }
     }
 }
@@ -332,7 +332,7 @@ where
     /// If any of those boxed writers are retained then the `W` cannot
     /// be reclaimed and returned. This will cause a panic.
     #[must_use]
-    pub fn finish_timed_stream(self) -> BuildpackOutput<state::InSection, W> {
+    pub fn finish_timed_stream(self) -> BuildpackOutput<state::Section, W> {
         let duration = self.started.elapsed();
 
         let mut io = Arc::try_unwrap(self.arc_io)
@@ -346,7 +346,7 @@ where
         let mut section = BuildpackOutput {
             io,
             data: self.data,
-            _state: state::InSection,
+            _state: state::Section,
         };
 
         section.mut_step(&format!(
