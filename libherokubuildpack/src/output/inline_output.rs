@@ -60,17 +60,17 @@ pub fn step_stream<T>(s: impl AsRef<str>, f: impl FnOnce(&mut Stream<Stdout>) ->
 
 /// Print an error block to the output
 pub fn error(s: impl AsRef<str>) {
-    build_buildpack_output().announce().error(s.as_ref());
+    build_buildpack_output().error(s.as_ref());
 }
 
 /// Print an warning block to the output
 pub fn warning(s: impl AsRef<str>) {
-    let _ = build_buildpack_output().announce().warning(s.as_ref());
+    let _ = build_buildpack_output().warning(s.as_ref());
 }
 
 /// Print an important block to the output
 pub fn important(s: impl AsRef<str>) {
-    let _ = build_buildpack_output().announce().important(s.as_ref());
+    let _ = build_buildpack_output().important(s.as_ref());
 }
 
 fn build_buildpack_output() -> BuildpackOutput<state::Section, Stdout> {
@@ -79,6 +79,6 @@ fn build_buildpack_output() -> BuildpackOutput<state::Section, Stdout> {
         // Be careful not to do anything that might access this state
         // as it's ephemeral data (i.e. not passed in from the start of the build)
         data: BuildData::default(),
-        _state: state::Section,
+        state: state::Section,
     }
 }
