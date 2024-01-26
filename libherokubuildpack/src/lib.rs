@@ -20,8 +20,5 @@ pub mod tar;
 pub mod toml;
 #[cfg(feature = "write")]
 pub mod write;
-
-#[cfg(test)]
-use ascii_table as _;
 #[cfg(test)]
 use fun_run as _;

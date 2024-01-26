@@ -54,4 +54,3 @@ libcnb-test = {workspace = true}
 indoc = "2"
 pretty_assertions = "1"
 fun_run = "0.1.1"
-ascii_table = { version = "4", features = ["color_codes"] }
