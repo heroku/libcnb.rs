@@ -1,6 +1,6 @@
-//! # Build output logging
+//! # Buildpack output
 //!
-//! Use the `BuildLog` to output structured text as a buildpack is executing
+//! Use the [`BuildpackOutput`] to output structured text as a buildpack is executing
 //!
 //! ```
 //! use libherokubuildpack::output::buildpack_output::BuildpackOutput;
@@ -15,9 +15,7 @@
 //! output.finish();
 //! ```
 //!
-//! To log inside of a layer see `section_log`.
-//!
-//! For usage details run `cargo run --bin print_style_guide`
+//! To output inside of a layer see [`inline_output`].
 use crate::output::style;
 use std::fmt::Debug;
 use std::io::Write;
@@ -33,7 +31,7 @@ pub struct BuildpackOutput<T, W: Debug> {
     pub(crate) _state: T,
 }
 
-/// A bag of data passed throughout the lifecycle of a `BuildLog`
+/// A bag of data passed throughout the lifecycle of a [`BuildpackOutput`]
 #[derive(Debug)]
 pub(crate) struct BuildData {
     pub(crate) started: Instant,
@@ -47,9 +45,9 @@ impl Default for BuildData {
     }
 }
 
-/// Various states for `BuildOutput` to contain
+/// Various states for [`BuildpackOutput`] to contain
 ///
-/// The `BuildLog` struct acts as a logging state machine. These structs
+/// The [`BuildpackOutput`] struct acts as an output state machine. These structs
 /// are meant to represent those states
 pub(crate) mod state {
     #[derive(Debug)]
@@ -114,8 +112,8 @@ where
         self.io
     }
 
-    pub fn announce(self) -> AnnounceLog<state::Started, W> {
-        AnnounceLog {
+    pub fn announce(self) -> Announce<state::Started, W> {
+        Announce {
             io: self.io,
             data: self.data,
             _state: state::Started,
@@ -139,12 +137,12 @@ where
         self
     }
 
-    pub fn step_timed_stream(mut self, s: &str) -> StreamLog<W> {
+    pub fn step_timed_stream(mut self, s: &str) -> Stream<W> {
         self.mut_step(s);
 
         let started = Instant::now();
         let arc_io = Arc::new(Mutex::new(self.io));
-        let mut stream = StreamLog {
+        let mut stream = Stream {
             arc_io,
             data: self.data,
             started,
@@ -162,8 +160,8 @@ where
         }
     }
 
-    pub fn announce(self) -> AnnounceLog<state::Section, W> {
-        AnnounceLog {
+    pub fn announce(self) -> Announce<state::Section, W> {
+        Announce {
             io: self.io,
             data: self.data,
             _state: state::Section,
@@ -174,7 +172,7 @@ where
 
 // Store internal state, print leading character exactly once on warning or important
 #[derive(Debug)]
-pub struct AnnounceLog<T, W>
+pub struct Announce<T, W>
 where
     W: Write + Send + Sync + Debug + 'static,
 {
@@ -184,12 +182,12 @@ where
     leader: Option<String>,
 }
 
-impl<T, W> AnnounceLog<T, W>
+impl<T, W> Announce<T, W>
 where
     T: Debug,
     W: Write + Send + Sync + Debug + 'static,
 {
-    fn log_warning(&mut self, s: &str) {
+    fn shared_warning(&mut self, s: &str) {
         if let Some(leader) = self.leader.take() {
             write_now(&mut self.io, leader);
         }
@@ -198,7 +196,7 @@ where
         writeln_now(&mut self.io, "");
     }
 
-    fn log_important(&mut self, s: &str) {
+    fn shared_important(&mut self, s: &str) {
         if let Some(leader) = self.leader.take() {
             write_now(&mut self.io, leader);
         }
@@ -215,20 +213,20 @@ where
     }
 }
 
-impl<W> AnnounceLog<state::Section, W>
+impl<W> Announce<state::Section, W>
 where
     W: Write + Send + Sync + Debug + 'static,
 {
     #[must_use]
-    pub fn warning(mut self, s: &str) -> AnnounceLog<state::Section, W> {
-        self.log_warning(s);
+    pub fn warning(mut self, s: &str) -> Announce<state::Section, W> {
+        self.shared_warning(s);
 
         self
     }
 
     #[must_use]
-    pub fn important(mut self, s: &str) -> AnnounceLog<state::Section, W> {
-        self.log_important(s);
+    pub fn important(mut self, s: &str) -> Announce<state::Section, W> {
+        self.shared_important(s);
 
         self
     }
@@ -242,19 +240,19 @@ where
     }
 }
 
-impl<W> AnnounceLog<state::Started, W>
+impl<W> Announce<state::Started, W>
 where
     W: Write + Send + Sync + Debug + 'static,
 {
     #[must_use]
-    pub fn warning(mut self, s: &str) -> AnnounceLog<state::Started, W> {
-        self.log_warning(s);
+    pub fn warning(mut self, s: &str) -> Announce<state::Started, W> {
+        self.shared_warning(s);
         self
     }
 
     #[must_use]
-    pub fn important(mut self, s: &str) -> AnnounceLog<state::Started, W> {
-        self.log_important(s);
+    pub fn important(mut self, s: &str) -> Announce<state::Started, W> {
+        self.shared_important(s);
         self
     }
 
@@ -279,39 +277,39 @@ where
     W: Write + Send + Sync + Debug + 'static,
 {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        let mut io = self.arc.lock().expect("Logging mutex poisoned");
+        let mut io = self.arc.lock().expect("Output mutex poisoned");
         io.write(buf)
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
-        let mut io = self.arc.lock().expect("Logging mutex poisoned");
+        let mut io = self.arc.lock().expect("Output mutex poisoned");
         io.flush()
     }
 }
 
 /// Stream output to the user
 ///
-/// Mostly used for logging a running command
+/// Mostly used for ouputting a running command
 #[derive(Debug)]
-pub struct StreamLog<W> {
+pub struct Stream<W> {
     data: BuildData,
     arc_io: Arc<Mutex<W>>,
     started: Instant,
 }
 
-impl<W> StreamLog<W>
+impl<W> Stream<W>
 where
     W: Write + Send + Sync + Debug + 'static,
 {
     fn start(&mut self) {
-        let mut guard = self.arc_io.lock().expect("Logging mutex poisoned");
+        let mut guard = self.arc_io.lock().expect("Output mutex poisoned");
         let mut io = guard.by_ref();
         // Newline before stream https://github.com/heroku/libcnb.rs/issues/582
         writeln_now(&mut io, "");
     }
 
     /// Yield boxed writer that can be used for formatting and streaming contents
-    /// back to the logger.
+    /// back to the output.
     pub fn io(&mut self) -> Box<dyn Write + Send + Sync> {
         Box::new(crate::write::line_mapped(
             LockedWriter {
@@ -338,7 +336,7 @@ where
         let mut io = Arc::try_unwrap(self.arc_io)
             .expect("Expected buildpack author to not retain any IO streaming IO instances")
             .into_inner()
-            .expect("Logging mutex was poisioned");
+            .expect("Output mutex was poisioned");
 
         // // Newline after stream
         writeln_now(&mut io, "");
@@ -362,20 +360,16 @@ where
 ///
 /// This is especially important for writing individual characters to the same line
 fn write_now<D: Write>(destination: &mut D, msg: impl AsRef<str>) {
-    write!(destination, "{}", msg.as_ref()).expect("Logging error: UI writer closed");
+    write!(destination, "{}", msg.as_ref()).expect("Output error: UI writer closed");
 
-    destination
-        .flush()
-        .expect("Logging error: UI writer closed");
+    destination.flush().expect("Output error: UI writer closed");
 }
 
 /// Internal helper, ensures that all contents are always flushed (never buffered)
 fn writeln_now<D: Write>(destination: &mut D, msg: impl AsRef<str>) {
-    writeln!(destination, "{}", msg.as_ref()).expect("Logging error: UI writer closed");
+    writeln!(destination, "{}", msg.as_ref()).expect("Output error: UI writer closed");
 
-    destination
-        .flush()
-        .expect("Logging error: UI writer closed");
+    destination.flush().expect("Output error: UI writer closed");
 }
 
 #[cfg(test)]
@@ -479,13 +473,13 @@ mod test {
     #[test]
     fn double_warning_step_padding() {
         let writer = Vec::new();
-        let logger = BuildpackOutput::new(writer)
+        let output = BuildpackOutput::new(writer)
             .start("RCT")
             .section("Guest thoughts")
             .step("The scenery here is wonderful")
             .announce();
 
-        let io = logger
+        let io = output
             .warning("It's too crowded here")
             .warning("I'm tired")
             .end_announce()

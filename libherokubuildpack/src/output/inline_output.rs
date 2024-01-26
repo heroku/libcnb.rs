@@ -1,0 +1,84 @@
+//! Write to the build output in a [`BuildpackOutput`] format with functions
+//!
+//! ## What
+//!
+//! Outputting from within a layer can be difficult because calls to the layer interface are not
+//! mutable nor consumable. Functions can be used at any time with no restrictions. The
+//! only downside is that the buildpack author (you) is now responsible for:
+//!
+//! - Ensuring that [`BuildpackOutput::section`] funciton was called right before any of these
+//! functions are called.
+//! - Ensuring that you are not attempting to output while already streaming i.e. calling [`step`] within
+//! a [`step_stream`] call.
+//!
+//! ## Use
+//!
+//! The main use case is writing output in a layer:
+//!
+//! ```no_run
+//! use libherokubuildpack::output::inline_output;
+//!
+//! inline_output::step("Clearing the cache")
+//! ```
+use crate::output::buildpack_output::{state, BuildData, BuildpackOutput, Stream};
+use std::io::Stdout;
+
+/// Output a message as a single step, ideally a short message
+///
+/// ```
+/// use libherokubuildpack::output::inline_output;
+///
+/// inline_output::step("Clearing cache (ruby version changed)");
+/// ```
+pub fn step(s: impl AsRef<str>) {
+    let _ = build_buildpack_output().step(s.as_ref());
+}
+
+/// Will print the input string and yield a [`Stream`] that can be used to print
+/// to the output. The main use case is running commands
+///
+/// ```no_run
+/// use fun_run::CommandWithName;
+/// use libherokubuildpack::output::inline_output;
+/// use libherokubuildpack::output::style;
+///
+/// let mut cmd = std::process::Command::new("bundle");
+/// cmd.arg("install");
+///
+/// inline_output::step_stream(format!("Running {}", style::command(cmd.name())), |stream| {
+///     cmd.stream_output(stream.io(), stream.io()).unwrap()
+/// });
+/// ```
+///
+/// Timing information will be output at the end of the step.
+pub fn step_stream<T>(s: impl AsRef<str>, f: impl FnOnce(&mut Stream<Stdout>) -> T) -> T {
+    let mut stream = build_buildpack_output().step_timed_stream(s.as_ref());
+    let out = f(&mut stream);
+    let _ = stream.finish_timed_stream();
+    out
+}
+
+/// Print an error block to the output
+pub fn error(s: impl AsRef<str>) {
+    build_buildpack_output().announce().error(s.as_ref());
+}
+
+/// Print an warning block to the output
+pub fn warning(s: impl AsRef<str>) {
+    let _ = build_buildpack_output().announce().warning(s.as_ref());
+}
+
+/// Print an important block to the output
+pub fn important(s: impl AsRef<str>) {
+    let _ = build_buildpack_output().announce().important(s.as_ref());
+}
+
+fn build_buildpack_output() -> BuildpackOutput<state::Section, Stdout> {
+    BuildpackOutput::<state::Section, Stdout> {
+        io: std::io::stdout(),
+        // Be careful not to do anything that might access this state
+        // as it's ephemeral data (i.e. not passed in from the start of the build)
+        data: BuildData::default(),
+        _state: state::Section,
+    }
+}
