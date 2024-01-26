@@ -3,7 +3,7 @@
 //! Use the `BuildLog` to output structured text as a buildpack is executing
 //!
 //! ```
-//! use libherokubuildpack::output::build_log::BuildpackOutput;
+//! use libherokubuildpack::output::buildpack_output::BuildpackOutput;
 //!
 //! let mut output = BuildpackOutput::new(std::io::stdout())
 //!     .start("Heroku Ruby Buildpack");

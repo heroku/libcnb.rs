@@ -22,8 +22,8 @@
 //!
 //! log_step("Clearing the cache")
 //! ```
-use crate::output::build_log::StreamLog;
-use crate::output::build_log::{state, BuildData, BuildpackOutput};
+use crate::output::buildpack_output::StreamLog;
+use crate::output::buildpack_output::{state, BuildData, BuildpackOutput};
 use std::io::Stdout;
 
 /// Output a message as a single step, ideally a short message
