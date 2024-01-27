@@ -32,6 +32,7 @@ pub struct BuildpackOutput<T, W: Debug> {
 
 /// A bag of data passed throughout the lifecycle of a [`BuildpackOutput`]
 #[derive(Debug)]
+#[doc(hidden)]
 pub(crate) struct BuildData {
     pub(crate) started: Instant,
 }
@@ -48,6 +49,7 @@ impl Default for BuildData {
 ///
 /// The [`BuildpackOutput`] struct acts as an output state machine. These structs
 /// are meant to represent those states
+#[doc(hidden)]
 pub(crate) mod state {
     #[derive(Debug)]
     pub struct NotStarted;
@@ -247,6 +249,7 @@ where
 
 // TODO: Decide if we need documentation for this
 #[derive(Debug)]
+#[doc(hidden)]
 struct LockedWriter<W> {
     arc: Arc<Mutex<W>>,
 }
@@ -270,6 +273,7 @@ where
 ///
 /// Mostly used for ouputting a running command
 #[derive(Debug)]
+#[doc(hidden)]
 pub struct Stream<W> {
     data: BuildData,
     arc_io: Arc<Mutex<W>>,
