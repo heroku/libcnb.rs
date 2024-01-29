@@ -16,18 +16,18 @@
 //! The main use case is writing output in a layer:
 //!
 //! ```no_run
-//! use libherokubuildpack::output::inline_output;
+//! use libherokubuildpack::buildpack_output::inline_output;
 //!
 //! inline_output::step("Clearing the cache")
 //! ```
-use crate::output::buildpack_output::{state, BuildpackOutput, Stream};
+use crate::buildpack_output::{state, BuildpackOutput, Stream};
 use std::io::Stdout;
 use std::time::Instant;
 
 /// Output a message as a single step, ideally a short message.
 ///
 /// ```
-/// use libherokubuildpack::output::inline_output;
+/// use libherokubuildpack::buildpack_output::inline_output;
 ///
 /// inline_output::step("Clearing cache (ruby version changed)");
 /// ```
@@ -40,8 +40,8 @@ pub fn step(s: impl AsRef<str>) {
 ///
 /// ```no_run
 /// use fun_run::CommandWithName;
-/// use libherokubuildpack::output::inline_output;
-/// use libherokubuildpack::output::style;
+/// use libherokubuildpack::buildpack_output::inline_output;
+/// use libherokubuildpack::buildpack_output::style;
 ///
 /// let mut cmd = std::process::Command::new("bundle");
 /// cmd.arg("install");

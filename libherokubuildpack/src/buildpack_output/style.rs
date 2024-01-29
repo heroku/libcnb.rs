@@ -1,4 +1,4 @@
-use crate::output::util::LinesWithEndings;
+use crate::buildpack_output::util::LinesWithEndings;
 use const_format::formatcp;
 use std::fmt::Write;
 
