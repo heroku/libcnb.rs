@@ -3,7 +3,7 @@
 //! Use the [`BuildpackOutput`] to output structured text as a buildpack is executing.
 //!
 //! ```
-//! use libherokubuildpack::output::buildpack_output::BuildpackOutput;
+//! use libherokubuildpack::buildpack_output::BuildpackOutput;
 //!
 //! let mut output = BuildpackOutput::new(std::io::stdout())
 //!     .start("Heroku Ruby Buildpack");
@@ -15,11 +15,14 @@
 //! output.finish();
 //! ```
 //!
-use crate::output::style;
 use std::fmt::Debug;
 use std::io::Write;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
+
+pub mod inline_output;
+pub mod style;
+mod util;
 
 /// See the module docs for example usage.
 #[allow(clippy::module_name_repetitions)]
@@ -346,9 +349,9 @@ fn writeln_now<D: Write>(destination: &mut D, msg: impl AsRef<str>) {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::buildpack_output::style::strip_control_codes;
+    use crate::buildpack_output::util::test_helpers::trim_end_lines;
     use crate::command::CommandExt;
-    use crate::output::style::strip_control_codes;
-    use crate::output::util::test_helpers::trim_end_lines;
     use indoc::formatdoc;
     use libcnb_test::assert_contains;
     use pretty_assertions::assert_eq;
