@@ -47,7 +47,7 @@ pub(crate) const DEFAULT_DIM: &str = "\x1B[2;1m"; // Default color but softer/le
 pub(crate) const RESET: &str = "\x1B[0m";
 
 #[cfg(test)]
-pub(crate) const NOCOLOR: &str = "\x1B[1;39m"; // Differentiate between color clear and explicit no color https://github.com/heroku/buildpacks-ruby/pull/155#discussion_r1260029915
+pub(crate) const NO_COLOR: &str = "\x1B[1;39m"; // Differentiate between color clear and explicit no color https://github.com/heroku/buildpacks-ruby/pull/155#discussion_r1260029915
 pub(crate) const ALL_CODES: [&str; 7] = [
     RED,
     YELLOW,
@@ -181,7 +181,7 @@ pub(crate) fn prepend_each_line(
 /// Colors with newlines are a problem since the contents stream to git which prepends `remote:` before the `libcnb_test`
 /// if we don't clear, then we will colorize output that isn't ours.
 ///
-/// Explicitly uncolored output is handled by treating `\x1b[1;39m` (NOCOLOR) as a distinct case from `\x1b[0m`.
+/// Explicitly uncolored output is handled by treating `\x1b[1;39m` (`NO_COLOR`) as a distinct case from `\x1b[0m`.
 pub(crate) fn colorize(color: &str, body: impl AsRef<str>) -> String {
     body.as_ref()
         .split('\n')
@@ -232,10 +232,10 @@ mod test {
 
     #[test]
     fn handles_explicitly_removed_colors() {
-        let nested = colorize(NOCOLOR, "nested");
+        let nested = colorize(NO_COLOR, "nested");
 
         let out = colorize(RED, format!("hello {nested} color"));
-        let expected = format!("{RED}hello {NOCOLOR}nested{RESET}{RED} color{RESET}");
+        let expected = format!("{RED}hello {NO_COLOR}nested{RESET}{RED} color{RESET}");
 
         assert_eq!(expected, out);
     }
