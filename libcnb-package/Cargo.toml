@@ -22,4 +22,4 @@ libcnb-data.workspace = true
 petgraph = { version = "0.6.4", default-features = false }
 thiserror = "1.0.50"
 uriparse = "0.6.4"
-which = "5.0.0"
+which = "6.0.0"
