@@ -22,6 +22,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
 pub mod layer_output;
+pub use layer_output::LayerOutput;
 pub mod style;
 mod util;
 
@@ -38,8 +39,7 @@ pub struct BuildpackOutput<T, W: Debug> {
 ///
 /// The [`BuildpackOutput`] struct acts as an output state machine. These structs
 /// are meant to represent those states.
-#[doc(hidden)]
-pub(crate) mod state {
+pub mod state {
     #[derive(Debug)]
     pub struct NotStarted;
 

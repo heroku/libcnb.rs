@@ -44,4 +44,5 @@ libcnb-data = { version = "=0.17.0", path = "libcnb-data" }
 libcnb-package = { version = "=0.17.0", path = "libcnb-package" }
 libcnb-proc-macros = { version = "=0.17.0", path = "libcnb-proc-macros" }
 libcnb-test = { version = "=0.17.0", path = "libcnb-test" }
+libherokubuildpack = { version = "=0.17.0", path = "libherokubuildpack" }
 toml = { version = "0.8.8" }

@@ -1,15 +1,12 @@
 //! TODO docs
 use crate::buildpack_output::{state, BuildpackOutput, Stream};
 
-trait LayerOutput<W>
+pub trait LayerOutput<W>
 where
     W: std::io::Write + std::fmt::Debug + Send + Sync + 'static,
 {
     fn get(&mut self) -> BuildpackOutput<state::Section, W>;
-    fn set(
-        &mut self,
-        output: BuildpackOutput<state::Section, W>,
-    ) -> BuildpackOutput<state::Section, W>;
+    fn set(&mut self, output: BuildpackOutput<state::Section, W>);
 
     fn step(&mut self, s: impl AsRef<str>) {
         let out = self.get().step(s.as_ref());
@@ -36,11 +33,7 @@ where
         self.set(output);
     }
 
-    fn error(mut self, s: impl AsRef<str>)
-    where
-        Self: Sized,
-    {
-        let output = self.get();
-        output.error(s.as_ref());
-    }
+    // Intentionally not implemented because it consumes
+    // If you want to emit an error inside a layer, raise an error
+    // fn error
 }
