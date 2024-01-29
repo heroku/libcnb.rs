@@ -15,6 +15,7 @@
 //! output.finish();
 //! ```
 //!
+use crate::buildpack_output::util::ParagraphInspectWrite;
 use std::fmt::Debug;
 use std::io::Write;
 use std::sync::{Arc, Mutex};
@@ -28,7 +29,7 @@ mod util;
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug)]
 pub struct BuildpackOutput<T, W: Debug> {
-    pub(crate) io: W,
+    pub(crate) io: ParagraphInspectWrite<W>,
     pub(crate) started: Option<Instant>,
     pub(crate) state: T,
 }
@@ -138,7 +139,7 @@ where
 {
     pub fn new(io: W) -> Self {
         Self {
-            io,
+            io: ParagraphInspectWrite::new(io),
             state: state::NotStarted,
             started: None,
         }
@@ -186,7 +187,7 @@ where
             writeln_now(&mut self.io, style::section("Done"));
         }
 
-        self.io
+        self.io.inner
     }
 }
 
@@ -265,9 +266,9 @@ where
 /// Mostly used for outputting a running command.
 #[derive(Debug)]
 #[doc(hidden)]
-pub struct Stream<W> {
+pub struct Stream<W: Debug> {
     buildpack_output_started: Option<Instant>,
-    arc_io: Arc<Mutex<W>>,
+    arc_io: Arc<Mutex<ParagraphInspectWrite<W>>>,
     started: Instant,
 }
 

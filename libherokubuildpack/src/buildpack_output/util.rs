@@ -1,3 +1,6 @@
+use std::fmt::Debug;
+use std::io::Write;
+
 /// Iterator yielding every line in a string. The line includes newline character(s).
 ///
 /// <https://stackoverflow.com/a/40457615>
@@ -32,6 +35,41 @@ impl<'a> Iterator for LinesWithEndings<'a> {
         let (line, rest) = self.input.split_at(split);
         self.input = rest;
         Some(line)
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct ParagraphInspectWrite<W: Debug> {
+    pub(crate) inner: W,
+    pub(crate) was_paragraph: bool,
+}
+
+impl<W> ParagraphInspectWrite<W>
+where
+    W: Debug,
+{
+    pub(crate) fn new(io: W) -> Self {
+        Self {
+            inner: io,
+            was_paragraph: false,
+        }
+    }
+}
+
+impl<W: Write + Debug> Write for ParagraphInspectWrite<W> {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        // Only modify `was_paragraph` if we write anything
+        if !buf.is_empty() {
+            // TODO: This will not work with Windows line endings
+            self.was_paragraph =
+                buf.len() >= 2 && buf[buf.len() - 2] == b'\n' && buf[buf.len() - 1] == b'\n';
+        }
+
+        self.inner.write(buf)
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        self.inner.flush()
     }
 }
 
@@ -83,5 +121,25 @@ mod test {
             });
 
         assert_eq!("zfoo\nzbar\n", actual);
+    }
+
+    #[test]
+    #[allow(clippy::write_with_newline)]
+    fn test_paragraph_inspect_write() {
+        use std::io::Write;
+
+        let buffer: Vec<u8> = vec![];
+        let mut inspect_write = ParagraphInspectWrite::new(buffer);
+
+        assert!(!inspect_write.was_paragraph);
+
+        write!(&mut inspect_write, "Hello World!\n").unwrap();
+        assert!(!inspect_write.was_paragraph);
+
+        write!(&mut inspect_write, "Hello World!\n\n").unwrap();
+        assert!(inspect_write.was_paragraph);
+
+        write!(&mut inspect_write, "End.\n").unwrap();
+        assert!(!inspect_write.was_paragraph);
     }
 }
