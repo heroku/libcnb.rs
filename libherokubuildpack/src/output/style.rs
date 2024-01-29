@@ -290,15 +290,15 @@ pub(crate) mod time {
         let hours = hours(duration);
         let minutes = minutes(duration);
         let seconds = seconds(duration);
-        let miliseconds = milliseconds(duration);
+        let milliseconds = milliseconds(duration);
 
         if hours > 0 {
             format!("{hours}h {minutes}m {seconds}s")
         } else if minutes > 0 {
             format!("{minutes}m {seconds}s")
-        } else if seconds > 0 || miliseconds > 100 {
+        } else if seconds > 0 || milliseconds > 100 {
             // 0.1
-            format!("{seconds}.{miliseconds:0>3}s")
+            format!("{seconds}.{milliseconds:0>3}s")
         } else {
             String::from("< 0.1s")
         }
