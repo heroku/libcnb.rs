@@ -80,6 +80,6 @@ fn build_buildpack_output() -> BuildpackOutput<state::Section, Stdout> {
         // Be careful not to do anything that might access this state
         // as it's ephemeral data (i.e. not passed in from the start of the build)
         started: Some(Instant::now()),
-        state: state::Section,
+        _state: state::Section,
     }
 }
