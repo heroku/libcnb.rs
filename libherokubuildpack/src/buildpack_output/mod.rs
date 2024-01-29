@@ -21,7 +21,7 @@ use std::io::Write;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
-pub mod inline_output;
+pub mod layer_output;
 pub mod style;
 mod util;
 
