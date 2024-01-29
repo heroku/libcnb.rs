@@ -20,7 +20,7 @@
 //!
 //! inline_output::step("Clearing the cache")
 //! ```
-use crate::buildpack_output::{state, BuildpackOutput, Stream};
+use crate::buildpack_output::{state, BuildpackOutput, ParagraphInspectWrite, Stream};
 use std::io::Stdout;
 use std::time::Instant;
 
@@ -76,7 +76,7 @@ pub fn important(s: impl AsRef<str>) {
 
 fn build_buildpack_output() -> BuildpackOutput<state::Section, Stdout> {
     BuildpackOutput::<state::Section, Stdout> {
-        io: std::io::stdout(),
+        io: ParagraphInspectWrite::new(std::io::stdout()),
         // Be careful not to do anything that might access this state
         // as it's ephemeral data (i.e. not passed in from the start of the build)
         started: Some(Instant::now()),
