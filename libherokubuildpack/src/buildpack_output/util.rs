@@ -42,6 +42,7 @@ impl<'a> Iterator for LinesWithEndings<'a> {
 pub(crate) struct ParagraphInspectWrite<W: Debug> {
     pub(crate) inner: W,
     pub(crate) was_paragraph: bool,
+    pub(crate) newlines_since_last_char: usize,
 }
 
 impl<W> ParagraphInspectWrite<W>
@@ -51,6 +52,7 @@ where
     pub(crate) fn new(io: W) -> Self {
         Self {
             inner: io,
+            newlines_since_last_char: 0,
             was_paragraph: false,
         }
     }
@@ -58,13 +60,14 @@ where
 
 impl<W: Write + Debug> Write for ParagraphInspectWrite<W> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        // Only modify `was_paragraph` if we write anything
-        if !buf.is_empty() {
-            // TODO: This will not work with Windows line endings
-            self.was_paragraph =
-                buf.len() >= 2 && buf[buf.len() - 2] == b'\n' && buf[buf.len() - 1] == b'\n';
+        let newline_count = buf.iter().rev().take_while(|&&c| c == b'\n').count();
+        if buf.len() == newline_count {
+            self.newlines_since_last_char += newline_count;
+        } else {
+            self.newlines_since_last_char = newline_count;
         }
 
+        self.was_paragraph = self.newlines_since_last_char > 1;
         self.inner.write(buf)
     }
 
@@ -141,5 +144,14 @@ mod test {
 
         write!(&mut inspect_write, "End.\n").unwrap();
         assert!(!inspect_write.was_paragraph);
+
+        // Double end, on multiple writes
+        write!(&mut inspect_write, "End.\n").unwrap();
+        write!(&mut inspect_write, "\n").unwrap();
+        assert!(inspect_write.was_paragraph);
+
+        write!(&mut inspect_write, "- The scenery here is wonderful\n").unwrap();
+        write!(&mut inspect_write, "\n").unwrap();
+        assert!(inspect_write.was_paragraph);
     }
 }

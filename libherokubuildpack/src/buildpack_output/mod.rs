@@ -31,7 +31,7 @@ mod util;
 pub struct BuildpackOutput<T, W: Debug> {
     pub(crate) io: ParagraphInspectWrite<W>,
     pub(crate) started: Option<Instant>,
-    pub(crate) state: T,
+    pub(crate) _state: T,
 }
 
 /// Various states for [`BuildpackOutput`] to contain.
@@ -48,32 +48,23 @@ pub(crate) mod state {
 
     #[derive(Debug)]
     pub struct Section;
-
-    #[derive(Debug)]
-    pub struct Announce<T>(pub T);
 }
 
 #[doc(hidden)]
-pub trait StartedMarker {}
-impl StartedMarker for state::Started {}
-impl<S> StartedMarker for state::Announce<S> where S: StartedMarker + IntoAnnounceMarker {}
+pub trait WarnInfoError {}
+impl WarnInfoError for state::Section {}
+impl WarnInfoError for state::Started {}
 
-#[doc(hidden)]
-pub trait SectionMarker {}
-impl SectionMarker for state::Section {}
-impl<S> SectionMarker for state::Announce<S> where S: SectionMarker + IntoAnnounceMarker {}
-
-#[doc(hidden)]
-pub trait IntoAnnounceMarker {}
-impl IntoAnnounceMarker for state::Section {}
-impl IntoAnnounceMarker for state::Started {}
-
-impl<T, W> BuildpackOutput<state::Announce<T>, W>
+impl<S, W> BuildpackOutput<S, W>
 where
+    S: WarnInfoError,
     W: Write + Send + Sync + Debug + 'static,
 {
     #[must_use]
-    pub fn warning(mut self, s: &str) -> BuildpackOutput<state::Announce<T>, W> {
+    pub fn warning(mut self, s: &str) -> BuildpackOutput<S, W> {
+        if !self.io.was_paragraph {
+            writeln_now(&mut self.io, "");
+        }
         writeln_now(&mut self.io, style::warning(s.trim()));
         writeln_now(&mut self.io, "");
 
@@ -81,7 +72,10 @@ where
     }
 
     #[must_use]
-    pub fn important(mut self, s: &str) -> BuildpackOutput<state::Announce<T>, W> {
+    pub fn important(mut self, s: &str) -> BuildpackOutput<S, W> {
+        if !self.io.was_paragraph {
+            writeln_now(&mut self.io, "");
+        }
         writeln_now(&mut self.io, style::important(s.trim()));
         writeln_now(&mut self.io, "");
 
@@ -89,47 +83,11 @@ where
     }
 
     pub fn error(mut self, s: &str) {
+        if !self.io.was_paragraph {
+            writeln_now(&mut self.io, "");
+        }
         writeln_now(&mut self.io, style::error(s.trim()));
         writeln_now(&mut self.io, "");
-    }
-}
-
-impl<S, W> BuildpackOutput<S, W>
-where
-    S: IntoAnnounceMarker,
-    W: Write + Send + Sync + Debug + 'static,
-{
-    #[must_use]
-    pub fn warning(mut self, s: &str) -> BuildpackOutput<state::Announce<S>, W> {
-        writeln_now(&mut self.io, "");
-
-        let announce = BuildpackOutput {
-            io: self.io,
-            started: self.started,
-            state: state::Announce(self.state),
-        };
-        announce.warning(s)
-    }
-
-    #[must_use]
-    pub fn important(mut self, s: &str) -> BuildpackOutput<state::Announce<S>, W> {
-        writeln_now(&mut self.io, "");
-
-        let announce = BuildpackOutput {
-            io: self.io,
-            started: self.started,
-            state: state::Announce(self.state),
-        };
-        announce.important(s)
-    }
-
-    pub fn error(self, s: &str) {
-        let announce = BuildpackOutput {
-            io: self.io,
-            started: self.started,
-            state: state::Announce(self.state),
-        };
-        announce.error(s);
     }
 }
 
@@ -140,7 +98,7 @@ where
     pub fn new(io: W) -> Self {
         Self {
             io: ParagraphInspectWrite::new(io),
-            state: state::NotStarted,
+            _state: state::NotStarted,
             started: None,
         }
     }
@@ -158,23 +116,23 @@ where
         BuildpackOutput {
             io: self.io,
             started: Some(Instant::now()),
-            state: state::Started,
+            _state: state::Started,
         }
     }
 }
 
-impl<S, W> BuildpackOutput<S, W>
+impl<W> BuildpackOutput<state::Started, W>
 where
-    S: StartedMarker,
     W: Write + Send + Sync + Debug + 'static,
 {
+    #[must_use]
     pub fn section(mut self, s: &str) -> BuildpackOutput<state::Section, W> {
         writeln_now(&mut self.io, style::section(s));
 
         BuildpackOutput {
             io: self.io,
             started: self.started,
-            state: state::Section,
+            _state: state::Section,
         }
     }
 
@@ -198,13 +156,7 @@ where
     pub fn mut_step(&mut self, s: &str) {
         writeln_now(&mut self.io, style::step(s));
     }
-}
 
-impl<S, W> BuildpackOutput<S, W>
-where
-    S: SectionMarker,
-    W: Write + Send + Sync + Debug + 'static,
-{
     #[must_use]
     pub fn step(mut self, s: &str) -> BuildpackOutput<state::Section, W> {
         writeln_now(&mut self.io, style::step(s));
@@ -212,7 +164,7 @@ where
         BuildpackOutput {
             io: self.io,
             started: self.started,
-            state: state::Section,
+            _state: state::Section,
         }
     }
 
@@ -234,7 +186,7 @@ where
         BuildpackOutput {
             io: self.io,
             started: self.started,
-            state: state::Started,
+            _state: state::Started,
         }
     }
 }
@@ -319,7 +271,7 @@ where
         let mut section = BuildpackOutput {
             io,
             started: self.buildpack_output_started,
-            state: state::Section,
+            _state: state::Section,
         };
 
         section.mut_step(&format!(
