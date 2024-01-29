@@ -20,8 +20,9 @@
 //!
 //! inline_output::step("Clearing the cache")
 //! ```
-use crate::output::buildpack_output::{state, BuildData, BuildpackOutput, Stream};
+use crate::output::buildpack_output::{state, BuildpackOutput, Stream};
 use std::io::Stdout;
+use std::time::Instant;
 
 /// Output a message as a single step, ideally a short message
 ///
@@ -78,7 +79,7 @@ fn build_buildpack_output() -> BuildpackOutput<state::Section, Stdout> {
         io: std::io::stdout(),
         // Be careful not to do anything that might access this state
         // as it's ephemeral data (i.e. not passed in from the start of the build)
-        data: BuildData::default(),
+        started: Some(Instant::now()),
         state: state::Section,
     }
 }
