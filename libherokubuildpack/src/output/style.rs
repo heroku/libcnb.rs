@@ -2,34 +2,34 @@ use crate::output::util::LinesWithEndings;
 use const_format::formatcp;
 use std::fmt::Write;
 
-/// Helpers for formatting and colorizing your output
+/// Helpers for formatting and colorizing your output.
 
-/// Decorated str for prefixing "Help:"
+/// Decorated str for prefixing "Help:".
 pub const HELP: &str = formatcp!("{IMPORTANT_COLOR}! HELP{RESET}");
 
-/// Decorated str for prefixing "Debug info:"
+/// Decorated str for prefixing "Debug info:".
 pub const DEBUG_INFO: &str = formatcp!("{IMPORTANT_COLOR}Debug info{RESET}");
 
-/// Decorate a URL for the build output
+/// Decorate a URL for the build output.
 #[must_use]
 pub fn url(contents: impl AsRef<str>) -> String {
     colorize(URL_COLOR, contents)
 }
 
-/// Decorate the name of a command being run i.e. `bundle install`
+/// Decorate the name of a command being run i.e. `bundle install`.
 #[must_use]
 pub fn command(contents: impl AsRef<str>) -> String {
     value(colorize(COMMAND_COLOR, contents.as_ref()))
 }
 
-/// Decorate an important value i.e. `2.3.4`
+/// Decorate an important value i.e. `2.3.4`.
 #[must_use]
 pub fn value(contents: impl AsRef<str>) -> String {
     let contents = colorize(VALUE_COLOR, contents.as_ref());
     format!("`{contents}`")
 }
 
-/// Decorate additional information at the end of a line
+/// Decorate additional information at the end of a line.
 #[must_use]
 pub fn details(contents: impl AsRef<str>) -> String {
     let contents = contents.as_ref();
@@ -41,7 +41,7 @@ pub(crate) const YELLOW: &str = "\x1B[0;33m";
 pub(crate) const CYAN: &str = "\x1B[0;36m";
 
 pub(crate) const BOLD_CYAN: &str = "\x1B[1;36m";
-pub(crate) const BOLD_PURPLE: &str = "\x1B[1;35m"; // magenta
+pub(crate) const BOLD_PURPLE: &str = "\x1B[1;35m"; // Magenta
 
 pub(crate) const DEFAULT_DIM: &str = "\x1B[2;1m"; // Default color but softer/less vibrant
 pub(crate) const RESET: &str = "\x1B[0m";
@@ -72,8 +72,7 @@ const SECTION_PREFIX: &str = "- ";
 const STEP_PREFIX: &str = "  - ";
 const CMD_INDENT: &str = "      ";
 
-/// Used with libherokubuildpack linemapped command output
-///
+/// Used with libherokubuildpack line-mapped command output.
 #[must_use]
 pub(crate) fn cmd_stream_format(mut input: Vec<u8>) -> Vec<u8> {
     let mut result: Vec<u8> = CMD_INDENT.into();
@@ -91,7 +90,7 @@ pub(crate) fn step(contents: impl AsRef<str>) -> String {
     prefix_indent(STEP_PREFIX, contents)
 }
 
-/// Used to decorate a buildpack
+/// Used to decorate a buildpack.
 #[must_use]
 pub(crate) fn header(contents: impl AsRef<str>) -> String {
     let contents = contents.as_ref();
@@ -150,7 +149,7 @@ pub(crate) fn error(contents: impl AsRef<str>) -> String {
     colorize(ERROR_COLOR, bangify(contents))
 }
 
-/// Helper method that adds a bang i.e. `!` before strings
+/// Helper method that adds a bang i.e. `!` before strings.
 pub(crate) fn bangify(body: impl AsRef<str>) -> String {
     prepend_each_line("!", " ", body)
 }
@@ -177,12 +176,12 @@ pub(crate) fn prepend_each_line(
     lines
 }
 
-/// Colorizes a body while preserving existing color/reset combinations and clearing before newlines
+/// Colorizes a body while preserving existing color/reset combinations and clearing before newlines.
 ///
 /// Colors with newlines are a problem since the contents stream to git which prepends `remote:` before the `libcnb_test`
 /// if we don't clear, then we will colorize output that isn't ours.
 ///
-/// Explicitly uncolored output is handled by treating `\x1b[1;39m` (NOCOLOR) as a distinct case from `\x1b[0m`
+/// Explicitly uncolored output is handled by treating `\x1b[1;39m` (NOCOLOR) as a distinct case from `\x1b[0m`.
 pub(crate) fn colorize(color: &str, body: impl AsRef<str>) -> String {
     body.as_ref()
         .split('\n')

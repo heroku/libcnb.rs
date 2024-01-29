@@ -1,6 +1,6 @@
 //! # Buildpack output
 //!
-//! Use the [`BuildpackOutput`] to output structured text as a buildpack is executing
+//! Use the [`BuildpackOutput`] to output structured text as a buildpack is executing.
 //!
 //! ```
 //! use libherokubuildpack::output::buildpack_output::BuildpackOutput;
@@ -21,7 +21,7 @@ use std::io::Write;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
-/// See the module docs for example usage
+/// See the module docs for example usage.
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug)]
 pub struct BuildpackOutput<T, W: Debug> {
@@ -30,10 +30,10 @@ pub struct BuildpackOutput<T, W: Debug> {
     pub(crate) state: T,
 }
 
-/// Various states for [`BuildpackOutput`] to contain
+/// Various states for [`BuildpackOutput`] to contain.
 ///
 /// The [`BuildpackOutput`] struct acts as an output state machine. These structs
-/// are meant to represent those states
+/// are meant to represent those states.
 #[doc(hidden)]
 pub(crate) mod state {
     #[derive(Debug)]
@@ -257,9 +257,9 @@ where
     }
 }
 
-/// Stream output to the user
+/// Stream output to the user.
 ///
-/// Mostly used for ouputting a running command
+/// Mostly used for outputting a running command.
 #[derive(Debug)]
 #[doc(hidden)]
 pub struct Stream<W> {
@@ -309,7 +309,7 @@ where
             .into_inner()
             .expect("Output mutex was poisioned");
 
-        // // Newline after stream
+        // Newline after stream
         writeln_now(&mut io, "");
 
         let mut section = BuildpackOutput {
@@ -327,16 +327,16 @@ where
     }
 }
 
-/// Internal helper, ensures that all contents are always flushed (never buffered)
+/// Internal helper, ensures that all contents are always flushed (never buffered).
 ///
-/// This is especially important for writing individual characters to the same line
+/// This is especially important for writing individual characters to the same line.
 fn write_now<D: Write>(destination: &mut D, msg: impl AsRef<str>) {
     write!(destination, "{}", msg.as_ref()).expect("Output error: UI writer closed");
 
     destination.flush().expect("Output error: UI writer closed");
 }
 
-/// Internal helper, ensures that all contents are always flushed (never buffered)
+/// Internal helper, ensures that all contents are always flushed (never buffered).
 fn writeln_now<D: Write>(destination: &mut D, msg: impl AsRef<str>) {
     writeln!(destination, "{}", msg.as_ref()).expect("Output error: UI writer closed");
 

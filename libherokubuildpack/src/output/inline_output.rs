@@ -1,4 +1,4 @@
-//! Write to the build output in a [`BuildpackOutput`] format with functions
+//! Write to the build output in a [`BuildpackOutput`] format with functions.
 //!
 //! ## What
 //!
@@ -6,7 +6,7 @@
 //! mutable nor consumable. Functions can be used at any time with no restrictions. The
 //! only downside is that the buildpack author (you) is now responsible for:
 //!
-//! - Ensuring that [`BuildpackOutput::section`] funciton was called right before any of these
+//! - Ensuring that [`BuildpackOutput::section`] function was called right before any of these
 //! functions are called.
 //! - Ensuring that you are not attempting to output while already streaming i.e. calling [`step`] within
 //! a [`step_stream`] call.
@@ -24,7 +24,7 @@ use crate::output::buildpack_output::{state, BuildpackOutput, Stream};
 use std::io::Stdout;
 use std::time::Instant;
 
-/// Output a message as a single step, ideally a short message
+/// Output a message as a single step, ideally a short message.
 ///
 /// ```
 /// use libherokubuildpack::output::inline_output;
@@ -36,7 +36,7 @@ pub fn step(s: impl AsRef<str>) {
 }
 
 /// Will print the input string and yield a [`Stream`] that can be used to print
-/// to the output. The main use case is running commands
+/// to the output. The main use case is running commands.
 ///
 /// ```no_run
 /// use fun_run::CommandWithName;
@@ -59,17 +59,17 @@ pub fn step_stream<T>(s: impl AsRef<str>, f: impl FnOnce(&mut Stream<Stdout>) ->
     out
 }
 
-/// Print an error block to the output
+/// Print an error block to the output.
 pub fn error(s: impl AsRef<str>) {
     build_buildpack_output().error(s.as_ref());
 }
 
-/// Print an warning block to the output
+/// Print an warning block to the output.
 pub fn warning(s: impl AsRef<str>) {
     let _ = build_buildpack_output().warning(s.as_ref());
 }
 
-/// Print an important block to the output
+/// Print an important block to the output.
 pub fn important(s: impl AsRef<str>) {
     let _ = build_buildpack_output().important(s.as_ref());
 }
