@@ -26,23 +26,8 @@ use std::time::Instant;
 #[derive(Debug)]
 pub struct BuildpackOutput<T, W: Debug> {
     pub(crate) io: W,
-    pub(crate) data: BuildData,
+    pub(crate) started: Option<Instant>,
     pub(crate) state: T,
-}
-
-/// A bag of data passed throughout the lifecycle of a [`BuildpackOutput`]
-#[derive(Debug)]
-#[doc(hidden)]
-pub(crate) struct BuildData {
-    pub(crate) started: Instant,
-}
-
-impl Default for BuildData {
-    fn default() -> Self {
-        Self {
-            started: Instant::now(),
-        }
-    }
 }
 
 /// Various states for [`BuildpackOutput`] to contain
@@ -116,7 +101,7 @@ where
 
         let announce = BuildpackOutput {
             io: self.io,
-            data: self.data,
+            started: self.started,
             state: state::Announce(self.state),
         };
         announce.warning(s)
@@ -128,7 +113,7 @@ where
 
         let announce = BuildpackOutput {
             io: self.io,
-            data: self.data,
+            started: self.started,
             state: state::Announce(self.state),
         };
         announce.important(s)
@@ -137,7 +122,7 @@ where
     pub fn error(self, s: &str) {
         let announce = BuildpackOutput {
             io: self.io,
-            data: self.data,
+            started: self.started,
             state: state::Announce(self.state),
         };
         announce.error(s);
@@ -152,7 +137,7 @@ where
         Self {
             io,
             state: state::NotStarted,
-            data: BuildData::default(),
+            started: None,
         }
     }
 
@@ -168,7 +153,7 @@ where
     pub fn start_silent(self) -> BuildpackOutput<state::Started, W> {
         BuildpackOutput {
             io: self.io,
-            data: self.data,
+            started: Some(Instant::now()),
             state: state::Started,
         }
     }
@@ -184,16 +169,20 @@ where
 
         BuildpackOutput {
             io: self.io,
-            data: self.data,
+            started: self.started,
             state: state::Section,
         }
     }
 
     pub fn finish(mut self) -> W {
-        let elapsed = style::time::human(&self.data.started.elapsed());
-        let details = style::details(format!("finished in {elapsed}"));
+        if let Some(started) = &self.started {
+            let elapsed = style::time::human(&started.elapsed());
+            let details = style::details(format!("finished in {elapsed}"));
+            writeln_now(&mut self.io, style::section(format!("Done {details}")));
+        } else {
+            writeln_now(&mut self.io, style::section("Done"));
+        }
 
-        writeln_now(&mut self.io, style::section(format!("Done {details}")));
         self.io
     }
 }
@@ -218,7 +207,7 @@ where
 
         BuildpackOutput {
             io: self.io,
-            data: self.data,
+            started: self.started,
             state: state::Section,
         }
     }
@@ -226,12 +215,11 @@ where
     pub fn step_timed_stream(mut self, s: &str) -> Stream<W> {
         writeln_now(&mut self.io, style::step(s));
 
-        let started = Instant::now();
         let arc_io = Arc::new(Mutex::new(self.io));
         let mut stream = Stream {
             arc_io,
-            data: self.data,
-            started,
+            started: Instant::now(),
+            buildpack_output_started: self.started,
         };
         stream.start();
 
@@ -241,7 +229,7 @@ where
     pub fn end_section(self) -> BuildpackOutput<state::Started, W> {
         BuildpackOutput {
             io: self.io,
-            data: self.data,
+            started: self.started,
             state: state::Started,
         }
     }
@@ -275,7 +263,7 @@ where
 #[derive(Debug)]
 #[doc(hidden)]
 pub struct Stream<W> {
-    data: BuildData,
+    buildpack_output_started: Option<Instant>,
     arc_io: Arc<Mutex<W>>,
     started: Instant,
 }
@@ -326,7 +314,7 @@ where
 
         let mut section = BuildpackOutput {
             io,
-            data: self.data,
+            started: self.buildpack_output_started,
             state: state::Section,
         };
 
