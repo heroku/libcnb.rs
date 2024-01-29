@@ -125,7 +125,7 @@ pub trait Layer {
     /// Implementations **MUST** be read-only. They **MUST NOT** modify the file-system or write
     /// anything to stdout/stdout or any other stream.
     fn migrate_incompatible_metadata(
-        &self,
+        &mut self,
         context: &BuildContext<Self::Buildpack>,
         metadata: &GenericMetadata,
     ) -> Result<MetadataMigration<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {

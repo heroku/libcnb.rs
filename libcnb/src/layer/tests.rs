@@ -101,7 +101,7 @@ impl Layer for TestLayer {
     }
 
     fn migrate_incompatible_metadata(
-        &self,
+        &mut self,
         _context: &BuildContext<Self::Buildpack>,
         metadata: &GenericMetadata,
     ) -> Result<MetadataMigration<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {
