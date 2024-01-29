@@ -412,11 +412,39 @@ mod test {
     }
 
     #[test]
+    fn warning_after_buildpack() {
+        let writer = Vec::new();
+        let io = BuildpackOutput::new(writer)
+            .start("RCT")
+            .warning("It's too crowded here\nI'm tired")
+            .section("Guest thoughts")
+            .step("The jumping fountains are great")
+            .step("The music is nice here")
+            .end_section()
+            .finish();
+
+        let expected = formatdoc! {"
+
+            # RCT
+
+            ! It's too crowded here
+            ! I'm tired
+
+            - Guest thoughts
+              - The jumping fountains are great
+              - The music is nice here
+            - Done (finished in < 0.1s)
+        "};
+
+        assert_eq!(expected, strip_control_codes(String::from_utf8_lossy(&io)));
+    }
+
+    #[test]
     fn warning_step_padding() {
         let writer = Vec::new();
         let io = BuildpackOutput::new(writer)
             .start("RCT")
-            .section("Guest thoughs")
+            .section("Guest thoughts")
             .step("The scenery here is wonderful")
             .warning("It's too crowded here\nI'm tired")
             .step("The jumping fountains are great")
@@ -428,7 +456,7 @@ mod test {
 
             # RCT
 
-            - Guest thoughs
+            - Guest thoughts
               - The scenery here is wonderful
 
             ! It's too crowded here
