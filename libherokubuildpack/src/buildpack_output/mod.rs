@@ -15,10 +15,11 @@
 //! output.finish();
 //! ```
 //!
+use crate::buildpack_output::style::cmd_stream_format;
 use crate::buildpack_output::util::ParagraphInspectWrite;
+use crate::write::line_mapped;
 use std::fmt::Debug;
 use std::io::Write;
-use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
 pub mod inline_output;
@@ -28,10 +29,9 @@ mod util;
 /// See the module docs for example usage.
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug)]
-pub struct BuildpackOutput<T, W> {
-    pub(crate) io: ParagraphInspectWrite<W>,
+pub struct BuildpackOutput<T> {
     pub(crate) started: Option<Instant>,
-    pub(crate) _state: T,
+    pub(crate) state: T,
 }
 
 /// Various states for [`BuildpackOutput`] to contain.
@@ -40,99 +40,146 @@ pub struct BuildpackOutput<T, W> {
 /// are meant to represent those states.
 #[doc(hidden)]
 pub(crate) mod state {
-    #[derive(Debug)]
-    pub struct NotStarted;
+    use crate::buildpack_output::util::ParagraphInspectWrite;
+    use crate::write::MappedWrite;
+    use std::time::Instant;
 
     #[derive(Debug)]
-    pub struct Started;
+    pub struct NotStarted<W> {
+        pub(crate) write: ParagraphInspectWrite<W>,
+    }
 
     #[derive(Debug)]
-    pub struct Section;
+    pub struct Started<W> {
+        pub(crate) write: ParagraphInspectWrite<W>,
+    }
+
+    #[derive(Debug)]
+    pub struct Section<W> {
+        pub(crate) write: ParagraphInspectWrite<W>,
+    }
+
+    pub struct TimedStream<W: std::io::Write> {
+        pub(crate) started: Instant,
+        pub(crate) write: MappedWrite<ParagraphInspectWrite<W>>,
+    }
 }
 
 #[doc(hidden)]
-pub trait WarnInfoError {}
-impl WarnInfoError for state::Section {}
-impl WarnInfoError for state::Started {}
+pub trait AnnounceSupportedState {
+    type Inner: Write;
 
-impl<S, W> BuildpackOutput<S, W>
+    fn write_mut(&mut self) -> &mut ParagraphInspectWrite<Self::Inner>;
+}
+
+impl<W> AnnounceSupportedState for state::Section<W>
 where
-    S: WarnInfoError,
-    W: Write + Send + Sync + 'static,
+    W: Write,
+{
+    type Inner = W;
+
+    fn write_mut(&mut self) -> &mut ParagraphInspectWrite<Self::Inner> {
+        &mut self.write
+    }
+}
+
+impl<W> AnnounceSupportedState for state::Started<W>
+where
+    W: Write,
+{
+    type Inner = W;
+
+    fn write_mut(&mut self) -> &mut ParagraphInspectWrite<Self::Inner> {
+        &mut self.write
+    }
+}
+
+impl<S> BuildpackOutput<S>
+where
+    S: AnnounceSupportedState,
 {
     #[must_use]
-    pub fn warning(mut self, s: &str) -> BuildpackOutput<S, W> {
-        if !self.io.was_paragraph {
-            writeln_now(&mut self.io, "");
+    pub fn warning(mut self, s: &str) -> BuildpackOutput<S> {
+        let io = self.state.write_mut();
+
+        if !io.was_paragraph {
+            writeln_now(io, "");
         }
-        writeln_now(&mut self.io, style::warning(s.trim()));
-        writeln_now(&mut self.io, "");
+        writeln_now(io, style::warning(s.trim()));
+        writeln_now(io, "");
 
         self
     }
 
     #[must_use]
-    pub fn important(mut self, s: &str) -> BuildpackOutput<S, W> {
-        if !self.io.was_paragraph {
-            writeln_now(&mut self.io, "");
+    pub fn important(mut self, s: &str) -> BuildpackOutput<S> {
+        let io = self.state.write_mut();
+
+        if !io.was_paragraph {
+            writeln_now(io, "");
         }
-        writeln_now(&mut self.io, style::important(s.trim()));
-        writeln_now(&mut self.io, "");
+        writeln_now(io, style::important(s.trim()));
+        writeln_now(io, "");
 
         self
     }
 
     pub fn error(mut self, s: &str) {
-        if !self.io.was_paragraph {
-            writeln_now(&mut self.io, "");
+        let io = self.state.write_mut();
+
+        if !io.was_paragraph {
+            writeln_now(io, "");
         }
-        writeln_now(&mut self.io, style::error(s.trim()));
-        writeln_now(&mut self.io, "");
+        writeln_now(io, style::error(s.trim()));
+        writeln_now(io, "");
     }
 }
 
-impl<W> BuildpackOutput<state::NotStarted, W>
+impl<W> BuildpackOutput<state::NotStarted<W>>
 where
     W: Write,
 {
     pub fn new(io: W) -> Self {
         Self {
-            io: ParagraphInspectWrite::new(io),
-            _state: state::NotStarted,
+            state: state::NotStarted {
+                write: ParagraphInspectWrite::new(io),
+            },
             started: None,
         }
     }
 
-    pub fn start(mut self, buildpack_name: &str) -> BuildpackOutput<state::Started, W> {
+    pub fn start(mut self, buildpack_name: &str) -> BuildpackOutput<state::Started<W>> {
         write_now(
-            &mut self.io,
+            &mut self.state.write,
             format!("{}\n\n", style::header(buildpack_name)),
         );
 
         self.start_silent()
     }
 
-    pub fn start_silent(self) -> BuildpackOutput<state::Started, W> {
+    pub fn start_silent(self) -> BuildpackOutput<state::Started<W>> {
         BuildpackOutput {
-            io: self.io,
             started: Some(Instant::now()),
-            _state: state::Started,
+            state: state::Started {
+                write: self.state.write,
+            },
         }
     }
 }
 
-impl<W> BuildpackOutput<state::Started, W>
+impl<W> BuildpackOutput<state::Started<W>>
 where
     W: Write + Send + Sync + 'static,
 {
     #[must_use]
-    pub fn section(mut self, s: &str) -> BuildpackOutput<state::Section, W> {
-        writeln_now(&mut self.io, style::section(s));
+    pub fn section(mut self, s: &str) -> BuildpackOutput<state::Section<W>> {
+        writeln_now(&mut self.state.write, style::section(s));
 
         BuildpackOutput {
-            io: self.io,
             started: self.started,
-            _state: state::Section,
+            state: state::Section {
+                write: self.state.write,
+            },
         }
     }
 
@@ -140,139 +187,77 @@ where
         if let Some(started) = &self.started {
             let elapsed = style::time::human(&started.elapsed());
             let details = style::details(format!("finished in {elapsed}"));
-            writeln_now(&mut self.io, style::section(format!("Done {details}")));
+            writeln_now(
+                &mut self.state.write,
+                style::section(format!("Done {details}")),
+            );
         } else {
-            writeln_now(&mut self.io, style::section("Done"));
+            writeln_now(&mut self.state.write, style::section("Done"));
         }
 
-        self.io.inner
+        self.state.write.inner
     }
 }
 
-impl<W> BuildpackOutput<state::Section, W>
+impl<W> BuildpackOutput<state::Section<W>>
 where
     W: Write + Send + Sync + 'static,
 {
     pub fn mut_step(&mut self, s: &str) {
-        writeln_now(&mut self.io, style::step(s));
+        writeln_now(&mut self.state.write, style::step(s));
     }
 
     #[must_use]
-    pub fn step(mut self, s: &str) -> BuildpackOutput<state::Section, W> {
-        writeln_now(&mut self.io, style::step(s));
+    pub fn step(mut self, s: &str) -> BuildpackOutput<state::Section<W>> {
+        writeln_now(&mut self.state.write, style::step(s));
 
         BuildpackOutput {
-            io: self.io,
             started: self.started,
-            _state: state::Section,
-        }
-    }
-
-    pub fn step_timed_stream(mut self, s: &str) -> Stream<W> {
-        writeln_now(&mut self.io, style::step(s));
-
-        let arc_io = Arc::new(Mutex::new(self.io));
-        let mut stream = Stream {
-            arc_io,
-            started: Instant::now(),
-            buildpack_output_started: self.started,
-        };
-        stream.start();
-
-        stream
-    }
-
-    pub fn end_section(self) -> BuildpackOutput<state::Started, W> {
-        BuildpackOutput {
-            io: self.io,
-            started: self.started,
-            _state: state::Started,
-        }
-    }
-}
-
-// TODO: Decide if we need documentation for this
-#[derive(Debug)]
-#[doc(hidden)]
-struct LockedWriter<W> {
-    arc: Arc<Mutex<W>>,
-}
-
-impl<W> Write for LockedWriter<W>
-where
-    W: Write + Send + Sync + 'static,
-{
-    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        let mut io = self.arc.lock().expect("Output mutex poisoned");
-        io.write(buf)
-    }
-
-    fn flush(&mut self) -> std::io::Result<()> {
-        let mut io = self.arc.lock().expect("Output mutex poisoned");
-        io.flush()
-    }
-}
-
-/// Stream output to the user.
-///
-/// Mostly used for outputting a running command.
-#[derive(Debug)]
-#[doc(hidden)]
-pub struct Stream<W> {
-    buildpack_output_started: Option<Instant>,
-    arc_io: Arc<Mutex<ParagraphInspectWrite<W>>>,
-    started: Instant,
-}
-
-impl<W> Stream<W>
-where
-    W: Write + Send + Sync + 'static,
-{
-    fn start(&mut self) {
-        let mut guard = self.arc_io.lock().expect("Output mutex poisoned");
-        let mut io = guard.by_ref();
-        // Newline before stream https://github.com/heroku/libcnb.rs/issues/582
-        writeln_now(&mut io, "");
-    }
-
-    /// Yield boxed writer that can be used for formatting and streaming contents
-    /// back to the output.
-    pub fn io(&mut self) -> Box<dyn Write + Send + Sync> {
-        Box::new(crate::write::line_mapped(
-            LockedWriter {
-                arc: self.arc_io.clone(),
+            state: state::Section {
+                write: self.state.write,
             },
-            style::cmd_stream_format,
-        ))
+        }
     }
 
-    /// # Panics
-    ///
-    /// Ensure that the return of any calls to the `io` function
-    /// are not retained before calling this function.
-    ///
-    /// This struct yields a `Box<dyn Write>` which is effectively an
-    /// `Arc<Write>` to allow using the same writer for streaming stdout and stderr.
-    ///
-    /// If any of those boxed writers are retained then the `W` cannot
-    /// be reclaimed and returned. This will cause a panic.
-    #[must_use]
-    pub fn finish_timed_stream(self) -> BuildpackOutput<state::Section, W> {
-        let duration = self.started.elapsed();
+    pub fn step_timed_stream(mut self, s: &str) -> BuildpackOutput<state::TimedStream<W>> {
+        writeln_now(&mut self.state.write, style::step(s));
 
-        let Ok(mutex) = Arc::try_unwrap(self.arc_io) else {
-            panic!("Expected buildpack author to not retain any IO streaming IO instances")
-        };
+        // Newline before stream https://github.com/heroku/libcnb.rs/issues/582
+        writeln_now(&mut self.state.write, "");
 
-        let mut io = mutex.into_inner().expect("Output mutex was poisoned");
+        BuildpackOutput {
+            started: self.started,
+            state: state::TimedStream {
+                started: Instant::now(),
+                write: line_mapped(self.state.write, cmd_stream_format),
+            },
+        }
+    }
 
-        // Newline after stream
-        writeln_now(&mut io, "");
+    pub fn end_section(self) -> BuildpackOutput<state::Started<W>> {
+        BuildpackOutput {
+            started: self.started,
+            state: state::Started {
+                write: self.state.write,
+            },
+        }
+    }
+}
+
+impl<W> BuildpackOutput<state::TimedStream<W>>
+where
+    W: Write + Send + Sync + 'static,
+{
+    pub fn finish_timed_stream(mut self) -> BuildpackOutput<state::Section<W>> {
+        let duration = self.state.started.elapsed();
+
+        writeln_now(&mut self.state.write, "");
 
         let mut section = BuildpackOutput {
-            io,
-            started: self.buildpack_output_started,
-            _state: state::Section,
+            started: self.started,
+            state: state::Section {
+                write: self.state.write.unwrap(),
+            },
         };
 
         section.mut_step(&format!(
@@ -281,6 +266,19 @@ where
         ));
 
         section
+    }
+}
+
+impl<W> Write for BuildpackOutput<state::TimedStream<W>>
+where
+    W: Write,
+{
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        self.state.write.write(buf)
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        self.state.write.flush()
     }
 }
 
@@ -305,6 +303,7 @@ mod test {
     use super::*;
     use crate::buildpack_output::style::strip_control_codes;
     use crate::buildpack_output::util::test_helpers::trim_end_lines;
+    use crate::buildpack_output::util::LockedWriter;
     use crate::command::CommandExt;
     use indoc::formatdoc;
     use libcnb_test::assert_contains;
@@ -321,7 +320,7 @@ mod test {
             .step_timed_stream("Streaming stuff");
 
         let value = "stuff".to_string();
-        writeln!(stream.io(), "{value}").unwrap();
+        writeln!(&mut stream, "{value}").unwrap();
 
         let io = stream.finish_timed_stream().end_section().finish();
 
@@ -353,10 +352,14 @@ mod test {
             .section("Command streaming")
             .step_timed_stream("Streaming stuff");
 
+        let locked_writer = LockedWriter::new(stream);
+
         std::process::Command::new("echo")
             .arg("hello world")
-            .output_and_write_streams(stream.io(), stream.io())
+            .output_and_write_streams(locked_writer.clone(), locked_writer.clone())
             .unwrap();
+
+        stream = locked_writer.unwrap();
 
         let io = stream.finish_timed_stream().end_section().finish();
 

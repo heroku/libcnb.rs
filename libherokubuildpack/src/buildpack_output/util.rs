@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 use std::io::Write;
+use std::sync::{Arc, Mutex};
 
 /// Iterator yielding every line in a string. The line includes newline character(s).
 ///
@@ -35,6 +36,50 @@ impl<'a> Iterator for LinesWithEndings<'a> {
         let (line, rest) = self.input.split_at(split);
         self.input = rest;
         Some(line)
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct LockedWriter<W> {
+    arc: Arc<Mutex<W>>,
+}
+
+impl<W> Clone for LockedWriter<W> {
+    fn clone(&self) -> Self {
+        Self {
+            arc: self.arc.clone(),
+        }
+    }
+}
+
+impl<W> LockedWriter<W> {
+    pub(crate) fn new(write: W) -> Self {
+        LockedWriter {
+            arc: Arc::new(Mutex::new(write)),
+        }
+    }
+
+    pub(crate) fn unwrap(self) -> W {
+        let Ok(mutex) = Arc::try_unwrap(self.arc) else {
+            panic!("Expected buildpack author to not retain any IO streaming IO instances")
+        };
+
+        mutex.into_inner().expect("Output mutex was poisoned")
+    }
+}
+
+impl<W> Write for LockedWriter<W>
+where
+    W: Write + Send + Sync + 'static,
+{
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        let mut io = self.arc.lock().expect("Output mutex poisoned");
+        io.write(buf)
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        let mut io = self.arc.lock().expect("Output mutex poisoned");
+        io.flush()
     }
 }
 

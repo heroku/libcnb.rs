@@ -20,7 +20,8 @@
 //!
 //! inline_output::step("Clearing the cache")
 //! ```
-use crate::buildpack_output::{state, BuildpackOutput, ParagraphInspectWrite, Stream};
+use crate::buildpack_output::state::TimedStream;
+use crate::buildpack_output::{state, BuildpackOutput, ParagraphInspectWrite};
 use std::io::Stdout;
 use std::time::Instant;
 
@@ -38,21 +39,11 @@ pub fn step(s: impl AsRef<str>) {
 /// Will print the input string and yield a [`Stream`] that can be used to print
 /// to the output. The main use case is running commands.
 ///
-/// ```no_run
-/// use fun_run::CommandWithName;
-/// use libherokubuildpack::buildpack_output::inline_output;
-/// use libherokubuildpack::buildpack_output::style;
-///
-/// let mut cmd = std::process::Command::new("bundle");
-/// cmd.arg("install");
-///
-/// inline_output::step_stream(format!("Running {}", style::command(cmd.name())), |stream| {
-///     cmd.stream_output(stream.io(), stream.io()).unwrap()
-/// });
-/// ```
-///
 /// Timing information will be output at the end of the step.
-pub fn step_stream<T>(s: impl AsRef<str>, f: impl FnOnce(&mut Stream<Stdout>) -> T) -> T {
+pub fn step_stream<T>(
+    s: impl AsRef<str>,
+    f: impl FnOnce(&mut BuildpackOutput<TimedStream<Stdout>>) -> T,
+) -> T {
     let mut stream = build_buildpack_output().step_timed_stream(s.as_ref());
     let out = f(&mut stream);
     let _ = stream.finish_timed_stream();
@@ -74,12 +65,13 @@ pub fn important(s: impl AsRef<str>) {
     let _ = build_buildpack_output().important(s.as_ref());
 }
 
-fn build_buildpack_output() -> BuildpackOutput<state::Section, Stdout> {
-    BuildpackOutput::<state::Section, Stdout> {
-        io: ParagraphInspectWrite::new(std::io::stdout()),
+fn build_buildpack_output() -> BuildpackOutput<state::Section<Stdout>> {
+    BuildpackOutput::<state::Section<Stdout>> {
         // Be careful not to do anything that might access this state
         // as it's ephemeral data (i.e. not passed in from the start of the build)
         started: Some(Instant::now()),
-        _state: state::Section,
+        state: state::Section {
+            write: ParagraphInspectWrite::new(std::io::stdout()),
+        },
     }
 }
