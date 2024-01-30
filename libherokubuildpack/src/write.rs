@@ -66,7 +66,7 @@ impl<W> MappedWrite<W>
 where
     W: io::Write,
 {
-    pub fn new<F: (Fn(Vec<u8>) -> Vec<u8>) + Sync + Send + 'static>(
+    fn new<F: (Fn(Vec<u8>) -> Vec<u8>) + Sync + Send + 'static>(
         w: W,
         marker_byte: u8,
         f: F,
