@@ -39,16 +39,13 @@ impl<'a> Iterator for LinesWithEndings<'a> {
 }
 
 #[derive(Debug)]
-pub(crate) struct ParagraphInspectWrite<W: Debug> {
+pub(crate) struct ParagraphInspectWrite<W> {
     pub(crate) inner: W,
     pub(crate) was_paragraph: bool,
     pub(crate) newlines_since_last_char: usize,
 }
 
-impl<W> ParagraphInspectWrite<W>
-where
-    W: Debug,
-{
+impl<W> ParagraphInspectWrite<W> {
     pub(crate) fn new(io: W) -> Self {
         Self {
             inner: io,
@@ -58,7 +55,7 @@ where
     }
 }
 
-impl<W: Write + Debug> Write for ParagraphInspectWrite<W> {
+impl<W: Write> Write for ParagraphInspectWrite<W> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         let newline_count = buf.iter().rev().take_while(|&&c| c == b'\n').count();
         if buf.len() == newline_count {

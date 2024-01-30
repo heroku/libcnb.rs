@@ -28,7 +28,7 @@ mod util;
 /// See the module docs for example usage.
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug)]
-pub struct BuildpackOutput<T, W: Debug> {
+pub struct BuildpackOutput<T, W> {
     pub(crate) io: ParagraphInspectWrite<W>,
     pub(crate) started: Option<Instant>,
     pub(crate) _state: T,
@@ -58,7 +58,7 @@ impl WarnInfoError for state::Started {}
 impl<S, W> BuildpackOutput<S, W>
 where
     S: WarnInfoError,
-    W: Write + Send + Sync + Debug + 'static,
+    W: Write + Send + Sync + 'static,
 {
     #[must_use]
     pub fn warning(mut self, s: &str) -> BuildpackOutput<S, W> {
@@ -93,7 +93,7 @@ where
 
 impl<W> BuildpackOutput<state::NotStarted, W>
 where
-    W: Write + Debug,
+    W: Write,
 {
     pub fn new(io: W) -> Self {
         Self {
@@ -123,7 +123,7 @@ where
 
 impl<W> BuildpackOutput<state::Started, W>
 where
-    W: Write + Send + Sync + Debug + 'static,
+    W: Write + Send + Sync + 'static,
 {
     #[must_use]
     pub fn section(mut self, s: &str) -> BuildpackOutput<state::Section, W> {
@@ -151,7 +151,7 @@ where
 
 impl<W> BuildpackOutput<state::Section, W>
 where
-    W: Write + Send + Sync + Debug + 'static,
+    W: Write + Send + Sync + 'static,
 {
     pub fn mut_step(&mut self, s: &str) {
         writeln_now(&mut self.io, style::step(s));
@@ -200,7 +200,7 @@ struct LockedWriter<W> {
 
 impl<W> Write for LockedWriter<W>
 where
-    W: Write + Send + Sync + Debug + 'static,
+    W: Write + Send + Sync + 'static,
 {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         let mut io = self.arc.lock().expect("Output mutex poisoned");
@@ -218,7 +218,7 @@ where
 /// Mostly used for outputting a running command.
 #[derive(Debug)]
 #[doc(hidden)]
-pub struct Stream<W: Debug> {
+pub struct Stream<W> {
     buildpack_output_started: Option<Instant>,
     arc_io: Arc<Mutex<ParagraphInspectWrite<W>>>,
     started: Instant,
@@ -226,7 +226,7 @@ pub struct Stream<W: Debug> {
 
 impl<W> Stream<W>
 where
-    W: Write + Send + Sync + Debug + 'static,
+    W: Write + Send + Sync + 'static,
 {
     fn start(&mut self) {
         let mut guard = self.arc_io.lock().expect("Output mutex poisoned");
@@ -260,10 +260,11 @@ where
     pub fn finish_timed_stream(self) -> BuildpackOutput<state::Section, W> {
         let duration = self.started.elapsed();
 
-        let mut io = Arc::try_unwrap(self.arc_io)
-            .expect("Expected buildpack author to not retain any IO streaming IO instances")
-            .into_inner()
-            .expect("Output mutex was poisoned");
+        let Ok(mutex) = Arc::try_unwrap(self.arc_io) else {
+            panic!("Expected buildpack author to not retain any IO streaming IO instances")
+        };
+
+        let mut io = mutex.into_inner().expect("Output mutex was poisoned");
 
         // Newline after stream
         writeln_now(&mut io, "");
