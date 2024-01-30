@@ -26,6 +26,8 @@ pub trait Buildpack {
     /// during buildpack execution.
     type Error: Debug;
 
+    type Context: Default;
+
     /// Detect logic for this buildpack. Directly corresponds to
     /// [detect in the CNB buildpack interface](https://github.com/buildpacks/spec/blob/platform/v0.9/buildpack.md#detection).
     fn detect(&self, context: DetectContext<Self>) -> crate::Result<DetectResult, Self::Error>;

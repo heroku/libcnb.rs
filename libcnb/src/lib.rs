@@ -47,7 +47,7 @@ const LIBCNB_SUPPORTED_BUILDPACK_API: data::buildpack::BuildpackApi =
 /// ```
 /// use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
 /// use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
-/// use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};
+/// use libcnb::generic::{GenericContext, GenericError, GenericMetadata, GenericPlatform};
 /// use libcnb::{buildpack_main, Buildpack};
 ///
 /// pub(crate) struct MyBuildpack;
@@ -56,6 +56,7 @@ const LIBCNB_SUPPORTED_BUILDPACK_API: data::buildpack::BuildpackApi =
 ///     type Platform = GenericPlatform;
 ///     type Metadata = GenericMetadata;
 ///     type Error = GenericError;
+///     type Context = GenericContext;
 ///
 ///     fn detect(
 ///         &self,

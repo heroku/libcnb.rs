@@ -39,7 +39,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     /// # use libcnb::data::layer_name;
     /// # use libcnb::data::layer_content_metadata::LayerTypes;
     /// # use libcnb::detect::{DetectContext, DetectResult};
-    /// # use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};
+    /// # use libcnb::generic::{GenericContext, GenericError, GenericMetadata, GenericPlatform};
     /// # use libcnb::layer::{Layer, LayerResult, LayerResultBuilder};
     /// # use libcnb::Buildpack;
     /// # use serde::Deserialize;
@@ -52,6 +52,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     /// #   type Platform = GenericPlatform;
     /// #   type Metadata = GenericMetadata;
     /// #   type Error = GenericError;
+    /// #   type Context = GenericContext;
     /// #
     /// #    fn detect(&self, context: DetectContext<Self>) -> libcnb::Result<DetectResult, Self::Error> {
     /// #        unimplemented!()

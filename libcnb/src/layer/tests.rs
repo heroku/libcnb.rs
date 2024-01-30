@@ -14,7 +14,7 @@ use crate::data::buildpack_id;
 use crate::data::layer_content_metadata::LayerTypes;
 use crate::data::stack_id;
 use crate::detect::{DetectContext, DetectResult, DetectResultBuilder};
-use crate::generic::{GenericMetadata, GenericPlatform};
+use crate::generic::{GenericContext, GenericMetadata, GenericPlatform};
 use crate::layer::{
     handle_layer, ExistingLayerStrategy, Layer, LayerData, LayerResult, LayerResultBuilder,
     MetadataMigration,
@@ -941,6 +941,7 @@ impl Buildpack for TestBuildpack {
     type Platform = GenericPlatform;
     type Metadata = GenericMetadata;
     type Error = TestBuildpackError;
+    type Context = GenericContext;
 
     fn detect(&self, _context: DetectContext<Self>) -> crate::Result<DetectResult, Self::Error> {
         DetectResultBuilder::pass().build()

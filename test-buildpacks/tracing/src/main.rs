@@ -1,6 +1,6 @@
 use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
-use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};
+use libcnb::generic::{GenericContext, GenericError, GenericMetadata, GenericPlatform};
 use libcnb::{buildpack_main, Buildpack};
 
 // Suppress warnings due to the `unused_crate_dependencies` lint not handling integration tests well.
@@ -16,6 +16,7 @@ impl Buildpack for TestTracingBuildpack {
     type Platform = GenericPlatform;
     type Metadata = GenericMetadata;
     type Error = GenericError;
+    type Context = GenericContext;
 
     fn detect(&self, _context: DetectContext<Self>) -> libcnb::Result<DetectResult, Self::Error> {
         DetectResultBuilder::pass().build()

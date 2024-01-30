@@ -13,7 +13,7 @@ use std::fmt::Debug;
 /// use libcnb::build::{BuildContext, BuildResult};
 /// use libcnb::Buildpack;
 /// use libcnb::detect::{DetectContext, DetectResult};
-/// use libcnb::generic::{GenericMetadata, GenericPlatform};
+/// use libcnb::generic::{GenericContext, GenericMetadata, GenericPlatform};
 /// use libherokubuildpack::log::log_error;
 /// use libherokubuildpack::error::on_error;
 ///
@@ -40,6 +40,7 @@ use std::fmt::Debug;
 ///     type Platform = GenericPlatform;
 ///     type Metadata = GenericMetadata;
 ///     type Error = FooBuildpackError;
+///     type Context = GenericContext;
 ///
 ///     // Omitted detect and build implementations...
 ///     # fn detect(&self, context: DetectContext<Self>) -> libcnb::Result<DetectResult, Self::Error> {

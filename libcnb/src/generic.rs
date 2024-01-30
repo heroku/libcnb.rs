@@ -16,6 +16,9 @@ impl Display for GenericError {
     }
 }
 
+#[derive(Debug, Default)]
+pub struct GenericContext;
+
 /// A generic platform that only provides access to environment variables.
 pub struct GenericPlatform {
     env: Env,

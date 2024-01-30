@@ -104,7 +104,7 @@ use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
 use libcnb::data::launch::{LaunchBuilder, ProcessBuilder};
 use libcnb::data::process_type;
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
-use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};
+use libcnb::generic::{GenericContext, GenericError, GenericMetadata, GenericPlatform};
 use libcnb::{buildpack_main, Buildpack};
 
 pub(crate) struct HelloWorldBuildpack;
@@ -130,6 +130,8 @@ impl Buildpack for HelloWorldBuildpack {
     // Common errors that happen during buildpack execution such as I/O errors while
     // writing CNB TOML files are handled by libcnb.rs itself.
     type Error = GenericError;
+
+    type Context = GenericContext;
 
     // This method will be called when the CNB lifecycle executes the detect phase (`bin/detect`).
     // Use the `DetectContext` to access CNB data such as the stack this buildpack is currently

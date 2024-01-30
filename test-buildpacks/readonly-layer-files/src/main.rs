@@ -4,7 +4,7 @@ use crate::layer::TestLayer;
 use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
 use libcnb::data::layer_name;
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
-use libcnb::generic::{GenericMetadata, GenericPlatform};
+use libcnb::generic::{GenericContext, GenericMetadata, GenericPlatform};
 use libcnb::{buildpack_main, Buildpack};
 use std::io::Error;
 
@@ -18,6 +18,7 @@ impl Buildpack for TestBuildpack {
     type Platform = GenericPlatform;
     type Metadata = GenericMetadata;
     type Error = TestBuildpackError;
+    type Context = GenericContext;
 
     fn detect(&self, _context: DetectContext<Self>) -> libcnb::Result<DetectResult, Self::Error> {
         DetectResultBuilder::pass().build()
