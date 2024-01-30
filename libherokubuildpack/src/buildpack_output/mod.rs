@@ -263,7 +263,7 @@ where
         let mut io = Arc::try_unwrap(self.arc_io)
             .expect("Expected buildpack author to not retain any IO streaming IO instances")
             .into_inner()
-            .expect("Output mutex was poisioned");
+            .expect("Output mutex was poisoned");
 
         // Newline after stream
         writeln_now(&mut io, "");
