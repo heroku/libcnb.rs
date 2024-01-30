@@ -102,28 +102,28 @@ where
     S: AnnounceSupportedState,
 {
     #[must_use]
-    pub fn warning(mut self, s: &str) -> BuildpackOutput<S> {
+    pub fn warning(mut self, s: impl AsRef<str>) -> BuildpackOutput<S> {
         self.write_paragraph(WARNING_COLOR, s);
         self
     }
 
     #[must_use]
-    pub fn important(mut self, s: &str) -> BuildpackOutput<S> {
+    pub fn important(mut self, s: impl AsRef<str>) -> BuildpackOutput<S> {
         self.write_paragraph(IMPORTANT_COLOR, s);
         self
     }
 
-    pub fn error(mut self, s: &str) {
+    pub fn error(mut self, s: impl AsRef<str>) {
         self.write_paragraph(ERROR_COLOR, s);
     }
 
-    fn write_paragraph(&mut self, color: &str, s: &str) {
+    fn write_paragraph(&mut self, color: &str, s: impl AsRef<str>) {
         let io = self.state.write_mut();
 
         if !io.was_paragraph {
             writeln_now(io, "");
         }
-        writeln_now(io, colorize(color, bangify(s.trim())));
+        writeln_now(io, colorize(color, bangify(s.as_ref().trim())));
         writeln_now(io, "");
     }
 }
@@ -141,10 +141,10 @@ where
         }
     }
 
-    pub fn start(mut self, buildpack_name: &str) -> BuildpackOutput<state::Started<W>> {
+    pub fn start(mut self, buildpack_name: impl AsRef<str>) -> BuildpackOutput<state::Started<W>> {
         writeln_now(
             &mut self.state.write,
-            colorize(HEROKU_COLOR, format!("\n# {buildpack_name}\n")),
+            colorize(HEROKU_COLOR, format!("\n# {}\n", buildpack_name.as_ref())),
         );
 
         self.start_silent()
@@ -165,7 +165,7 @@ where
     W: Write + Send + Sync + 'static,
 {
     #[must_use]
-    pub fn section(mut self, s: &str) -> BuildpackOutput<state::Section<W>> {
+    pub fn section(mut self, s: impl AsRef<str>) -> BuildpackOutput<state::Section<W>> {
         writeln_now(&mut self.state.write, style::section(s));
 
         BuildpackOutput {
@@ -196,12 +196,12 @@ impl<W> BuildpackOutput<state::Section<W>>
 where
     W: Write + Send + Sync + 'static,
 {
-    pub fn mut_step(&mut self, s: &str) {
+    pub fn mut_step(&mut self, s: impl AsRef<str>) {
         writeln_now(&mut self.state.write, style::step(s));
     }
 
     #[must_use]
-    pub fn step(mut self, s: &str) -> BuildpackOutput<state::Section<W>> {
+    pub fn step(mut self, s: impl AsRef<str>) -> BuildpackOutput<state::Section<W>> {
         writeln_now(&mut self.state.write, style::step(s));
 
         BuildpackOutput {
@@ -212,7 +212,10 @@ where
         }
     }
 
-    pub fn step_timed_stream(mut self, s: &str) -> BuildpackOutput<state::TimedStream<W>> {
+    pub fn step_timed_stream(
+        mut self,
+        s: impl AsRef<str>,
+    ) -> BuildpackOutput<state::TimedStream<W>> {
         writeln_now(&mut self.state.write, style::step(s));
 
         // Newline before stream https://github.com/heroku/libcnb.rs/issues/582
