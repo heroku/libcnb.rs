@@ -301,7 +301,6 @@ fn writeln_now<D: Write>(destination: &mut D, msg: impl AsRef<str>) {
 mod test {
     use super::*;
     use crate::buildpack_output::style::strip_control_codes;
-    use crate::buildpack_output::util::test_helpers::trim_end_lines;
     use crate::buildpack_output::util::LockedWriter;
     use crate::command::CommandExt;
     use indoc::formatdoc;
@@ -337,10 +336,7 @@ mod test {
             - Done (finished in < 0.1s)
         "};
 
-        assert_eq!(
-            expected,
-            trim_end_lines(strip_control_codes(String::from_utf8_lossy(&io)))
-        );
+        assert_eq!(expected, strip_control_codes(String::from_utf8_lossy(&io)));
     }
 
     #[test]
@@ -362,7 +358,7 @@ mod test {
 
         let io = stream.finish_timed_stream().end_section().finish();
 
-        let actual = trim_end_lines(strip_control_codes(String::from_utf8_lossy(&io)));
+        let actual = strip_control_codes(String::from_utf8_lossy(&io));
 
         assert_contains!(actual, "      hello world\n");
     }

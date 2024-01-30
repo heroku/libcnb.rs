@@ -119,36 +119,9 @@ impl<W: Write> Write for ParagraphInspectWrite<W> {
 }
 
 #[cfg(test)]
-pub(crate) mod test_helpers {
-    use super::*;
-    use std::fmt::Write;
-
-    /// Removes trailing whitespace from lines
-    ///
-    /// Useful because most editors strip trailing whitespace (in test fixtures)
-    /// but commands <https://github.com/heroku/libcnb.rs/issues/582> emit newlines
-    /// with leading spaces. These can be sanitized by removing trailing whitespace.
-    pub(crate) fn trim_end_lines(s: impl AsRef<str>) -> String {
-        LinesWithEndings::from(s.as_ref()).fold(String::new(), |mut output, line| {
-            let _ = writeln!(output, "{}", line.trim_end());
-            output
-        })
-    }
-}
-
-#[cfg(test)]
 mod test {
     use super::*;
     use std::fmt::Write;
-
-    #[test]
-    fn test_trim_end_lines() {
-        let actual = test_helpers::trim_end_lines("hello \n");
-        assert_eq!("hello\n", &actual);
-
-        let actual = test_helpers::trim_end_lines("hello\n    \nworld\n");
-        assert_eq!("hello\n\nworld\n", &actual);
-    }
 
     #[test]
     fn test_lines_with_endings() {

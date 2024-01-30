@@ -75,9 +75,14 @@ const CMD_INDENT: &str = "      ";
 /// Used with libherokubuildpack line-mapped command output.
 #[must_use]
 pub(crate) fn cmd_stream_format(mut input: Vec<u8>) -> Vec<u8> {
-    let mut result: Vec<u8> = CMD_INDENT.into();
-    result.append(&mut input);
-    result
+    let s = String::from_utf8_lossy(&input);
+    if !s.trim().is_empty() {
+        let mut result: Vec<u8> = CMD_INDENT.into();
+        result.append(&mut input);
+        result
+    } else {
+        input
+    }
 }
 
 #[must_use]
