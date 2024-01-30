@@ -6,7 +6,8 @@
 //! use libherokubuildpack::buildpack_output::BuildpackOutput;
 //!
 //! let mut output = BuildpackOutput::new(std::io::stdout())
-//!     .start("Heroku Ruby Buildpack");
+//!     .start("Heroku Ruby Buildpack")
+//!     .warning("No Gemfile.lock found");
 //!
 //! output = output
 //!     .section("Ruby version")
@@ -40,7 +41,7 @@ pub struct BuildpackOutput<T> {
 /// The [`BuildpackOutput`] struct acts as an output state machine. These structs
 /// are meant to represent those states.
 #[doc(hidden)]
-pub(crate) mod state {
+pub mod state {
     use crate::buildpack_output::util::ParagraphInspectWrite;
     use crate::write::MappedWrite;
     use std::time::Instant;
@@ -67,7 +68,7 @@ pub(crate) mod state {
 }
 
 #[doc(hidden)]
-pub trait AnnounceSupportedState {
+trait AnnounceSupportedState {
     type Inner: Write;
 
     fn write_mut(&mut self) -> &mut ParagraphInspectWrite<Self::Inner>;
@@ -95,6 +96,7 @@ where
     }
 }
 
+#[allow(private_bounds)]
 impl<S> BuildpackOutput<S>
 where
     S: AnnounceSupportedState,
