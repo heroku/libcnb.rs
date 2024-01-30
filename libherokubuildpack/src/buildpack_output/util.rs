@@ -2,28 +2,18 @@ use std::fmt::Debug;
 use std::io::Write;
 use std::sync::{Arc, Mutex};
 
-/// Iterator yielding every line in a string. The line includes newline character(s).
-///
-/// <https://stackoverflow.com/a/40457615>
-///
-/// The problem this solves is when iterating over lines of a string, the whitespace may be significant.
-/// For example if you want to split a string and then get the original string back then calling
-/// `lines().collect<Vec<_>>().join("\n")` will never preserve trailing newlines.
-///
-/// There's another option to `lines().fold(String::new(), |s, l| s + l + "\n")`, but that
-/// always adds a trailing newline even if the original string doesn't have one.
-///
-pub(crate) struct LinesWithEndings<'a> {
+/// Iterator yielding every line in a string. Every line includes existing newline character(s).
+pub(crate) struct LineIterator<'a> {
     input: &'a str,
 }
 
-impl<'a> LinesWithEndings<'a> {
-    pub(crate) fn from(input: &'a str) -> LinesWithEndings<'a> {
-        LinesWithEndings { input }
+impl<'a> LineIterator<'a> {
+    pub(crate) fn from(input: &'a str) -> LineIterator<'a> {
+        LineIterator { input }
     }
 }
 
-impl<'a> Iterator for LinesWithEndings<'a> {
+impl<'a> Iterator for LineIterator<'a> {
     type Item = &'a str;
 
     #[inline]
@@ -31,9 +21,10 @@ impl<'a> Iterator for LinesWithEndings<'a> {
         if self.input.is_empty() {
             return None;
         }
-        let split = self.input.find('\n').map_or(self.input.len(), |i| i + 1);
 
-        let (line, rest) = self.input.split_at(split);
+        let newline_index = self.input.find('\n').map_or(self.input.len(), |i| i + 1);
+
+        let (line, rest) = self.input.split_at(newline_index);
         self.input = rest;
         Some(line)
     }
@@ -125,18 +116,17 @@ mod test {
 
     #[test]
     fn test_lines_with_endings() {
-        let actual = LinesWithEndings::from("foo\nbar").fold(String::new(), |mut output, line| {
+        let actual = LineIterator::from("foo\nbar").fold(String::new(), |mut output, line| {
             let _ = write!(output, "z{line}");
             output
         });
 
         assert_eq!("zfoo\nzbar", actual);
 
-        let actual =
-            LinesWithEndings::from("foo\nbar\n").fold(String::new(), |mut output, line| {
-                let _ = write!(output, "z{line}");
-                output
-            });
+        let actual = LineIterator::from("foo\nbar\n").fold(String::new(), |mut output, line| {
+            let _ = write!(output, "z{line}");
+            output
+        });
 
         assert_eq!("zfoo\nzbar\n", actual);
     }

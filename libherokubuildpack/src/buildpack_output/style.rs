@@ -1,4 +1,4 @@
-use crate::buildpack_output::util::LinesWithEndings;
+use crate::buildpack_output::util::LineIterator;
 use const_format::formatcp;
 use std::fmt::Write;
 
@@ -68,8 +68,12 @@ pub(crate) const ERROR_COLOR: &str = RED;
 #[allow(dead_code)]
 pub(crate) const WARNING_COLOR: &str = YELLOW;
 
-const SECTION_PREFIX: &str = "- ";
-const STEP_PREFIX: &str = "  - ";
+const SECTION_PREFIX_FIRST: &str = "- ";
+const SECTION_PREFIX_REST: &str = "  ";
+
+const STEP_PREFIX_FIRST: &str = "  - ";
+const STEP_PREFIX_REST: &str = "    ";
+
 const CMD_INDENT: &str = "      ";
 
 /// Used with libherokubuildpack line-mapped command output.
@@ -87,12 +91,12 @@ pub(crate) fn cmd_stream_format(mut input: Vec<u8>) -> Vec<u8> {
 
 #[must_use]
 pub(crate) fn section(topic: impl AsRef<str>) -> String {
-    prefix_indent(SECTION_PREFIX, topic)
+    prefix_lines(SECTION_PREFIX_FIRST, SECTION_PREFIX_REST, topic.as_ref())
 }
 
 #[must_use]
 pub(crate) fn step(contents: impl AsRef<str>) -> String {
-    prefix_indent(STEP_PREFIX, contents)
+    prefix_lines(STEP_PREFIX_FIRST, STEP_PREFIX_REST, contents.as_ref())
 }
 
 /// Used to decorate a buildpack.
@@ -102,40 +106,25 @@ pub(crate) fn header(contents: impl AsRef<str>) -> String {
     colorize(HEROKU_COLOR, format!("\n# {contents}"))
 }
 
-pub(crate) fn replace_chars_preserve_whitespace(input: &str, replacement: &str) -> String {
-    input
-        .chars()
-        .map(|c| {
-            if c.is_whitespace() {
-                c.to_string()
+pub(crate) fn prefix_lines(first_prefix: &str, rest_prefix: &str, contents: &str) -> String {
+    let lines = LineIterator::from(contents).enumerate().fold(
+        String::new(),
+        |mut acc, (line_index, line)| {
+            let prefix = if line_index == 0 {
+                first_prefix
             } else {
-                replacement.to_string()
-            }
-        })
-        .collect()
-}
+                rest_prefix
+            };
 
-// Prefix is expected to be a single line
-//
-// If contents is multi line then indent additional lines to align with the end of the prefix.
-pub(crate) fn prefix_indent(prefix: impl AsRef<str>, contents: impl AsRef<str>) -> String {
-    let prefix = prefix.as_ref();
-    let contents = contents.as_ref();
-    let clean_prefix = strip_control_codes(prefix);
+            let _ = write!(acc, "{prefix}{line}");
+            acc
+        },
+    );
 
-    let indent_str = replace_chars_preserve_whitespace(&clean_prefix, " ");
-    let lines = LinesWithEndings::from(contents).collect::<Vec<_>>();
-
-    if let Some((first, rest)) = lines.split_first() {
-        format!(
-            "{prefix}{first}{}",
-            rest.iter().fold(String::new(), |mut output, line| {
-                let _ = write!(output, "{indent_str}{line}");
-                output
-            })
-        )
+    if lines.is_empty() {
+        String::from(first_prefix)
     } else {
-        prefix.to_string()
+        lines
     }
 }
 
@@ -169,7 +158,7 @@ pub(crate) fn prepend_each_line(
     let prepend = prepend.as_ref();
     let separator = separator.as_ref();
 
-    let lines = LinesWithEndings::from(body)
+    let lines = LineIterator::from(body)
         .map(|line| {
             if line.trim().is_empty() {
                 format!("{prepend}{line}")
@@ -216,14 +205,17 @@ mod test {
 
     #[test]
     fn test_prefix_indent() {
-        assert_eq!("- hello", &prefix_indent("- ", "hello"));
-        assert_eq!("- hello\n  world", &prefix_indent("- ", "hello\nworld"));
-        assert_eq!("- hello\n  world\n", &prefix_indent("- ", "hello\nworld\n"));
-        let actual = prefix_indent(format!("- {RED}help:{RESET} "), "hello\nworld\n");
+        assert_eq!("- hello", &prefix_lines("- ", "  ", "hello"));
         assert_eq!(
-            &format!("- {RED}help:{RESET} hello\n        world\n"),
-            &actual
+            "- hello\n  world",
+            &prefix_lines("- ", "  ", "hello\nworld")
         );
+        assert_eq!(
+            "- hello\n  world\n",
+            &prefix_lines("- ", "  ", "hello\nworld\n")
+        );
+
+        assert_eq!("- ", &prefix_lines("- ", "  ", ""));
     }
 
     #[test]
