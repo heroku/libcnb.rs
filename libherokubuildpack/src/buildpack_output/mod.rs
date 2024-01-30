@@ -61,7 +61,7 @@ pub mod state {
         pub(crate) write: ParagraphInspectWrite<W>,
     }
 
-    pub struct TimedStream<W: std::io::Write> {
+    pub struct Stream<W: std::io::Write> {
         pub(crate) started: Instant,
         pub(crate) write: MappedWrite<ParagraphInspectWrite<W>>,
     }
@@ -227,18 +227,13 @@ where
         }
     }
 
-    pub fn step_timed_stream(
-        mut self,
-        s: impl AsRef<str>,
-    ) -> BuildpackOutput<state::TimedStream<W>> {
+    pub fn start_stream(mut self, s: impl AsRef<str>) -> BuildpackOutput<state::Stream<W>> {
         writeln_now(&mut self.state.write, Self::style(s));
-
-        // Newline before stream https://github.com/heroku/libcnb.rs/issues/582
         writeln_now(&mut self.state.write, "");
 
         BuildpackOutput {
             started: self.started,
-            state: state::TimedStream {
+            state: state::Stream {
                 started: Instant::now(),
                 write: line_mapped(self.state.write, |mut input| {
                     if input.iter().all(u8::is_ascii_whitespace) {
@@ -263,11 +258,11 @@ where
     }
 }
 
-impl<W> BuildpackOutput<state::TimedStream<W>>
+impl<W> BuildpackOutput<state::Stream<W>>
 where
     W: Write + Send + Sync + 'static,
 {
-    pub fn finish_timed_stream(mut self) -> BuildpackOutput<state::Section<W>> {
+    pub fn finish_stream(mut self) -> BuildpackOutput<state::Section<W>> {
         let duration = self.state.started.elapsed();
 
         writeln_now(&mut self.state.write, "");
@@ -288,7 +283,7 @@ where
     }
 }
 
-impl<W> Write for BuildpackOutput<state::TimedStream<W>>
+impl<W> Write for BuildpackOutput<state::Stream<W>>
 where
     W: Write,
 {
@@ -326,12 +321,12 @@ mod test {
             .section("Ruby version `3.1.3` from `Gemfile.lock`")
             .end_section()
             .section("Hello world")
-            .step_timed_stream("Streaming stuff");
+            .start_stream("Streaming stuff");
 
         let value = "stuff".to_string();
         writeln!(&mut stream, "{value}").unwrap();
 
-        let io = stream.finish_timed_stream().end_section().finish();
+        let io = stream.finish_stream().end_section().finish();
 
         let expected = formatdoc! {"
 
@@ -356,7 +351,7 @@ mod test {
         let mut stream = BuildpackOutput::new(writer)
             .start("Streaming buildpack demo")
             .section("Command streaming")
-            .step_timed_stream("Streaming stuff");
+            .start_stream("Streaming stuff");
 
         let locked_writer = LockedWriter::new(stream);
 
@@ -367,7 +362,7 @@ mod test {
 
         stream = locked_writer.unwrap();
 
-        let io = stream.finish_timed_stream().end_section().finish();
+        let io = stream.finish_stream().end_section().finish();
 
         let actual = strip_control_codes(String::from_utf8_lossy(&io));
 
