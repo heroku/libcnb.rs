@@ -17,7 +17,7 @@
 //! ```
 //!
 use crate::buildpack_output::style::{
-    bangify, cmd_stream_format, colorize, ERROR_COLOR, HEROKU_COLOR, IMPORTANT_COLOR, WARNING_COLOR,
+    bangify, colorize, ERROR_COLOR, HEROKU_COLOR, IMPORTANT_COLOR, WARNING_COLOR,
 };
 use crate::buildpack_output::util::ParagraphInspectWrite;
 use crate::write::line_mapped;
@@ -164,9 +164,16 @@ impl<W> BuildpackOutput<state::Started<W>>
 where
     W: Write + Send + Sync + 'static,
 {
+    const PREFIX_FIRST: &'static str = "- ";
+    const PREFIX_REST: &'static str = "  ";
+
+    fn style(s: impl AsRef<str>) -> String {
+        style::prefix_first_rest_lines(Self::PREFIX_FIRST, Self::PREFIX_REST, s.as_ref())
+    }
+
     #[must_use]
     pub fn section(mut self, s: impl AsRef<str>) -> BuildpackOutput<state::Section<W>> {
-        writeln_now(&mut self.state.write, style::section(s));
+        writeln_now(&mut self.state.write, Self::style(s));
 
         BuildpackOutput {
             started: self.started,
@@ -182,10 +189,10 @@ where
             let details = style::details(format!("finished in {elapsed}"));
             writeln_now(
                 &mut self.state.write,
-                style::section(format!("Done {details}")),
+                Self::style(format!("Done {details}")),
             );
         } else {
-            writeln_now(&mut self.state.write, style::section("Done"));
+            writeln_now(&mut self.state.write, Self::style("Done"));
         }
 
         self.state.write.inner
@@ -196,13 +203,21 @@ impl<W> BuildpackOutput<state::Section<W>>
 where
     W: Write + Send + Sync + 'static,
 {
+    const PREFIX_FIRST: &'static str = "  - ";
+    const PREFIX_REST: &'static str = "    ";
+    const CMD_INDENT: &'static str = "      ";
+
+    fn style(s: impl AsRef<str>) -> String {
+        style::prefix_first_rest_lines(Self::PREFIX_FIRST, Self::PREFIX_REST, s.as_ref())
+    }
+
     pub fn mut_step(&mut self, s: impl AsRef<str>) {
-        writeln_now(&mut self.state.write, style::step(s));
+        writeln_now(&mut self.state.write, Self::style(s));
     }
 
     #[must_use]
     pub fn step(mut self, s: impl AsRef<str>) -> BuildpackOutput<state::Section<W>> {
-        writeln_now(&mut self.state.write, style::step(s));
+        writeln_now(&mut self.state.write, Self::style(s));
 
         BuildpackOutput {
             started: self.started,
@@ -216,7 +231,7 @@ where
         mut self,
         s: impl AsRef<str>,
     ) -> BuildpackOutput<state::TimedStream<W>> {
-        writeln_now(&mut self.state.write, style::step(s));
+        writeln_now(&mut self.state.write, Self::style(s));
 
         // Newline before stream https://github.com/heroku/libcnb.rs/issues/582
         writeln_now(&mut self.state.write, "");
@@ -225,7 +240,15 @@ where
             started: self.started,
             state: state::TimedStream {
                 started: Instant::now(),
-                write: line_mapped(self.state.write, cmd_stream_format),
+                write: line_mapped(self.state.write, |mut input| {
+                    if input.iter().all(u8::is_ascii_whitespace) {
+                        input
+                    } else {
+                        let mut result: Vec<u8> = Self::CMD_INDENT.into();
+                        result.append(&mut input);
+                        result
+                    }
+                }),
             },
         }
     }

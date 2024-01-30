@@ -68,37 +68,6 @@ pub(crate) const IMPORTANT_COLOR: &str = CYAN;
 pub(crate) const ERROR_COLOR: &str = RED;
 pub(crate) const WARNING_COLOR: &str = YELLOW;
 
-const SECTION_PREFIX_FIRST: &str = "- ";
-const SECTION_PREFIX_REST: &str = "  ";
-
-const STEP_PREFIX_FIRST: &str = "  - ";
-const STEP_PREFIX_REST: &str = "    ";
-
-const CMD_INDENT: &str = "      ";
-
-/// Used with libherokubuildpack line-mapped command output.
-#[must_use]
-pub(crate) fn cmd_stream_format(mut input: Vec<u8>) -> Vec<u8> {
-    let s = String::from_utf8_lossy(&input);
-    if s.trim().is_empty() {
-        input
-    } else {
-        let mut result: Vec<u8> = CMD_INDENT.into();
-        result.append(&mut input);
-        result
-    }
-}
-
-#[must_use]
-pub(crate) fn section(topic: impl AsRef<str>) -> String {
-    prefix_first_rest_lines(SECTION_PREFIX_FIRST, SECTION_PREFIX_REST, topic.as_ref())
-}
-
-#[must_use]
-pub(crate) fn step(contents: impl AsRef<str>) -> String {
-    prefix_first_rest_lines(STEP_PREFIX_FIRST, STEP_PREFIX_REST, contents.as_ref())
-}
-
 pub(crate) fn prefix_lines<F: Fn(usize, &str) -> String>(contents: &str, f: F) -> String {
     let lines = LineIterator::from(contents).enumerate().fold(
         String::new(),
@@ -136,7 +105,7 @@ pub(crate) fn prefix_first_rest_lines(
 /// Helper method that adds a bang i.e. `!` before strings.
 pub(crate) fn bangify(body: impl AsRef<str>) -> String {
     prefix_lines(body.as_ref(), |_, line| {
-        if line.trim().is_empty() {
+        if line.chars().all(char::is_whitespace) {
             String::from("!")
         } else {
             String::from("! ")
