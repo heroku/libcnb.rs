@@ -43,11 +43,13 @@ pub(crate) const CYAN: &str = "\x1B[0;36m";
 pub(crate) const BOLD_CYAN: &str = "\x1B[1;36m";
 pub(crate) const BOLD_PURPLE: &str = "\x1B[1;35m"; // Magenta
 
+#[cfg(test)]
 pub(crate) const DEFAULT_DIM: &str = "\x1B[2;1m"; // Default color but softer/less vibrant
 pub(crate) const RESET: &str = "\x1B[0m";
 
 #[cfg(test)]
 pub(crate) const NO_COLOR: &str = "\x1B[1;39m"; // Differentiate between color clear and explicit no color https://github.com/heroku/buildpacks-ruby/pull/155#discussion_r1260029915
+#[cfg(test)]
 pub(crate) const ALL_CODES: [&str; 7] = [
     RED,
     YELLOW,
@@ -78,12 +80,12 @@ const CMD_INDENT: &str = "      ";
 #[must_use]
 pub(crate) fn cmd_stream_format(mut input: Vec<u8>) -> Vec<u8> {
     let s = String::from_utf8_lossy(&input);
-    if !s.trim().is_empty() {
+    if s.trim().is_empty() {
+        input
+    } else {
         let mut result: Vec<u8> = CMD_INDENT.into();
         result.append(&mut input);
         result
-    } else {
-        input
     }
 }
 
@@ -164,6 +166,7 @@ pub(crate) fn colorize(color: &str, body: impl AsRef<str>) -> String {
         .join("\n")
 }
 
+#[cfg(test)]
 pub(crate) fn strip_control_codes(contents: impl AsRef<str>) -> String {
     let mut contents = contents.as_ref().to_string();
     for code in ALL_CODES {

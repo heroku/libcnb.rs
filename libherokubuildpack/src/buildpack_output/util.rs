@@ -44,12 +44,14 @@ impl<W> Clone for LockedWriter<W> {
 }
 
 impl<W> LockedWriter<W> {
+    #[cfg(test)]
     pub(crate) fn new(write: W) -> Self {
         LockedWriter {
             arc: Arc::new(Mutex::new(write)),
         }
     }
 
+    #[cfg(test)]
     pub(crate) fn unwrap(self) -> W {
         let Ok(mutex) = Arc::try_unwrap(self.arc) else {
             panic!("Expected buildpack author to not retain any IO streaming IO instances")
