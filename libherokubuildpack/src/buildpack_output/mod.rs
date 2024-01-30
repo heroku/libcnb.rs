@@ -22,7 +22,6 @@ use std::fmt::Debug;
 use std::io::Write;
 use std::time::Instant;
 
-pub mod inline_output;
 pub mod style;
 mod util;
 
