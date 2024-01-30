@@ -107,7 +107,7 @@ where
             writeln_now(io, "");
         }
         writeln_now(io, colorize(WARNING_COLOR, bangify(s.trim())));
-        writeln_now(io, "\n");
+        writeln_now(io, "");
 
         self
     }
