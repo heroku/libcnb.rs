@@ -85,7 +85,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     /// #    }
     /// #
     ///     fn create(
-    ///         &self,
+    ///         &mut self,
     ///         context: &BuildContext<Self::Buildpack>,
     ///         layer_path: &Path,
     ///     ) -> Result<LayerResult<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {

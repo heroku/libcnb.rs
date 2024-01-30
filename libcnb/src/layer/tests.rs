@@ -61,7 +61,7 @@ impl Layer for TestLayer {
     }
 
     fn create(
-        &self,
+        &mut self,
         _context: &BuildContext<Self::Buildpack>,
         layer_path: &Path,
     ) -> Result<LayerResult<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {
@@ -79,7 +79,7 @@ impl Layer for TestLayer {
     }
 
     fn existing_layer_strategy(
-        &self,
+        &mut self,
         _context: &BuildContext<Self::Buildpack>,
         _layer_data: &LayerData<Self::Metadata>,
     ) -> Result<ExistingLayerStrategy, <Self::Buildpack as Buildpack>::Error> {
@@ -87,7 +87,7 @@ impl Layer for TestLayer {
     }
 
     fn update(
-        &self,
+        &mut self,
         _context: &BuildContext<Self::Buildpack>,
         layer_data: &LayerData<Self::Metadata>,
     ) -> Result<LayerResult<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {
@@ -101,7 +101,7 @@ impl Layer for TestLayer {
     }
 
     fn migrate_incompatible_metadata(
-        &self,
+        &mut self,
         _context: &BuildContext<Self::Buildpack>,
         metadata: &GenericMetadata,
     ) -> Result<MetadataMigration<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {
@@ -749,7 +749,7 @@ fn default_layer_method_implementations() {
         }
 
         fn create(
-            &self,
+            &mut self,
             _context: &BuildContext<Self::Buildpack>,
             _layer_path: &Path,
         ) -> Result<LayerResult<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {
@@ -770,7 +770,7 @@ fn default_layer_method_implementations() {
     let temp_dir = tempdir().unwrap();
     let context = build_context(&temp_dir);
     let layer_name = random_layer_name();
-    let simple_layer = SimpleLayer;
+    let mut simple_layer = SimpleLayer;
 
     let simple_layer_metadata = SimpleLayerMetadata {
         field_one: String::from("value one"),
@@ -838,7 +838,7 @@ fn layer_env_read_write() {
         }
 
         fn create(
-            &self,
+            &mut self,
             _context: &BuildContext<Self::Buildpack>,
             _layer_path: &Path,
         ) -> Result<LayerResult<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {
@@ -848,7 +848,7 @@ fn layer_env_read_write() {
         }
 
         fn existing_layer_strategy(
-            &self,
+            &mut self,
             _context: &BuildContext<Self::Buildpack>,
             layer_data: &LayerData<Self::Metadata>,
         ) -> Result<ExistingLayerStrategy, <Self::Buildpack as Buildpack>::Error> {
@@ -858,7 +858,7 @@ fn layer_env_read_write() {
         }
 
         fn update(
-            &self,
+            &mut self,
             _context: &BuildContext<Self::Buildpack>,
             layer_data: &LayerData<Self::Metadata>,
         ) -> Result<LayerResult<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {

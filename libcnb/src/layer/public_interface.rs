@@ -45,7 +45,7 @@ pub trait Layer {
     /// # Implementation Requirements
     /// Implementations **MUST NOT** write to any other location than `layer_path`.
     fn create(
-        &self,
+        &mut self,
         context: &BuildContext<Self::Buildpack>,
         layer_path: &Path,
     ) -> Result<LayerResult<Self::Metadata>, <Self::Buildpack as Buildpack>::Error>;
@@ -74,7 +74,7 @@ pub trait Layer {
     /// # Implementation Requirements
     /// Implementations **MUST NOT** modify the file-system.
     fn existing_layer_strategy(
-        &self,
+        &mut self,
         context: &BuildContext<Self::Buildpack>,
         layer_data: &LayerData<Self::Metadata>,
     ) -> Result<ExistingLayerStrategy, <Self::Buildpack as Buildpack>::Error> {
@@ -100,7 +100,7 @@ pub trait Layer {
     /// # Implementation Requirements
     /// Implementations **MUST NOT** write to any other location than `layer_path`.
     fn update(
-        &self,
+        &mut self,
         context: &BuildContext<Self::Buildpack>,
         layer_data: &LayerData<Self::Metadata>,
     ) -> Result<LayerResult<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {
@@ -125,7 +125,7 @@ pub trait Layer {
     /// Implementations **MUST** be read-only. They **MUST NOT** modify the file-system or write
     /// anything to stdout/stdout or any other stream.
     fn migrate_incompatible_metadata(
-        &self,
+        &mut self,
         context: &BuildContext<Self::Buildpack>,
         metadata: &GenericMetadata,
     ) -> Result<MetadataMigration<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {
