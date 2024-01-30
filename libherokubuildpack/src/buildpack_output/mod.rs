@@ -101,38 +101,27 @@ where
 {
     #[must_use]
     pub fn warning(mut self, s: &str) -> BuildpackOutput<S> {
-        let io = self.state.write_mut();
-
-        if !io.was_paragraph {
-            writeln_now(io, "");
-        }
-        writeln_now(io, colorize(WARNING_COLOR, bangify(s.trim())));
-        writeln_now(io, "");
-
+        self.write_paragraph(WARNING_COLOR, s);
         self
     }
 
     #[must_use]
     pub fn important(mut self, s: &str) -> BuildpackOutput<S> {
-        let io = self.state.write_mut();
-
-        if !io.was_paragraph {
-            writeln_now(io, "");
-        }
-        writeln_now(io, colorize(IMPORTANT_COLOR, bangify(s.trim())));
-        writeln_now(io, "");
-
+        self.write_paragraph(IMPORTANT_COLOR, s);
         self
     }
 
     pub fn error(mut self, s: &str) {
+        self.write_paragraph(ERROR_COLOR, s);
+    }
+
+    fn write_paragraph(&mut self, color: &str, s: &str) {
         let io = self.state.write_mut();
 
         if !io.was_paragraph {
             writeln_now(io, "");
         }
-
-        writeln_now(io, colorize(ERROR_COLOR, bangify(s.trim())));
+        writeln_now(io, colorize(color, bangify(s.trim())));
         writeln_now(io, "");
     }
 }
