@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `libcnb`:
   - Changed `Layer` interface from `&self` to `&mut self`. ([#669](https://github.com/heroku/libcnb.rs/pull/669))
 
+### Added
+
+- `libherokubuildpack`:
+  - `MappedWrite::unwrap` for getting the wrapped `Write` back out. ([#000](https://github.com/heroku/libcnb.rs/pull/000))
 
 ## [0.17.0] - 2023-12-06
 

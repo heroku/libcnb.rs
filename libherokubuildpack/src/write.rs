@@ -13,12 +13,7 @@ pub fn mapped<W: io::Write, F: (Fn(Vec<u8>) -> Vec<u8>) + Sync + Send + 'static>
     marker_byte: u8,
     f: F,
 ) -> MappedWrite<W> {
-    MappedWrite {
-        inner: w,
-        marker_byte,
-        buffer: Vec::new(),
-        mapping_fn: Arc::new(f),
-    }
+    MappedWrite::new(w, marker_byte, f)
 }
 
 /// Constructs a writer that buffers written data until an ASCII/UTF-8 newline byte (`0x0A`) is
@@ -44,7 +39,17 @@ pub fn tee<A: io::Write, B: io::Write>(a: A, b: B) -> TeeWrite<A, B> {
 /// A mapped writer that was created with the [`mapped`] or [`line_mapped`] function.
 #[derive(Clone)]
 pub struct MappedWrite<W: io::Write> {
-    inner: W,
+    // To support unwrapping the inner `Write` while also implementing `Drop` for final cleanup, we need to wrap the
+    // `W` value so we can replace it in memory during unwrap. Without the wrapping `Option` we'd need to have a way
+    // to construct a bogus `W` value which would require additional trait bounds for `W`. `Clone` and/or `Default`
+    // come to mind. Not only would this clutter the API, but for most values that implement `Write`, `Clone` or
+    // `Default` are hard to implement correctly as they most often involve system resources such as file handles.
+    //
+    // This semantically means that a `MappedWrite` can exist without an inner `Write`, but users of `MappedWrite` can
+    // never construct such a `MappedWrite` as it only represents a state that happens during `MappedWrite::unwrap`.
+    //
+    // See: https://rustwiki.org/en/error-index/#E0509
+    inner: Option<W>,
     marker_byte: u8,
     buffer: Vec<u8>,
     mapping_fn: Arc<dyn (Fn(Vec<u8>) -> Vec<u8>) + Sync + Send>,
@@ -57,10 +62,44 @@ pub struct TeeWrite<A: io::Write, B: io::Write> {
     inner_b: B,
 }
 
-impl<W: io::Write> MappedWrite<W> {
+impl<W> MappedWrite<W>
+where
+    W: io::Write,
+{
+    pub fn new<F: (Fn(Vec<u8>) -> Vec<u8>) + Sync + Send + 'static>(
+        w: W,
+        marker_byte: u8,
+        f: F,
+    ) -> MappedWrite<W> {
+        MappedWrite {
+            inner: Some(w),
+            marker_byte,
+            buffer: Vec::new(),
+            mapping_fn: Arc::new(f),
+        }
+    }
+
+    pub fn unwrap(mut self) -> W {
+        // See `Drop` implementation. This logic cannot be de-duplicated (i.e. by using unwrap in `Drop`) as we would
+        // end up in illegal states.
+        if self.inner.is_some() {
+            let _result = self.map_and_write_current_buffer();
+        }
+
+        if let Some(inner) = self.inner.take() {
+            inner
+        } else {
+            // Since `unwrap` is the only function that will cause `self.inner` to be `None` and `unwrap` itself
+            // consumes the `MappedWrite`, we can be sure that this case never happens.
+            unreachable!("self.inner will never be None")
+        }
+    }
+
     fn map_and_write_current_buffer(&mut self) -> io::Result<()> {
-        self.inner
-            .write_all(&(self.mapping_fn)(mem::take(&mut self.buffer)))
+        match self.inner {
+            Some(ref mut inner) => inner.write_all(&(self.mapping_fn)(mem::take(&mut self.buffer))),
+            None => Ok(()),
+        }
     }
 }
 
@@ -78,7 +117,10 @@ impl<W: io::Write> io::Write for MappedWrite<W> {
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        self.inner.flush()
+        match self.inner {
+            Some(ref mut inner) => inner.flush(),
+            None => Ok(()),
+        }
     }
 }
 
