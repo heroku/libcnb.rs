@@ -64,8 +64,6 @@ pub(crate) const COMMAND_COLOR: &str = BOLD_CYAN;
 pub(crate) const URL_COLOR: &str = CYAN;
 pub(crate) const IMPORTANT_COLOR: &str = CYAN;
 pub(crate) const ERROR_COLOR: &str = RED;
-
-#[allow(dead_code)]
 pub(crate) const WARNING_COLOR: &str = YELLOW;
 
 const SECTION_PREFIX_FIRST: &str = "- ";
@@ -91,83 +89,57 @@ pub(crate) fn cmd_stream_format(mut input: Vec<u8>) -> Vec<u8> {
 
 #[must_use]
 pub(crate) fn section(topic: impl AsRef<str>) -> String {
-    prefix_lines(SECTION_PREFIX_FIRST, SECTION_PREFIX_REST, topic.as_ref())
+    prefix_first_rest_lines(SECTION_PREFIX_FIRST, SECTION_PREFIX_REST, topic.as_ref())
 }
 
 #[must_use]
 pub(crate) fn step(contents: impl AsRef<str>) -> String {
-    prefix_lines(STEP_PREFIX_FIRST, STEP_PREFIX_REST, contents.as_ref())
+    prefix_first_rest_lines(STEP_PREFIX_FIRST, STEP_PREFIX_REST, contents.as_ref())
 }
 
-/// Used to decorate a buildpack.
-#[must_use]
-pub(crate) fn header(contents: impl AsRef<str>) -> String {
-    let contents = contents.as_ref();
-    colorize(HEROKU_COLOR, format!("\n# {contents}"))
-}
-
-pub(crate) fn prefix_lines(first_prefix: &str, rest_prefix: &str, contents: &str) -> String {
+pub(crate) fn prefix_lines<F: Fn(usize, &str) -> String>(contents: &str, f: F) -> String {
     let lines = LineIterator::from(contents).enumerate().fold(
         String::new(),
         |mut acc, (line_index, line)| {
-            let prefix = if line_index == 0 {
-                first_prefix
-            } else {
-                rest_prefix
-            };
-
+            let prefix = f(line_index, line);
             let _ = write!(acc, "{prefix}{line}");
             acc
         },
     );
 
     if lines.is_empty() {
-        String::from(first_prefix)
+        f(0, "")
     } else {
         lines
     }
 }
 
-#[must_use]
-pub(crate) fn important(contents: impl AsRef<str>) -> String {
-    colorize(IMPORTANT_COLOR, bangify(contents))
-}
+pub(crate) fn prefix_first_rest_lines(
+    first_prefix: &str,
+    rest_prefix: &str,
+    contents: &str,
+) -> String {
+    let first_prefix = String::from(first_prefix);
+    let rest_prefix = String::from(rest_prefix);
 
-#[must_use]
-pub(crate) fn warning(contents: impl AsRef<str>) -> String {
-    colorize(WARNING_COLOR, bangify(contents))
-}
-
-#[must_use]
-pub(crate) fn error(contents: impl AsRef<str>) -> String {
-    colorize(ERROR_COLOR, bangify(contents))
+    prefix_lines(contents, move |index, _| {
+        if index == 0 {
+            first_prefix.clone()
+        } else {
+            rest_prefix.clone()
+        }
+    })
 }
 
 /// Helper method that adds a bang i.e. `!` before strings.
 pub(crate) fn bangify(body: impl AsRef<str>) -> String {
-    prepend_each_line("!", " ", body)
-}
-
-// Ensures every line starts with `prepend`
-pub(crate) fn prepend_each_line(
-    prepend: impl AsRef<str>,
-    separator: impl AsRef<str>,
-    contents: impl AsRef<str>,
-) -> String {
-    let body = contents.as_ref();
-    let prepend = prepend.as_ref();
-    let separator = separator.as_ref();
-
-    let lines = LineIterator::from(body)
-        .map(|line| {
-            if line.trim().is_empty() {
-                format!("{prepend}{line}")
-            } else {
-                format!("{prepend}{separator}{line}")
-            }
-        })
-        .collect::<String>();
-    lines
+    prefix_lines(body.as_ref(), |_, line| {
+        if line.trim().is_empty() {
+            String::from("!")
+        } else {
+            String::from("! ")
+        }
+    })
 }
 
 /// Colorizes a body while preserving existing color/reset combinations and clearing before newlines.
@@ -205,17 +177,17 @@ mod test {
 
     #[test]
     fn test_prefix_indent() {
-        assert_eq!("- hello", &prefix_lines("- ", "  ", "hello"));
+        assert_eq!("- hello", &prefix_first_rest_lines("- ", "  ", "hello"));
         assert_eq!(
             "- hello\n  world",
-            &prefix_lines("- ", "  ", "hello\nworld")
+            &prefix_first_rest_lines("- ", "  ", "hello\nworld")
         );
         assert_eq!(
             "- hello\n  world\n",
-            &prefix_lines("- ", "  ", "hello\nworld\n")
+            &prefix_first_rest_lines("- ", "  ", "hello\nworld\n")
         );
 
-        assert_eq!("- ", &prefix_lines("- ", "  ", ""));
+        assert_eq!("- ", &prefix_first_rest_lines("- ", "  ", ""));
     }
 
     #[test]

@@ -15,7 +15,9 @@
 //! output.finish();
 //! ```
 //!
-use crate::buildpack_output::style::cmd_stream_format;
+use crate::buildpack_output::style::{
+    bangify, cmd_stream_format, colorize, ERROR_COLOR, HEROKU_COLOR, IMPORTANT_COLOR, WARNING_COLOR,
+};
 use crate::buildpack_output::util::ParagraphInspectWrite;
 use crate::write::line_mapped;
 use std::fmt::Debug;
@@ -104,8 +106,8 @@ where
         if !io.was_paragraph {
             writeln_now(io, "");
         }
-        writeln_now(io, style::warning(s.trim()));
-        writeln_now(io, "");
+        writeln_now(io, colorize(WARNING_COLOR, bangify(s.trim())));
+        writeln_now(io, "\n");
 
         self
     }
@@ -117,7 +119,7 @@ where
         if !io.was_paragraph {
             writeln_now(io, "");
         }
-        writeln_now(io, style::important(s.trim()));
+        writeln_now(io, colorize(IMPORTANT_COLOR, bangify(s.trim())));
         writeln_now(io, "");
 
         self
@@ -129,7 +131,8 @@ where
         if !io.was_paragraph {
             writeln_now(io, "");
         }
-        writeln_now(io, style::error(s.trim()));
+
+        writeln_now(io, colorize(ERROR_COLOR, bangify(s.trim())));
         writeln_now(io, "");
     }
 }
@@ -148,9 +151,9 @@ where
     }
 
     pub fn start(mut self, buildpack_name: &str) -> BuildpackOutput<state::Started<W>> {
-        write_now(
+        writeln_now(
             &mut self.state.write,
-            format!("{}\n\n", style::header(buildpack_name)),
+            colorize(HEROKU_COLOR, format!("\n# {buildpack_name}\n")),
         );
 
         self.start_silent()
@@ -279,15 +282,6 @@ where
     fn flush(&mut self) -> std::io::Result<()> {
         self.state.write.flush()
     }
-}
-
-/// Internal helper, ensures that all contents are always flushed (never buffered).
-///
-/// This is especially important for writing individual characters to the same line.
-fn write_now<D: Write>(destination: &mut D, msg: impl AsRef<str>) {
-    write!(destination, "{}", msg.as_ref()).expect("Output error: UI writer closed");
-
-    destination.flush().expect("Output error: UI writer closed");
 }
 
 /// Internal helper, ensures that all contents are always flushed (never buffered).
