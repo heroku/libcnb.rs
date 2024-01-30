@@ -159,6 +159,7 @@ pub(crate) fn colorize(color: &str, body: impl AsRef<str>) -> String {
         // The above logic causes redundant colors and resets, clean them up
         .map(|line| line.replace(&format!("{RESET}{color}{RESET}"), RESET))
         .map(|line| line.replace(&format!("{color}{color}"), color)) // Reduce useless color
+        .map(|line| line.replace(&format!("{color}{RESET}"), "")) // Do not colorize empty lines
         .collect::<Vec<String>>()
         .join("\n")
 }
