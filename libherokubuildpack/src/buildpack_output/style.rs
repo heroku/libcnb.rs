@@ -1,23 +1,26 @@
-use crate::buildpack_output::ansi_escape::*;
+use crate::buildpack_output::ansi_escape;
 
 /// Helpers for formatting and colorizing your output.
 
 /// Decorate a URL for the build output.
 #[must_use]
 pub fn url(contents: impl AsRef<str>) -> String {
-    colorize_multiline(CYAN, contents)
+    ansi_escape::colorize_multiline(ansi_escape::CYAN, contents)
 }
 
 /// Decorate the name of a command being run i.e. `bundle install`.
 #[must_use]
 pub fn command(contents: impl AsRef<str>) -> String {
-    value(colorize_multiline(BOLD_CYAN, contents.as_ref()))
+    value(ansi_escape::colorize_multiline(
+        ansi_escape::BOLD_CYAN,
+        contents.as_ref(),
+    ))
 }
 
 /// Decorate an important value i.e. `2.3.4`.
 #[must_use]
 pub fn value(contents: impl AsRef<str>) -> String {
-    let contents = colorize_multiline(YELLOW, contents.as_ref());
+    let contents = ansi_escape::colorize_multiline(ansi_escape::YELLOW, contents.as_ref());
     format!("`{contents}`")
 }
 
