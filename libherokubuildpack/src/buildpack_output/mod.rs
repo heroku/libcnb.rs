@@ -11,7 +11,7 @@
 //!
 //! output = output
 //!     .section("Ruby version")
-//!     .end_section();
+//!     .finish();
 //!
 //! output.finish();
 //! ```
@@ -254,7 +254,7 @@ where
         }
     }
 
-    pub fn end_section(self) -> BuildpackOutput<state::Started<W>> {
+    pub fn finish(self) -> BuildpackOutput<state::Started<W>> {
         BuildpackOutput {
             started: self.started,
             state: state::Started {
@@ -268,7 +268,7 @@ impl<W> BuildpackOutput<state::Stream<W>>
 where
     W: Write + Send + Sync + 'static,
 {
-    pub fn finish_stream(mut self) -> BuildpackOutput<state::Section<W>> {
+    pub fn finish(mut self) -> BuildpackOutput<state::Section<W>> {
         let duration = self.state.started.elapsed();
 
         writeln_now(&mut self.state.write, "");
@@ -320,14 +320,14 @@ mod test {
         let mut stream = BuildpackOutput::new(writer)
             .start("Heroku Ruby Buildpack")
             .section("Ruby version `3.1.3` from `Gemfile.lock`")
-            .end_section()
+            .finish()
             .section("Hello world")
             .start_stream("Streaming stuff");
 
         let value = "stuff".to_string();
         writeln!(&mut stream, "{value}").unwrap();
 
-        let io = stream.finish_stream().end_section().finish();
+        let io = stream.finish().finish().finish();
 
         let expected = formatdoc! {"
 
@@ -366,7 +366,7 @@ mod test {
 
         stream = locked_writer.unwrap();
 
-        let io = stream.finish_stream().end_section().finish();
+        let io = stream.finish().finish().finish();
 
         let actual = strip_ansi_escape_sequences(String::from_utf8_lossy(&io));
 
@@ -382,7 +382,7 @@ mod test {
             .section("Guest thoughts")
             .step("The jumping fountains are great")
             .step("The music is nice here")
-            .end_section()
+            .finish()
             .finish();
 
         let expected = formatdoc! {"
@@ -414,7 +414,7 @@ mod test {
             .warning("It's too crowded here\nI'm tired")
             .step("The jumping fountains are great")
             .step("The music is nice here")
-            .end_section()
+            .finish()
             .finish();
 
         let expected = formatdoc! {"
@@ -451,7 +451,7 @@ mod test {
             .warning("I'm tired")
             .step("The jumping fountains are great")
             .step("The music is nice here")
-            .end_section()
+            .finish()
             .finish();
 
         let expected = formatdoc! {"
