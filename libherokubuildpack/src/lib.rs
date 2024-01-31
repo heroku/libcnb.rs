@@ -20,6 +20,3 @@ pub mod tar;
 pub mod toml;
 #[cfg(feature = "write")]
 pub mod write;
-
-#[cfg(test)]
-use fun_run as _;

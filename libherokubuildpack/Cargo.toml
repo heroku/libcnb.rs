@@ -52,4 +52,3 @@ const_format = { version = "0.2", optional = true }
 tempfile = "3.8.1"
 libcnb-test = {workspace = true}
 indoc = "2"
-fun_run = "0.1.1"
