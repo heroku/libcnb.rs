@@ -16,15 +16,17 @@
 //! output.finish();
 //! ```
 //!
-use crate::buildpack_output::style::{
-    bangify, colorize, ERROR_COLOR, HEROKU_COLOR, IMPORTANT_COLOR, WARNING_COLOR,
+use crate::buildpack_output::constants::{
+    ERROR_COLOR, HEROKU_COLOR, IMPORTANT_COLOR, WARNING_COLOR,
 };
+use crate::buildpack_output::style::{bangify, colorize};
 use crate::buildpack_output::util::ParagraphInspectWrite;
 use crate::write::line_mapped;
 use std::fmt::Debug;
 use std::io::Write;
 use std::time::Instant;
 
+mod constants;
 mod duration_format;
 pub mod style;
 mod util;
