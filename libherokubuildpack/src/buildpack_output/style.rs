@@ -7,19 +7,19 @@ use std::fmt::Write;
 /// Decorate a URL for the build output.
 #[must_use]
 pub fn url(contents: impl AsRef<str>) -> String {
-    colorize(URL_COLOR, contents)
+    colorize_multiline(CYAN, contents)
 }
 
 /// Decorate the name of a command being run i.e. `bundle install`.
 #[must_use]
 pub fn command(contents: impl AsRef<str>) -> String {
-    value(colorize(COMMAND_COLOR, contents.as_ref()))
+    value(colorize_multiline(BOLD_CYAN, contents.as_ref()))
 }
 
 /// Decorate an important value i.e. `2.3.4`.
 #[must_use]
 pub fn value(contents: impl AsRef<str>) -> String {
-    let contents = colorize(VALUE_COLOR, contents.as_ref());
+    let contents = colorize_multiline(YELLOW, contents.as_ref());
     format!("`{contents}`")
 }
 
@@ -81,7 +81,7 @@ pub(crate) fn bangify(body: impl AsRef<str>) -> String {
 /// if we don't clear, then we will colorize output that isn't ours.
 ///
 /// Explicitly uncolored output is handled by treating `\x1b[1;39m` (`NO_COLOR`) as a distinct case from `\x1b[0m`.
-pub(crate) fn colorize(color: &str, body: impl AsRef<str>) -> String {
+pub(crate) fn colorize_multiline(color: &str, body: impl AsRef<str>) -> String {
     body.as_ref()
         .split('\n')
         // If sub contents are colorized it will contain SUBCOLOR ... RESET. After the reset,
@@ -127,9 +127,9 @@ mod test {
 
     #[test]
     fn handles_explicitly_removed_colors() {
-        let nested = colorize(NO_COLOR, "nested");
+        let nested = colorize_multiline(NO_COLOR, "nested");
 
-        let out = colorize(RED, format!("hello {nested} color"));
+        let out = colorize_multiline(RED, format!("hello {nested} color"));
         let expected = format!("{RED}hello {NO_COLOR}nested{RESET}{RED} color{RESET}");
 
         assert_eq!(expected, out);
@@ -137,9 +137,9 @@ mod test {
 
     #[test]
     fn handles_nested_colors() {
-        let nested = colorize(CYAN, "nested");
+        let nested = colorize_multiline(CYAN, "nested");
 
-        let out = colorize(RED, format!("hello {nested} color"));
+        let out = colorize_multiline(RED, format!("hello {nested} color"));
         let expected = format!("{RED}hello {CYAN}nested{RESET}{RED} color{RESET}");
 
         assert_eq!(expected, out);
@@ -147,7 +147,7 @@ mod test {
 
     #[test]
     fn splits_newlines() {
-        let actual = colorize(RED, "hello\nworld");
+        let actual = colorize_multiline(RED, "hello\nworld");
         let expected = format!("{RED}hello{RESET}\n{RED}world{RESET}");
 
         assert_eq!(expected, actual);
@@ -155,7 +155,7 @@ mod test {
 
     #[test]
     fn simple_case() {
-        let actual = colorize(RED, "hello world");
+        let actual = colorize_multiline(RED, "hello world");
         assert_eq!(format!("{RED}hello world{RESET}"), actual);
     }
 }

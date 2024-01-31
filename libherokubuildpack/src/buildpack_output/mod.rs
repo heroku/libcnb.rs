@@ -16,10 +16,8 @@
 //! output.finish();
 //! ```
 //!
-use crate::buildpack_output::constants::{
-    ERROR_COLOR, HEROKU_COLOR, IMPORTANT_COLOR, WARNING_COLOR,
-};
-use crate::buildpack_output::style::{bangify, colorize};
+use crate::buildpack_output::constants::{BOLD_PURPLE, CYAN, RED, YELLOW};
+use crate::buildpack_output::style::{bangify, colorize_multiline};
 use crate::buildpack_output::util::ParagraphInspectWrite;
 use crate::write::line_mapped;
 use std::fmt::Debug;
@@ -106,18 +104,18 @@ where
 {
     #[must_use]
     pub fn warning(mut self, s: impl AsRef<str>) -> BuildpackOutput<S> {
-        self.write_paragraph(WARNING_COLOR, s);
+        self.write_paragraph(YELLOW, s);
         self
     }
 
     #[must_use]
     pub fn important(mut self, s: impl AsRef<str>) -> BuildpackOutput<S> {
-        self.write_paragraph(IMPORTANT_COLOR, s);
+        self.write_paragraph(CYAN, s);
         self
     }
 
     pub fn error(mut self, s: impl AsRef<str>) {
-        self.write_paragraph(ERROR_COLOR, s);
+        self.write_paragraph(RED, s);
     }
 
     fn write_paragraph(&mut self, color: &str, s: impl AsRef<str>) {
@@ -126,7 +124,7 @@ where
         if !io.was_paragraph {
             writeln_now(io, "");
         }
-        writeln_now(io, colorize(color, bangify(s.as_ref().trim())));
+        writeln_now(io, colorize_multiline(color, bangify(s.as_ref().trim())));
         writeln_now(io, "");
     }
 }
@@ -147,7 +145,7 @@ where
     pub fn start(mut self, buildpack_name: impl AsRef<str>) -> BuildpackOutput<state::Started<W>> {
         writeln_now(
             &mut self.state.write,
-            colorize(HEROKU_COLOR, format!("\n# {}\n", buildpack_name.as_ref())),
+            colorize_multiline(BOLD_PURPLE, format!("\n# {}\n", buildpack_name.as_ref())),
         );
 
         self.start_silent()

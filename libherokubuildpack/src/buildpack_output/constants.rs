@@ -21,11 +21,3 @@ pub(crate) const ALL_CODES: [&str; 7] = [
     DEFAULT_DIM,
     RESET,
 ];
-
-pub(crate) const HEROKU_COLOR: &str = BOLD_PURPLE;
-pub(crate) const VALUE_COLOR: &str = YELLOW;
-pub(crate) const COMMAND_COLOR: &str = BOLD_CYAN;
-pub(crate) const URL_COLOR: &str = CYAN;
-pub(crate) const IMPORTANT_COLOR: &str = CYAN;
-pub(crate) const ERROR_COLOR: &str = RED;
-pub(crate) const WARNING_COLOR: &str = YELLOW;
