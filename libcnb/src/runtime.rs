@@ -132,10 +132,14 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
     #[cfg(feature = "trace")]
     let mut trace = start_trace(&buildpack_descriptor.buildpack, "detect");
 
+    #[cfg(feature = "trace")]
     let mut trace_error = |err: &dyn std::error::Error| {
-        #[cfg(feature = "trace")]
         trace.set_error(err);
     };
+
+    #[cfg(not(feature = "trace"))]
+    let trace_error = |_: &dyn std::error::Error| {};
+
     let stack_id: StackId = env::var("CNB_STACK_ID")
         .map_err(Error::CannotDetermineStackId)
         .and_then(|stack_id_string| stack_id_string.parse().map_err(Error::StackIdError))
@@ -190,6 +194,7 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
 ///
 /// Exposed only to allow for advanced use-cases where build is programmatically invoked.
 #[doc(hidden)]
+#[allow(clippy::too_many_lines)]
 pub fn libcnb_runtime_build<B: Buildpack>(
     buildpack: &B,
     args: BuildArgs,
@@ -206,10 +211,13 @@ pub fn libcnb_runtime_build<B: Buildpack>(
     #[cfg(feature = "trace")]
     let mut trace = start_trace(&buildpack_descriptor.buildpack, "build");
 
+    #[cfg(feature = "trace")]
     let mut trace_error = |err: &dyn std::error::Error| {
-        #[cfg(feature = "trace")]
         trace.set_error(err);
     };
+
+    #[cfg(not(feature = "trace"))]
+    let trace_error = |_: &dyn std::error::Error| {};
 
     let stack_id: StackId = env::var("CNB_STACK_ID")
         .map_err(Error::CannotDetermineStackId)
