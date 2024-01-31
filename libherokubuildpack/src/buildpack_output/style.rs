@@ -1,6 +1,6 @@
-use crate::buildpack_output::ansi_escape;
+//! Helpers for formatting and colorizing your output.
 
-/// Helpers for formatting and colorizing your output.
+use crate::buildpack_output::ansi_escape;
 
 /// Decorate a URL for the build output.
 pub fn url(contents: impl AsRef<str>) -> String {
@@ -17,8 +17,7 @@ pub fn command(contents: impl AsRef<str>) -> String {
 
 /// Decorate an important value i.e. `2.3.4`.
 pub fn value(contents: impl AsRef<str>) -> String {
-    let contents =
-        ansi_escape::inject_default_ansi_escape(ansi_escape::YELLOW, contents.as_ref());
+    let contents = ansi_escape::inject_default_ansi_escape(ansi_escape::YELLOW, contents.as_ref());
     format!("`{contents}`")
 }
 
