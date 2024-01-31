@@ -234,13 +234,7 @@ where
     #[must_use]
     pub fn step(mut self, s: impl AsRef<str>) -> BuildpackOutput<state::Section<W>> {
         writeln_now(&mut self.state.write, Self::style(s));
-
-        BuildpackOutput {
-            started: self.started,
-            state: state::Section {
-                write: self.state.write,
-            },
-        }
+        self
     }
 
     pub fn start_stream(mut self, s: impl AsRef<str>) -> BuildpackOutput<state::Stream<W>> {
