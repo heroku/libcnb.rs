@@ -25,6 +25,7 @@ use std::fmt::Debug;
 use std::io::Write;
 use std::time::Instant;
 
+mod duration_format;
 pub mod style;
 mod util;
 
@@ -185,7 +186,7 @@ where
 
     pub fn finish(mut self) -> W {
         if let Some(started) = &self.started {
-            let elapsed = style::time::human(&started.elapsed());
+            let elapsed = duration_format::human(&started.elapsed());
             let details = style::details(format!("finished in {elapsed}"));
             writeln_now(
                 &mut self.state.write,
@@ -276,7 +277,7 @@ where
 
         section.mut_step(&format!(
             "Done {}",
-            style::details(style::time::human(&duration))
+            style::details(duration_format::human(&duration))
         ));
 
         section
