@@ -16,15 +16,15 @@
 //! output.finish();
 //! ```
 //!
-use crate::buildpack_output::constants::{BOLD_PURPLE, CYAN, RED, YELLOW};
-use crate::buildpack_output::style::{bangify, colorize_multiline};
+use crate::buildpack_output::ansi_escape::{BOLD_PURPLE, CYAN, RED, YELLOW};
+use crate::buildpack_output::style::bangify;
 use crate::buildpack_output::util::ParagraphInspectWrite;
 use crate::write::line_mapped;
 use std::fmt::Debug;
 use std::io::Write;
 use std::time::Instant;
 
-mod constants;
+mod ansi_escape;
 mod duration_format;
 pub mod style;
 mod util;
@@ -124,7 +124,10 @@ where
         if !io.was_paragraph {
             writeln_now(io, "");
         }
-        writeln_now(io, colorize_multiline(color, bangify(s.as_ref().trim())));
+        writeln_now(
+            io,
+            ansi_escape::colorize_multiline(color, bangify(s.as_ref().trim())),
+        );
         writeln_now(io, "");
     }
 }
@@ -145,7 +148,10 @@ where
     pub fn start(mut self, buildpack_name: impl AsRef<str>) -> BuildpackOutput<state::Started<W>> {
         writeln_now(
             &mut self.state.write,
-            colorize_multiline(BOLD_PURPLE, format!("\n# {}\n", buildpack_name.as_ref())),
+            ansi_escape::colorize_multiline(
+                BOLD_PURPLE,
+                format!("\n# {}\n", buildpack_name.as_ref()),
+            ),
         );
 
         self.start_silent()
