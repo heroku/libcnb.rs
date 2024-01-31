@@ -227,10 +227,6 @@ where
         prefix_first_rest_lines(Self::PREFIX_FIRST, Self::PREFIX_REST, s.as_ref())
     }
 
-    pub fn mut_step(&mut self, s: impl AsRef<str>) {
-        writeln_now(&mut self.state.write, Self::style(s));
-    }
-
     #[must_use]
     pub fn step(mut self, s: impl AsRef<str>) -> BuildpackOutput<state::Section<W>> {
         writeln_now(&mut self.state.write, Self::style(s));
@@ -277,19 +273,16 @@ where
 
         writeln_now(&mut self.state.write, "");
 
-        let mut section = BuildpackOutput {
+        BuildpackOutput {
             started: self.started,
             state: state::Section {
                 write: self.state.write.unwrap(),
             },
-        };
-
-        section.mut_step(&format!(
+        }
+        .step(format!(
             "Done {}",
             style::details(duration_format::human(&duration))
-        ));
-
-        section
+        ))
     }
 }
 
