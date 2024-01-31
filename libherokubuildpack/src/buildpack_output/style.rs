@@ -4,12 +4,6 @@ use std::fmt::Write;
 
 /// Helpers for formatting and colorizing your output.
 
-/// Decorated str for prefixing "Help:".
-pub const HELP: &str = formatcp!("{IMPORTANT_COLOR}! HELP{RESET}");
-
-/// Decorated str for prefixing "Debug info:".
-pub const DEBUG_INFO: &str = formatcp!("{IMPORTANT_COLOR}Debug info{RESET}");
-
 /// Decorate a URL for the build output.
 #[must_use]
 pub fn url(contents: impl AsRef<str>) -> String {
