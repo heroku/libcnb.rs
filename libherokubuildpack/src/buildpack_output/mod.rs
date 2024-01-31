@@ -309,7 +309,7 @@ fn writeln_now<D: Write>(destination: &mut D, msg: impl AsRef<str>) {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::buildpack_output::style::strip_control_codes;
+    use crate::buildpack_output::constants::ALL_CODES;
     use crate::buildpack_output::util::LockedWriter;
     use crate::command::CommandExt;
     use indoc::formatdoc;
@@ -463,5 +463,13 @@ mod test {
         "};
 
         assert_eq!(expected, strip_control_codes(String::from_utf8_lossy(&io)));
+    }
+
+    fn strip_control_codes(contents: impl AsRef<str>) -> String {
+        let mut contents = contents.as_ref().to_string();
+        for code in ALL_CODES {
+            contents = contents.replace(code, "");
+        }
+        contents
     }
 }

@@ -98,15 +98,6 @@ pub(crate) fn colorize(color: &str, body: impl AsRef<str>) -> String {
 }
 
 #[cfg(test)]
-pub(crate) fn strip_control_codes(contents: impl AsRef<str>) -> String {
-    let mut contents = contents.as_ref().to_string();
-    for code in ALL_CODES {
-        contents = contents.replace(code, "");
-    }
-    contents
-}
-
-#[cfg(test)]
 mod test {
     use super::*;
 
