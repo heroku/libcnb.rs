@@ -311,7 +311,6 @@ mod test {
     use crate::command::CommandExt;
     use indoc::formatdoc;
     use libcnb_test::assert_contains;
-    use pretty_assertions::assert_eq;
 
     #[test]
     fn test_captures() {
