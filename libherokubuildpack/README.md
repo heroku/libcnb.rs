@@ -24,6 +24,8 @@ The feature names line up with the modules in this crate. All features are enabl
   Enables helpers to achieve consistent error logging.
 * **log** -
   Enables helpers for logging.
+* **buildpack_output** -
+  Enables helpers for user-facing buildpack output.
 * **tar** -
   Enables helpers for working with tarballs.
 * **toml** -
