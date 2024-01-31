@@ -126,7 +126,7 @@ where
 
         writeln_now(
             io,
-            ansi_escape::colorize_multiline(
+            ansi_escape::inject_default_ansi_escape(
                 color,
                 prefix_lines(s.as_ref(), |_, line| {
                     if line.chars().all(char::is_whitespace) {
@@ -157,7 +157,7 @@ where
     pub fn start(mut self, buildpack_name: impl AsRef<str>) -> BuildpackOutput<state::Started<W>> {
         writeln_now(
             &mut self.state.write,
-            ansi_escape::colorize_multiline(
+            ansi_escape::inject_default_ansi_escape(
                 BOLD_PURPLE,
                 format!("\n# {}\n", buildpack_name.as_ref()),
             ),
