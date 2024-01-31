@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-#[must_use]
 pub(crate) fn human(duration: &Duration) -> String {
     let hours = (duration.as_secs() / 3600) % 60;
     let minutes = (duration.as_secs() / 60) % 60;
