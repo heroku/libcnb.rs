@@ -307,7 +307,6 @@ fn writeln_now<D: Write>(destination: &mut D, msg: impl AsRef<str>) {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::buildpack_output::constants::ALL_CODES;
     use crate::buildpack_output::util::LockedWriter;
     use crate::command::CommandExt;
     use indoc::formatdoc;
@@ -342,7 +341,10 @@ mod test {
             - Done (finished in < 0.1s)
         "};
 
-        assert_eq!(expected, strip_control_codes(String::from_utf8_lossy(&io)));
+        assert_eq!(
+            expected,
+            strip_ansi_escape_sequences(String::from_utf8_lossy(&io))
+        );
     }
 
     #[test]
@@ -364,7 +366,7 @@ mod test {
 
         let io = stream.finish_stream().end_section().finish();
 
-        let actual = strip_control_codes(String::from_utf8_lossy(&io));
+        let actual = strip_ansi_escape_sequences(String::from_utf8_lossy(&io));
 
         assert_contains!(actual, "      hello world\n");
     }
@@ -394,7 +396,10 @@ mod test {
             - Done (finished in < 0.1s)
         "};
 
-        assert_eq!(expected, strip_control_codes(String::from_utf8_lossy(&io)));
+        assert_eq!(
+            expected,
+            strip_ansi_escape_sequences(String::from_utf8_lossy(&io))
+        );
     }
 
     #[test]
@@ -425,7 +430,10 @@ mod test {
             - Done (finished in < 0.1s)
         "};
 
-        assert_eq!(expected, strip_control_codes(String::from_utf8_lossy(&io)));
+        assert_eq!(
+            expected,
+            strip_ansi_escape_sequences(String::from_utf8_lossy(&io))
+        );
     }
 
     #[test]
@@ -460,14 +468,31 @@ mod test {
             - Done (finished in < 0.1s)
         "};
 
-        assert_eq!(expected, strip_control_codes(String::from_utf8_lossy(&io)));
+        assert_eq!(
+            expected,
+            strip_ansi_escape_sequences(String::from_utf8_lossy(&io))
+        );
     }
 
-    fn strip_control_codes(contents: impl AsRef<str>) -> String {
-        let mut contents = contents.as_ref().to_string();
-        for code in ALL_CODES {
-            contents = contents.replace(code, "");
+    fn strip_ansi_escape_sequences(contents: impl AsRef<str>) -> String {
+        let mut result = String::new();
+        let mut in_ansi_escape = false;
+        for char in contents.as_ref().chars() {
+            if in_ansi_escape {
+                if char == 'm' {
+                    in_ansi_escape = false;
+                    continue;
+                }
+            } else {
+                if char == '\x1B' {
+                    in_ansi_escape = true;
+                    continue;
+                }
+
+                result.push(char);
+            }
         }
-        contents
+
+        result
     }
 }
