@@ -17,8 +17,7 @@
 //! ```
 //!
 use crate::buildpack_output::ansi_escape::{BOLD_PURPLE, CYAN, RED, YELLOW};
-use crate::buildpack_output::style::bangify;
-use crate::buildpack_output::util::ParagraphInspectWrite;
+use crate::buildpack_output::util::{prefix_first_rest_lines, prefix_lines, ParagraphInspectWrite};
 use crate::write::line_mapped;
 use std::fmt::Debug;
 use std::io::Write;
@@ -124,9 +123,19 @@ where
         if !io.was_paragraph {
             writeln_now(io, "");
         }
+
         writeln_now(
             io,
-            ansi_escape::colorize_multiline(color, bangify(s.as_ref().trim())),
+            ansi_escape::colorize_multiline(
+                color,
+                prefix_lines(s.as_ref(), |_, line| {
+                    if line.chars().all(char::is_whitespace) {
+                        String::from("!")
+                    } else {
+                        String::from("! ")
+                    }
+                }),
+            ),
         );
         writeln_now(io, "");
     }
@@ -175,7 +184,7 @@ where
     const PREFIX_REST: &'static str = "  ";
 
     fn style(s: impl AsRef<str>) -> String {
-        style::prefix_first_rest_lines(Self::PREFIX_FIRST, Self::PREFIX_REST, s.as_ref())
+        prefix_first_rest_lines(Self::PREFIX_FIRST, Self::PREFIX_REST, s.as_ref())
     }
 
     #[must_use]
@@ -215,7 +224,7 @@ where
     const CMD_INDENT: &'static str = "      ";
 
     fn style(s: impl AsRef<str>) -> String {
-        style::prefix_first_rest_lines(Self::PREFIX_FIRST, Self::PREFIX_REST, s.as_ref())
+        prefix_first_rest_lines(Self::PREFIX_FIRST, Self::PREFIX_REST, s.as_ref())
     }
 
     pub fn mut_step(&mut self, s: impl AsRef<str>) {

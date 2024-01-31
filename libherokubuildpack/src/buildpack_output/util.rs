@@ -30,6 +30,42 @@ impl<'a> Iterator for LineIterator<'a> {
     }
 }
 
+pub(crate) fn prefix_lines<F: Fn(usize, &str) -> String>(contents: &str, f: F) -> String {
+    use std::fmt::Write;
+
+    let lines = LineIterator::from(contents).enumerate().fold(
+        String::new(),
+        |mut acc, (line_index, line)| {
+            let prefix = f(line_index, line);
+            let _ = write!(acc, "{prefix}{line}");
+            acc
+        },
+    );
+
+    if lines.is_empty() {
+        f(0, "")
+    } else {
+        lines
+    }
+}
+
+pub(crate) fn prefix_first_rest_lines(
+    first_prefix: &str,
+    rest_prefix: &str,
+    contents: &str,
+) -> String {
+    let first_prefix = String::from(first_prefix);
+    let rest_prefix = String::from(rest_prefix);
+
+    prefix_lines(contents, move |index, _| {
+        if index == 0 {
+            first_prefix.clone()
+        } else {
+            rest_prefix.clone()
+        }
+    })
+}
+
 #[derive(Debug)]
 pub(crate) struct LockedWriter<W> {
     arc: Arc<Mutex<W>>,
@@ -160,5 +196,20 @@ mod test {
         write!(&mut inspect_write, "- The scenery here is wonderful\n").unwrap();
         write!(&mut inspect_write, "\n").unwrap();
         assert!(inspect_write.was_paragraph);
+    }
+
+    #[test]
+    fn test_prefix_first_rest_lines() {
+        assert_eq!("- hello", &prefix_first_rest_lines("- ", "  ", "hello"));
+        assert_eq!(
+            "- hello\n  world",
+            &prefix_first_rest_lines("- ", "  ", "hello\nworld")
+        );
+        assert_eq!(
+            "- hello\n  world\n",
+            &prefix_first_rest_lines("- ", "  ", "hello\nworld\n")
+        );
+
+        assert_eq!("- ", &prefix_first_rest_lines("- ", "  ", ""));
     }
 }
