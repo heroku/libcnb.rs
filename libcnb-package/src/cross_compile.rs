@@ -41,7 +41,6 @@ fn generate_assistance(
     target_triple: &str,
 ) -> CrossCompileAssistance {
     match which(gcc_path) {
-        Err(_) => CrossCompileAssistance::HelpText(help_text.to_string()),
         Ok(_) => {
             if gcc_path == "musl-gcc" {
                 CrossCompileAssistance::Configuration {
@@ -70,6 +69,7 @@ fn generate_assistance(
                 }
             }
         }
+        Err(_) => CrossCompileAssistance::HelpText(help_text.to_string()),
     }
 }
 pub enum CrossCompileAssistance {
