@@ -64,7 +64,7 @@ pub fn cross_compile_assistance(target_triple: impl AsRef<str>) -> CrossCompileA
         }
         Err(_) => CrossCompileAssistance::HelpText(format!(
             r"For cross-compilation from {0} {1} to {target}, a C compiler and
-linker for the target platform must be installed on your computer:
+linker for the target platform must be installed:
 
 {help_text}
             
