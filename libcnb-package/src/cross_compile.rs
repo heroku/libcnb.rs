@@ -12,23 +12,23 @@ pub fn cross_compile_assistance(target_triple: impl AsRef<str>) -> CrossCompileA
     let (gcc_path, help_text) = match (target, consts::OS, consts::ARCH) {
         (AARCH64_UNKNOWN_LINUX_MUSL, OS_LINUX, ARCH_X86_64) => (
             "aarch64-linux-gnu-gcc",
-            "Install aarch64 cross-compiler:\nsudo apt-get install g++-aarch64-linux-gnu",
+            "To install an aarch64 cross-compiler on Ubuntu:\nsudo apt-get install g++-aarch64-linux-gnu",
         ),
         (AARCH64_UNKNOWN_LINUX_MUSL, OS_MACOS, _) => (
             "aarch64-unknown-linux-musl-gcc",
-            "Install aarch64 cross-compiler on macOS:\nbrew install messense/macos-cross-toolchains/aarch64-unknown-linux-musl",
+            "To install an aarch64 cross-compiler on macOS:\nbrew install messense/macos-cross-toolchains/aarch64-unknown-linux-musl",
         ),
         (AARCH64_UNKNOWN_LINUX_MUSL, OS_LINUX, ARCH_AARCH64) | (X86_64_UNKNOWN_LINUX_MUSL, OS_LINUX, ARCH_X86_64) => (
             "musl-gcc",
-            "Install musl-tools:\nsudo apt-get install musl-tools",
+            "To install musl-tools on Ubuntu:\nsudo apt-get install musl-tools",
         ),
         (X86_64_UNKNOWN_LINUX_MUSL, OS_LINUX, ARCH_AARCH64) => (
             "x86_64-linux-gnu-gcc",
-            "Install x86_64 cross-compiler:\nsudo apt-get install g++-x86_64-linux-gnu",
+            "To install an x86_64 cross-compiler on Ubuntu:\nsudo apt-get install g++-x86_64-linux-gnu",
         ),
         (X86_64_UNKNOWN_LINUX_MUSL, OS_MACOS, _) => (
             "x86_64-unknown-linux-musl-gcc",
-            "Install x86_64 cross-compiler on macOS:\nbrew install messense/macos-cross-toolchains/x86_64-unknown-linux-musl",
+            "To install an x86_64 cross-compiler on macOS:\nbrew install messense/macos-cross-toolchains/x86_64-unknown-linux-musl",
         ),
         _ => return CrossCompileAssistance::NoAssistance,
     };
