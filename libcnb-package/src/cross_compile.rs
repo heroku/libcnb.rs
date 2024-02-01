@@ -31,15 +31,8 @@ pub fn cross_compile_assistance(target_triple: impl AsRef<str>) -> CrossCompileA
             "Install x86_64 cross-compiler on macOS:\nbrew install messense/macos-cross-toolchains/x86_64-unknown-linux-musl",
         ),
         _ => return CrossCompileAssistance::NoAssistance,
-        };
-    generate_assistance(gcc_path, help_text, target)
-}
+    };
 
-fn generate_assistance(
-    gcc_path: &str,
-    help_text: &str,
-    target_triple: &str,
-) -> CrossCompileAssistance {
     match which(gcc_path) {
         Ok(_) => {
             if gcc_path == "musl-gcc" {
@@ -55,14 +48,14 @@ fn generate_assistance(
                             // https://github.com/rust-lang/cargo/issues/4133
                             OsString::from(format!(
                                 "CARGO_TARGET_{}_LINKER",
-                                target_triple.to_uppercase().replace('-', "_")
+                                target.to_uppercase().replace('-', "_")
                             )),
                             OsString::from(gcc_path),
                         ),
                         (
                             // Required so that any crates that call out to gcc are also cross-compiled:
                             // https://github.com/alexcrichton/cc-rs/issues/82
-                            OsString::from(format!("CC_{target_triple}")),
+                            OsString::from(format!("CC_{target}")),
                             OsString::from(gcc_path),
                         ),
                     ],
@@ -72,6 +65,7 @@ fn generate_assistance(
         Err(_) => CrossCompileAssistance::HelpText(help_text.to_string()),
     }
 }
+
 pub enum CrossCompileAssistance {
     /// No specific assistance available for the current host and target platform combination.
     NoAssistance,
