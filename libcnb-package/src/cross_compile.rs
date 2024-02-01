@@ -40,35 +40,37 @@ fn generate_assistance(
     help_text: &str,
     target_triple: &str,
 ) -> CrossCompileAssistance {
-    if which(gcc_path).is_err() {
-        CrossCompileAssistance::HelpText(help_text.to_string())
-    } else if gcc_path == "musl-gcc" {
-        CrossCompileAssistance::Configuration {
-            cargo_env: Vec::new(),
+    match which(gcc_path) {
+        Err(_) => CrossCompileAssistance::HelpText(help_text.to_string()),
+        Ok(_) => {
+            if gcc_path == "musl-gcc" {
+                CrossCompileAssistance::Configuration {
+                    cargo_env: Vec::new(),
+                }
+            } else {
+                let cargo_env = vec![
+                    (
+                        // Required until Cargo can auto-detect the musl-cross gcc/linker itself,
+                        // since otherwise it checks for a binary named 'musl-gcc' (which is handled above):
+                        // https://github.com/rust-lang/cargo/issues/4133
+                        OsString::from(format!(
+                            "CARGO_TARGET_{}_LINKER",
+                            target_triple.to_uppercase().replace('-', "_")
+                        )),
+                        OsString::from(gcc_path),
+                    ),
+                    (
+                        // Required so that any crates that call out to gcc are also cross-compiled:
+                        // https://github.com/alexcrichton/cc-rs/issues/82
+                        OsString::from(format!("CC_{target_triple}")),
+                        OsString::from(gcc_path),
+                    ),
+                ];
+                CrossCompileAssistance::Configuration { cargo_env }
+            }
         }
-    } else {
-        let cargo_env = vec![
-            (
-                // Required until Cargo can auto-detect the musl-cross gcc/linker itself,
-                // since otherwise it checks for a binary named 'musl-gcc' (which is handled above):
-                // https://github.com/rust-lang/cargo/issues/4133
-                OsString::from(format!(
-                    "CARGO_TARGET_{}_LINKER",
-                    target_triple.to_uppercase().replace('-', "_")
-                )),
-                OsString::from(gcc_path),
-            ),
-            (
-                // Required so that any crates that call out to gcc are also cross-compiled:
-                // https://github.com/alexcrichton/cc-rs/issues/82
-                OsString::from(format!("CC_{target_triple}")),
-                OsString::from(gcc_path),
-            ),
-        ];
-        CrossCompileAssistance::Configuration { cargo_env }
     }
 }
-
 pub enum CrossCompileAssistance {
     /// No specific assistance available for the current host and target platform combination.
     NoAssistance,
