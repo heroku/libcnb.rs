@@ -40,11 +40,6 @@ fn generate_assistance(
     help_text: &str,
     target_triple: &str,
 ) -> CrossCompileAssistance {
-    let cargo_target_linker_var = format!(
-        "CARGO_TARGET_{}_LINKER",
-        target_triple.to_uppercase().replace('-', "_")
-    );
-
     if which(gcc_path).is_err() {
         CrossCompileAssistance::HelpText(help_text.to_string())
     } else if gcc_path == "musl-gcc" {
@@ -57,7 +52,10 @@ fn generate_assistance(
                 // Required until Cargo can auto-detect the musl-cross gcc/linker itself,
                 // since otherwise it checks for a binary named 'musl-gcc' (which is handled above):
                 // https://github.com/rust-lang/cargo/issues/4133
-                OsString::from(cargo_target_linker_var),
+                OsString::from(format!(
+                    "CARGO_TARGET_{}_LINKER",
+                    target_triple.to_uppercase().replace('-', "_")
+                )),
                 OsString::from(gcc_path),
             ),
             (
