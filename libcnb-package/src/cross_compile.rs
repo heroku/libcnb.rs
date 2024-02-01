@@ -55,7 +55,7 @@ pub fn cross_compile_assistance(target_triple: impl AsRef<str>) -> CrossCompileA
                         (
                             // Required so that any crates that call out to gcc are also cross-compiled:
                             // https://github.com/alexcrichton/cc-rs/issues/82
-                            OsString::from(format!("CC_{target}")),
+                            OsString::from(format!("CC_{}", target.replace('-', "_"))),
                             OsString::from(gcc_path),
                         ),
                     ],
