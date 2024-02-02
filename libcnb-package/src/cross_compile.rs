@@ -37,7 +37,7 @@ pub fn cross_compile_assistance(target_triple: impl AsRef<str>) -> CrossCompileA
             "x86_64-linux-gnu-gcc",
             indoc! {"
                 To install an x86_64 cross-compiler on Ubuntu:
-                sudo apt-get install g++-x86-64-linux-gnu
+                sudo apt-get install g++-x86-64-linux-gnu libc6-dev-amd64-cross musl-tools
             "},
         ),
         (X86_64_UNKNOWN_LINUX_MUSL, OS_MACOS, ARCH_X86_64 | ARCH_AARCH64) => (
