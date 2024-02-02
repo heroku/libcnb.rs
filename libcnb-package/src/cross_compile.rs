@@ -52,6 +52,8 @@ pub fn cross_compile_assistance(target_triple: impl AsRef<str>) -> CrossCompileA
 
     match which(gcc_path) {
         Ok(_) => {
+            // When the gcc binary is `musl-gcc`, Cargo will automatically select the appropriate default linker,
+            // and set the required environment variables.
             if gcc_path == "musl-gcc" {
                 CrossCompileAssistance::Configuration {
                     cargo_env: Vec::new(),
