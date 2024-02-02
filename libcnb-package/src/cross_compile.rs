@@ -92,7 +92,7 @@ pub enum CrossCompileAssistance {
 const AARCH64_UNKNOWN_LINUX_MUSL: &str = "aarch64-unknown-linux-musl";
 const X86_64_UNKNOWN_LINUX_MUSL: &str = "x86_64-unknown-linux-musl";
 
-// Constants for OS and ARCH
+// Constants for `std::env::consts::OS` and `std::env::consts::ARCH`
 const OS_LINUX: &str = "linux";
 const OS_MACOS: &str = "macos";
 const ARCH_X86_64: &str = "x86_64";
