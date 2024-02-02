@@ -86,7 +86,6 @@ pub fn cross_compile_assistance(target_triple: impl AsRef<str>) -> CrossCompileA
             linker for the target platform must be installed:
 
             {help_text}
-
             You will also need to install the Rust target:
             rustup target add {target_triple}
             ",
