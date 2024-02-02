@@ -15,7 +15,7 @@ pub fn cross_compile_assistance(target_triple: impl AsRef<str>) -> CrossCompileA
             "aarch64-linux-gnu-gcc",
             indoc! {"
                 To install an aarch64 cross-compiler on Ubuntu:
-                sudo apt-get install g++-aarch64-linux-gnu
+                sudo apt-get install g++-aarch64-linux-gnu libc6-dev-arm64-cross musl-tools
             "},
         ),
         (AARCH64_UNKNOWN_LINUX_MUSL, OS_MACOS, ARCH_X86_64 | ARCH_AARCH64) => (
