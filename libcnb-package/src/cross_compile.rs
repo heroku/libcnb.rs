@@ -1,4 +1,4 @@
-use indoc::indoc;
+use indoc::{formatdoc, indoc};
 use std::env::consts;
 use std::ffi::OsString;
 use which::which;
@@ -79,7 +79,7 @@ pub fn cross_compile_assistance(target_triple: impl AsRef<str>) -> CrossCompileA
                 }
             }
         }
-        Err(_) => CrossCompileAssistance::HelpText(format!(
+        Err(_) => CrossCompileAssistance::HelpText(formatdoc! {
             r"For cross-compilation from {0} {1} to {target_triple}, a C compiler and
 linker for the target platform must be installed:
 
@@ -89,7 +89,7 @@ You will also need to install the Rust target:
 rustup target add {target_triple}",
             consts::ARCH,
             consts::OS
-        )),
+        }),
     }
 }
 
