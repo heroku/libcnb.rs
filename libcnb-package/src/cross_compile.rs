@@ -18,7 +18,8 @@ pub fn cross_compile_assistance(target_triple: impl AsRef<str>) -> CrossCompileA
             "aarch64-unknown-linux-musl-gcc",
             "To install an aarch64 cross-compiler on macOS:\nbrew install messense/macos-cross-toolchains/aarch64-unknown-linux-musl",
         ),
-        (AARCH64_UNKNOWN_LINUX_MUSL, OS_LINUX, ARCH_AARCH64) | (X86_64_UNKNOWN_LINUX_MUSL, OS_LINUX, ARCH_X86_64) => (
+        (AARCH64_UNKNOWN_LINUX_MUSL, OS_LINUX, ARCH_AARCH64)
+        | (X86_64_UNKNOWN_LINUX_MUSL, OS_LINUX, ARCH_X86_64) => (
             "musl-gcc",
             "To install musl-tools on Ubuntu:\nsudo apt-get install musl-tools",
         ),
