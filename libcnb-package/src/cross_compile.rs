@@ -8,8 +8,8 @@ use which::which;
 /// look for the required tools and returns a human-readable help text if they can't be found or
 /// any other issue has been detected.
 pub fn cross_compile_assistance(target_triple: impl AsRef<str>) -> CrossCompileAssistance {
-    let target = target_triple.as_ref();
-    let (gcc_path, help_text) = match (target, consts::OS, consts::ARCH) {
+    let target_triple = target_triple.as_ref();
+    let (gcc_path, help_text) = match (target_triple, consts::OS, consts::ARCH) {
         (AARCH64_UNKNOWN_LINUX_MUSL, OS_LINUX, ARCH_X86_64) => (
             "aarch64-linux-gnu-gcc",
             "To install an aarch64 cross-compiler on Ubuntu:\nsudo apt-get install g++-aarch64-linux-gnu",
@@ -48,14 +48,14 @@ pub fn cross_compile_assistance(target_triple: impl AsRef<str>) -> CrossCompileA
                             // https://github.com/rust-lang/cargo/issues/4133
                             OsString::from(format!(
                                 "CARGO_TARGET_{}_LINKER",
-                                target.to_uppercase().replace('-', "_")
+                                target_triple.to_uppercase().replace('-', "_")
                             )),
                             OsString::from(gcc_path),
                         ),
                         (
                             // Required so that any crates that call out to gcc are also cross-compiled:
                             // https://github.com/alexcrichton/cc-rs/issues/82
-                            OsString::from(format!("CC_{}", target.replace('-', "_"))),
+                            OsString::from(format!("CC_{}", target_triple.replace('-', "_"))),
                             OsString::from(gcc_path),
                         ),
                     ],
@@ -63,13 +63,13 @@ pub fn cross_compile_assistance(target_triple: impl AsRef<str>) -> CrossCompileA
             }
         }
         Err(_) => CrossCompileAssistance::HelpText(format!(
-            r"For cross-compilation from {0} {1} to {target}, a C compiler and
+            r"For cross-compilation from {0} {1} to {target_triple}, a C compiler and
 linker for the target platform must be installed:
 
 {help_text}
             
 You will also need to install the Rust target:
-rustup target add {target}",
+rustup target add {target_triple}",
             consts::ARCH,
             consts::OS
         )),
