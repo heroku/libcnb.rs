@@ -1,3 +1,4 @@
+use indoc::indoc;
 use std::env::consts;
 use std::ffi::OsString;
 use which::which;
@@ -12,24 +13,39 @@ pub fn cross_compile_assistance(target_triple: impl AsRef<str>) -> CrossCompileA
     let (gcc_path, help_text) = match (target_triple, consts::OS, consts::ARCH) {
         (AARCH64_UNKNOWN_LINUX_MUSL, OS_LINUX, ARCH_X86_64) => (
             "aarch64-linux-gnu-gcc",
-            "To install an aarch64 cross-compiler on Ubuntu:\nsudo apt-get install g++-aarch64-linux-gnu",
+            indoc! {"
+                To install an aarch64 cross-compiler on Ubuntu:
+                sudo apt-get install g++-aarch64-linux-gnu
+            "},
         ),
         (AARCH64_UNKNOWN_LINUX_MUSL, OS_MACOS, ARCH_X86_64 | ARCH_AARCH64) => (
             "aarch64-unknown-linux-musl-gcc",
-            "To install an aarch64 cross-compiler on macOS:\nbrew install messense/macos-cross-toolchains/aarch64-unknown-linux-musl",
+            indoc! {"
+                To install an aarch64 cross-compiler on macOS:
+                brew install messense/macos-cross-toolchains/aarch64-unknown-linux-musl
+            "},
         ),
         (AARCH64_UNKNOWN_LINUX_MUSL, OS_LINUX, ARCH_AARCH64)
         | (X86_64_UNKNOWN_LINUX_MUSL, OS_LINUX, ARCH_X86_64) => (
             "musl-gcc",
-            "To install musl-tools on Ubuntu:\nsudo apt-get install musl-tools",
+            indoc! {"
+                To install musl-tools on Ubuntu:
+                sudo apt-get install musl-tools
+            "},
         ),
         (X86_64_UNKNOWN_LINUX_MUSL, OS_LINUX, ARCH_AARCH64) => (
             "x86_64-linux-gnu-gcc",
-            "To install an x86_64 cross-compiler on Ubuntu:\nsudo apt-get install g++-x86_64-linux-gnu",
+            indoc! {"
+                To install an x86_64 cross-compiler on Ubuntu:
+                sudo apt-get install g++-x86_64-linux-gnu
+            "},
         ),
         (X86_64_UNKNOWN_LINUX_MUSL, OS_MACOS, ARCH_X86_64 | ARCH_AARCH64) => (
             "x86_64-unknown-linux-musl-gcc",
-            "To install an x86_64 cross-compiler on macOS:\nbrew install messense/macos-cross-toolchains/x86_64-unknown-linux-musl",
+            indoc! {"
+                To install an x86_64 cross-compiler on macOS:
+                brew install messense/macos-cross-toolchains/x86_64-unknown-linux-musl
+            "},
         ),
         _ => return CrossCompileAssistance::NoAssistance,
     };
