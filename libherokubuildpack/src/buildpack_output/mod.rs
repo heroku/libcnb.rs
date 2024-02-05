@@ -39,28 +39,121 @@ pub struct BuildpackOutput<T> {
 /// Various states for [`BuildpackOutput`] to contain.
 ///
 /// The [`BuildpackOutput`] struct acts as an output state machine. These structs
-/// are meant to represent those states.
-#[doc(hidden)]
+/// represent the various states. See struct documentation for more details.
 pub mod state {
     use crate::buildpack_output::util::ParagraphInspectWrite;
     use crate::write::MappedWrite;
     use std::time::Instant;
 
+    /// An initialized buildpack output that has not announced it's start. Is represented by the
+    /// `state::NotStarted` type. This is transitioned into a `state::Started` type.
+    ///
+    /// Example:
+    ///
+    /// ```rust
+    /// use libherokubuildpack::buildpack_output::{BuildpackOutput, state::{NotStarted, Started}};
+    /// use std::io::Write;
+    ///
+    /// let mut not_started = BuildpackOutput::new(std::io::stdout());
+    /// let output = start_buildpack(not_started);
+    ///
+    /// output.section("Ruby version").step("Installing Ruby").finish();
+    ///
+    /// fn start_buildpack<W>(mut output: BuildpackOutput<NotStarted<W>>) -> BuildpackOutput<Started<W>>
+    /// where W: Write + Send + Sync + 'static {
+    ///     output.start("Heroku Ruby Buildpack")
+    ///}
+    /// ```
     #[derive(Debug)]
     pub struct NotStarted<W> {
         pub(crate) write: ParagraphInspectWrite<W>,
     }
 
+    /// After buildpack output has been started, it's top level output will be represented by the
+    /// `state::Started` type. This is transitioned into a `state::Section` to provide additional
+    /// details.
+    ///
+    /// Example:
+    ///
+    /// ```rust
+    /// use libherokubuildpack::buildpack_output::{BuildpackOutput, state::{Started, Section}};
+    /// use std::io::Write;
+    ///
+    /// let mut output = BuildpackOutput::new(std::io::stdout())
+    ///     .start("Heroku Ruby Buildpack");
+    ///
+    /// output = install_ruby(output).finish();
+    ///
+    /// fn install_ruby<W>(mut output: BuildpackOutput<Started<W>>) -> BuildpackOutput<Section<W>>
+    /// where W: Write + Send + Sync + 'static {
+    ///     let out = output.section("Ruby version")
+    ///         .step("Installing Ruby");
+    ///     // ...
+    ///     out
+    ///}
+    /// ```
     #[derive(Debug)]
     pub struct Started<W> {
         pub(crate) write: ParagraphInspectWrite<W>,
     }
 
+    /// The `state::Section` is intended for providing addiitonal details about the buildpack's
+    /// actions. When a section is finished it transitions back to a `state::Started` type.
+    ///
+    /// A streaming type can be started from a `state::Section`, usually to run and stream a
+    /// `process::Command` to the end user.
+    ///
+    /// Example:
+    ///
+    /// ```rust
+    /// use libherokubuildpack::buildpack_output::{BuildpackOutput, state::{Started, Section}};
+    /// use std::io::Write;
+    ///
+    /// let mut output = BuildpackOutput::new(std::io::stdout())
+    ///     .start("Heroku Ruby Buildpack")
+    ///     .section("Ruby version");
+    ///
+    /// install_ruby(output).finish();
+    ///
+    /// fn install_ruby<W>(mut output: BuildpackOutput<Section<W>>) -> BuildpackOutput<Started<W>>
+    /// where W: Write + Send + Sync + 'static {
+    ///     let output = output.step("Installing Ruby");
+    ///     // ...
+    ///
+    ///     output.finish()
+    ///}
+    /// ```
     #[derive(Debug)]
     pub struct Section<W> {
         pub(crate) write: ParagraphInspectWrite<W>,
     }
 
+    /// A `state::Stream` is intended for streaming output from a process to the end user. It is
+    /// started from a `state::Section` and finished back to a `state::Section`.
+    ///
+    /// The `BuildpackOutput<state::Stream<W>>` implements `std::io::Write`, so
+    /// you can stream to anything that accepts a `std::io::Write`.
+    ///
+    /// ```rust
+    /// use libherokubuildpack::buildpack_output::{BuildpackOutput, state::{Started, Section}};
+    /// use std::io::Write;
+    ///
+    /// let mut output = BuildpackOutput::new(std::io::stdout())
+    ///     .start("Heroku Ruby Buildpack")
+    ///     .section("Ruby version");
+    ///
+    /// install_ruby(output).finish();
+    ///
+    /// fn install_ruby<W>(mut output: BuildpackOutput<Section<W>>) -> BuildpackOutput<Section<W>>
+    /// where W: Write + Send + Sync + 'static {
+    ///     let mut stream = output.step("Installing Ruby")
+    ///         .start_stream("Streaming stuff");
+    ///
+    ///     write!(&mut stream, "...").unwrap();
+    ///
+    ///     stream.finish()
+    ///}
+    /// ```
     pub struct Stream<W: std::io::Write> {
         pub(crate) started: Instant,
         pub(crate) write: MappedWrite<ParagraphInspectWrite<W>>,
