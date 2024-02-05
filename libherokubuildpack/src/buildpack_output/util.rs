@@ -93,7 +93,9 @@ impl<W> LockedWriter<W> {
             panic!("Expected buildpack author to not retain any IO streaming IO instances")
         };
 
-        mutex.into_inner().expect("Output mutex was poisoned")
+        mutex
+            .into_inner()
+            .expect("Thread holding locked writer should not panic")
     }
 }
 
@@ -102,12 +104,18 @@ where
     W: Write + Send + Sync + 'static,
 {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        let mut io = self.arc.lock().expect("Output mutex poisoned");
+        let mut io = self
+            .arc
+            .lock()
+            .expect("Thread holding locked writer should not panic");
         io.write(buf)
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
-        let mut io = self.arc.lock().expect("Output mutex poisoned");
+        let mut io = self
+            .arc
+            .lock()
+            .expect("Thread holding locked writer should not panic");
         io.flush()
     }
 }
