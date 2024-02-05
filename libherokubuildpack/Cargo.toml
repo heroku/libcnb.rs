@@ -48,6 +48,6 @@ toml = { workspace = true, optional = true }
 ureq = { version = "2.9.1", default-features = false, features = ["tls"], optional = true }
 
 [dev-dependencies]
+indoc = "2.0.4"
+libcnb-test = { workspace = true }
 tempfile = "3.8.1"
-libcnb-test = {workspace = true}
-indoc = "2"

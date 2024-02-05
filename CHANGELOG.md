@@ -18,7 +18,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `libherokubuildpack`:
   - `MappedWrite::unwrap` for getting the wrapped `Write` back out. ([#765](https://github.com/heroku/libcnb.rs/pull/765))
-- `libherokubuildpack`:
   - Added build `output` module. This will help buildpack authors provide consistent and delightful output to their buildpack users ([#721](https://github.com/heroku/libcnb.rs/pull/721))
 
 ## [0.17.0] - 2023-12-06
