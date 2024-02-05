@@ -1,6 +1,6 @@
 //! # Buildpack output
 //!
-//! Use the [`BuildpackOutput`] to output structured text as a buildpack is executing.
+//! Use [`BuildpackOutput`] to output structured text as a buildpack is executing.
 //!
 //! ```
 //! use libherokubuildpack::buildpack_output::BuildpackOutput;
@@ -160,7 +160,6 @@ pub mod state {
     }
 }
 
-#[doc(hidden)]
 trait AnnounceSupportedState {
     type Inner: Write;
 
