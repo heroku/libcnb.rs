@@ -901,6 +901,11 @@ fn build_context(temp_dir: &TempDir) -> BuildContext<TestBuildpack> {
         layers_dir,
         app_dir,
         buildpack_dir,
+        target_os: String::from("linux"),
+        target_arch: String::from("amd64"),
+        target_arch_variant: None,
+        target_distro_name: Some(String::from("ubuntu")),
+        target_distro_version: Some(String::from("22.04")),
         platform: GenericPlatform::new(Env::new()),
         buildpack_plan: BuildpackPlan {
             entries: Vec::new(),

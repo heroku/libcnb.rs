@@ -9,6 +9,11 @@ use std::path::PathBuf;
 pub struct DetectContext<B: Buildpack + ?Sized> {
     pub app_dir: PathBuf,
     pub buildpack_dir: PathBuf,
+    pub target_os: String,
+    pub target_arch: String,
+    pub target_arch_variant: Option<String>,
+    pub target_distro_name: Option<String>,
+    pub target_distro_version: Option<String>,
     pub platform: B::Platform,
     pub buildpack_descriptor: ComponentBuildpackDescriptor<B::Metadata>,
 }

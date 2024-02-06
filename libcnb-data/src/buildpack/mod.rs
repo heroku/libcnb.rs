@@ -256,6 +256,15 @@ arch = "amd64"
 name = "ubuntu"
 version = "18.04"
 
+[[targets]]
+os = "linux"
+arch = "arm"
+variant = "v8"
+
+[[targets]]
+os = "windows"
+arch = "amd64"
+
 [metadata]
 checksum = "abc123"
         "#;
@@ -316,6 +325,32 @@ checksum = "abc123"
                 SbomFormat::CycloneDxJson,
                 SbomFormat::SpdxJson
             ])
+        );
+        assert_eq!(
+            buildpack_descriptor.targets,
+            [
+                Target {
+                    os: Some(String::from("linux")),
+                    arch: Some(String::from("amd64")),
+                    variant: None,
+                    distros: vec![Distro {
+                        name: String::from("ubuntu"),
+                        version: String::from("18.04"),
+                    }],
+                },
+                Target {
+                    os: Some(String::from("linux")),
+                    arch: Some(String::from("arm")),
+                    variant: Some(String::from("v8")),
+                    distros: Vec::new(),
+                },
+                Target {
+                    os: Some(String::from("windows")),
+                    arch: Some(String::from("amd64")),
+                    variant: None,
+                    distros: Vec::new(),
+                }
+            ]
         );
         assert_eq!(
             buildpack_descriptor.metadata.unwrap().get("checksum"),

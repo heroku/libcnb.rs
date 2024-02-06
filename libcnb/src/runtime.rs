@@ -146,9 +146,32 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
 
     let build_plan_path = args.build_plan_path;
 
+    let target_os = env::var("CNB_TARGET_OS")
+        .map_err(Error::CannotDetermineTargetOs)
+        .map_err(|err| {
+            trace_error(&err);
+            err
+        })?;
+
+    let target_arch = env::var("CNB_TARGET_ARCH")
+        .map_err(Error::CannotDetermineTargetArch)
+        .map_err(|err| {
+            trace_error(&err);
+            err
+        })?;
+
+    let target_arch_variant = env::var("CNB_TARGET_ARCH_VARIANT").ok();
+    let target_distro_name = env::var("CNB_TARGET_DISTRO_NAME").ok();
+    let target_distro_version = env::var("CNB_TARGET_DISTRO_VERSION").ok();
+
     let detect_context = DetectContext {
         app_dir,
         buildpack_dir,
+        target_os,
+        target_arch,
+        target_arch_variant,
+        target_distro_name,
+        target_distro_version,
         platform,
         buildpack_descriptor,
     };
@@ -220,10 +243,33 @@ pub fn libcnb_runtime_build<B: Buildpack>(
     .map_err(Error::CannotReadStore)
     .inspect_err(|err| trace_error(err))?;
 
+    let target_os = env::var("CNB_TARGET_OS")
+        .map_err(Error::CannotDetermineTargetOs)
+        .map_err(|err| {
+            trace_error(&err);
+            err
+        })?;
+
+    let target_arch = env::var("CNB_TARGET_ARCH")
+        .map_err(Error::CannotDetermineTargetArch)
+        .map_err(|err| {
+            trace_error(&err);
+            err
+        })?;
+
+    let target_arch_variant = env::var("CNB_TARGET_ARCH_VARIANT").ok();
+    let target_distro_name = env::var("CNB_TARGET_DISTRO_NAME").ok();
+    let target_distro_version = env::var("CNB_TARGET_DISTRO_VERSION").ok();
+
     let build_context = BuildContext {
         layers_dir: layers_dir.clone(),
         app_dir,
         platform,
+        target_os,
+        target_arch,
+        target_arch_variant,
+        target_distro_name,
+        target_distro_version,
         buildpack_plan,
         buildpack_dir,
         buildpack_descriptor,
