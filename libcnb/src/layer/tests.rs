@@ -12,7 +12,6 @@
 use crate::build::{BuildContext, BuildResult, BuildResultBuilder};
 use crate::data::buildpack_id;
 use crate::data::layer_content_metadata::LayerTypes;
-use crate::data::stack_id;
 use crate::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use crate::generic::{GenericMetadata, GenericPlatform};
 use crate::layer::{
@@ -21,7 +20,7 @@ use crate::layer::{
 };
 use crate::layer_env::{LayerEnv, ModificationBehavior, Scope};
 use crate::{read_toml_file, Buildpack, Env, LIBCNB_SUPPORTED_BUILDPACK_API};
-use libcnb_data::buildpack::{BuildpackVersion, ComponentBuildpackDescriptor, Stack};
+use libcnb_data::buildpack::{BuildpackVersion, ComponentBuildpackDescriptor};
 use libcnb_data::buildpack_plan::BuildpackPlan;
 use libcnb_data::layer::LayerName;
 use libcnb_data::layer_content_metadata::LayerContentMetadata;
@@ -902,7 +901,6 @@ fn build_context(temp_dir: &TempDir) -> BuildContext<TestBuildpack> {
         layers_dir,
         app_dir,
         buildpack_dir,
-        stack_id: stack_id!("heroku-20"),
         platform: GenericPlatform::new(Env::new()),
         buildpack_plan: BuildpackPlan {
             entries: Vec::new(),
@@ -920,7 +918,6 @@ fn build_context(temp_dir: &TempDir) -> BuildContext<TestBuildpack> {
                 licenses: Vec::new(),
                 sbom_formats: HashSet::new(),
             },
-            stacks: vec![Stack::Any],
             metadata: GenericMetadata::default(),
         },
         store: None,

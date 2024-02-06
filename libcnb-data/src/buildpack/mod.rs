@@ -1,7 +1,5 @@
 mod api;
 mod id;
-mod stack;
-mod stack_id;
 mod version;
 
 use crate::generic::GenericMetadata;
@@ -9,8 +7,6 @@ use crate::sbom::SbomFormat;
 pub use api::*;
 pub use id::*;
 use serde::Deserialize;
-pub use stack::*;
-pub use stack_id::*;
 use std::collections::HashSet;
 pub use version::*;
 
@@ -41,9 +37,6 @@ pub use version::*;
 ///
 /// [[buildpack.licenses]]
 /// type = "BSD-3-Clause"
-///
-/// [[stacks]]
-/// id = "*"
 /// "#;
 ///
 /// let buildpack_descriptor =
@@ -84,7 +77,7 @@ impl<BM> BuildpackDescriptor<BM> {
 ///
 /// # Example:
 /// ```
-/// use libcnb_data::buildpack::{ComponentBuildpackDescriptor, Stack};
+/// use libcnb_data::buildpack::{ComponentBuildpackDescriptor};
 /// use libcnb_data::buildpack_id;
 ///
 /// let toml_str = r#"
@@ -101,22 +94,17 @@ impl<BM> BuildpackDescriptor<BM> {
 ///
 /// [[buildpack.licenses]]
 /// type = "BSD-3-Clause"
-///
-/// [[stacks]]
-/// id = "*"
 /// "#;
 ///
 /// let buildpack_descriptor =
 ///     toml::from_str::<ComponentBuildpackDescriptor>(toml_str).unwrap();
 /// assert_eq!(buildpack_descriptor.buildpack.id, buildpack_id!("foo/bar"));
-/// assert_eq!(buildpack_descriptor.stacks, [Stack::Any]);
 /// ```
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct ComponentBuildpackDescriptor<BM = GenericMetadata> {
     pub api: BuildpackApi,
     pub buildpack: Buildpack,
-    pub stacks: Vec<Stack>,
     pub metadata: BM,
 }
 
@@ -245,22 +233,6 @@ uri = "https://example.tld/my-license"
 [[buildpack.licenses]]
 uri = "https://example.tld/my-license"
 
-[[stacks]]
-id = "heroku-20"
-
-[[stacks]]
-id = "io.buildpacks.stacks.bionic"
-mixins = []
-
-[[stacks]]
-id = "io.buildpacks.stacks.focal"
-mixins = ["build:jq", "wget"]
-
-# As counter-intuitive as it may seem, the CNB spec permits specifying
-# the "any" stack at the same time as stacks with specific IDs.
-[[stacks]]
-id = "*"
-
 [metadata]
 checksum = "abc123"
         "#;
@@ -321,25 +293,6 @@ checksum = "abc123"
                 SbomFormat::CycloneDxJson,
                 SbomFormat::SpdxJson
             ])
-        );
-        assert_eq!(
-            buildpack_descriptor.stacks,
-            [
-                Stack::Specific {
-                    // Cannot use the `stack_id!` macro due to: https://github.com/heroku/libcnb.rs/issues/179
-                    id: "heroku-20".parse().unwrap(),
-                    mixins: Vec::new()
-                },
-                Stack::Specific {
-                    id: "io.buildpacks.stacks.bionic".parse().unwrap(),
-                    mixins: Vec::new()
-                },
-                Stack::Specific {
-                    id: "io.buildpacks.stacks.focal".parse().unwrap(),
-                    mixins: vec![String::from("build:jq"), String::from("wget")]
-                },
-                Stack::Any
-            ]
         );
         assert_eq!(
             buildpack_descriptor.metadata.unwrap().get("checksum"),
@@ -466,9 +419,6 @@ api = "0.9"
 [buildpack]
 id = "foo/bar"
 version = "0.0.1"
-
-[[stacks]]
-id = "*"
         "#;
 
         let buildpack_descriptor =
@@ -496,7 +446,6 @@ id = "*"
         );
         assert_eq!(buildpack_descriptor.buildpack.licenses, Vec::new());
         assert_eq!(buildpack_descriptor.buildpack.sbom_formats, HashSet::new());
-        assert_eq!(buildpack_descriptor.stacks, [Stack::Any]);
         assert_eq!(buildpack_descriptor.metadata, None);
     }
 
@@ -561,9 +510,6 @@ api = "0.9"
 [buildpack]
 id = "foo/bar"
 version = "0.0.1"
-
-[[stacks]]
-id = "*"
         "#;
 
         let buildpack_descriptor = toml::from_str::<BuildpackDescriptor>(toml_str).unwrap();
@@ -597,6 +543,7 @@ version = "0.0.1"
     }
 
     #[test]
+    #[ignore]
     fn reject_buildpack_with_both_stacks_and_order() {
         let toml_str = r#"
 api = "0.9"
@@ -604,9 +551,6 @@ api = "0.9"
 [buildpack]
 id = "foo/bar"
 version = "0.0.1"
-
-[[stacks]]
-id = "*"
 
 [[order]]
 

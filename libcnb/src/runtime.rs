@@ -1,6 +1,6 @@
 use crate::build::{BuildContext, InnerBuildResult};
 use crate::buildpack::Buildpack;
-use crate::data::buildpack::{BuildpackApi, StackId};
+use crate::data::buildpack::BuildpackApi;
 use crate::detect::{DetectContext, InnerDetectResult};
 use crate::error::Error;
 use crate::platform::Platform;
@@ -140,11 +140,6 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
     #[cfg(not(feature = "trace"))]
     let trace_error = |_: &dyn std::error::Error| {};
 
-    let stack_id: StackId = env::var("CNB_STACK_ID")
-        .map_err(Error::CannotDetermineStackId)
-        .and_then(|stack_id_string| stack_id_string.parse().map_err(Error::StackIdError))
-        .inspect_err(|err| trace_error(err))?;
-
     let platform = B::Platform::from_path(&args.platform_dir_path)
         .map_err(Error::CannotCreatePlatformFromPath)
         .inspect_err(|err| trace_error(err))?;
@@ -154,7 +149,6 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
     let detect_context = DetectContext {
         app_dir,
         buildpack_dir,
-        stack_id,
         platform,
         buildpack_descriptor,
     };
@@ -211,11 +205,6 @@ pub fn libcnb_runtime_build<B: Buildpack>(
     #[cfg(not(feature = "trace"))]
     let trace_error = |_: &dyn std::error::Error| {};
 
-    let stack_id: StackId = env::var("CNB_STACK_ID")
-        .map_err(Error::CannotDetermineStackId)
-        .and_then(|stack_id_string| stack_id_string.parse().map_err(Error::StackIdError))
-        .inspect_err(|err| trace_error(err))?;
-
     let platform = Platform::from_path(&args.platform_dir_path)
         .map_err(Error::CannotCreatePlatformFromPath)
         .inspect_err(|err| trace_error(err))?;
@@ -234,7 +223,6 @@ pub fn libcnb_runtime_build<B: Buildpack>(
     let build_context = BuildContext {
         layers_dir: layers_dir.clone(),
         app_dir,
-        stack_id,
         platform,
         buildpack_plan,
         buildpack_dir,

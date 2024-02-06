@@ -148,7 +148,6 @@ impl Buildpack for HelloWorldBuildpack {
     // build phase (`bin/build`).
     fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildResult, Self::Error> {
         println!("Hello World!");
-        println!("Build runs on stack {}!", context.stack_id);
 
         BuildResultBuilder::new()
             .launch(
