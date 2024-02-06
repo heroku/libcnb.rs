@@ -1,4 +1,4 @@
-api = "0.8"
+api = "0.10"
 
 [buildpack]
 id = "single-buildpack"

@@ -26,7 +26,7 @@ pub use version::*;
 /// use libcnb_data::buildpack::BuildpackDescriptor;
 ///
 /// let toml_str = r#"
-/// api = "0.9"
+/// api = "0.10"
 ///
 /// [buildpack]
 /// id = "foo/bar"
@@ -83,7 +83,7 @@ impl<BM> BuildpackDescriptor<BM> {
 /// use libcnb_data::buildpack_id;
 ///
 /// let toml_str = r#"
-/// api = "0.9"
+/// api = "0.10"
 ///
 /// [buildpack]
 /// id = "foo/bar"
@@ -139,7 +139,7 @@ pub struct ComponentBuildpackDescriptor<BM = GenericMetadata> {
 /// use libcnb_data::buildpack_id;
 ///
 /// let toml_str = r#"
-/// api = "0.9"
+/// api = "0.10"
 ///
 /// [buildpack]
 /// id = "foo/bar"
@@ -226,7 +226,7 @@ mod tests {
     #[allow(clippy::too_many_lines)]
     fn deserialize_component_buildpack() {
         let toml_str = r#"
-api = "0.9"
+api = "0.10"
 
 [buildpack]
 id = "foo/bar"
@@ -274,7 +274,10 @@ checksum = "abc123"
 
         assert_eq!(
             buildpack_descriptor.api,
-            BuildpackApi { major: 0, minor: 9 }
+            BuildpackApi {
+                major: 0,
+                minor: 10
+            }
         );
         assert_eq!(
             buildpack_descriptor.buildpack.id,
@@ -361,7 +364,7 @@ checksum = "abc123"
     #[test]
     fn deserialize_composite_buildpack() {
         let toml_str = r#"
-api = "0.9"
+api = "0.10"
 
 [buildpack]
 id = "foo/bar"
@@ -402,7 +405,10 @@ checksum = "abc123"
 
         assert_eq!(
             buildpack_descriptor.api,
-            BuildpackApi { major: 0, minor: 9 }
+            BuildpackApi {
+                major: 0,
+                minor: 10
+            }
         );
         assert_eq!(
             buildpack_descriptor.buildpack.id,
@@ -472,7 +478,7 @@ checksum = "abc123"
     #[test]
     fn deserialize_minimal_component_buildpack() {
         let toml_str = r#"
-api = "0.9"
+api = "0.10"
 
 [buildpack]
 id = "foo/bar"
@@ -488,7 +494,10 @@ arch = "amd64"
 
         assert_eq!(
             buildpack_descriptor.api,
-            BuildpackApi { major: 0, minor: 9 }
+            BuildpackApi {
+                major: 0,
+                minor: 10
+            }
         );
         assert_eq!(
             buildpack_descriptor.buildpack.id,
@@ -523,7 +532,7 @@ arch = "amd64"
     #[test]
     fn deserialize_minimal_composite_buildpack() {
         let toml_str = r#"
-api = "0.9"
+api = "0.10"
 
 [buildpack]
 id = "foo/bar"
@@ -541,7 +550,10 @@ version = "0.0.1"
 
         assert_eq!(
             buildpack_descriptor.api,
-            BuildpackApi { major: 0, minor: 9 }
+            BuildpackApi {
+                major: 0,
+                minor: 10
+            }
         );
         assert_eq!(
             buildpack_descriptor.buildpack.id,
@@ -576,7 +588,7 @@ version = "0.0.1"
     #[test]
     fn deserialize_buildpackdescriptor_component() {
         let toml_str = r#"
-api = "0.9"
+api = "0.10"
 
 [buildpack]
 id = "foo/bar"
@@ -593,7 +605,7 @@ version = "0.0.1"
     #[test]
     fn deserialize_buildpackdescriptor_composite() {
         let toml_str = r#"
-api = "0.9"
+api = "0.10"
 
 [buildpack]
 id = "foo/bar"
