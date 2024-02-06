@@ -20,7 +20,7 @@ use crate::layer::{
 };
 use crate::layer_env::{LayerEnv, ModificationBehavior, Scope};
 use crate::{read_toml_file, Buildpack, Env, LIBCNB_SUPPORTED_BUILDPACK_API};
-use libcnb_data::buildpack::{BuildpackVersion, ComponentBuildpackDescriptor};
+use libcnb_data::buildpack::{BuildpackVersion, ComponentBuildpackDescriptor, Target};
 use libcnb_data::buildpack_plan::BuildpackPlan;
 use libcnb_data::layer::LayerName;
 use libcnb_data::layer_content_metadata::LayerContentMetadata;
@@ -918,6 +918,12 @@ fn build_context(temp_dir: &TempDir) -> BuildContext<TestBuildpack> {
                 licenses: Vec::new(),
                 sbom_formats: HashSet::new(),
             },
+            targets: vec![Target {
+                os: Some(String::from("linux")),
+                arch: Some(String::from("amd64")),
+                variant: None,
+                distros: vec![],
+            }],
             metadata: GenericMetadata::default(),
         },
         store: None,

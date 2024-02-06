@@ -1,5 +1,6 @@
 mod api;
 mod id;
+mod target;
 mod version;
 
 use crate::generic::GenericMetadata;
@@ -8,6 +9,7 @@ pub use api::*;
 pub use id::*;
 use serde::Deserialize;
 use std::collections::HashSet;
+pub use target::*;
 pub use version::*;
 
 /// Data structures for the Buildpack descriptor (buildpack.toml).
@@ -77,7 +79,7 @@ impl<BM> BuildpackDescriptor<BM> {
 ///
 /// # Example:
 /// ```
-/// use libcnb_data::buildpack::{ComponentBuildpackDescriptor};
+/// use libcnb_data::buildpack::{ComponentBuildpackDescriptor, Target};
 /// use libcnb_data::buildpack_id;
 ///
 /// let toml_str = r#"
@@ -94,17 +96,31 @@ impl<BM> BuildpackDescriptor<BM> {
 ///
 /// [[buildpack.licenses]]
 /// type = "BSD-3-Clause"
+///
+/// [[targets]]
+/// os = "linux"
 /// "#;
 ///
 /// let buildpack_descriptor =
 ///     toml::from_str::<ComponentBuildpackDescriptor>(toml_str).unwrap();
 /// assert_eq!(buildpack_descriptor.buildpack.id, buildpack_id!("foo/bar"));
+/// assert_eq!(
+///     buildpack_descriptor.targets,
+///     [Target {
+///         os: Some(String::from("linux")),
+///         arch: None,
+///         variant: None,
+///         distros: vec![]
+///     }]
+/// );
 /// ```
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct ComponentBuildpackDescriptor<BM = GenericMetadata> {
     pub api: BuildpackApi,
     pub buildpack: Buildpack,
+    #[serde(default = "Vec::new")]
+    pub targets: Vec<Target>,
     pub metadata: BM,
 }
 
@@ -232,6 +248,13 @@ uri = "https://example.tld/my-license"
 
 [[buildpack.licenses]]
 uri = "https://example.tld/my-license"
+
+[[targets]]
+os = "linux"
+arch = "amd64"
+[[targets.distros]]
+name = "ubuntu"
+version = "18.04"
 
 [metadata]
 checksum = "abc123"
@@ -419,6 +442,10 @@ api = "0.9"
 [buildpack]
 id = "foo/bar"
 version = "0.0.1"
+
+[[targets]]
+os = "linux"
+arch = "amd64"
         "#;
 
         let buildpack_descriptor =
@@ -446,6 +473,15 @@ version = "0.0.1"
         );
         assert_eq!(buildpack_descriptor.buildpack.licenses, Vec::new());
         assert_eq!(buildpack_descriptor.buildpack.sbom_formats, HashSet::new());
+        assert_eq!(
+            buildpack_descriptor.targets,
+            [Target {
+                os: Some(String::from("linux")),
+                arch: Some(String::from("amd64")),
+                variant: None,
+                distros: Vec::new()
+            }]
+        );
         assert_eq!(buildpack_descriptor.metadata, None);
     }
 
@@ -543,14 +579,16 @@ version = "0.0.1"
     }
 
     #[test]
-    #[ignore]
-    fn reject_buildpack_with_both_stacks_and_order() {
+    fn reject_buildpack_with_both_targets_and_order() {
         let toml_str = r#"
-api = "0.9"
+api = "0.10"
 
 [buildpack]
 id = "foo/bar"
 version = "0.0.1"
+
+[[targets]]
+os = "linux"
 
 [[order]]
 
@@ -569,6 +607,6 @@ version = "0.0.1"
         assert!(err.to_string().contains("unknown field `order`"));
 
         let err = toml::from_str::<CompositeBuildpackDescriptor>(toml_str).unwrap_err();
-        assert!(err.to_string().contains("unknown field `stacks`"));
+        assert!(err.to_string().contains("unknown field `targets`"));
     }
 }
