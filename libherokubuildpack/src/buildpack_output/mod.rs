@@ -1,21 +1,5 @@
-//! # Buildpack output
-//!
-//! Use [`BuildpackOutput`] to output structured text as a buildpack is executing.
-//!
-//! ```
-//! use libherokubuildpack::buildpack_output::BuildpackOutput;
-//!
-//! let mut output = BuildpackOutput::new(std::io::stdout())
-//!     .start("Heroku Ruby Buildpack")
-//!     .warning("No Gemfile.lock found");
-//!
-//! output = output
-//!     .section("Ruby version")
-//!     .finish();
-//!
-//! output.finish();
-//! ```
-//!
+#![doc = include_str!("./README.md")]
+
 use crate::buildpack_output::ansi_escape::{BOLD_PURPLE, CYAN, RED, YELLOW};
 use crate::buildpack_output::util::{prefix_first_rest_lines, prefix_lines, ParagraphInspectWrite};
 use crate::write::line_mapped;
@@ -28,7 +12,7 @@ mod duration_format;
 pub mod style;
 mod util;
 
-/// See the module docs for example usage.
+#[doc = include_str!("./README.md")]
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug)]
 pub struct BuildpackOutput<T> {
@@ -45,8 +29,9 @@ pub mod state {
     use crate::write::MappedWrite;
     use std::time::Instant;
 
-    /// An initialized buildpack output that has not announced it's start. Is represented by the
-    /// `state::NotStarted` type. This is transitioned into a `state::Started` type.
+    /// An initialized buildpack output that has not announced its start.
+    ///
+    /// It is represented by the`state::NotStarted` type and is transitioned into a `state::Started` type.
     ///
     /// Example:
     ///
@@ -61,7 +46,7 @@ pub mod state {
     ///
     /// fn start_buildpack<W>(mut output: BuildpackOutput<NotStarted<W>>) -> BuildpackOutput<Started<W>>
     /// where W: Write + Send + Sync + 'static {
-    ///     output.start("Heroku Ruby Buildpack")
+    ///     output.start("Example Buildpack")
     ///}
     /// ```
     #[derive(Debug)]
@@ -69,8 +54,8 @@ pub mod state {
         pub(crate) write: ParagraphInspectWrite<W>,
     }
 
-    /// After buildpack output has been started, it's top level output will be represented by the
-    /// `state::Started` type. This is transitioned into a `state::Section` to provide additional
+    /// After the buildpack output has started, its top-level output will be represented by the
+    /// `state::Started` type and is transitioned into a `state::Section` to provide additional
     /// details.
     ///
     /// Example:
@@ -80,7 +65,7 @@ pub mod state {
     /// use std::io::Write;
     ///
     /// let mut output = BuildpackOutput::new(std::io::stdout())
-    ///     .start("Heroku Ruby Buildpack");
+    ///     .start("Example Buildpack");
     ///
     /// output = install_ruby(output).finish();
     ///
@@ -97,8 +82,8 @@ pub mod state {
         pub(crate) write: ParagraphInspectWrite<W>,
     }
 
-    /// The `state::Section` is intended for providing addiitonal details about the buildpack's
-    /// actions. When a section is finished it transitions back to a `state::Started` type.
+    /// The `state::Section` is intended to provide addiitonal details about the buildpack's
+    /// actions. When a section is finished, it transitions back to a `state::Started` type.
     ///
     /// A streaming type can be started from a `state::Section`, usually to run and stream a
     /// `process::Command` to the end user.
@@ -110,7 +95,7 @@ pub mod state {
     /// use std::io::Write;
     ///
     /// let mut output = BuildpackOutput::new(std::io::stdout())
-    ///     .start("Heroku Ruby Buildpack")
+    ///     .start("Example Buildpack")
     ///     .section("Ruby version");
     ///
     /// install_ruby(output).finish();
@@ -128,18 +113,17 @@ pub mod state {
         pub(crate) write: ParagraphInspectWrite<W>,
     }
 
-    /// A `state::Stream` is intended for streaming output from a process to the end user. It is
+    /// A this state is intended for streaming output from a process to the end user. It is
     /// started from a `state::Section` and finished back to a `state::Section`.
     ///
-    /// The `BuildpackOutput<state::Stream<W>>` implements `std::io::Write`, so
-    /// you can stream to anything that accepts a `std::io::Write`.
+    /// The `BuildpackOutput<state::Stream<W>>` implements [`std::io::Write`], so you can stream from anything that accepts a [`std::io::Write`].
     ///
     /// ```rust
     /// use libherokubuildpack::buildpack_output::{BuildpackOutput, state::{Started, Section}};
     /// use std::io::Write;
     ///
     /// let mut output = BuildpackOutput::new(std::io::stdout())
-    ///     .start("Heroku Ruby Buildpack")
+    ///     .start("Example Buildpack")
     ///     .section("Ruby version");
     ///
     /// install_ruby(output).finish();
@@ -193,20 +177,56 @@ impl<S> BuildpackOutput<S>
 where
     S: AnnounceSupportedState,
 {
+    /// Emit an error and end the build output
+    ///
+    /// When an unrecoverable situation is encountered, you can emit an error message to the user.
+    /// This associated function will consume the build output, so you may only emit one error per build output.
+    ///
+    /// An error message should describe what went wrong and why the buildpack cannot continue.
+    /// It is best practice to include debugging information in the error message. For example,
+    /// if a file is missing, consider showing the user the contents of the directory where the file was expected to be
+    /// and the full path of the file.
+    ///
+    /// If you are confident about what action needs to be taken to fix the error, you should include that in the error message.
+    /// Do not write a generic suggestion like "try again later" unless you are certain that the error is transient.
+    ///
+    /// If you detect something problematic but not bad enough to halt buildpack execution, consider using a [`BuildpackOutput::warning`] instead.
+    pub fn error(mut self, s: impl AsRef<str>) {
+        self.write_paragraph(RED, s);
+    }
+
+    /// Emit a warning message to the end user.
+    ///
+    /// A warning should be used to emit a message to the end user about a potential problem.
+    ///
+    /// Multiple warnings can be emitted in sequence. The buildpack author should take care not to overwhelm the end user with
+    /// unnecessary warnings.
+    ///
+    /// When emitting a warning, describe the problem to the user, if possible, and tell them how to fix it or where to look next.
+    ///
+    /// Warnings should often come with some disabling mechanism, if possible. If the user can turn off the warning,
+    /// that information should be included in the warning message. If you're confident that the user should not be able to
+    /// turn off a warning; use an [`BuildpackOutput::error`] instead
+    ///
+    /// Warnings will be output in a multi-line paragraph style. A warning can be emitted from any state except for [`state::NotStarted`].
     #[must_use]
     pub fn warning(mut self, s: impl AsRef<str>) -> BuildpackOutput<S> {
         self.write_paragraph(YELLOW, s);
         self
     }
 
+    /// Emit an important message to the end user.
+    ///
+    /// When something significant happens but is not inherently negative, you can use an important message. For example,
+    /// if a buildpack detects that the operating system or architecture has changed since the last build, it might not be a problem,
+    ///, but if something goes wrong, the user should know about it.
+    ///
+    /// Important messages should be used sparingly and only for things the user should be aware of but not necessarily act on.
+    /// If the message is actionable, consider using a [`BuildpackOutput::warning`] instead.
     #[must_use]
     pub fn important(mut self, s: impl AsRef<str>) -> BuildpackOutput<S> {
         self.write_paragraph(CYAN, s);
         self
-    }
-
-    pub fn error(mut self, s: impl AsRef<str>) {
-        self.write_paragraph(RED, s);
     }
 
     fn write_paragraph(&mut self, color: &str, s: impl AsRef<str>) {
@@ -237,6 +257,9 @@ impl<W> BuildpackOutput<state::NotStarted<W>>
 where
     W: Write,
 {
+    /// Create a buildpack output struct, but do not announce the buildpack's start.
+    ///
+    /// See the [`BuildpackOutput::start`] method for more details.
     pub fn new(io: W) -> Self {
         Self {
             state: state::NotStarted {
@@ -246,6 +269,18 @@ where
         }
     }
 
+    /// Announce the start of the buildpack.
+    ///
+    /// The input should be the human-readable name of your buildpack. Most buildpack names include
+    /// the feature they provide.
+    ///
+    /// It is common to use a title case for the buildpack name and to include the word "Buildpack" at the end.
+    /// For example, `Ruby Buildpack`. Do not include a period at the end of the name.
+    ///
+    /// Avoid starting your buildpack with "Heroku" unless you work for Heroku. If you wish to express that your
+    /// buildpack is built to target only Heroku; you can include that in the description of the buildpack.
+    ///
+    /// This function will transition your buildpack output to [`state::Started`].
     pub fn start(mut self, buildpack_name: impl AsRef<str>) -> BuildpackOutput<state::Started<W>> {
         writeln_now(
             &mut self.state.write,
@@ -258,6 +293,7 @@ where
         self.start_silent()
     }
 
+    /// Start a buildpack output without announcing the name
     pub fn start_silent(self) -> BuildpackOutput<state::Started<W>> {
         BuildpackOutput {
             started: Some(Instant::now()),
@@ -279,6 +315,14 @@ where
         prefix_first_rest_lines(Self::PREFIX_FIRST, Self::PREFIX_REST, s.as_ref())
     }
 
+    /// Begin a new section of the buildpack output.
+    ///
+    /// A section should be a noun, e.g., 'Ruby version'. Anything emitted within the section should be in the context of this output.
+    ///
+    /// If the following steps can change based on input, consider grouping shared information such as version numbers and sources
+    /// in the section name e.g., 'Ruby version ``3.1.3`` from ``Gemfile.lock``'.
+    ///
+    /// This function will transition your buildpack output to [`state::Section`].
     #[must_use]
     pub fn section(mut self, s: impl AsRef<str>) -> BuildpackOutput<state::Section<W>> {
         writeln_now(&mut self.state.write, Self::style(s));
@@ -291,6 +335,7 @@ where
         }
     }
 
+    /// Announce that your buildpack has finished execution successfully.
     pub fn finish(mut self) -> W {
         if let Some(started) = &self.started {
             let elapsed = duration_format::human(&started.elapsed());
@@ -319,12 +364,44 @@ where
         prefix_first_rest_lines(Self::PREFIX_FIRST, Self::PREFIX_REST, s.as_ref())
     }
 
+    /// Emit a step in the buildpack output within a section.
+    ///
+    /// A step should be a verb, i.e., 'Downloading'. Related verbs should be nested under a single section.
+    ///
+    /// Some example verbs to use:
+    ///
+    /// - Downloading
+    /// - Writing
+    /// - Using
+    /// - Reading
+    /// - Clearing
+    /// - Skipping
+    /// - Detecting
+    /// - Compiling
+    /// - etc.
+    ///
+    /// Steps should be short and stand-alone sentences within the context of the section header.
+    ///
+    /// In general, if the buildpack did something different between two builds, it should be observable
+    /// by the user through the buildpack output. For example, if a cache needs to be cleared, emit that your buildpack is clearing it and why.
+    ///
+    /// Multiple steps are allowed within a section. This function returns to the same [`state::Section`].
     #[must_use]
     pub fn step(mut self, s: impl AsRef<str>) -> BuildpackOutput<state::Section<W>> {
         writeln_now(&mut self.state.write, Self::style(s));
         self
     }
 
+    /// Stream output to the end user
+    ///
+    /// The most common use case is to stream the output of a running `std::process::Command` to the end user.
+    /// Streaming lets the end user know that something is happening and provides them with the output of the process.
+    ///
+    /// The result of this function is a `BuildpackOutput<state::Stream<W>>` which implements [`std::io::Write`].
+    ///
+    /// If you do not wish the end user to view the output of the process, consider using a `step` instead.
+    ///
+    /// This function will transition your buildpack output to [`state::Stream`].
     pub fn start_stream(mut self, s: impl AsRef<str>) -> BuildpackOutput<state::Stream<W>> {
         writeln_now(&mut self.state.write, Self::style(s));
         writeln_now(&mut self.state.write, "");
@@ -346,6 +423,7 @@ where
         }
     }
 
+    /// Finish a section and transition back to [`state::Started`].
     pub fn finish(self) -> BuildpackOutput<state::Started<W>> {
         BuildpackOutput {
             started: self.started,
@@ -360,6 +438,10 @@ impl<W> BuildpackOutput<state::Stream<W>>
 where
     W: Write + Send + Sync + 'static,
 {
+    /// Finalize a stream's output
+    ///
+    /// Once you're finished streaming to the output, calling this function
+    /// finalizes the stream's output and transitions back to a [`state::Section`].
     pub fn finish(mut self) -> BuildpackOutput<state::Section<W>> {
         let duration = self.state.started.elapsed();
 
