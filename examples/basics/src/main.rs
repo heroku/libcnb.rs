@@ -14,8 +14,12 @@ impl Buildpack for BasicBuildpack {
         DetectResultBuilder::pass().build()
     }
 
-    fn build(&self, _context: BuildContext<Self>) -> libcnb::Result<BuildResult, Self::Error> {
-        // println!("Build runs on stack {}!", context.stack_id);
+    fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildResult, Self::Error> {
+        println!(
+            "Build runs on: {} ({})!",
+            context.target_os, context.target_arch
+        );
+
         BuildResultBuilder::new().build()
     }
 }
