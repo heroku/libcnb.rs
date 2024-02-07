@@ -23,16 +23,34 @@ mod test {
 
     #[test]
     fn test_display_duration() {
+        let duration = Duration::ZERO;
+        assert_eq!(human(&duration), "< 0.1s");
+
         let duration = Duration::from_millis(99);
-        assert_eq!("< 0.1s", human(&duration).as_str());
+        assert_eq!(human(&duration), "< 0.1s");
 
-        let duration = Duration::from_millis(1024);
-        assert_eq!("1.024s", human(&duration).as_str());
+        let duration = Duration::from_millis(100);
+        assert_eq!(human(&duration), "0.100s");
 
-        let duration = Duration::from_millis(60 * 1024);
-        assert_eq!("1m 1s", human(&duration).as_str());
+        let duration = Duration::from_millis(999);
+        assert_eq!(human(&duration), "0.999s");
 
-        let duration = Duration::from_millis(3600 * 1024);
-        assert_eq!("1h 1m 26s", human(&duration).as_str());
+        let duration = Duration::from_millis(1000);
+        assert_eq!(human(&duration), "1.000s");
+
+        let duration = Duration::from_millis(60 * 1000 - 1);
+        assert_eq!(human(&duration), "59.999s");
+
+        let duration = Duration::from_millis(60 * 1000);
+        assert_eq!(human(&duration), "1m 0s");
+
+        let duration = Duration::from_millis(60 * 60 * 1000 - 1);
+        assert_eq!(human(&duration), "59m 59s");
+
+        let duration = Duration::from_millis(60 * 60 * 1000);
+        assert_eq!(human(&duration), "1h 0m 0s");
+
+        let duration = Duration::from_millis(75 * 60 * 1000 - 1);
+        assert_eq!(human(&duration), "1h 14m 59s");
     }
 }

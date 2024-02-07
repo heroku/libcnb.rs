@@ -20,9 +20,8 @@ pub(crate) fn inject_default_ansi_escape(ansi_escape: &str, body: impl AsRef<str
         // Set the main color for each line and reset after so we don't colorize `remote:` by accident
         .map(|line| format!("{ansi_escape}{line}{RESET}"))
         // The above logic causes redundant colors and resets, clean them up
-        .map(|line| line.replace(&format!("{RESET}{ansi_escape}{RESET}"), RESET))
         .map(|line| line.replace(&format!("{ansi_escape}{ansi_escape}"), ansi_escape)) // Reduce useless color
-        .map(|line| line.replace(&format!("{ansi_escape}{RESET}"), "")) // Do not colorize empty lines
+        .map(|line| line.replace(&format!("{ansi_escape}{RESET}"), "")) // Empty lines or where the nested color is at the end of the line
         .collect::<Vec<String>>()
         .join("\n")
 }

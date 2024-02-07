@@ -11,13 +11,13 @@ pub fn url(contents: impl AsRef<str>) -> String {
 pub fn command(contents: impl AsRef<str>) -> String {
     value(ansi_escape::inject_default_ansi_escape(
         ansi_escape::BOLD_CYAN,
-        contents.as_ref(),
+        contents,
     ))
 }
 
 /// Decorate an important value i.e. `2.3.4`.
 pub fn value(contents: impl AsRef<str>) -> String {
-    let contents = ansi_escape::inject_default_ansi_escape(ansi_escape::YELLOW, contents.as_ref());
+    let contents = ansi_escape::inject_default_ansi_escape(ansi_escape::YELLOW, contents);
     format!("`{contents}`")
 }
 
