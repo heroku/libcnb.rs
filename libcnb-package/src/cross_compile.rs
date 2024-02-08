@@ -82,8 +82,8 @@ pub fn cross_compile_assistance(target_triple: impl AsRef<str>) -> CrossCompileA
             }
         }
         Err(_) => CrossCompileAssistance::HelpText(formatdoc! {"
-            For cross-compilation from {0} {1} to {target_triple}, a C compiler and
-            linker for the target platform must be installed:
+            For cross-compilation from {0} {1} to {target_triple},
+            a C compiler and linker for the target platform must be installed:
 
             {help_text}
             You will also need to install the Rust target:
