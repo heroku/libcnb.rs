@@ -10,7 +10,7 @@
 ///
 /// Strings that are previously colorized will not be overridden by this function. For example, if a word is already
 /// colored yellow, that word will continue to be yellow.
-pub(crate) fn inject_default_ansi_escape(ansi: &ANSI, body: impl AsRef<str>) -> String {
+pub(crate) fn wrap_ansi_escape_each_line(ansi: &ANSI, body: impl AsRef<str>) -> String {
     let ansi_escape = ansi.to_str();
     body.as_ref()
         .split('\n')
@@ -58,15 +58,15 @@ mod test {
 
     #[test]
     fn empty_line() {
-        let actual = inject_default_ansi_escape(&ANSI::Red, "\n");
+        let actual = wrap_ansi_escape_each_line(&ANSI::Red, "\n");
         let expected = String::from("\n");
         assert_eq!(expected, actual);
     }
 
     #[test]
     fn handles_nested_color_at_start() {
-        let start = inject_default_ansi_escape(&ANSI::BoldCyan, "hello");
-        let out = inject_default_ansi_escape(&ANSI::Red, format!("{start} world"));
+        let start = wrap_ansi_escape_each_line(&ANSI::BoldCyan, "hello");
+        let out = wrap_ansi_escape_each_line(&ANSI::Red, format!("{start} world"));
         let expected = format!("{RED}{BOLD_CYAN}hello{RESET}{RED} world{RESET}");
 
         assert_eq!(expected, out);
@@ -74,16 +74,16 @@ mod test {
 
     #[test]
     fn handles_nested_color_in_middle() {
-        let middle = inject_default_ansi_escape(&ANSI::BoldCyan, "middle");
-        let out = inject_default_ansi_escape(&ANSI::Red, format!("hello {middle} color"));
+        let middle = wrap_ansi_escape_each_line(&ANSI::BoldCyan, "middle");
+        let out = wrap_ansi_escape_each_line(&ANSI::Red, format!("hello {middle} color"));
         let expected = format!("{RED}hello {BOLD_CYAN}middle{RESET}{RED} color{RESET}");
         assert_eq!(expected, out);
     }
 
     #[test]
     fn handles_nested_color_at_end() {
-        let end = inject_default_ansi_escape(&ANSI::BoldCyan, "world");
-        let out = inject_default_ansi_escape(&ANSI::Red, format!("hello {end}"));
+        let end = wrap_ansi_escape_each_line(&ANSI::BoldCyan, "world");
+        let out = wrap_ansi_escape_each_line(&ANSI::Red, format!("hello {end}"));
         let expected = format!("{RED}hello {BOLD_CYAN}world{RESET}");
 
         assert_eq!(expected, out);
@@ -91,9 +91,9 @@ mod test {
 
     #[test]
     fn handles_double_nested_color() {
-        let inner = inject_default_ansi_escape(&ANSI::BoldCyan, "inner");
-        let outer = inject_default_ansi_escape(&ANSI::Red, format!("outer {inner}"));
-        let out = inject_default_ansi_escape(&ANSI::Yellow, format!("hello {outer}"));
+        let inner = wrap_ansi_escape_each_line(&ANSI::BoldCyan, "inner");
+        let outer = wrap_ansi_escape_each_line(&ANSI::Red, format!("outer {inner}"));
+        let out = wrap_ansi_escape_each_line(&ANSI::Yellow, format!("hello {outer}"));
         let expected = format!("{YELLOW}hello {RED}outer {BOLD_CYAN}inner{RESET}");
 
         assert_eq!(expected, out);
@@ -101,7 +101,7 @@ mod test {
 
     #[test]
     fn splits_newlines() {
-        let actual = inject_default_ansi_escape(&ANSI::Red, "hello\nworld");
+        let actual = wrap_ansi_escape_each_line(&ANSI::Red, "hello\nworld");
         let expected = format!("{RED}hello{RESET}\n{RED}world{RESET}");
 
         assert_eq!(expected, actual);
@@ -109,7 +109,7 @@ mod test {
 
     #[test]
     fn simple_case() {
-        let actual = inject_default_ansi_escape(&ANSI::Red, "hello world");
+        let actual = wrap_ansi_escape_each_line(&ANSI::Red, "hello world");
         assert_eq!(format!("{RED}hello world{RESET}"), actual);
     }
 }

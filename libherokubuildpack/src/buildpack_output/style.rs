@@ -4,12 +4,12 @@ use crate::buildpack_output::ansi_escape::{self, ANSI};
 
 /// Decorate a URL for the build output.
 pub fn url(contents: impl AsRef<str>) -> String {
-    ansi_escape::inject_default_ansi_escape(&ANSI::BoldCyan, contents)
+    ansi_escape::wrap_ansi_escape_each_line(&ANSI::BoldCyan, contents)
 }
 
 /// Decorate the name of a command being run i.e. `bundle install`.
 pub fn command(contents: impl AsRef<str>) -> String {
-    value(ansi_escape::inject_default_ansi_escape(
+    value(ansi_escape::wrap_ansi_escape_each_line(
         &ANSI::BoldCyan,
         contents,
     ))
@@ -17,7 +17,7 @@ pub fn command(contents: impl AsRef<str>) -> String {
 
 /// Decorate an important value i.e. `2.3.4`.
 pub fn value(contents: impl AsRef<str>) -> String {
-    let contents = ansi_escape::inject_default_ansi_escape(&ANSI::Yellow, contents);
+    let contents = ansi_escape::wrap_ansi_escape_each_line(&ANSI::Yellow, contents);
     format!("`{contents}`")
 }
 
