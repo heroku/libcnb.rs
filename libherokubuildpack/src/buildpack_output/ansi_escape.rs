@@ -1,17 +1,15 @@
-/// Smartly injects an ANSI escape sequence as the default into the given string.
+/// Wraps each line in an ANSI escape sequence while preserving prior ANSI escape sequences.
 ///
-/// All sub sequences of the given string that are not preceded by an ANSI escape sequence other than reset will use
-/// the given ANSI escape sequence as the default.
+/// ## Why does this exist?
 ///
-/// The given string is allowed to already contain ANSI sequences which will not be overridden by this function. For
-/// example, this function can be used to color all text red, but if a word is already colored yellow, that word will
-/// continue to be yellow.
+/// When buildpack output is streamed to the user, each line is prefixed with `remote: ` by Git. Any colorization
+/// of text will apply to those prefixes which is not the desired behavior. This function colors lines of text
+/// while ensuring that styles are disabled at the end of each line.
 ///
-/// The given ANSI escape sequence will in injected into each line of the given string separately, followed by a reset
-/// at the end of each line. This ensure that any downstream consumers of the resulting string can process it
-/// line-by-line without losing context. One example is the `remote: ` prefix that Git adds when streaming output from
-/// a buildpack.
-pub(crate) fn inject_default_ansi_escape(ansi_escape: &str, body: impl AsRef<str>) -> String {
+/// ## Supports recursive colorization
+///
+/// Strings that are previously colorized will not be overridden by this function. For example, if a word is already
+/// colored yellow, that word will continue to be yellow.
     body.as_ref()
         .split('\n')
         // If sub contents are colorized it will contain SUBCOLOR ... RESET. After the reset,
