@@ -1,6 +1,6 @@
 #![doc = include_str!("./README.md")]
 
-use crate::buildpack_output::ansi_escape::{BOLD_PURPLE, CYAN, RED, YELLOW};
+use crate::buildpack_output::ansi_escape::ANSI;
 use crate::buildpack_output::util::{prefix_first_rest_lines, prefix_lines, ParagraphInspectWrite};
 use crate::write::line_mapped;
 use std::fmt::Debug;
@@ -192,7 +192,7 @@ where
     ///
     /// If you detect something problematic but not bad enough to halt buildpack execution, consider using a [`BuildpackOutput::warning`] instead.
     pub fn error(mut self, s: impl AsRef<str>) {
-        self.write_paragraph(RED, s);
+        self.write_paragraph(&ANSI::Red, s);
     }
 
     /// Emit a warning message to the end user.
@@ -211,7 +211,7 @@ where
     /// Warnings will be output in a multi-line paragraph style. A warning can be emitted from any state except for [`state::NotStarted`].
     #[must_use]
     pub fn warning(mut self, s: impl AsRef<str>) -> BuildpackOutput<S> {
-        self.write_paragraph(YELLOW, s);
+        self.write_paragraph(&ANSI::Yellow, s);
         self
     }
 
@@ -225,11 +225,11 @@ where
     /// If the message is actionable, consider using a [`BuildpackOutput::warning`] instead.
     #[must_use]
     pub fn important(mut self, s: impl AsRef<str>) -> BuildpackOutput<S> {
-        self.write_paragraph(CYAN, s);
+        self.write_paragraph(&ANSI::BoldCyan, s);
         self
     }
 
-    fn write_paragraph(&mut self, color: &str, s: impl AsRef<str>) {
+    fn write_paragraph(&mut self, color: &ANSI, s: impl AsRef<str>) {
         let io = self.state.write_mut();
 
         if !io.was_paragraph {
@@ -285,7 +285,7 @@ where
         writeln_now(
             &mut self.state.write,
             ansi_escape::inject_default_ansi_escape(
-                BOLD_PURPLE,
+                &ANSI::BoldPurple,
                 format!("\n# {}\n", buildpack_name.as_ref()),
             ),
         );
