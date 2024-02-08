@@ -143,16 +143,11 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
     let stack_id: StackId = env::var("CNB_STACK_ID")
         .map_err(Error::CannotDetermineStackId)
         .and_then(|stack_id_string| stack_id_string.parse().map_err(Error::StackIdError))
-        .map_err(|err| {
-            trace_error(&err);
-            err
-        })?;
+        .inspect_err(|err| trace_error(err))?;
 
-    let platform = B::Platform::from_path(&args.platform_dir_path).map_err(|inner_err| {
-        let err = Error::CannotCreatePlatformFromPath(inner_err);
-        trace_error(&err);
-        err
-    })?;
+    let platform = B::Platform::from_path(&args.platform_dir_path)
+        .map_err(Error::CannotCreatePlatformFromPath)
+        .inspect_err(|err| trace_error(err))?;
 
     let build_plan_path = args.build_plan_path;
 
@@ -164,10 +159,9 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
         buildpack_descriptor,
     };
 
-    let detect_result = buildpack.detect(detect_context).map_err(|err| {
-        trace_error(&err);
-        err
-    })?;
+    let detect_result = buildpack
+        .detect(detect_context)
+        .inspect_err(|err| trace_error(err))?;
 
     match detect_result.0 {
         InnerDetectResult::Fail => {
@@ -177,11 +171,9 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
         }
         InnerDetectResult::Pass { build_plan } => {
             if let Some(build_plan) = build_plan {
-                write_toml_file(&build_plan, build_plan_path).map_err(|inner_err| {
-                    let err = Error::CannotWriteBuildPlan(inner_err);
-                    trace_error(&err);
-                    err
-                })?;
+                write_toml_file(&build_plan, build_plan_path)
+                    .map_err(Error::CannotWriteBuildPlan)
+                    .inspect_err(|err| trace_error(err))?;
             }
             #[cfg(feature = "trace")]
             trace.add_event("detect-passed");
@@ -222,32 +214,22 @@ pub fn libcnb_runtime_build<B: Buildpack>(
     let stack_id: StackId = env::var("CNB_STACK_ID")
         .map_err(Error::CannotDetermineStackId)
         .and_then(|stack_id_string| stack_id_string.parse().map_err(Error::StackIdError))
-        .map_err(|err| {
-            trace_error(&err);
-            err
-        })?;
+        .inspect_err(|err| trace_error(err))?;
 
-    let platform = Platform::from_path(&args.platform_dir_path).map_err(|inner_err| {
-        let err = Error::CannotCreatePlatformFromPath(inner_err);
-        trace_error(&err);
-        err
-    })?;
+    let platform = Platform::from_path(&args.platform_dir_path)
+        .map_err(Error::CannotCreatePlatformFromPath)
+        .inspect_err(|err| trace_error(err))?;
 
-    let buildpack_plan = read_toml_file(&args.buildpack_plan_path).map_err(|inner_err| {
-        let err = Error::CannotReadBuildpackPlan(inner_err);
-        trace_error(&err);
-        err
-    })?;
+    let buildpack_plan = read_toml_file(&args.buildpack_plan_path)
+        .map_err(Error::CannotReadBuildpackPlan)
+        .inspect_err(|err| trace_error(err))?;
 
     let store = match read_toml_file::<Store>(layers_dir.join("store.toml")) {
         Err(TomlFileError::IoError(io_error)) if is_not_found_error_kind(&io_error) => Ok(None),
         other => other.map(Some),
     }
     .map_err(Error::CannotReadStore)
-    .map_err(|err| {
-        trace_error(&err);
-        err
-    })?;
+    .inspect_err(|err| trace_error(err))?;
 
     let build_context = BuildContext {
         layers_dir: layers_dir.clone(),
@@ -260,10 +242,9 @@ pub fn libcnb_runtime_build<B: Buildpack>(
         store,
     };
 
-    let build_result = buildpack.build(build_context).map_err(|err| {
-        trace_error(&err);
-        err
-    })?;
+    let build_result = buildpack
+        .build(build_context)
+        .inspect_err(|err| trace_error(err))?;
 
     match build_result.0 {
         InnerBuildResult::Pass {
@@ -273,19 +254,15 @@ pub fn libcnb_runtime_build<B: Buildpack>(
             launch_sboms,
         } => {
             if let Some(launch) = launch {
-                write_toml_file(&launch, layers_dir.join("launch.toml")).map_err(|inner_err| {
-                    let err = Error::CannotWriteLaunch(inner_err);
-                    trace_error(&err);
-                    err
-                })?;
+                write_toml_file(&launch, layers_dir.join("launch.toml"))
+                    .map_err(Error::CannotWriteLaunch)
+                    .inspect_err(|err| trace_error(err))?;
             };
 
             if let Some(store) = store {
-                write_toml_file(&store, layers_dir.join("store.toml")).map_err(|inner_err| {
-                    let err = Error::CannotWriteStore(inner_err);
-                    trace_error(&err);
-                    err
-                })?;
+                write_toml_file(&store, layers_dir.join("store.toml"))
+                    .map_err(Error::CannotWriteStore)
+                    .inspect_err(|err| trace_error(err))?;
             };
 
             for build_sbom in build_sboms {
@@ -294,10 +271,7 @@ pub fn libcnb_runtime_build<B: Buildpack>(
                     &build_sbom.data,
                 )
                 .map_err(Error::CannotWriteBuildSbom)
-                .map_err(|err| {
-                    trace_error(&err);
-                    err
-                })?;
+                .inspect_err(|err| trace_error(err))?;
             }
 
             for launch_sbom in launch_sboms {
@@ -306,10 +280,7 @@ pub fn libcnb_runtime_build<B: Buildpack>(
                     &launch_sbom.data,
                 )
                 .map_err(Error::CannotWriteLaunchSbom)
-                .map_err(|err| {
-                    trace_error(&err);
-                    err
-                })?;
+                .inspect_err(|err| trace_error(err))?;
             }
 
             #[cfg(feature = "trace")]
