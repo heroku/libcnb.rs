@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Improved the consistency of cross-compilation assistance provided across all supported `target_triple` and host OS/architecture combinations. [#769](https://github.com/heroku/libcnb.rs/pull/769)
+- Added cross-compilation assistance for `aarch64-unknown-linux-musl` (on macOS and ARM64 Linux) and `x86_64-unknown-linux-musl` (on ARM64 Linux). [#769](https://github.com/heroku/libcnb.rs/pull/769)
 - `libcnb`:
   - Changed `Layer` interface from `&self` to `&mut self`. ([#669](https://github.com/heroku/libcnb.rs/pull/669))
 
