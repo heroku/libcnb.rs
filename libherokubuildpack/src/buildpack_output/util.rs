@@ -4,6 +4,23 @@ use std::io::Write;
 #[cfg(test)]
 use std::sync::{Arc, Mutex};
 
+pub(crate) fn prefix_first_rest_lines(
+    first_prefix: &str,
+    rest_prefix: &str,
+    contents: &str,
+) -> String {
+    let first_prefix = String::from(first_prefix);
+    let rest_prefix = String::from(rest_prefix);
+
+    prefix_lines(contents, move |index, _| {
+        if index == 0 {
+            first_prefix.clone()
+        } else {
+            rest_prefix.clone()
+        }
+    })
+}
+
 pub(crate) fn prefix_lines<F: Fn(usize, &str) -> String>(contents: &str, f: F) -> String {
     use std::fmt::Write;
 
@@ -21,23 +38,6 @@ pub(crate) fn prefix_lines<F: Fn(usize, &str) -> String>(contents: &str, f: F) -
     } else {
         lines
     }
-}
-
-pub(crate) fn prefix_first_rest_lines(
-    first_prefix: &str,
-    rest_prefix: &str,
-    contents: &str,
-) -> String {
-    let first_prefix = String::from(first_prefix);
-    let rest_prefix = String::from(rest_prefix);
-
-    prefix_lines(contents, move |index, _| {
-        if index == 0 {
-            first_prefix.clone()
-        } else {
-            rest_prefix.clone()
-        }
-    })
 }
 
 #[derive(Debug)]
