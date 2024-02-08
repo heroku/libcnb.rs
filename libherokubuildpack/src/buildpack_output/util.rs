@@ -2,38 +2,10 @@ use std::fmt::Debug;
 use std::io::Write;
 use std::sync::{Arc, Mutex};
 
-/// Iterator yielding every line in a string. Every line includes existing newline character(s).
-pub(crate) struct LineIterator<'a> {
-    input: &'a str,
-}
-
-impl<'a> LineIterator<'a> {
-    pub(crate) fn from(input: &'a str) -> LineIterator<'a> {
-        LineIterator { input }
-    }
-}
-
-impl<'a> Iterator for LineIterator<'a> {
-    type Item = &'a str;
-
-    #[inline]
-    fn next(&mut self) -> Option<&'a str> {
-        if self.input.is_empty() {
-            return None;
-        }
-
-        let newline_index = self.input.find('\n').map_or(self.input.len(), |i| i + 1);
-
-        let (line, rest) = self.input.split_at(newline_index);
-        self.input = rest;
-        Some(line)
-    }
-}
-
 pub(crate) fn prefix_lines<F: Fn(usize, &str) -> String>(contents: &str, f: F) -> String {
     use std::fmt::Write;
 
-    let lines = LineIterator::from(contents).enumerate().fold(
+    let lines = contents.split_inclusive('\n').enumerate().fold(
         String::new(),
         |mut acc, (line_index, line)| {
             let prefix = f(line_index, line);
@@ -158,24 +130,6 @@ impl<W: Write> Write for ParagraphInspectWrite<W> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use std::fmt::Write;
-
-    #[test]
-    fn test_lines_with_endings() {
-        let actual = LineIterator::from("foo\nbar").fold(String::new(), |mut output, line| {
-            let _ = write!(output, "z{line}");
-            output
-        });
-
-        assert_eq!("zfoo\nzbar", actual);
-
-        let actual = LineIterator::from("foo\nbar\n").fold(String::new(), |mut output, line| {
-            let _ = write!(output, "z{line}");
-            output
-        });
-
-        assert_eq!("zfoo\nzbar\n", actual);
-    }
 
     #[test]
     #[allow(clippy::write_with_newline)]
