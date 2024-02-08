@@ -37,5 +37,5 @@ The feature names line up with the modules in this crate. All features are enabl
 [docs.rs]: https://docs.rs/libherokubuildpack/latest/libherokubuildpack/
 [Latest Version]: https://img.shields.io/crates/v/libherokubuildpack.svg
 [crates.io]: https://crates.io/crates/libherokubuildpack
-[MSRV]: https://img.shields.io/badge/MSRV-rustc_1.74+-lightgray.svg
+[MSRV]: https://img.shields.io/badge/MSRV-rustc_1.76+-lightgray.svg
 [install-rust]: https://www.rust-lang.org/tools/install
