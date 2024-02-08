@@ -1,5 +1,7 @@
 use std::fmt::Debug;
 use std::io::Write;
+
+#[cfg(test)]
 use std::sync::{Arc, Mutex};
 
 pub(crate) fn prefix_lines<F: Fn(usize, &str) -> String>(contents: &str, f: F) -> String {
@@ -39,60 +41,6 @@ pub(crate) fn prefix_first_rest_lines(
 }
 
 #[derive(Debug)]
-pub(crate) struct LockedWriter<W> {
-    arc: Arc<Mutex<W>>,
-}
-
-impl<W> Clone for LockedWriter<W> {
-    fn clone(&self) -> Self {
-        Self {
-            arc: self.arc.clone(),
-        }
-    }
-}
-
-impl<W> LockedWriter<W> {
-    #[cfg(test)]
-    pub(crate) fn new(write: W) -> Self {
-        LockedWriter {
-            arc: Arc::new(Mutex::new(write)),
-        }
-    }
-
-    #[cfg(test)]
-    pub(crate) fn unwrap(self) -> W {
-        let Ok(mutex) = Arc::try_unwrap(self.arc) else {
-            panic!("Expected buildpack author to not retain any IO streaming IO instances")
-        };
-
-        mutex
-            .into_inner()
-            .expect("Thread holding locked writer should not panic")
-    }
-}
-
-impl<W> Write for LockedWriter<W>
-where
-    W: Write + Send + Sync + 'static,
-{
-    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        let mut io = self
-            .arc
-            .lock()
-            .expect("Thread holding locked writer should not panic");
-        io.write(buf)
-    }
-
-    fn flush(&mut self) -> std::io::Result<()> {
-        let mut io = self
-            .arc
-            .lock()
-            .expect("Thread holding locked writer should not panic");
-        io.flush()
-    }
-}
-
-#[derive(Debug)]
 pub(crate) struct ParagraphInspectWrite<W> {
     pub(crate) inner: W,
     pub(crate) was_paragraph: bool,
@@ -124,6 +72,64 @@ impl<W: Write> Write for ParagraphInspectWrite<W> {
 
     fn flush(&mut self) -> std::io::Result<()> {
         self.inner.flush()
+    }
+}
+
+#[cfg(test)]
+#[derive(Debug)]
+pub(crate) struct LockedWriter<W> {
+    arc: Arc<Mutex<W>>,
+}
+
+#[cfg(test)]
+impl<W> Clone for LockedWriter<W> {
+    fn clone(&self) -> Self {
+        Self {
+            arc: self.arc.clone(),
+        }
+    }
+}
+
+#[cfg(test)]
+impl<W> LockedWriter<W> {
+    #[cfg(test)]
+    pub(crate) fn new(write: W) -> Self {
+        LockedWriter {
+            arc: Arc::new(Mutex::new(write)),
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn unwrap(self) -> W {
+        let Ok(mutex) = Arc::try_unwrap(self.arc) else {
+            panic!("Expected buildpack author to not retain any IO streaming IO instances")
+        };
+
+        mutex
+            .into_inner()
+            .expect("Thread holding locked writer should not panic")
+    }
+}
+
+#[cfg(test)]
+impl<W> Write for LockedWriter<W>
+where
+    W: Write + Send + Sync + 'static,
+{
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        let mut io = self
+            .arc
+            .lock()
+            .expect("Thread holding locked writer should not panic");
+        io.write(buf)
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        let mut io = self
+            .arc
+            .lock()
+            .expect("Thread holding locked writer should not panic");
+        io.flush()
     }
 }
 
