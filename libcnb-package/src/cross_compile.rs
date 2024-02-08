@@ -10,7 +10,7 @@ use which::which;
 /// any other issue has been detected.
 pub fn cross_compile_assistance(target_triple: impl AsRef<str>) -> CrossCompileAssistance {
     let target_triple = target_triple.as_ref();
-    let (gcc_path, help_text) = match (target_triple, consts::OS, consts::ARCH) {
+    let (gcc_binary_name, help_text) = match (target_triple, consts::OS, consts::ARCH) {
         (AARCH64_UNKNOWN_LINUX_MUSL, OS_LINUX, ARCH_X86_64) => (
             "aarch64-linux-gnu-gcc",
             indoc! {"
@@ -50,11 +50,11 @@ pub fn cross_compile_assistance(target_triple: impl AsRef<str>) -> CrossCompileA
         _ => return CrossCompileAssistance::NoAssistance,
     };
 
-    match which(gcc_path) {
+    match which(gcc_binary_name) {
         Ok(_) => {
-            // When the gcc binary is `musl-gcc`, Cargo will automatically select the appropriate default linker,
+            // When the gcc binary name is `musl-gcc`, Cargo will automatically select the appropriate default linker,
             // and set the required environment variables.
-            if gcc_path == "musl-gcc" {
+            if gcc_binary_name == "musl-gcc" {
                 CrossCompileAssistance::Configuration {
                     cargo_env: Vec::new(),
                 }
@@ -69,13 +69,13 @@ pub fn cross_compile_assistance(target_triple: impl AsRef<str>) -> CrossCompileA
                                 "CARGO_TARGET_{}_LINKER",
                                 target_triple.to_uppercase().replace('-', "_")
                             )),
-                            OsString::from(gcc_path),
+                            OsString::from(gcc_binary_name),
                         ),
                         (
                             // Required so that any crates that call out to gcc are also cross-compiled:
                             // https://github.com/alexcrichton/cc-rs/issues/82
                             OsString::from(format!("CC_{}", target_triple.replace('-', "_"))),
-                            OsString::from(gcc_path),
+                            OsString::from(gcc_binary_name),
                         ),
                     ],
                 }
