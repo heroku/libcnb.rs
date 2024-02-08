@@ -40,23 +40,44 @@ mod test {
     use super::*;
 
     #[test]
-    fn handles_explicitly_removed_colors() {
-        // Differentiate between color clear and explicit no color https://github.com/heroku/buildpacks-ruby/pull/155#discussion_r1260029915
-        const NO_COLOR: &str = "\x1B[1;39m";
-        let nested = inject_default_ansi_escape(NO_COLOR, "nested");
+    fn empty_line() {
+        let actual = inject_default_ansi_escape(RED, "\n");
+        let expected = String::from("\n");
+        assert_eq!(expected, actual);
+    }
 
-        let out = inject_default_ansi_escape(RED, format!("hello {nested} color"));
-        let expected = format!("{RED}hello {NO_COLOR}nested{RESET}{RED} color{RESET}");
+    #[test]
+    fn handles_nested_color_at_start() {
+        let start = inject_default_ansi_escape(CYAN, "hello");
+        let out = inject_default_ansi_escape(RED, format!("{start} world"));
+        let expected = format!("{RED}{CYAN}hello{RESET}{RED} world{RESET}");
 
         assert_eq!(expected, out);
     }
 
     #[test]
-    fn handles_nested_colors() {
-        let nested = inject_default_ansi_escape(CYAN, "nested");
+    fn handles_nested_color_in_middle() {
+        let middle = inject_default_ansi_escape(CYAN, "middle");
+        let out = inject_default_ansi_escape(RED, format!("hello {middle} color"));
+        let expected = format!("{RED}hello {CYAN}middle{RESET}{RED} color{RESET}");
+        assert_eq!(expected, out);
+    }
 
-        let out = inject_default_ansi_escape(RED, format!("hello {nested} color"));
-        let expected = format!("{RED}hello {CYAN}nested{RESET}{RED} color{RESET}");
+    #[test]
+    fn handles_nested_color_at_end() {
+        let end = inject_default_ansi_escape(CYAN, "world");
+        let out = inject_default_ansi_escape(RED, format!("hello {end}"));
+        let expected = format!("{RED}hello {CYAN}world{RESET}");
+
+        assert_eq!(expected, out);
+    }
+
+    #[test]
+    fn handles_double_nested_color() {
+        let inner = inject_default_ansi_escape(CYAN, "inner");
+        let outer = inject_default_ansi_escape(RED, format!("outer {inner}"));
+        let out = inject_default_ansi_escape(YELLOW, format!("hello {outer}"));
+        let expected = format!("{YELLOW}hello {RED}outer {CYAN}inner{RESET}");
 
         assert_eq!(expected, out);
     }
