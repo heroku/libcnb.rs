@@ -145,7 +145,7 @@ impl Buildpack for HelloWorldBuildpack {
     // build phase (`bin/build`).
     fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildResult, Self::Error> {
         println!("Hello World!");
-        println!("Build runs on: {} ({})!", context.target_os, context.target_arch);
+        println!("The build is running on: {} ({})!", context.target_os, context.target_arch);
 
         BuildResultBuilder::new()
             .launch(
@@ -215,7 +215,7 @@ libcnb-examples/my-buildpack 0.1.0
 ===> RESTORING
 ===> BUILDING
 Hello World!
-Build runs on: linux (amd64)!
+The build is running on: linux (amd64)!
 ===> EXPORTING
 Adding layer 'buildpacksio/lifecycle:launch.sbom'
 Adding 1/1 app layer(s)
