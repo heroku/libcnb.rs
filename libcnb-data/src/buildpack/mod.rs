@@ -122,6 +122,10 @@ pub struct ComponentBuildpackDescriptor<BM = GenericMetadata> {
     #[serde(default = "Vec::new")]
     pub targets: Vec<Target>,
     pub metadata: BM,
+    // As of 2024-02-09, the CNB spec does not forbid component buildpacks
+    // to contain `order`. This is a change from buildpack API 0.9 where `order`
+    // was disallowed in component buildpacks. However, `pack` does not allow this.
+    // We believe this to be a spec error and libcnb.rs does intentionally not support this.
 }
 
 /// Data structure for the Buildpack descriptor (buildpack.toml) of a composite buildpack.
@@ -171,6 +175,10 @@ pub struct CompositeBuildpackDescriptor<BM = GenericMetadata> {
     pub buildpack: Buildpack,
     pub order: Vec<Order>,
     pub metadata: BM,
+    // As of 2024-02-09, the CNB spec does not forbid composite buildpacks
+    // to contain `targets`. This is a change from buildpack API 0.9 where `stack`
+    // was disallowed in composite buildpacks. However, `pack` does not allow this.
+    // We believe this to be a spec error and libcnb.rs does intentionally not support this.
 }
 
 #[derive(Deserialize, Debug)]
