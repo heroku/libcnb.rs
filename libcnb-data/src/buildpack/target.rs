@@ -6,8 +6,7 @@ pub struct Target {
     pub os: Option<String>,
     pub arch: Option<String>,
     pub variant: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub distros: Vec<Distro>,
 }
 

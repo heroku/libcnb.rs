@@ -119,7 +119,7 @@ impl<BM> BuildpackDescriptor<BM> {
 pub struct ComponentBuildpackDescriptor<BM = GenericMetadata> {
     pub api: BuildpackApi,
     pub buildpack: Buildpack,
-    #[serde(default = "Vec::new")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub targets: Vec<Target>,
     pub metadata: BM,
     // As of 2024-02-09, the CNB spec does not forbid component buildpacks
