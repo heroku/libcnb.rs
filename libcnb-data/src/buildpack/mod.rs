@@ -491,10 +491,6 @@ api = "0.10"
 [buildpack]
 id = "foo/bar"
 version = "0.0.1"
-
-[[targets]]
-os = "linux"
-arch = "amd64"
         "#;
 
         let buildpack_descriptor =
@@ -525,15 +521,7 @@ arch = "amd64"
         );
         assert_eq!(buildpack_descriptor.buildpack.licenses, Vec::new());
         assert_eq!(buildpack_descriptor.buildpack.sbom_formats, HashSet::new());
-        assert_eq!(
-            buildpack_descriptor.targets,
-            [Target {
-                os: Some(String::from("linux")),
-                arch: Some(String::from("amd64")),
-                variant: None,
-                distros: Vec::new()
-            }]
-        );
+        assert_eq!(buildpack_descriptor.targets, []);
         assert_eq!(buildpack_descriptor.metadata, None);
     }
 
