@@ -33,6 +33,14 @@ pub(crate) fn prefix_lines<F: Fn(usize, &str) -> String>(contents: &str, f: F) -
     }
 }
 
+/// A trailing newline aware writer
+///
+/// A paragraph style block of text has an empty newline before and after the text.
+/// When multiple paragraphs are emitted, it's important that they don't double up on empty newlines
+/// or the output will look off.
+///
+/// This writer seeks to solve that problem by preserving knowledge of prior newline writes and
+/// exposing that information to the caller.
 #[derive(Debug)]
 pub(crate) struct ParagraphInspectWrite<W> {
     pub(crate) inner: W,
@@ -51,12 +59,15 @@ impl<W> ParagraphInspectWrite<W> {
 }
 
 impl<W: Write> Write for ParagraphInspectWrite<W> {
+    /// We need to track newlines across multiple writes to eliminate the double empty newline
+    /// problem described above.
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        let newline_count = buf.iter().rev().take_while(|&&c| c == b'\n').count();
-        if buf.len() == newline_count {
-            self.newlines_since_last_char += newline_count;
+        let trailing_newline_count = buf.iter().rev().take_while(|&&c| c == b'\n').count();
+        // The buffer contains only newlines
+        if buf.len() == trailing_newline_count {
+            self.newlines_since_last_char += trailing_newline_count;
         } else {
-            self.newlines_since_last_char = newline_count;
+            self.newlines_since_last_char = trailing_newline_count;
         }
 
         self.was_paragraph = self.newlines_since_last_char > 1;
@@ -135,7 +146,15 @@ mod test {
 
         let buffer: Vec<u8> = vec![];
         let mut inspect_write = ParagraphInspectWrite::new(buffer);
+        assert!(!inspect_write.was_paragraph);
 
+        write!(&mut inspect_write, "Hello World").unwrap();
+        assert!(!inspect_write.was_paragraph);
+
+        write!(&mut inspect_write, "").unwrap();
+        assert!(!inspect_write.was_paragraph);
+
+        write!(&mut inspect_write, "\n\nHello World!\n").unwrap();
         assert!(!inspect_write.was_paragraph);
 
         write!(&mut inspect_write, "Hello World!\n").unwrap();
