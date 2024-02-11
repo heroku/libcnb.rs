@@ -24,10 +24,6 @@
 //! ## Consistent indentation and newlines
 //!
 //! Help your users focus on what's happening, not on inconsistent formatting. The [`BuildpackOutput`] is a consuming, stateful design. That means you can use Rust's powerful type system to ensure only the output you expect, in the style you want, is emitted to the screen. See the documentation in the [`state`] module for more information.
-//!
-//! ## See it in action
-//!
-//! Beyond reading about the features, you can see the build output in action (TODO: style guide link). Run it locally by cloning this repo and executing (TODO: style guide command). The text of the style guide has helpful tips, dos and don'ts, and suggestions for helping your buildpack stand out in a good way.
 
 use crate::buildpack_output::ansi_escape::ANSI;
 use crate::buildpack_output::util::{prefix_first_rest_lines, prefix_lines, ParagraphInspectWrite};
@@ -41,8 +37,6 @@ mod duration_format;
 pub mod style;
 mod util;
 
-/// # Buildpack output
-///
 /// Use [`BuildpackOutput`] to output structured text as a buildpack executes. The buildpack output is intended to be read by the application user running your buildpack against their application.
 ///
 /// ```rust
@@ -127,7 +121,7 @@ pub mod state {
         pub(crate) write: ParagraphInspectWrite<W>,
     }
 
-    /// The `state::Section` is intended to provide addiitonal details about the buildpack's
+    /// The `state::Section` is intended to provide additional details about the buildpack's
     /// actions. When a section is finished, it transitions back to a `state::Started` type.
     ///
     /// A streaming type can be started from a `state::Section`, usually to run and stream a
@@ -222,7 +216,7 @@ impl<S> BuildpackOutput<S>
 where
     S: AnnounceSupportedState,
 {
-    /// Emit an error and end the build output
+    /// Emit an error and end the build output.
     ///
     /// When an unrecoverable situation is encountered, you can emit an error message to the user.
     /// This associated function will consume the build output, so you may only emit one error per build output.
@@ -286,7 +280,7 @@ where
             ansi_escape::wrap_ansi_escape_each_line(
                 color,
                 prefix_lines(s.as_ref(), |_, line| {
-                    if line.chars().all(char::is_whitespace) {
+                    if line.is_empty() {
                         String::from("!")
                     } else {
                         String::from("! ")
@@ -338,7 +332,7 @@ where
         self.start_silent()
     }
 
-    /// Start a buildpack output without announcing the name
+    /// Start a buildpack output without announcing the name.
     pub fn start_silent(self) -> BuildpackOutput<state::Started<W>> {
         BuildpackOutput {
             started: Some(Instant::now()),
@@ -437,7 +431,7 @@ where
         self
     }
 
-    /// Stream output to the end user
+    /// Stream output to the end user.
     ///
     /// The most common use case is to stream the output of a running `std::process::Command` to the end user.
     /// Streaming lets the end user know that something is happening and provides them with the output of the process.

@@ -9,14 +9,11 @@ pub(crate) fn prefix_first_rest_lines(
     rest_prefix: &str,
     contents: &str,
 ) -> String {
-    let first_prefix = String::from(first_prefix);
-    let rest_prefix = String::from(rest_prefix);
-
     prefix_lines(contents, move |index, _| {
         if index == 0 {
-            first_prefix.clone()
+            String::from(first_prefix)
         } else {
-            rest_prefix.clone()
+            String::from(rest_prefix)
         }
     })
 }
@@ -24,19 +21,17 @@ pub(crate) fn prefix_first_rest_lines(
 pub(crate) fn prefix_lines<F: Fn(usize, &str) -> String>(contents: &str, f: F) -> String {
     use std::fmt::Write;
 
-    let lines = contents.split_inclusive('\n').enumerate().fold(
-        String::new(),
-        |mut acc, (line_index, line)| {
-            let prefix = f(line_index, line);
-            let _ = write!(acc, "{prefix}{line}");
-            acc
-        },
-    );
-
-    if lines.is_empty() {
+    if contents.is_empty() {
         f(0, "")
     } else {
-        lines
+        contents.split_inclusive('\n').enumerate().fold(
+            String::new(),
+            |mut acc, (line_index, line)| {
+                let prefix = f(line_index, line);
+                let _ = write!(acc, "{prefix}{line}");
+                acc
+            },
+        )
     }
 }
 
@@ -92,14 +87,12 @@ impl<W> Clone for LockedWriter<W> {
 
 #[cfg(test)]
 impl<W> LockedWriter<W> {
-    #[cfg(test)]
     pub(crate) fn new(write: W) -> Self {
         LockedWriter {
             arc: Arc::new(Mutex::new(write)),
         }
     }
 
-    #[cfg(test)]
     pub(crate) fn unwrap(self) -> W {
         let Ok(mutex) = Arc::try_unwrap(self.arc) else {
             panic!("Expected buildpack author to not retain any IO streaming IO instances")
