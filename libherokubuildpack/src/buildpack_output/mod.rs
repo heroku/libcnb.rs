@@ -299,6 +299,7 @@ where
     /// Create a buildpack output struct, but do not announce the buildpack's start.
     ///
     /// See the [`BuildpackOutput::start`] method for more details.
+    #[must_use]
     pub fn new(io: W) -> Self {
         Self {
             state: state::NotStarted {
@@ -320,6 +321,7 @@ where
     /// buildpack is built to target only Heroku; you can include that in the description of the buildpack.
     ///
     /// This function will transition your buildpack output to [`state::Started`].
+    #[must_use]
     pub fn start(mut self, buildpack_name: impl AsRef<str>) -> BuildpackOutput<state::Started<W>> {
         writeln_now(
             &mut self.state.write,
@@ -333,6 +335,7 @@ where
     }
 
     /// Start a buildpack output without announcing the name.
+    #[must_use]
     pub fn start_silent(self) -> BuildpackOutput<state::Started<W>> {
         BuildpackOutput {
             started: Some(Instant::now()),
@@ -441,6 +444,7 @@ where
     /// If you do not wish the end user to view the output of the process, consider using a `step` instead.
     ///
     /// This function will transition your buildpack output to [`state::Stream`].
+    #[must_use]
     pub fn start_stream(mut self, s: impl AsRef<str>) -> BuildpackOutput<state::Stream<W>> {
         writeln_now(&mut self.state.write, Self::style(s));
         writeln_now(&mut self.state.write, "");
