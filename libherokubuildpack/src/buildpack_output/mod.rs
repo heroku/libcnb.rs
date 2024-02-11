@@ -245,7 +245,7 @@ where
     ///
     /// Warnings should often come with some disabling mechanism, if possible. If the user can turn off the warning,
     /// that information should be included in the warning message. If you're confident that the user should not be able to
-    /// turn off a warning; use an [`BuildpackOutput::error`] instead
+    /// turn off a warning, consider using a [`BuildpackOutput::error`] instead.
     ///
     /// Warnings will be output in a multi-line paragraph style. A warning can be emitted from any state except for [`state::NotStarted`].
     #[must_use]
