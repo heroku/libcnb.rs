@@ -533,6 +533,32 @@ mod test {
     use std::fs::File;
 
     #[test]
+    fn paragraph_color_codes() {
+        let tmpdir = tempfile::tempdir().unwrap();
+        let path = tmpdir.path().join("output.txt");
+
+        BuildpackOutput::new(File::create(&path).unwrap())
+            .start("Buildpack Header is Bold Purple")
+            .important("Important is bold cyan")
+            .warning("Warnings are yellow")
+            .error("Errors are red");
+
+        let expected = formatdoc! {"
+
+            \u{1b}[1;35m# Buildpack Header is Bold Purple\u{1b}[0m
+
+            \u{1b}[1;36m! Important is bold cyan\u{1b}[0m
+
+            \u{1b}[0;33m! Warnings are yellow\u{1b}[0m
+
+            \u{1b}[0;31m! Errors are red\u{1b}[0m
+
+        "};
+
+        assert_eq!(expected, std::fs::read_to_string(path).unwrap());
+    }
+
+    #[test]
     fn test_important() {
         let writer = Vec::new();
         let io = BuildpackOutput::new(writer)
