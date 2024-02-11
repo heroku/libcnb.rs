@@ -530,6 +530,53 @@ mod test {
     use crate::command::CommandExt;
     use indoc::formatdoc;
     use libcnb_test::assert_contains;
+    use std::fs::File;
+
+    #[test]
+    fn test_important() {
+        let writer = Vec::new();
+        let io = BuildpackOutput::new(writer)
+            .start("Heroku Ruby Buildpack")
+            .important("This is important")
+            .finish();
+
+        let expected = formatdoc! {"
+
+            # Heroku Ruby Buildpack
+
+            ! This is important
+
+            - Done (finished in < 0.1s)
+        "};
+
+        assert_eq!(
+            expected,
+            strip_ansi_escape_sequences(String::from_utf8_lossy(&io))
+        );
+    }
+
+    #[test]
+    fn test_error() {
+        let tmpdir = tempfile::tempdir().unwrap();
+        let path = tmpdir.path().join("output.txt");
+
+        BuildpackOutput::new(File::create(&path).unwrap())
+            .start("Heroku Ruby Buildpack")
+            .error("This is an error");
+
+        let expected = formatdoc! {"
+
+            # Heroku Ruby Buildpack
+
+            ! This is an error
+
+        "};
+
+        assert_eq!(
+            expected,
+            strip_ansi_escape_sequences(std::fs::read_to_string(path).unwrap())
+        );
+    }
 
     #[test]
     fn test_captures() {
