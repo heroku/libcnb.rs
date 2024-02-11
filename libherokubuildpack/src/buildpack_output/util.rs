@@ -189,5 +189,10 @@ mod test {
         );
 
         assert_eq!("- ", &prefix_first_rest_lines("- ", "  ", ""));
+
+        assert_eq!(
+            "- hello\n  \n  world",
+            &prefix_first_rest_lines("- ", "  ", "hello\n\nworld")
+        );
     }
 }
