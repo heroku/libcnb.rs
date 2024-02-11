@@ -19,19 +19,17 @@ pub(crate) fn prefix_first_rest_lines(
 }
 
 pub(crate) fn prefix_lines<F: Fn(usize, &str) -> String>(contents: &str, f: F) -> String {
-    use std::fmt::Write;
-
     if contents.is_empty() {
         f(0, "")
     } else {
-        contents.split_inclusive('\n').enumerate().fold(
-            String::new(),
-            |mut acc, (line_index, line)| {
+        contents
+            .split_inclusive('\n')
+            .enumerate()
+            .map(|(line_index, line)| {
                 let prefix = f(line_index, line);
-                let _ = write!(acc, "{prefix}{line}");
-                acc
-            },
-        )
+                prefix + line
+            })
+            .collect()
     }
 }
 
