@@ -21,7 +21,7 @@ pub struct ContextTarget {
     ///
     /// CNB `lifecycle` sources this value from the build OCI image's [`variant` property](https://github.com/opencontainers/image-spec/blob/main/config.md#properties).
     pub arch_variant: Option<String>,
-    /// The name of the operating system distribution. Should be empty for windows.
+    /// The name of the operating system distribution. Should be empty for Windows.
     ///
     /// For example: `ubuntu` or `arch`.
     ///
