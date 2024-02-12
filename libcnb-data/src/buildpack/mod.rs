@@ -273,6 +273,8 @@ variant = "v8"
 os = "windows"
 arch = "amd64"
 
+[[targets]]
+
 [metadata]
 checksum = "abc123"
         "#;
@@ -360,6 +362,12 @@ checksum = "abc123"
                     arch: Some(String::from("amd64")),
                     variant: None,
                     distros: Vec::new(),
+                },
+                Target {
+                    os: None,
+                    arch: None,
+                    variant: None,
+                    distros: Vec::new()
                 }
             ]
         );
