@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `libherokubuildpack`:
+  - Removed `error` and `log` modules in favor of `buildpack_output`. ([#721](https://github.com/heroku/libcnb.rs/pull/721))
+
+### Added
+
+- `libherokubuildpack`:
+  - Added build `buildpack_output` module. This will help buildpack authors provide consistent and delightful output to their buildpack users ([#721](https://github.com/heroku/libcnb.rs/pull/721))
+
 
 ## [0.18.0] - 2024-02-12
 
@@ -25,7 +35,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `libherokubuildpack`:
   - `MappedWrite::unwrap` for getting the wrapped `Write` back out. ([#765](https://github.com/heroku/libcnb.rs/pull/765))
-  - Added build `buildpack_output` module. This will help buildpack authors provide consistent and delightful output to their buildpack users ([#721](https://github.com/heroku/libcnb.rs/pull/721))
 
 ### Removed
 
