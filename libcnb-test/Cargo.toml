@@ -20,10 +20,10 @@ fs_extra = "1.3.0"
 libcnb-common.workspace = true
 libcnb-data.workspace = true
 libcnb-package.workspace = true
-tempfile = "3.8.1"
-thiserror = "1.0.50"
+tempfile = "3.10.0"
+thiserror = "1.0.57"
 
 [dev-dependencies]
 indoc = "2.0.4"
-ureq = { version = "2.9.1", default-features = false }
+ureq = { version = "2.9.5", default-features = false }
 libcnb.workspace = true

@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [0.18.0] - 2024-02-12
+
 ### Changed
 
 - Now targets [Buildpack API 0.10](https://github.com/buildpacks/spec/releases/tag/buildpack%2Fv0.10). Buildpacks need to upgrade the `api` key to `0.10` in their `buildpack.toml`. ([#773](https://github.com/heroku/libcnb.rs/pull/773))
@@ -252,7 +255,8 @@ version number. See the changelog below for other changes.
 
 - Remove support for legacy BOM. Remove `Launch::bom`, `Build::bom`, `bom::Bom`, `bom::Entry`. ([#489](https://github.com/heroku/libcnb.rs/pull/489))
 
-[unreleased]: https://github.com/heroku/libcnb.rs/compare/v0.17.0...HEAD
+[unreleased]: https://github.com/heroku/libcnb.rs/compare/v0.18.0...HEAD
+[0.18.0]: https://github.com/heroku/libcnb.rs/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/heroku/libcnb.rs/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/heroku/libcnb.rs/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/heroku/libcnb.rs/compare/v0.14.0...v0.15.0
