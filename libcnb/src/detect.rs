@@ -9,10 +9,39 @@ use std::path::PathBuf;
 pub struct DetectContext<B: Buildpack + ?Sized> {
     pub app_dir: PathBuf,
     pub buildpack_dir: PathBuf,
+    /// The name of the target operating system.
+    ///
+    /// The value should conform to [Go's `$GOOS`](https://golang.org/doc/install/source#environment), for example
+    /// `linux` or `windows`.
+    ///
+    /// CNB `lifecycle` sources this value from the build OCI image's [`os` property](https://github.com/opencontainers/image-spec/blob/main/config.md#properties).
     pub target_os: String,
+    /// The name of the target CPU architecture.
+    ///
+    /// The value should conform to [Go's $GOARCH](https://golang.org/doc/install/source#environment), for example
+    /// `amd64` or `arm64`.
+    ///
+    /// CNB `lifecycle` sources this value from the build OCI image's [`architecture` property](https://github.com/opencontainers/image-spec/blob/main/config.md#properties).
+    /// ``
     pub target_arch: String,
+    /// The variant of the specified CPU architecture.
+    ///
+    /// The value should conform to [OCI image spec platform variants](https://github.com/opencontainers/image-spec/blob/main/image-index.md#platform-variants), for example
+    /// `v7` or `v8`.
+    ///
+    /// CNB `lifecycle` sources this value from the build OCI image's [`variant` property](https://github.com/opencontainers/image-spec/blob/main/config.md#properties).
     pub target_arch_variant: Option<String>,
+    /// The name of the operating system distribution. Should be empty for windows.
+    ///
+    /// For example: `ubuntu` or `arch`.
+    ///
+    /// CNB `lifecycle` sources this value from the build OCI image's `io.buildpacks.distro.name` label.
     pub target_distro_name: Option<String>,
+    /// The version of the operating system distribution.
+    ///
+    /// For example: `18.02` or `2024.02.01`.
+    ///
+    /// CNB `lifecycle` sources this value from the build OCI image's `io.buildpacks.distro.version` label.
     pub target_distro_version: Option<String>,
     pub platform: B::Platform,
     pub buildpack_descriptor: ComponentBuildpackDescriptor<B::Metadata>,
