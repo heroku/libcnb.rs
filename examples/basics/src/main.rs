@@ -17,7 +17,7 @@ impl Buildpack for BasicBuildpack {
     fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildResult, Self::Error> {
         println!(
             "Build runs on: {} ({})!",
-            context.target_os, context.target_arch
+            context.target.os, context.target.arch
         );
 
         BuildResultBuilder::new().build()

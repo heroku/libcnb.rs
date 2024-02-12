@@ -145,7 +145,7 @@ impl Buildpack for HelloWorldBuildpack {
     // build phase (`bin/build`).
     fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildResult, Self::Error> {
         println!("Hello World!");
-        println!("The build is running on: {} ({})!", context.target_os, context.target_arch);
+        println!("The build is running on: {} ({})!", context.target.os, context.target.arch);
 
         BuildResultBuilder::new()
             .launch(

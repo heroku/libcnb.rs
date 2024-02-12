@@ -5,6 +5,7 @@ use crate::detect::{DetectContext, InnerDetectResult};
 use crate::error::Error;
 use crate::platform::Platform;
 use crate::sbom::cnb_sbom_path;
+use crate::target::ContextTarget;
 #[cfg(feature = "trace")]
 use crate::tracing::start_trace;
 use crate::util::is_not_found_error_kind;
@@ -138,7 +139,7 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
     };
 
     #[cfg(not(feature = "trace"))]
-    let trace_error = |_: &dyn std::error::Error| {};
+    let mut trace_error = |_: &dyn std::error::Error| {};
 
     let platform = B::Platform::from_path(&args.platform_dir_path)
         .map_err(Error::CannotCreatePlatformFromPath)
@@ -146,32 +147,12 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
 
     let build_plan_path = args.build_plan_path;
 
-    let target_os = env::var("CNB_TARGET_OS")
-        .map_err(Error::CannotDetermineTargetOs)
-        .map_err(|err| {
-            trace_error(&err);
-            err
-        })?;
-
-    let target_arch = env::var("CNB_TARGET_ARCH")
-        .map_err(Error::CannotDetermineTargetArch)
-        .map_err(|err| {
-            trace_error(&err);
-            err
-        })?;
-
-    let target_arch_variant = env::var("CNB_TARGET_ARCH_VARIANT").ok();
-    let target_distro_name = env::var("CNB_TARGET_DISTRO_NAME").ok();
-    let target_distro_version = env::var("CNB_TARGET_DISTRO_VERSION").ok();
+    let target = context_target().inspect_err(|err| trace_error(err))?;
 
     let detect_context = DetectContext {
         app_dir,
         buildpack_dir,
-        target_os,
-        target_arch,
-        target_arch_variant,
-        target_distro_name,
-        target_distro_version,
+        target,
         platform,
         buildpack_descriptor,
     };
@@ -226,7 +207,7 @@ pub fn libcnb_runtime_build<B: Buildpack>(
     };
 
     #[cfg(not(feature = "trace"))]
-    let trace_error = |_: &dyn std::error::Error| {};
+    let mut trace_error = |_: &dyn std::error::Error| {};
 
     let platform = Platform::from_path(&args.platform_dir_path)
         .map_err(Error::CannotCreatePlatformFromPath)
@@ -243,33 +224,13 @@ pub fn libcnb_runtime_build<B: Buildpack>(
     .map_err(Error::CannotReadStore)
     .inspect_err(|err| trace_error(err))?;
 
-    let target_os = env::var("CNB_TARGET_OS")
-        .map_err(Error::CannotDetermineTargetOs)
-        .map_err(|err| {
-            trace_error(&err);
-            err
-        })?;
-
-    let target_arch = env::var("CNB_TARGET_ARCH")
-        .map_err(Error::CannotDetermineTargetArch)
-        .map_err(|err| {
-            trace_error(&err);
-            err
-        })?;
-
-    let target_arch_variant = env::var("CNB_TARGET_ARCH_VARIANT").ok();
-    let target_distro_name = env::var("CNB_TARGET_DISTRO_NAME").ok();
-    let target_distro_version = env::var("CNB_TARGET_DISTRO_VERSION").ok();
+    let target = context_target().inspect_err(|err| trace_error(err))?;
 
     let build_context = BuildContext {
         layers_dir: layers_dir.clone(),
         app_dir,
         platform,
-        target_os,
-        target_arch,
-        target_arch_variant,
-        target_distro_name,
-        target_distro_version,
+        target,
         buildpack_plan,
         buildpack_dir,
         buildpack_descriptor,
@@ -394,5 +355,24 @@ fn read_buildpack_descriptor<BD: DeserializeOwned, E: Debug>() -> crate::Result<
     read_buildpack_dir().and_then(|buildpack_dir| {
         read_toml_file(buildpack_dir.join("buildpack.toml"))
             .map_err(Error::CannotReadBuildpackDescriptor)
+    })
+}
+
+fn context_target<E>() -> crate::Result<ContextTarget, E>
+where
+    E: Debug,
+{
+    let os = env::var("CNB_TARGET_OS").map_err(Error::CannotDetermineTargetOs)?;
+    let arch = env::var("CNB_TARGET_ARCH").map_err(Error::CannotDetermineTargetArch)?;
+    let arch_variant = env::var("CNB_TARGET_ARCH_VARIANT").ok();
+    let distro_name = env::var("CNB_TARGET_DISTRO_NAME").ok();
+    let distro_version = env::var("CNB_TARGET_DISTRO_VERSION").ok();
+
+    Ok(ContextTarget {
+        os,
+        arch,
+        arch_variant,
+        distro_name,
+        distro_version,
     })
 }

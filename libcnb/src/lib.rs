@@ -18,6 +18,7 @@ mod error;
 mod exit_code;
 mod platform;
 mod runtime;
+mod target;
 #[cfg(feature = "trace")]
 mod tracing;
 mod util;
