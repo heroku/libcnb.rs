@@ -280,7 +280,7 @@ where
             ansi_escape::wrap_ansi_escape_each_line(
                 color,
                 prefix_lines(s.as_ref(), |_, line| {
-                    if line.is_empty() {
+                    if line.chars().all(char::is_whitespace) {
                         String::from("!")
                     } else {
                         String::from("! ")
@@ -531,6 +531,30 @@ mod test {
     use indoc::formatdoc;
     use libcnb_test::assert_contains;
     use std::fs::File;
+
+    #[test]
+    fn write_paragraph_empty_lines() {
+        let io = BuildpackOutput::new(Vec::new())
+            .start("Example Buildpack")
+            .warning("hello\n\nworld")
+            .finish();
+
+        let expected = formatdoc! {"
+
+            # Example Buildpack
+
+            ! hello
+            !
+            ! world
+
+            - Done (finished in < 0.1s)
+        "};
+
+        assert_eq!(
+            expected,
+            strip_ansi_escape_sequences(String::from_utf8_lossy(&io))
+        );
+    }
 
     #[test]
     fn paragraph_color_codes() {
