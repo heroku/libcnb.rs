@@ -4,6 +4,14 @@ use std::io::Write;
 #[cfg(test)]
 use std::sync::{Arc, Mutex};
 
+/// Applies a prefix to the first line and a different prefix to the rest of the lines
+///
+/// The primary use case is to align indentation with the prefix of the first line. Most often
+/// for emitting indented bullet point lists.
+///
+/// The first prefix is always applied, even when the contents are empty. This default
+/// was chosen to ensure that a nested-bullet point will always follow a parent bullet point, even
+/// if that parent has no text.
 pub(crate) fn prefix_first_rest_lines(
     first_prefix: &str,
     rest_prefix: &str,
@@ -18,12 +26,19 @@ pub(crate) fn prefix_first_rest_lines(
     })
 }
 
+/// Prefixes each line of input
+///
+/// Each line of the provided string slice will be passed to the provided function along with
+/// the index of the line. The function should return a string that will be prepended to the line.
+///
+/// If an empty string is provided, the function will be called with a zero index and an empty slice.
 pub(crate) fn prefix_lines<F: Fn(usize, &str) -> String>(contents: &str, f: F) -> String {
-    if contents.is_empty() {
+    let mut lines = contents.split_inclusive('\n').peekable();
+
+    if lines.peek().is_none() {
         f(0, "")
     } else {
-        contents
-            .split_inclusive('\n')
+        lines
             .enumerate()
             .map(|(line_index, line)| {
                 let prefix = f(line_index, line);
@@ -194,5 +209,20 @@ mod test {
             "- hello\n  \n  world",
             &prefix_first_rest_lines("- ", "  ", "hello\n\nworld")
         );
+    }
+
+    #[test]
+    fn test_prefix_lines() {
+        assert_eq!(
+            "- hello\n- world\n",
+            &prefix_lines("hello\nworld\n", |_, _| String::from("- "))
+        );
+        assert_eq!(
+            "0: hello\n1: world\n",
+            &prefix_lines("hello\nworld\n", |index, _| { format!("{index}: ") })
+        );
+        assert_eq!("- ", &prefix_lines("", |_, _| String::from("- ")));
+        assert_eq!("- \n", &prefix_lines("\n", |_, _| String::from("- ")));
+        assert_eq!("- \n- \n", &prefix_lines("\n\n", |_, _| String::from("- ")));
     }
 }
