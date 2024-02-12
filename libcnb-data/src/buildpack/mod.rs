@@ -1,7 +1,6 @@
 mod api;
 mod id;
-mod stack;
-mod stack_id;
+mod target;
 mod version;
 
 use crate::generic::GenericMetadata;
@@ -9,9 +8,8 @@ use crate::sbom::SbomFormat;
 pub use api::*;
 pub use id::*;
 use serde::Deserialize;
-pub use stack::*;
-pub use stack_id::*;
 use std::collections::HashSet;
+pub use target::*;
 pub use version::*;
 
 /// Data structures for the Buildpack descriptor (buildpack.toml).
@@ -28,7 +26,7 @@ pub use version::*;
 /// use libcnb_data::buildpack::BuildpackDescriptor;
 ///
 /// let toml_str = r#"
-/// api = "0.9"
+/// api = "0.10"
 ///
 /// [buildpack]
 /// id = "foo/bar"
@@ -41,9 +39,6 @@ pub use version::*;
 ///
 /// [[buildpack.licenses]]
 /// type = "BSD-3-Clause"
-///
-/// [[stacks]]
-/// id = "*"
 /// "#;
 ///
 /// let buildpack_descriptor =
@@ -84,11 +79,11 @@ impl<BM> BuildpackDescriptor<BM> {
 ///
 /// # Example:
 /// ```
-/// use libcnb_data::buildpack::{ComponentBuildpackDescriptor, Stack};
+/// use libcnb_data::buildpack::{ComponentBuildpackDescriptor, Target};
 /// use libcnb_data::buildpack_id;
 ///
 /// let toml_str = r#"
-/// api = "0.9"
+/// api = "0.10"
 ///
 /// [buildpack]
 /// id = "foo/bar"
@@ -102,22 +97,35 @@ impl<BM> BuildpackDescriptor<BM> {
 /// [[buildpack.licenses]]
 /// type = "BSD-3-Clause"
 ///
-/// [[stacks]]
-/// id = "*"
+/// [[targets]]
+/// os = "linux"
 /// "#;
 ///
 /// let buildpack_descriptor =
 ///     toml::from_str::<ComponentBuildpackDescriptor>(toml_str).unwrap();
 /// assert_eq!(buildpack_descriptor.buildpack.id, buildpack_id!("foo/bar"));
-/// assert_eq!(buildpack_descriptor.stacks, [Stack::Any]);
+/// assert_eq!(
+///     buildpack_descriptor.targets,
+///     [Target {
+///         os: Some(String::from("linux")),
+///         arch: None,
+///         variant: None,
+///         distros: vec![]
+///     }]
+/// );
 /// ```
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct ComponentBuildpackDescriptor<BM = GenericMetadata> {
     pub api: BuildpackApi,
     pub buildpack: Buildpack,
-    pub stacks: Vec<Stack>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub targets: Vec<Target>,
     pub metadata: BM,
+    // As of 2024-02-09, the CNB spec does not forbid component buildpacks
+    // to contain `order`. This is a change from buildpack API 0.9 where `order`
+    // was disallowed in component buildpacks. However, `pack` does not allow this.
+    // We believe this to be a spec error and libcnb.rs does intentionally not support this.
 }
 
 /// Data structure for the Buildpack descriptor (buildpack.toml) of a composite buildpack.
@@ -135,7 +143,7 @@ pub struct ComponentBuildpackDescriptor<BM = GenericMetadata> {
 /// use libcnb_data::buildpack_id;
 ///
 /// let toml_str = r#"
-/// api = "0.9"
+/// api = "0.10"
 ///
 /// [buildpack]
 /// id = "foo/bar"
@@ -167,6 +175,10 @@ pub struct CompositeBuildpackDescriptor<BM = GenericMetadata> {
     pub buildpack: Buildpack,
     pub order: Vec<Order>,
     pub metadata: BM,
+    // As of 2024-02-09, the CNB spec does not forbid composite buildpacks
+    // to contain `targets`. This is a change from buildpack API 0.9 where `stack`
+    // was disallowed in composite buildpacks. However, `pack` does not allow this.
+    // We believe this to be a spec error and libcnb.rs does intentionally not support this.
 }
 
 #[derive(Deserialize, Debug)]
@@ -222,7 +234,7 @@ mod tests {
     #[allow(clippy::too_many_lines)]
     fn deserialize_component_buildpack() {
         let toml_str = r#"
-api = "0.9"
+api = "0.10"
 
 [buildpack]
 id = "foo/bar"
@@ -245,21 +257,23 @@ uri = "https://example.tld/my-license"
 [[buildpack.licenses]]
 uri = "https://example.tld/my-license"
 
-[[stacks]]
-id = "heroku-20"
+[[targets]]
+os = "linux"
+arch = "amd64"
+[[targets.distros]]
+name = "ubuntu"
+version = "18.04"
 
-[[stacks]]
-id = "io.buildpacks.stacks.bionic"
-mixins = []
+[[targets]]
+os = "linux"
+arch = "arm"
+variant = "v8"
 
-[[stacks]]
-id = "io.buildpacks.stacks.focal"
-mixins = ["build:jq", "wget"]
+[[targets]]
+os = "windows"
+arch = "amd64"
 
-# As counter-intuitive as it may seem, the CNB spec permits specifying
-# the "any" stack at the same time as stacks with specific IDs.
-[[stacks]]
-id = "*"
+[[targets]]
 
 [metadata]
 checksum = "abc123"
@@ -270,7 +284,10 @@ checksum = "abc123"
 
         assert_eq!(
             buildpack_descriptor.api,
-            BuildpackApi { major: 0, minor: 9 }
+            BuildpackApi {
+                major: 0,
+                minor: 10
+            }
         );
         assert_eq!(
             buildpack_descriptor.buildpack.id,
@@ -323,22 +340,35 @@ checksum = "abc123"
             ])
         );
         assert_eq!(
-            buildpack_descriptor.stacks,
+            buildpack_descriptor.targets,
             [
-                Stack::Specific {
-                    // Cannot use the `stack_id!` macro due to: https://github.com/heroku/libcnb.rs/issues/179
-                    id: "heroku-20".parse().unwrap(),
-                    mixins: Vec::new()
+                Target {
+                    os: Some(String::from("linux")),
+                    arch: Some(String::from("amd64")),
+                    variant: None,
+                    distros: vec![Distro {
+                        name: String::from("ubuntu"),
+                        version: String::from("18.04"),
+                    }],
                 },
-                Stack::Specific {
-                    id: "io.buildpacks.stacks.bionic".parse().unwrap(),
-                    mixins: Vec::new()
+                Target {
+                    os: Some(String::from("linux")),
+                    arch: Some(String::from("arm")),
+                    variant: Some(String::from("v8")),
+                    distros: Vec::new(),
                 },
-                Stack::Specific {
-                    id: "io.buildpacks.stacks.focal".parse().unwrap(),
-                    mixins: vec![String::from("build:jq"), String::from("wget")]
+                Target {
+                    os: Some(String::from("windows")),
+                    arch: Some(String::from("amd64")),
+                    variant: None,
+                    distros: Vec::new(),
                 },
-                Stack::Any
+                Target {
+                    os: None,
+                    arch: None,
+                    variant: None,
+                    distros: Vec::new()
+                }
             ]
         );
         assert_eq!(
@@ -350,7 +380,7 @@ checksum = "abc123"
     #[test]
     fn deserialize_composite_buildpack() {
         let toml_str = r#"
-api = "0.9"
+api = "0.10"
 
 [buildpack]
 id = "foo/bar"
@@ -391,7 +421,10 @@ checksum = "abc123"
 
         assert_eq!(
             buildpack_descriptor.api,
-            BuildpackApi { major: 0, minor: 9 }
+            BuildpackApi {
+                major: 0,
+                minor: 10
+            }
         );
         assert_eq!(
             buildpack_descriptor.buildpack.id,
@@ -461,14 +494,11 @@ checksum = "abc123"
     #[test]
     fn deserialize_minimal_component_buildpack() {
         let toml_str = r#"
-api = "0.9"
+api = "0.10"
 
 [buildpack]
 id = "foo/bar"
 version = "0.0.1"
-
-[[stacks]]
-id = "*"
         "#;
 
         let buildpack_descriptor =
@@ -476,7 +506,10 @@ id = "*"
 
         assert_eq!(
             buildpack_descriptor.api,
-            BuildpackApi { major: 0, minor: 9 }
+            BuildpackApi {
+                major: 0,
+                minor: 10
+            }
         );
         assert_eq!(
             buildpack_descriptor.buildpack.id,
@@ -496,14 +529,14 @@ id = "*"
         );
         assert_eq!(buildpack_descriptor.buildpack.licenses, Vec::new());
         assert_eq!(buildpack_descriptor.buildpack.sbom_formats, HashSet::new());
-        assert_eq!(buildpack_descriptor.stacks, [Stack::Any]);
+        assert_eq!(buildpack_descriptor.targets, []);
         assert_eq!(buildpack_descriptor.metadata, None);
     }
 
     #[test]
     fn deserialize_minimal_composite_buildpack() {
         let toml_str = r#"
-api = "0.9"
+api = "0.10"
 
 [buildpack]
 id = "foo/bar"
@@ -521,7 +554,10 @@ version = "0.0.1"
 
         assert_eq!(
             buildpack_descriptor.api,
-            BuildpackApi { major: 0, minor: 9 }
+            BuildpackApi {
+                major: 0,
+                minor: 10
+            }
         );
         assert_eq!(
             buildpack_descriptor.buildpack.id,
@@ -556,14 +592,11 @@ version = "0.0.1"
     #[test]
     fn deserialize_buildpackdescriptor_component() {
         let toml_str = r#"
-api = "0.9"
+api = "0.10"
 
 [buildpack]
 id = "foo/bar"
 version = "0.0.1"
-
-[[stacks]]
-id = "*"
         "#;
 
         let buildpack_descriptor = toml::from_str::<BuildpackDescriptor>(toml_str).unwrap();
@@ -576,7 +609,7 @@ id = "*"
     #[test]
     fn deserialize_buildpackdescriptor_composite() {
         let toml_str = r#"
-api = "0.9"
+api = "0.10"
 
 [buildpack]
 id = "foo/bar"
@@ -597,16 +630,16 @@ version = "0.0.1"
     }
 
     #[test]
-    fn reject_buildpack_with_both_stacks_and_order() {
+    fn reject_buildpack_with_both_targets_and_order() {
         let toml_str = r#"
-api = "0.9"
+api = "0.10"
 
 [buildpack]
 id = "foo/bar"
 version = "0.0.1"
 
-[[stacks]]
-id = "*"
+[[targets]]
+os = "linux"
 
 [[order]]
 
@@ -625,6 +658,6 @@ version = "0.0.1"
         assert!(err.to_string().contains("unknown field `order`"));
 
         let err = toml::from_str::<CompositeBuildpackDescriptor>(toml_str).unwrap_err();
-        assert!(err.to_string().contains("unknown field `stacks`"));
+        assert!(err.to_string().contains("unknown field `targets`"));
     }
 }

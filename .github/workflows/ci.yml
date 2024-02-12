@@ -62,7 +62,7 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2.7.3
       - name: Install Pack CLI
-        uses: buildpacks/github-actions/setup-pack@v5.5.1
+        uses: buildpacks/github-actions/setup-pack@v5.5.2
       - name: Run integration tests
         # Runs only tests annotated with the `ignore` attribute (which in this repo, are the integration tests).
         run: cargo test -- --ignored
@@ -89,7 +89,8 @@ jobs:
         run: cargo run --package libcnb-cargo -- libcnb package
         working-directory: ./examples/basics
       - name: Pack build using examples/basics
-        # Uses a non-libc image to validate the static musl cross-compilation.
-        # TODO: Switch this back to using the `alpine` tag once the stable Pack CLI release supports
-        # image extensions (currently newer sample alpine images fail to build with stable Pack).
-        run: pack build example-basics --builder cnbs/sample-builder@sha256:da5ff69191919f1ff30d5e28859affff8e39f23038137c7751e24a42e919c1ab --trust-builder --buildpack packaged/x86_64-unknown-linux-musl/debug/libcnb-examples_basics --path examples/
+        # TODO: This test previously used a non-libc builder to validate the static musl cross-compilation.
+        # This image used the experimental image extensions feature which has to be explicitly enabled and doesn't
+        # work with `--trust-builder`. To unblock CI, the builder has been changed to `heroku/builder:22`. As soon as
+        # we can, we should use a non-libc builder again.
+        run: pack build example-basics --force-color --builder heroku/builder:22 --trust-builder --buildpack packaged/x86_64-unknown-linux-musl/debug/libcnb-examples_basics --path examples/

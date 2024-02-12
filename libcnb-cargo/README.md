@@ -53,5 +53,5 @@ pack build my-image-name \
 
 [Latest Version]: https://img.shields.io/crates/v/libcnb-cargo.svg
 [crates.io]: https://crates.io/crates/libcnb-cargo
-[MSRV]: https://img.shields.io/badge/MSRV-rustc_1.74+-lightgray.svg
+[MSRV]: https://img.shields.io/badge/MSRV-rustc_1.76+-lightgray.svg
 [install-rust]: https://www.rust-lang.org/tools/install

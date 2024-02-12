@@ -12,7 +12,6 @@
 use crate::build::{BuildContext, BuildResult, BuildResultBuilder};
 use crate::data::buildpack_id;
 use crate::data::layer_content_metadata::LayerTypes;
-use crate::data::stack_id;
 use crate::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use crate::generic::{GenericMetadata, GenericPlatform};
 use crate::layer::{
@@ -20,8 +19,9 @@ use crate::layer::{
     MetadataMigration,
 };
 use crate::layer_env::{LayerEnv, ModificationBehavior, Scope};
+use crate::target::ContextTarget;
 use crate::{read_toml_file, Buildpack, Env, LIBCNB_SUPPORTED_BUILDPACK_API};
-use libcnb_data::buildpack::{BuildpackVersion, ComponentBuildpackDescriptor, Stack};
+use libcnb_data::buildpack::{BuildpackVersion, ComponentBuildpackDescriptor, Target};
 use libcnb_data::buildpack_plan::BuildpackPlan;
 use libcnb_data::layer::LayerName;
 use libcnb_data::layer_content_metadata::LayerContentMetadata;
@@ -902,7 +902,13 @@ fn build_context(temp_dir: &TempDir) -> BuildContext<TestBuildpack> {
         layers_dir,
         app_dir,
         buildpack_dir,
-        stack_id: stack_id!("heroku-20"),
+        target: ContextTarget {
+            os: String::from("linux"),
+            arch: String::from("amd64"),
+            arch_variant: None,
+            distro_name: Some(String::from("ubuntu")),
+            distro_version: Some(String::from("22.04")),
+        },
         platform: GenericPlatform::new(Env::new()),
         buildpack_plan: BuildpackPlan {
             entries: Vec::new(),
@@ -920,7 +926,12 @@ fn build_context(temp_dir: &TempDir) -> BuildContext<TestBuildpack> {
                 licenses: Vec::new(),
                 sbom_formats: HashSet::new(),
             },
-            stacks: vec![Stack::Any],
+            targets: vec![Target {
+                os: Some(String::from("linux")),
+                arch: Some(String::from("amd64")),
+                variant: None,
+                distros: vec![],
+            }],
             metadata: GenericMetadata::default(),
         },
         store: None,

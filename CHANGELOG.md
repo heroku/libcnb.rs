@@ -9,8 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [0.18.0] - 2024-02-12
+
 ### Changed
 
+- Now targets [Buildpack API 0.10](https://github.com/buildpacks/spec/releases/tag/buildpack%2Fv0.10). Buildpacks need to upgrade the `api` key to `0.10` in their `buildpack.toml`. ([#773](https://github.com/heroku/libcnb.rs/pull/773))
+- Improved the consistency of cross-compilation assistance provided across all supported `target_triple` and host OS/architecture combinations. [#769](https://github.com/heroku/libcnb.rs/pull/769)
+- Added cross-compilation assistance for `aarch64-unknown-linux-musl` (on macOS and ARM64 Linux) and `x86_64-unknown-linux-musl` (on ARM64 Linux). [#769](https://github.com/heroku/libcnb.rs/pull/769)
+- Raised Minimum Supported Rust Version (MSRV) to `1.76`. ([#774](https://github.com/heroku/libcnb.rs/pull/774))
 - `libcnb`:
   - Changed `Layer` interface from `&self` to `&mut self`. ([#669](https://github.com/heroku/libcnb.rs/pull/669))
 
@@ -19,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `libherokubuildpack`:
   - `MappedWrite::unwrap` for getting the wrapped `Write` back out. ([#765](https://github.com/heroku/libcnb.rs/pull/765))
   - Added build `buildpack_output` module. This will help buildpack authors provide consistent and delightful output to their buildpack users ([#721](https://github.com/heroku/libcnb.rs/pull/721))
+
+### Removed
+
+- Types, errors, macros and functions related to stacks. The concept of stacks has been removed from the CNB spec. Use `Target` instead. ([#773](https://github.com/heroku/libcnb.rs/pull/773))
 
 ## [0.17.0] - 2023-12-06
 
@@ -245,7 +256,8 @@ version number. See the changelog below for other changes.
 
 - Remove support for legacy BOM. Remove `Launch::bom`, `Build::bom`, `bom::Bom`, `bom::Entry`. ([#489](https://github.com/heroku/libcnb.rs/pull/489))
 
-[unreleased]: https://github.com/heroku/libcnb.rs/compare/v0.17.0...HEAD
+[unreleased]: https://github.com/heroku/libcnb.rs/compare/v0.18.0...HEAD
+[0.18.0]: https://github.com/heroku/libcnb.rs/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/heroku/libcnb.rs/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/heroku/libcnb.rs/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/heroku/libcnb.rs/compare/v0.14.0...v0.15.0

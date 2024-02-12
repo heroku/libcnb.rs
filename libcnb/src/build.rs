@@ -1,7 +1,6 @@
 //! Provides build phase specific types and helpers.
 
 use crate::buildpack::Buildpack;
-use crate::data::buildpack::StackId;
 use crate::data::layer::LayerName;
 use crate::data::store::Store;
 use crate::data::{
@@ -9,6 +8,7 @@ use crate::data::{
 };
 use crate::layer::{HandleLayerErrorOrBuildpackError, Layer, LayerData};
 use crate::sbom::Sbom;
+use crate::target::ContextTarget;
 use std::path::PathBuf;
 
 /// Context for the build phase execution.
@@ -16,7 +16,7 @@ pub struct BuildContext<B: Buildpack + ?Sized> {
     pub layers_dir: PathBuf,
     pub app_dir: PathBuf,
     pub buildpack_dir: PathBuf,
-    pub stack_id: StackId,
+    pub target: ContextTarget,
     pub platform: B::Platform,
     pub buildpack_plan: BuildpackPlan,
     pub buildpack_descriptor: ComponentBuildpackDescriptor<B::Metadata>,

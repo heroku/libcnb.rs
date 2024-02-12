@@ -1,3 +1,5 @@
+use indoc::{formatdoc, indoc};
+use std::env::consts;
 use std::ffi::OsString;
 use which::which;
 
@@ -7,95 +9,89 @@ use which::which;
 /// look for the required tools and returns a human-readable help text if they can't be found or
 /// any other issue has been detected.
 pub fn cross_compile_assistance(target_triple: impl AsRef<str>) -> CrossCompileAssistance {
-    // Background: https://omarkhawaja.com/cross-compiling-rust-from-macos-to-linux/
-    if target_triple.as_ref() == X86_64_UNKNOWN_LINUX_MUSL && cfg!(target_os = "macos") {
-        // There is more than just one binary name here since we also support the binary name for
-        // an older version cross_compile_assistance which suggested installing a different
-        // toolchain.
-        let possible_gcc_binary_names = ["x86_64-unknown-linux-musl-gcc", "x86_64-linux-musl-gcc"];
+    let target_triple = target_triple.as_ref();
+    let (gcc_binary_name, help_text) = match (target_triple, consts::OS, consts::ARCH) {
+        (AARCH64_UNKNOWN_LINUX_MUSL, OS_LINUX, ARCH_X86_64) => (
+            "aarch64-linux-gnu-gcc",
+            indoc! {"
+                To install an aarch64 cross-compiler on Ubuntu:
+                sudo apt-get install g++-aarch64-linux-gnu libc6-dev-arm64-cross musl-tools
+            "},
+        ),
+        (AARCH64_UNKNOWN_LINUX_MUSL, OS_MACOS, ARCH_X86_64 | ARCH_AARCH64) => (
+            "aarch64-unknown-linux-musl-gcc",
+            indoc! {"
+                To install an aarch64 cross-compiler on macOS:
+                brew install messense/macos-cross-toolchains/aarch64-unknown-linux-musl
+            "},
+        ),
+        (AARCH64_UNKNOWN_LINUX_MUSL, OS_LINUX, ARCH_AARCH64)
+        | (X86_64_UNKNOWN_LINUX_MUSL, OS_LINUX, ARCH_X86_64) => (
+            "musl-gcc",
+            indoc! {"
+                To install musl-tools on Ubuntu:
+                sudo apt-get install musl-tools
+            "},
+        ),
+        (X86_64_UNKNOWN_LINUX_MUSL, OS_LINUX, ARCH_AARCH64) => (
+            "x86_64-linux-gnu-gcc",
+            indoc! {"
+                To install an x86_64 cross-compiler on Ubuntu:
+                sudo apt-get install g++-x86-64-linux-gnu libc6-dev-amd64-cross musl-tools
+            "},
+        ),
+        (X86_64_UNKNOWN_LINUX_MUSL, OS_MACOS, ARCH_X86_64 | ARCH_AARCH64) => (
+            "x86_64-unknown-linux-musl-gcc",
+            indoc! {"
+                To install an x86_64 cross-compiler on macOS:
+                brew install messense/macos-cross-toolchains/x86_64-unknown-linux-musl
+            "},
+        ),
+        _ => return CrossCompileAssistance::NoAssistance,
+    };
 
-        possible_gcc_binary_names
-            .iter()
-            .find_map(|binary_name| which(binary_name).ok())
-            .map_or_else(|| CrossCompileAssistance::HelpText(String::from(
-                r"For cross-compilation from macOS to x86_64-unknown-linux-musl, a C compiler and
-linker for the target platform must be installed on your computer.
-
-The easiest way to install the required cross-compilation toolchain is to run:
-brew install messense/macos-cross-toolchains/x86_64-unknown-linux-musl
-
-For more information, see:
-https://github.com/messense/homebrew-macos-cross-toolchains
-
-You will also need to install the Rust target, using:
-rustup target add x86_64-unknown-linux-musl",
-            )), |gcc_binary_path| {
+    match which(gcc_binary_name) {
+        Ok(_) => {
+            // When the gcc binary name is `musl-gcc`, Cargo will automatically select the appropriate default linker,
+            // and set the required environment variables.
+            if gcc_binary_name == "musl-gcc" {
+                CrossCompileAssistance::Configuration {
+                    cargo_env: Vec::new(),
+                }
+            } else {
                 CrossCompileAssistance::Configuration {
                     cargo_env: vec![
                         (
                             // Required until Cargo can auto-detect the musl-cross gcc/linker itself,
-                            // since otherwise it checks for a binary named 'musl-gcc':
-                            // https://github.com/FiloSottile/homebrew-musl-cross/issues/16
+                            // since otherwise it checks for a binary named 'musl-gcc' (which is handled above):
                             // https://github.com/rust-lang/cargo/issues/4133
-                            OsString::from("CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER"),
-                            OsString::from(&gcc_binary_path),
+                            OsString::from(format!(
+                                "CARGO_TARGET_{}_LINKER",
+                                target_triple.to_uppercase().replace('-', "_")
+                            )),
+                            OsString::from(gcc_binary_name),
                         ),
                         (
                             // Required so that any crates that call out to gcc are also cross-compiled:
                             // https://github.com/alexcrichton/cc-rs/issues/82
-                            OsString::from("CC_x86_64_unknown_linux_musl"),
-                            OsString::from(&gcc_binary_path),
+                            OsString::from(format!("CC_{}", target_triple.replace('-', "_"))),
+                            OsString::from(gcc_binary_name),
                         ),
                     ],
                 }
-            })
-    } else if target_triple.as_ref() == X86_64_UNKNOWN_LINUX_MUSL && cfg!(target_os = "linux") {
-        match which("musl-gcc") {
-            Ok(_) => CrossCompileAssistance::Configuration {
-                cargo_env: Vec::new(),
-            },
-            Err(_) => CrossCompileAssistance::HelpText(String::from(
-                r"For cross-compilation from Linux to x86_64-unknown-linux-musl, a C compiler and
-linker for the target platform must be installed on your computer.
-
-The easiest way to install 'musl-gcc' is to install the 'musl-tools' package:
-- https://packages.ubuntu.com/focal/musl-tools
-- https://packages.debian.org/bullseye/musl-tools
-
-You will also need to install the Rust target, using:
-rustup target add x86_64-unknown-linux-musl",
-            )),
+            }
         }
-    } else if target_triple.as_ref() == AARCH64_UNKNOWN_LINUX_MUSL && cfg!(target_os = "linux") {
-        let gcc_binary_path = "aarch64-linux-gnu-gcc";
-        match which(gcc_binary_path) {
-            Ok(_) => CrossCompileAssistance::Configuration {
-                cargo_env: vec![
-                    (
-                        OsString::from("CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER"),
-                        OsString::from(gcc_binary_path),
-                    ),
-                    (
-                        OsString::from("CC_aarch64_unknown_linux_musl"),
-                        OsString::from(gcc_binary_path),
-                    ),
-                ],
-            },
-            Err(_) => CrossCompileAssistance::HelpText(String::from(
-                r"For cross-compilation from Linux to aarch64-unknown-linux-musl, a C compiler and
-linker for the target platform must installed on your computer.
+        Err(_) => CrossCompileAssistance::HelpText(formatdoc! {"
+            For cross-compilation from {0} {1} to {target_triple},
+            a C compiler and linker for the target platform must be installed:
 
-The easiest way to install the 'g++-aarch64-linux-gnu', 'libc6-dev-arm64-cross', and 'musl-tools' packages:
-- https://packages.ubuntu.com/focal/g++-aarch64-linux-gnu
-- https://packages.ubuntu.com/focal/musl-tools
-- https://packages.ubuntu.com/focal/libc6-dev-arm64-cross
-
-You will also need to install the Rust target, using:
-rustup target add aarch64-unknown-linux-musl",
-            )),
-        }
-    } else {
-        CrossCompileAssistance::NoAssistance
+            {help_text}
+            You will also need to install the Rust target:
+            rustup target add {target_triple}
+            ",
+            consts::ARCH,
+            consts::OS
+        }),
     }
 }
 
@@ -111,5 +107,12 @@ pub enum CrossCompileAssistance {
     },
 }
 
+// Constants for supported target triples
 const AARCH64_UNKNOWN_LINUX_MUSL: &str = "aarch64-unknown-linux-musl";
 const X86_64_UNKNOWN_LINUX_MUSL: &str = "x86_64-unknown-linux-musl";
+
+// Constants for `std::env::consts::OS` and `std::env::consts::ARCH`
+const OS_LINUX: &str = "linux";
+const OS_MACOS: &str = "macos";
+const ARCH_X86_64: &str = "x86_64";
+const ARCH_AARCH64: &str = "aarch64";
