@@ -26,6 +26,7 @@ mod test {
     fn test_display_duration() {
         let duration = Duration::ZERO;
         assert_eq!(human(&duration), "< 0.1s");
+
         let duration = Duration::from_millis(99);
         assert_eq!(human(&duration), "< 0.1s");
 
