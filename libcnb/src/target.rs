@@ -23,13 +23,13 @@ pub struct ContextTarget {
     pub arch_variant: Option<String>,
     /// The name of the operating system distribution. Should be empty for Windows.
     ///
-    /// For example: `ubuntu` or `arch`.
+    /// For example: `ubuntu` or `alpine`.
     ///
     /// CNB `lifecycle` sources this value from the build OCI image's `io.buildpacks.distro.name` label.
     pub distro_name: Option<String>,
     /// The version of the operating system distribution.
     ///
-    /// For example: `18.02` or `2024.02.01`.
+    /// For example: `18.02` or `3.19`.
     ///
     /// CNB `lifecycle` sources this value from the build OCI image's `io.buildpacks.distro.version` label.
     pub distro_version: Option<String>,
