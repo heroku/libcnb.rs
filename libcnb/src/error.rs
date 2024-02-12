@@ -1,4 +1,3 @@
-use crate::data::buildpack::StackIdError;
 use crate::data::launch::ProcessTypeError;
 use crate::layer::HandleLayerError;
 use libcnb_common::toml_file::TomlFileError;
@@ -18,17 +17,17 @@ pub enum Error<E> {
     #[error("Process type error: {0}")]
     ProcessTypeError(#[from] ProcessTypeError),
 
-    #[error("Stack ID error: {0}")]
-    StackIdError(#[from] StackIdError),
-
     #[error("Couldn't determine app directory: {0}")]
     CannotDetermineAppDirectory(std::io::Error),
 
     #[error("Couldn't determine buildpack directory: {0}")]
     CannotDetermineBuildpackDirectory(std::env::VarError),
 
-    #[error("Couldn't determine stack id: {0}")]
-    CannotDetermineStackId(std::env::VarError),
+    #[error("Couldn't determine target os: {0}")]
+    CannotDetermineTargetOs(std::env::VarError),
+
+    #[error("Couldn't determine target arch: {0}")]
+    CannotDetermineTargetArch(std::env::VarError),
 
     #[error("Couldn't create platform from platform path: {0}")]
     CannotCreatePlatformFromPath(std::io::Error),

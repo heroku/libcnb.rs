@@ -13,7 +13,7 @@
 It is an opinionated implementation adding language constructs and convenience methods for working
 with the spec. It values strong adherence to the spec and data formats.
 
-It currently targets version `0.9` of the CNB [Buildpack API specification](https://github.com/buildpacks/spec/blob/buildpack/0.9/buildpack.md).
+It currently targets version `0.10` of the CNB [Buildpack API specification](https://github.com/buildpacks/spec/blob/buildpack/0.10/buildpack.md).
 
 ## Quick Start Guide
 
@@ -78,15 +78,12 @@ Since we're writing a Cloud Native Buildpack, we also need a `buildpack.toml`. U
 file named `buildpack.toml` in the root of your project, right next to `Cargo.toml`.
 
 ```toml
-api = "0.9"
+api = "0.10"
 
 [buildpack]
 id = "libcnb-examples/my-buildpack"
 version = "0.1.0"
 name = "My Buildpack"
-
-[[stacks]]
-id = "*"
 ```
 
 That's all we need! We can now move on to finally write some buildpack code!
@@ -132,7 +129,7 @@ impl Buildpack for HelloWorldBuildpack {
     type Error = GenericError;
 
     // This method will be called when the CNB lifecycle executes the detect phase (`bin/detect`).
-    // Use the `DetectContext` to access CNB data such as the stack this buildpack is currently
+    // Use the `DetectContext` to access CNB data such as the operating system this buildpack is currently
     // executed on, the app directory and similar things. When using libcnb.rs, you never have
     // to read environment variables or read/write files to disk to interact with the CNB lifecycle.
     //
@@ -148,7 +145,7 @@ impl Buildpack for HelloWorldBuildpack {
     // build phase (`bin/build`).
     fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildResult, Self::Error> {
         println!("Hello World!");
-        println!("Build runs on stack {}!", context.stack_id);
+        println!("The build is running on: {} ({})!", context.target.os, context.target.arch);
 
         BuildResultBuilder::new()
             .launch(
@@ -218,7 +215,7 @@ libcnb-examples/my-buildpack 0.1.0
 ===> RESTORING
 ===> BUILDING
 Hello World!
-Build runs on stack heroku-22!
+The build is running on: linux (amd64)!
 ===> EXPORTING
 Adding layer 'buildpacksio/lifecycle:launch.sbom'
 Adding 1/1 app layer(s)
@@ -230,7 +227,7 @@ Adding label 'io.buildpacks.build.metadata'
 Adding label 'io.buildpacks.project.metadata'
 Setting default process type 'web'
 Saving my-image...
-*** Images (aa4695184718):
+*** Images (85b067fc926a):
       my-image
 Successfully built image my-image
 ```

@@ -18,6 +18,7 @@ mod error;
 mod exit_code;
 mod platform;
 mod runtime;
+mod target;
 #[cfg(feature = "trace")]
 mod tracing;
 mod util;
@@ -37,7 +38,10 @@ use serde_json as _;
 pub use libcnb_data as data;
 
 const LIBCNB_SUPPORTED_BUILDPACK_API: data::buildpack::BuildpackApi =
-    data::buildpack::BuildpackApi { major: 0, minor: 9 };
+    data::buildpack::BuildpackApi {
+        major: 0,
+        minor: 10,
+    };
 
 /// Generates a main function for the given buildpack.
 ///
