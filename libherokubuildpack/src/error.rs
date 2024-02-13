@@ -1,11 +1,11 @@
-use crate::buildpack_output::BuildpackOutput;
+use crate::log::log_error;
 use std::fmt::Debug;
 
 /// Handles a given [`libcnb::Error`] in a consistent style.
 ///
 /// This function is intended to be used inside [`libcnb::Buildpack::on_error`].
 ///
-/// It outputs generic libcnb errors in a consistent style using [`BuildpackOutput`] from this
+/// It outputs generic libcnb errors in a consistent style using the [logging functions](log_error) from this
 /// crate. Buildpack specific errors are handled by the passed custom handler.
 ///
 /// # Example:
@@ -14,7 +14,7 @@ use std::fmt::Debug;
 /// use libcnb::Buildpack;
 /// use libcnb::detect::{DetectContext, DetectResult};
 /// use libcnb::generic::{GenericMetadata, GenericPlatform};
-/// use libherokubuildpack::buildpack_output::BuildpackOutput;
+/// use libherokubuildpack::log::log_error;
 /// use libherokubuildpack::error::on_error;
 ///
 /// #[derive(Debug)]
@@ -24,13 +24,12 @@ use std::fmt::Debug;
 /// }
 ///
 /// fn on_foo_buildpack_error(e: FooBuildpackError) {
-///     let output = BuildpackOutput::new(std::io::stdout()).start_silent();
 ///     match e {
 ///         FooBuildpackError::InvalidFooDescriptorToml => {
-///             output.error("Invalid foo.toml\n\nYour app's foo.toml is invalid!");
+///             log_error("Invalid foo.toml", "Your app's foo.toml is invalid!");
 ///         }
 ///         FooBuildpackError::CannotExecuteFooBuildTool(inner) => {
-///             output.error(format!("Couldn't execute foo build tool\n\nYour app's foo.toml is invalid!\n\nCause: {}", &inner));
+///             log_error("Couldn't execute foo build tool", format!("Cause: {}", &inner));
 ///         }
 ///     }
 /// }
@@ -64,9 +63,7 @@ where
     match error {
         libcnb::Error::BuildpackError(buildpack_error) => f(buildpack_error),
         libcnb_error => {
-            BuildpackOutput::new(std::io::stdout())
-                .start_silent()
-                .error(format!("Internal Buildpack Error\n\n{libcnb_error}"));
+            log_error("Internal Buildpack Error", libcnb_error.to_string());
         }
     }
 }
