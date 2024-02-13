@@ -8,6 +8,8 @@ pub mod command;
 pub mod digest;
 #[cfg(feature = "download")]
 pub mod download;
+#[cfg(feature = "error")]
+pub mod error;
 #[cfg(feature = "fs")]
 pub mod fs;
 #[cfg(feature = "tar")]

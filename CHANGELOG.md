@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `libherokubuildpack`:
-  - Removed `error` and `log` modules in favor of `buildpack_output`. ([#721](https://github.com/heroku/libcnb.rs/pull/721))
+  - Removed the `log` module in favor of `buildpack_output`. ([#721](https://github.com/heroku/libcnb.rs/pull/721))
 
 ### Added
 

@@ -21,6 +21,7 @@ workspace = true
 default = ["command", "download", "digest", "tar", "toml", "fs", "write", "buildpack_output"]
 download = ["dep:ureq", "dep:thiserror"]
 digest = ["dep:sha2"]
+error = ["buildpack_output", "dep:libcnb"]
 tar = ["dep:tar", "dep:flate2"]
 toml = ["dep:toml"]
 fs = ["dep:pathdiff"]
@@ -40,7 +41,6 @@ libcnb = { workspace = true, optional = true }
 pathdiff = { version = "0.2.1", optional = true }
 sha2 = { version = "0.10.8", optional = true }
 tar = { version = "0.4.40", default-features = false, optional = true }
-termcolor = { version = "1.4.1", optional = true }
 thiserror = { version = "1.0.57", optional = true }
 toml = { workspace = true, optional = true }
 ureq = { version = "2.9.5", default-features = false, features = ["tls"], optional = true }
