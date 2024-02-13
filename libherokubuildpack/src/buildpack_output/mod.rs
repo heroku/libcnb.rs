@@ -270,6 +270,7 @@ where
 
     fn write_paragraph(&mut self, color: &ANSI, s: impl AsRef<str>) {
         let io = self.state.write_mut();
+        let contents = s.as_ref().trim();
 
         if !io.was_paragraph {
             writeln_now(io, "");
@@ -279,7 +280,7 @@ where
             io,
             ansi_escape::wrap_ansi_escape_each_line(
                 color,
-                prefix_lines(s.as_ref(), |_, line| {
+                prefix_lines(contents, |_, line| {
                     // Avoid adding trailing whitespace to the line, if there was none already.
                     // The `\n` case is required since `prefix_lines` uses `str::split_inclusive`,
                     // which preserves any trailing newline characters if present.
@@ -330,7 +331,7 @@ where
             &mut self.state.write,
             ansi_escape::wrap_ansi_escape_each_line(
                 &ANSI::BoldPurple,
-                format!("\n# {}\n", buildpack_name.as_ref()),
+                format!("\n# {}\n", buildpack_name.as_ref().trim()),
             ),
         );
 
@@ -357,7 +358,7 @@ where
     const PREFIX_REST: &'static str = "  ";
 
     fn style(s: impl AsRef<str>) -> String {
-        prefix_first_rest_lines(Self::PREFIX_FIRST, Self::PREFIX_REST, s.as_ref())
+        prefix_first_rest_lines(Self::PREFIX_FIRST, Self::PREFIX_REST, s.as_ref().trim())
     }
 
     /// Begin a new section of the buildpack output.
@@ -406,7 +407,7 @@ where
     const CMD_INDENT: &'static str = "      ";
 
     fn style(s: impl AsRef<str>) -> String {
-        prefix_first_rest_lines(Self::PREFIX_FIRST, Self::PREFIX_REST, s.as_ref())
+        prefix_first_rest_lines(Self::PREFIX_FIRST, Self::PREFIX_REST, s.as_ref().trim())
     }
 
     /// Emit a step in the buildpack output within a section.
@@ -538,8 +539,11 @@ mod test {
     #[test]
     fn write_paragraph_empty_lines() {
         let io = BuildpackOutput::new(Vec::new())
-            .start("Example Buildpack")
+            .start("Example Buildpack\n\n")
             .warning("hello\n\n\t\t\nworld")
+            .section("Version\n\n")
+            .step("Installing\n\n")
+            .finish()
             .finish();
 
         let tab_char = '\t';
@@ -552,6 +556,8 @@ mod test {
             ! {tab_char}{tab_char}
             ! world
 
+            - Version
+              - Installing
             - Done (finished in < 0.1s)
         "};
 
