@@ -23,13 +23,12 @@ use crate::target::ContextTarget;
 use crate::{read_toml_file, Buildpack, Env, LIBCNB_SUPPORTED_BUILDPACK_API};
 use libcnb_data::buildpack::{BuildpackVersion, ComponentBuildpackDescriptor, Target};
 use libcnb_data::buildpack_plan::BuildpackPlan;
-use libcnb_data::layer::LayerName;
 use libcnb_data::layer_content_metadata::LayerContentMetadata;
+use libcnb_data::layer_name;
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashSet;
 use std::fs;
-use std::iter::repeat_with;
 use std::path::{Path, PathBuf};
 use tempfile::{tempdir, TempDir};
 
@@ -135,7 +134,7 @@ impl Default for TestLayer {
 fn create() {
     let temp_dir = tempdir().unwrap();
     let context = build_context(&temp_dir);
-    let layer_name = random_layer_name();
+    let layer_name = layer_name!("my-layer");
     let metadata_version_string = String::from("1.0.0");
     let test_layer = TestLayer {
         existing_layer_strategy: ExistingLayerStrategy::Keep,
@@ -203,7 +202,7 @@ fn create() {
 fn create_then_update() {
     let temp_dir = tempdir().unwrap();
     let context = build_context(&temp_dir);
-    let layer_name = random_layer_name();
+    let layer_name = layer_name!("my-layer");
     let metadata_version_string = String::from("2.3.4");
     let test_layer = TestLayer {
         existing_layer_strategy: ExistingLayerStrategy::Update,
@@ -275,7 +274,7 @@ fn create_then_update() {
 fn create_then_recreate() {
     let temp_dir = tempdir().unwrap();
     let context = build_context(&temp_dir);
-    let layer_name = random_layer_name();
+    let layer_name = layer_name!("my-layer");
     let residue_file_name = "RESIDUE.txt";
     let metadata_version_string = String::from("2.3.4");
     let recreated_metadata_version_string = String::from("1.0.0");
@@ -368,7 +367,7 @@ fn create_then_recreate() {
 fn create_then_keep() {
     let temp_dir = tempdir().unwrap();
     let context = build_context(&temp_dir);
-    let layer_name = random_layer_name();
+    let layer_name = layer_name!("my-layer");
     let residue_file_name = "RESIDUE.txt";
     let residue_file_data = "RESIDUE DATA";
     let metadata_version_string = String::from("0.1.2");
@@ -462,7 +461,7 @@ fn create_then_keep() {
 fn update_with_incompatible_metadata_replace() {
     let temp_dir = tempdir().unwrap();
     let context = build_context(&temp_dir);
-    let layer_name = random_layer_name();
+    let layer_name = layer_name!("my-layer");
     let metadata_version_string = String::from("2.3.4");
     let test_layer = TestLayer {
         existing_layer_strategy: ExistingLayerStrategy::Update,
@@ -552,7 +551,7 @@ v = "3.2.1"
 fn update_with_incompatible_metadata_recreate() {
     let temp_dir = tempdir().unwrap();
     let context = build_context(&temp_dir);
-    let layer_name = random_layer_name();
+    let layer_name = layer_name!("my-layer");
     let metadata_version_string = String::from("2.3.4");
     let test_layer = TestLayer {
         existing_layer_strategy: ExistingLayerStrategy::Update,
@@ -638,7 +637,7 @@ versi_on = "3.2.1"
 fn error_handling_no_metadata_toml() {
     let temp_dir = tempdir().unwrap();
     let context = build_context(&temp_dir);
-    let layer_name = random_layer_name();
+    let layer_name = layer_name!("my-layer");
 
     let layer_dir = temp_dir.path().join("layers").join(layer_name.as_str());
     fs::create_dir_all(layer_dir).unwrap();
@@ -663,7 +662,7 @@ fn error_handling_no_metadata_toml() {
 fn error_handling_no_directory() {
     let temp_dir = tempdir().unwrap();
     let context = build_context(&temp_dir);
-    let layer_name = random_layer_name();
+    let layer_name = layer_name!("my-layer");
 
     let layer_toml_path = temp_dir
         .path()
@@ -706,7 +705,7 @@ version = "3.2.1"
 fn write_layer_env() {
     let temp_dir = tempdir().unwrap();
     let context = build_context(&temp_dir);
-    let layer_name = random_layer_name();
+    let layer_name = layer_name!("my-layer");
     let metadata_version_string = String::from("1.0.0");
     let layer_env = LayerEnv::new().chainable_insert(
         Scope::All,
@@ -769,7 +768,7 @@ fn default_layer_method_implementations() {
 
     let temp_dir = tempdir().unwrap();
     let context = build_context(&temp_dir);
-    let layer_name = random_layer_name();
+    let layer_name = layer_name!("my-layer");
     let mut simple_layer = SimpleLayer;
 
     let simple_layer_metadata = SimpleLayerMetadata {
@@ -869,7 +868,7 @@ fn layer_env_read_write() {
     }
     let temp_dir = tempdir().unwrap();
     let context = build_context(&temp_dir);
-    let layer_name = random_layer_name();
+    let layer_name = layer_name!("my-layer");
 
     let layer = LayerDataTestLayer {
         expected_layer_env: LayerEnv::new().chainable_insert(
@@ -936,14 +935,6 @@ fn build_context(temp_dir: &TempDir) -> BuildContext<TestBuildpack> {
         },
         store: None,
     }
-}
-
-fn random_layer_name() -> LayerName {
-    repeat_with(fastrand::alphanumeric)
-        .take(15)
-        .collect::<String>()
-        .parse()
-        .unwrap()
 }
 
 struct TestBuildpack;
