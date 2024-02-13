@@ -31,14 +31,15 @@ pub(crate) fn prefix_first_rest_lines(
 /// Each line of the provided string slice will be passed to the provided function along with
 /// the index of the line. The function should return a string that will be prepended to the line.
 ///
-/// If an empty string is provided, the function will be called with a zero index and an empty slice.
+/// If an empty string is provided, a prefix will still be added to improve UX in cases
+/// where the caller forgot to pass a non-empty string.
 pub(crate) fn prefix_lines<F: Fn(usize, &str) -> String>(contents: &str, f: F) -> String {
-    let mut lines = contents.split_inclusive('\n').peekable();
-
-    if lines.peek().is_none() {
+    // `split_inclusive` yields `None` for the empty string, so we have to explicitly add the prefix.
+    if contents.is_empty() {
         f(0, "")
     } else {
-        lines
+        contents
+            .split_inclusive('\n')
             .enumerate()
             .map(|(line_index, line)| {
                 let prefix = f(line_index, line);
