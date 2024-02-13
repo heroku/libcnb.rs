@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `libherokubuildpack`:
-  - Added build `buildpack_output` module. This will help buildpack authors provide consistent and delightful output to their buildpack users ([#721](https://github.com/heroku/libcnb.rs/pull/721))
+  - Added `buildpack_output` module. This will help buildpack authors provide consistent and delightful output to their buildpack users ([#721](https://github.com/heroku/libcnb.rs/pull/721))
 
 ## [0.18.0] - 2024-02-12
 
