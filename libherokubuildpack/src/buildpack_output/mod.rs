@@ -280,7 +280,10 @@ where
             ansi_escape::wrap_ansi_escape_each_line(
                 color,
                 prefix_lines(s.as_ref(), |_, line| {
-                    if line.chars().all(char::is_whitespace) {
+                    // Avoid adding trailing whitespace to the line, if there was none already.
+                    // The `\n` case is required since `prefix_lines` uses `str::split_inclusive`,
+                    // which preserves any trailing newline characters if present.
+                    if line.is_empty() || line == "\n" {
                         String::from("!")
                     } else {
                         String::from("! ")
@@ -536,15 +539,17 @@ mod test {
     fn write_paragraph_empty_lines() {
         let io = BuildpackOutput::new(Vec::new())
             .start("Example Buildpack")
-            .warning("hello\n\nworld")
+            .warning("hello\n\n\t\t\nworld")
             .finish();
 
+        let tab_char = '\t';
         let expected = formatdoc! {"
 
             # Example Buildpack
 
             ! hello
             !
+            ! {tab_char}{tab_char}
             ! world
 
             - Done (finished in < 0.1s)
