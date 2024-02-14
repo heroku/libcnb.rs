@@ -4,14 +4,14 @@ use std::io::Write;
 #[cfg(test)]
 use std::sync::{Arc, Mutex};
 
-/// Applies a prefix to the first line and a different prefix to the rest of the lines
+/// Applies a prefix to the first line and a different prefix to the rest of the lines.
 ///
 /// The primary use case is to align indentation with the prefix of the first line. Most often
 /// for emitting indented bullet point lists.
 ///
-/// The first prefix is always applied, even when the contents are empty. This default
-/// was chosen to ensure that a nested-bullet point will always follow a parent bullet point, even
-/// if that parent has no text.
+/// The first prefix is always applied, even when the contents are empty. This default was
+/// chosen to ensure that a nested-bullet point will always follow a parent bullet point,
+/// even if that parent has no text.
 pub(crate) fn prefix_first_rest_lines(
     first_prefix: &str,
     rest_prefix: &str,
@@ -26,7 +26,7 @@ pub(crate) fn prefix_first_rest_lines(
     })
 }
 
-/// Prefixes each line of input
+/// Prefixes each line of input.
 ///
 /// Each line of the provided string slice will be passed to the provided function along with
 /// the index of the line. The function should return a string that will be prepended to the line.
@@ -49,11 +49,11 @@ pub(crate) fn prefix_lines<F: Fn(usize, &str) -> String>(contents: &str, f: F) -
     }
 }
 
-/// A trailing newline aware writer
+/// A trailing newline aware writer.
 ///
 /// A paragraph style block of text has an empty newline before and after the text.
-/// When multiple paragraphs are emitted, it's important that they don't double up on empty newlines
-/// or the output will look off.
+/// When multiple paragraphs are emitted, it's important that they don't double up on empty
+/// newlines or the output will look off.
 ///
 /// This writer seeks to solve that problem by preserving knowledge of prior newline writes and
 /// exposing that information to the caller.

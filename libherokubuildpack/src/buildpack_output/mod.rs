@@ -1,6 +1,7 @@
 //! # Buildpack output
 //!
-//! Use [`BuildpackOutput`] to output structured text as a buildpack executes. The buildpack output is intended to be read by the application user running your buildpack against their application.
+//! Use [`BuildpackOutput`] to output structured text as a buildpack executes. The buildpack output
+//! is intended to be read by the application user running your buildpack against their application.
 //!
 //! ```rust
 //! use libherokubuildpack::buildpack_output::BuildpackOutput;
@@ -18,12 +19,16 @@
 //!
 //! ## Colors
 //!
-//! In nature, colors and contrasts are used to emphasize differences and danger. [`BuildpackOutput`] utilizes common ANSI escape characters to highlight what's important and deemphasize what's not. The output experience is designed from the ground up to be streamed to a user's terminal correctly.
-//!
+//! In nature, colors and contrasts are used to emphasize differences and danger. [`BuildpackOutput`]
+//! utilizes common ANSI escape characters to highlight what's important and deemphasize what's not.
+//! The output experience is designed from the ground up to be streamed to a user's terminal correctly.
 //!
 //! ## Consistent indentation and newlines
 //!
-//! Help your users focus on what's happening, not on inconsistent formatting. The [`BuildpackOutput`] is a consuming, stateful design. That means you can use Rust's powerful type system to ensure only the output you expect, in the style you want, is emitted to the screen. See the documentation in the [`state`] module for more information.
+//! Help your users focus on what's happening, not on inconsistent formatting. The [`BuildpackOutput`]
+//! is a consuming, stateful design. That means you can use Rust's powerful type system to ensure
+//! only the output you expect, in the style you want, is emitted to the screen. See the documentation
+//! in the [`state`] module for more information.
 
 use crate::buildpack_output::ansi_escape::ANSI;
 use crate::buildpack_output::util::{prefix_first_rest_lines, prefix_lines, ParagraphInspectWrite};
@@ -37,7 +42,8 @@ mod duration_format;
 pub mod style;
 mod util;
 
-/// Use [`BuildpackOutput`] to output structured text as a buildpack executes. The buildpack output is intended to be read by the application user running your buildpack against their application.
+/// Use [`BuildpackOutput`] to output structured text as a buildpack executes. The buildpack output
+/// is intended to be read by the application user running your buildpack against their application.
 ///
 /// ```rust
 /// use libherokubuildpack::buildpack_output::BuildpackOutput;
@@ -70,7 +76,7 @@ pub mod state {
 
     /// An initialized buildpack output that has not announced its start.
     ///
-    /// It is represented by the`state::NotStarted` type and is transitioned into a `state::Started` type.
+    /// It is represented by the `state::NotStarted` type and is transitioned into a `state::Started` type.
     ///
     /// Example:
     ///
@@ -155,7 +161,8 @@ pub mod state {
     /// A this state is intended for streaming output from a process to the end user. It is
     /// started from a `state::Section` and finished back to a `state::Section`.
     ///
-    /// The `BuildpackOutput<state::Stream<W>>` implements [`std::io::Write`], so you can stream from anything that accepts a [`std::io::Write`].
+    /// The `BuildpackOutput<state::Stream<W>>` implements [`std::io::Write`], so you can stream
+    /// from anything that accepts a [`std::io::Write`].
     ///
     /// ```rust
     /// use libherokubuildpack::buildpack_output::{BuildpackOutput, state::{Started, Section}};
@@ -219,17 +226,20 @@ where
     /// Emit an error and end the build output.
     ///
     /// When an unrecoverable situation is encountered, you can emit an error message to the user.
-    /// This associated function will consume the build output, so you may only emit one error per build output.
+    /// This associated function will consume the build output, so you may only emit one error per
+    /// build output.
     ///
     /// An error message should describe what went wrong and why the buildpack cannot continue.
     /// It is best practice to include debugging information in the error message. For example,
-    /// if a file is missing, consider showing the user the contents of the directory where the file was expected to be
-    /// and the full path of the file.
+    /// if a file is missing, consider showing the user the contents of the directory where the
+    /// file was expected to be and the full path of the file.
     ///
-    /// If you are confident about what action needs to be taken to fix the error, you should include that in the error message.
-    /// Do not write a generic suggestion like "try again later" unless you are certain that the error is transient.
+    /// If you are confident about what action needs to be taken to fix the error, you should include
+    /// that in the error message. Do not write a generic suggestion like "try again later" unless
+    /// you are certain that the error is transient.
     ///
-    /// If you detect something problematic but not bad enough to halt buildpack execution, consider using a [`BuildpackOutput::warning`] instead.
+    /// If you detect something problematic but not bad enough to halt buildpack execution, consider
+    /// using a [`BuildpackOutput::warning`] instead.
     pub fn error(mut self, s: impl AsRef<str>) {
         self.write_paragraph(&ANSI::Red, s);
     }
@@ -238,16 +248,19 @@ where
     ///
     /// A warning should be used to emit a message to the end user about a potential problem.
     ///
-    /// Multiple warnings can be emitted in sequence. The buildpack author should take care not to overwhelm the end user with
-    /// unnecessary warnings.
+    /// Multiple warnings can be emitted in sequence. The buildpack author should take care not to
+    /// overwhelm the end user with unnecessary warnings.
     ///
-    /// When emitting a warning, describe the problem to the user, if possible, and tell them how to fix it or where to look next.
+    /// When emitting a warning, describe the problem to the user, if possible, and tell them how
+    /// to fix it or where to look next.
     ///
-    /// Warnings should often come with some disabling mechanism, if possible. If the user can turn off the warning,
-    /// that information should be included in the warning message. If you're confident that the user should not be able to
-    /// turn off a warning, consider using a [`BuildpackOutput::error`] instead.
+    /// Warnings should often come with some disabling mechanism, if possible. If the user can turn
+    /// off the warning, that information should be included in the warning message. If you're
+    /// confident that the user should not be able to turn off a warning, consider using a
+    /// [`BuildpackOutput::error`] instead.
     ///
-    /// Warnings will be output in a multi-line paragraph style. A warning can be emitted from any state except for [`state::NotStarted`].
+    /// Warnings will be output in a multi-line paragraph style. A warning can be emitted from any
+    /// state except for [`state::NotStarted`].
     #[must_use]
     pub fn warning(mut self, s: impl AsRef<str>) -> BuildpackOutput<S> {
         self.write_paragraph(&ANSI::Yellow, s);
@@ -256,12 +269,14 @@ where
 
     /// Emit an important message to the end user.
     ///
-    /// When something significant happens but is not inherently negative, you can use an important message. For example,
-    /// if a buildpack detects that the operating system or architecture has changed since the last build, it might not be a problem,
-    ///, but if something goes wrong, the user should know about it.
+    /// When something significant happens but is not inherently negative, you can use an important
+    /// message. For example, if a buildpack detects that the operating system or architecture has
+    /// changed since the last build, it might not be a problem, but if something goes wrong, the
+    /// user should know about it.
     ///
-    /// Important messages should be used sparingly and only for things the user should be aware of but not necessarily act on.
-    /// If the message is actionable, consider using a [`BuildpackOutput::warning`] instead.
+    /// Important messages should be used sparingly and only for things the user should be aware of
+    /// but not necessarily act on. If the message is actionable, consider using a
+    /// [`BuildpackOutput::warning`] instead.
     #[must_use]
     pub fn important(mut self, s: impl AsRef<str>) -> BuildpackOutput<S> {
         self.write_paragraph(&ANSI::BoldCyan, s);
@@ -363,10 +378,12 @@ where
 
     /// Begin a new section of the buildpack output.
     ///
-    /// A section should be a noun, e.g., 'Ruby version'. Anything emitted within the section should be in the context of this output.
+    /// A section should be a noun, e.g., 'Ruby version'. Anything emitted within the section
+    /// should be in the context of this output.
     ///
-    /// If the following steps can change based on input, consider grouping shared information such as version numbers and sources
-    /// in the section name e.g., 'Ruby version ``3.1.3`` from ``Gemfile.lock``'.
+    /// If the following steps can change based on input, consider grouping shared information
+    /// such as version numbers and sources in the section name e.g.,
+    /// 'Ruby version ``3.1.3`` from ``Gemfile.lock``'.
     ///
     /// This function will transition your buildpack output to [`state::Section`].
     #[must_use]
@@ -428,8 +445,9 @@ where
     ///
     /// Steps should be short and stand-alone sentences within the context of the section header.
     ///
-    /// In general, if the buildpack did something different between two builds, it should be observable
-    /// by the user through the buildpack output. For example, if a cache needs to be cleared, emit that your buildpack is clearing it and why.
+    /// In general, if the buildpack did something different between two builds, it should be
+    /// observable by the user through the buildpack output. For example, if a cache needs to be
+    /// cleared, emit that your buildpack is clearing it and why.
     ///
     /// Multiple steps are allowed within a section. This function returns to the same [`state::Section`].
     #[must_use]
@@ -440,8 +458,9 @@ where
 
     /// Stream output to the end user.
     ///
-    /// The most common use case is to stream the output of a running `std::process::Command` to the end user.
-    /// Streaming lets the end user know that something is happening and provides them with the output of the process.
+    /// The most common use case is to stream the output of a running `std::process::Command` to the
+    /// end user. Streaming lets the end user know that something is happening and provides them with
+    /// the output of the process.
     ///
     /// The result of this function is a `BuildpackOutput<state::Stream<W>>` which implements [`std::io::Write`].
     ///

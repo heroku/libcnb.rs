@@ -2,14 +2,14 @@
 ///
 /// ## Why does this exist?
 ///
-/// When buildpack output is streamed to the user, each line is prefixed with `remote: ` by Git. Any colorization
-/// of text will apply to those prefixes which is not the desired behavior. This function colors lines of text
-/// while ensuring that styles are disabled at the end of each line.
+/// When buildpack output is streamed to the user, each line is prefixed with `remote: ` by Git.
+/// Any colorization of text will apply to those prefixes which is not the desired behavior. This
+/// function colors lines of text while ensuring that styles are disabled at the end of each line.
 ///
 /// ## Supports recursive colorization
 ///
-/// Strings that are previously colorized will not be overridden by this function. For example, if a word is already
-/// colored yellow, that word will continue to be yellow.
+/// Strings that are previously colorized will not be overridden by this function. For example,
+/// if a word is already colored yellow, that word will continue to be yellow.
 pub(crate) fn wrap_ansi_escape_each_line(ansi: &ANSI, body: impl AsRef<str>) -> String {
     let ansi_escape = ansi.to_str();
     body.as_ref()
