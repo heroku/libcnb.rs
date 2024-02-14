@@ -510,18 +510,21 @@ where
     ///
     /// Once you're finished streaming to the output, calling this function
     /// finalizes the stream's output and transitions back to a [`state::Section`].
-    pub fn finish(mut self) -> BuildpackOutput<state::Section<W>> {
+    pub fn finish(self) -> BuildpackOutput<state::Section<W>> {
         let duration = self.state.started.elapsed();
 
-        writeln_now(&mut self.state.write, "");
-
-        BuildpackOutput {
+        let mut output = BuildpackOutput {
             started: self.started,
             state: state::Section {
                 write: self.state.write.unwrap(),
             },
+        };
+
+        if !output.state.write_mut().was_paragraph {
+            writeln_now(&mut output.state.write, "");
         }
-        .step(format!(
+
+        output.step(format!(
             "Done {}",
             style::details(duration_format::human(&duration))
         ))
@@ -700,7 +703,6 @@ mod test {
 
                   {tab_char}
                   baz
-
 
               - Done (< 0.1s)
             - Done (finished in < 0.1s)
