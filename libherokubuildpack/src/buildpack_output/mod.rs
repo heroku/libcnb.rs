@@ -540,7 +540,7 @@ mod test {
     fn write_paragraph_empty_lines() {
         let io = BuildpackOutput::new(Vec::new())
             .start("Example Buildpack\n\n")
-            .warning("hello\n\n\t\t\nworld")
+            .warning("\n\nhello\n\n\t\t\nworld\n\n")
             .section("Version\n\n")
             .step("Installing\n\n")
             .finish()
