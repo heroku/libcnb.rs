@@ -90,7 +90,7 @@ That's all we need! We can now move on to finally write some buildpack code!
 
 ### Writing the Buildpack
 
-The buildpack we're writing will be very simple. We will just log a "Hello World" message during the build
+The buildpack we're writing will be very simple. We will just output a "Hello World" message during the build
 and set the default process type to a command that will also emit "Hello World" when the application image is run.
 Examples of more complex buildpacks can be found in the [examples directory](https://github.com/heroku/libcnb.rs/tree/main/examples).
 

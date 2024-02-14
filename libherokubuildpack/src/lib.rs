@@ -1,5 +1,7 @@
 #![doc = include_str!("../README.md")]
 
+#[cfg(feature = "buildpack_output")]
+pub mod buildpack_output;
 #[cfg(feature = "command")]
 pub mod command;
 #[cfg(feature = "digest")]
