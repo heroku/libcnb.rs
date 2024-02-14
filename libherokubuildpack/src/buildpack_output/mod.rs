@@ -642,27 +642,42 @@ mod test {
     #[test]
     fn test_captures() {
         let writer = Vec::new();
-        let mut stream = BuildpackOutput::new(writer)
+        let mut first_stream = BuildpackOutput::new(writer)
             .start("Heroku Ruby Buildpack")
             .section("Ruby version `3.1.3` from `Gemfile.lock`")
             .finish()
             .section("Hello world")
-            .start_stream("Streaming stuff");
+            .start_stream("Streaming with no newlines");
 
-        let value = "stuff".to_string();
-        writeln!(&mut stream, "{value}").unwrap();
+        writeln!(&mut first_stream, "stuff").unwrap();
 
-        let io = stream.finish().finish().finish();
+        let mut second_stream = first_stream
+            .finish()
+            .start_stream("Streaming with blank lines and a trailing newline");
 
+        writeln!(&mut second_stream, "foo\nbar\n\nbaz\n").unwrap();
+
+        let io = second_stream.finish().finish().finish();
+
+        // TODO: See if there is a way to remove the additional newlines in the trailing newline case.
         let expected = formatdoc! {"
 
             # Heroku Ruby Buildpack
 
             - Ruby version `3.1.3` from `Gemfile.lock`
             - Hello world
-              - Streaming stuff
+              - Streaming with no newlines
 
                   stuff
+
+              - Done (< 0.1s)
+              - Streaming with blank lines and a trailing newline
+
+                  foo
+                  bar
+
+                  baz
+
 
               - Done (< 0.1s)
             - Done (finished in < 0.1s)
