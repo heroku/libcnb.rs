@@ -158,7 +158,7 @@ pub mod state {
         pub(crate) write: ParagraphInspectWrite<W>,
     }
 
-    /// A this state is intended for streaming output from a process to the end user. It is
+    /// This state is intended for streaming output from a process to the end user. It is
     /// started from a `state::Section` and finished back to a `state::Section`.
     ///
     /// The `BuildpackOutput<state::Stream<W>>` implements [`std::io::Write`], so you can stream
