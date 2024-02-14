@@ -38,6 +38,7 @@ use std::io::Write;
 use std::time::Instant;
 
 mod ansi_escape;
+mod background_printer;
 mod duration_format;
 pub mod style;
 mod util;
@@ -70,6 +71,7 @@ pub struct BuildpackOutput<T> {
 /// The [`BuildpackOutput`] struct acts as an output state machine. These structs
 /// represent the various states. See struct documentation for more details.
 pub mod state {
+    use crate::buildpack_output::background_printer::PrintGuard;
     use crate::buildpack_output::util::ParagraphInspectWrite;
     use crate::write::MappedWrite;
     use std::time::Instant;
@@ -188,6 +190,37 @@ pub mod state {
     pub struct Stream<W: std::io::Write> {
         pub(crate) started: Instant,
         pub(crate) write: MappedWrite<ParagraphInspectWrite<W>>,
+    }
+
+    /// This state is intended for long-running tasks that do not stream but wish to convey progress
+    /// to the end user. For example, while downloading a file.
+    ///
+    /// This state is started from a `state::Section` and finished back to a `state::Section`.
+    ///
+    /// ```rust
+    /// use libherokubuildpack::buildpack_output::{BuildpackOutput, state::{Started, Section}};
+    /// use std::io::Write;
+    ///
+    /// let mut output = BuildpackOutput::new(std::io::stdout())
+    ///     .start("Example Buildpack")
+    ///     .section("Ruby version");
+    ///
+    /// install_ruby(output).finish();
+    ///
+    /// fn install_ruby<W>(mut output: BuildpackOutput<Section<W>>) -> BuildpackOutput<Section<W>>
+    /// where W: Write + Send + Sync + 'static {
+    ///     let mut timer = output.step("Installing Ruby")
+    ///         .start_timer("Installing");
+    ///
+    ///     /// ...
+    ///
+    ///     timer.finish()
+    ///}
+    /// ```
+    #[derive(Debug)]
+    pub struct Background<W: std::io::Write> {
+        pub(crate) started: Instant,
+        pub(crate) write: PrintGuard<ParagraphInspectWrite<W>>,
     }
 }
 
@@ -492,6 +525,40 @@ where
         }
     }
 
+    /// Output periodic timer updates to the end user.
+    ///
+    /// If a buildpack author wishes to start a long-running task that does not stream, starting a timer
+    /// will let the user know that the buildpack is performing work and that the UI is not stuck.
+    ///
+    /// One common use case is when downloading a file. Emitting periodic output when downloading is especially important for the local
+    /// buildpack development experience where the user's network may be unexpectedly slow, such as
+    /// in a hotel or on a plane.
+    ///
+    /// This function will transition your buildpack output to [`state::Background`].
+    #[allow(clippy::missing_panics_doc)]
+    pub fn start_timer(mut self, s: impl AsRef<str>) -> BuildpackOutput<state::Background<W>> {
+        // Do not emit a newline after the message
+        write!(self.state.write, "{}", Self::style(s)).expect("Output error: UI writer closed");
+        self.state
+            .write
+            .flush()
+            .expect("Output error: UI writer closed");
+
+        BuildpackOutput {
+            started: self.started,
+            state: state::Background {
+                started: Instant::now(),
+                write: background_printer::print_interval(
+                    self.state.write,
+                    std::time::Duration::from_secs(1),
+                    ansi_escape::wrap_ansi_escape_each_line(&ANSI::Dim, " ."),
+                    ansi_escape::wrap_ansi_escape_each_line(&ANSI::Dim, "."),
+                    ansi_escape::wrap_ansi_escape_each_line(&ANSI::Dim, ". "),
+                ),
+            },
+        }
+    }
+
     /// Finish a section and transition back to [`state::Started`].
     pub fn finish(self) -> BuildpackOutput<state::Started<W>> {
         BuildpackOutput {
@@ -499,6 +566,30 @@ where
             state: state::Started {
                 write: self.state.write,
             },
+        }
+    }
+}
+
+impl<W> BuildpackOutput<state::Background<W>>
+where
+    W: Write + Send + Sync + 'static,
+{
+    /// Finalize a timer's output
+    ///
+    /// Once you're finished with your long running task, calling this function
+    /// finalizes the timer's output and transitions back to a [`state::Section`].
+    #[must_use]
+    pub fn finish(self) -> BuildpackOutput<state::Section<W>> {
+        let duration = self.state.started.elapsed();
+        let mut io = match self.state.write.stop() {
+            Ok(io) => io,
+            Err(e) => std::panic::resume_unwind(e),
+        };
+
+        writeln_now(&mut io, style::details(duration_format::human(&duration)));
+        BuildpackOutput {
+            started: self.started,
+            state: state::Section { write: io },
         }
     }
 }
@@ -560,6 +651,38 @@ mod test {
     use indoc::formatdoc;
     use libcnb_test::assert_contains;
     use std::fs::File;
+
+    #[test]
+    fn background_timer() {
+        let io = BuildpackOutput::new(Vec::new())
+            .start_silent()
+            .section("Background")
+            .start_timer("Installing")
+            .finish()
+            .finish()
+            .finish();
+
+        // Test human readable timer output
+        let expected = formatdoc! {"
+            - Background
+              - Installing ... (< 0.1s)
+            - Done (finished in < 0.1s)
+        "};
+
+        assert_eq!(
+            expected,
+            strip_ansi_escape_sequences(String::from_utf8_lossy(&io))
+        );
+
+        // Test timer dot colorization
+        let expected = formatdoc! {"
+            - Background
+              - Installing\u{1b}[2;1m .\u{1b}[0m\u{1b}[2;1m.\u{1b}[0m\u{1b}[2;1m. \u{1b}[0m(< 0.1s)
+            - Done (finished in < 0.1s)
+        "};
+
+        assert_eq!(expected, String::from_utf8_lossy(&io));
+    }
 
     #[test]
     fn write_paragraph_empty_lines() {

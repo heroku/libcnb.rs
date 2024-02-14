@@ -31,10 +31,12 @@ const RED: &str = "\x1B[0;31m";
 const YELLOW: &str = "\x1B[0;33m";
 const BOLD_CYAN: &str = "\x1B[1;36m";
 const BOLD_PURPLE: &str = "\x1B[1;35m";
+const DIM: &str = "\x1B[2;1m"; // Default color but softer/less vibrant
 
 #[derive(Debug)]
 #[allow(clippy::upper_case_acronyms)]
 pub(crate) enum ANSI {
+    Dim,
     Red,
     Yellow,
     BoldCyan,
@@ -44,6 +46,7 @@ pub(crate) enum ANSI {
 impl ANSI {
     fn to_str(&self) -> &'static str {
         match self {
+            ANSI::Dim => DIM,
             ANSI::Red => RED,
             ANSI::Yellow => YELLOW,
             ANSI::BoldCyan => BOLD_CYAN,
