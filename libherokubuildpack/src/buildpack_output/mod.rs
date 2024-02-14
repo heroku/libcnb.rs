@@ -184,6 +184,7 @@ pub mod state {
     ///     stream.finish()
     ///}
     /// ```
+    #[derive(Debug)]
     pub struct Stream<W: std::io::Write> {
         pub(crate) started: Instant,
         pub(crate) write: MappedWrite<ParagraphInspectWrite<W>>,
