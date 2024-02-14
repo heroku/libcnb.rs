@@ -16,7 +16,7 @@ pub fn mapped<W: io::Write, F: (Fn(Vec<u8>) -> Vec<u8>) + Sync + Send + 'static>
     MappedWrite::new(w, marker_byte, f)
 }
 
-/// Constructs a writer that buffers written data until an ASCII/UTF-8 newline byte (`0x0A`) is
+/// Constructs a writer that buffers written data until an ASCII/UTF-8 newline byte (`b'\n'`) is
 /// encountered and then applies the given mapping function to the data before passing the result to
 /// the wrapped writer.
 ///
@@ -25,7 +25,7 @@ pub fn line_mapped<W: io::Write, F: (Fn(Vec<u8>) -> Vec<u8>) + Sync + Send + 'st
     w: W,
     f: F,
 ) -> MappedWrite<W> {
-    mapped(w, NEWLINE_ASCII_BYTE, f)
+    mapped(w, b'\n', f)
 }
 
 /// Constructs a writer that writes to two other writers. Similar to the UNIX `tee` command.
@@ -154,8 +154,6 @@ impl<A: io::Write, B: io::Write> io::Write for TeeWrite<A, B> {
         self.inner_b.flush()
     }
 }
-
-const NEWLINE_ASCII_BYTE: u8 = 0x0Au8;
 
 #[cfg(test)]
 mod test {
