@@ -457,12 +457,14 @@ where
             started: self.started,
             state: state::Stream {
                 started: Instant::now(),
-                write: line_mapped(self.state.write, |mut input| {
-                    if input.iter().all(u8::is_ascii_whitespace) {
-                        input
+                write: line_mapped(self.state.write, |mut line| {
+                    // Avoid adding trailing whitespace to the line, if there was none already.
+                    // The `[b'\n']` case is required since `line` includes the trailing newline byte.
+                    if line.is_empty() || line == [b'\n'] {
+                        line
                     } else {
                         let mut result: Vec<u8> = Self::CMD_INDENT.into();
-                        result.append(&mut input);
+                        result.append(&mut line);
                         result
                     }
                 }),
@@ -655,10 +657,11 @@ mod test {
             .finish()
             .start_stream("Streaming with blank lines and a trailing newline");
 
-        writeln!(&mut second_stream, "foo\nbar\n\nbaz\n").unwrap();
+        writeln!(&mut second_stream, "foo\nbar\n\n\t\nbaz\n").unwrap();
 
         let io = second_stream.finish().finish().finish();
 
+        let tab_char = '\t';
         // TODO: See if there is a way to remove the additional newlines in the trailing newline case.
         let expected = formatdoc! {"
 
@@ -676,6 +679,7 @@ mod test {
                   foo
                   bar
 
+                  {tab_char}
                   baz
 
 
