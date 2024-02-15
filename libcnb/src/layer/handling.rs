@@ -338,7 +338,7 @@ fn write_layer<M: Serialize, P: AsRef<Path>>(
     Ok(())
 }
 
-fn read_layer<M: DeserializeOwned, P: AsRef<Path>>(
+pub(crate) fn read_layer<M: DeserializeOwned, P: AsRef<Path>>(
     layers_dir: P,
     layer_name: &LayerName,
 ) -> Result<Option<LayerData<M>>, ReadLayerError> {

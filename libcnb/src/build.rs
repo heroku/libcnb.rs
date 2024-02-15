@@ -9,6 +9,7 @@ use crate::data::{
 use crate::layer::{HandleLayerErrorOrBuildpackError, Layer, LayerData};
 use crate::sbom::Sbom;
 use crate::target::ContextTarget;
+use serde::de::DeserializeOwned;
 use std::path::PathBuf;
 
 /// Context for the build phase execution.
@@ -106,6 +107,17 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
             }
             HandleLayerErrorOrBuildpackError::BuildpackError(e) => crate::Error::BuildpackError(e),
         })
+    }
+
+    pub fn read_layer<M>(
+        &self,
+        layer_name: impl AsRef<LayerName>,
+    ) -> crate::Result<Option<LayerData<M>>, B::Error>
+    where
+        M: DeserializeOwned,
+    {
+        crate::layer::read_layer::<M, _>(&self.layers_dir, layer_name.as_ref())
+            .map_err(crate::Error::ReadLayerError)
     }
 }
 
