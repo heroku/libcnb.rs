@@ -1,5 +1,5 @@
 use crate::data::launch::ProcessTypeError;
-use crate::layer::{HandleLayerError, ReadLayerError};
+use crate::layer::{DeleteLayerError, HandleLayerError, ReadLayerError};
 use libcnb_common::toml_file::TomlFileError;
 use std::fmt::Debug;
 
@@ -16,6 +16,9 @@ pub enum Error<E> {
 
     #[error("Couldn't read layer: {0}")]
     ReadLayerError(#[from] ReadLayerError),
+
+    #[error("Couldn't delete layer: {0}")]
+    DeleteLayerError(#[from] DeleteLayerError),
 
     #[error("Process type error: {0}")]
     ProcessTypeError(#[from] ProcessTypeError),

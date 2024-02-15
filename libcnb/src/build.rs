@@ -119,6 +119,11 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
         crate::layer::read_layer::<M, _>(&self.layers_dir, layer_name.as_ref())
             .map_err(crate::Error::ReadLayerError)
     }
+
+    pub fn delete_layer(&self, layer_name: impl AsRef<LayerName>) -> crate::Result<(), B::Error> {
+        crate::layer::delete_layer(&self.layers_dir, layer_name.as_ref())
+            .map_err(crate::Error::DeleteLayerError)
+    }
 }
 
 /// Describes the result of the build phase.

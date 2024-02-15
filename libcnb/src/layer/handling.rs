@@ -257,7 +257,7 @@ enum Sboms {
 }
 
 /// Does not error if the layer doesn't exist.
-fn delete_layer<P: AsRef<Path>>(
+pub(crate) fn delete_layer<P: AsRef<Path>>(
     layers_dir: P,
     layer_name: &LayerName,
 ) -> Result<(), DeleteLayerError> {
