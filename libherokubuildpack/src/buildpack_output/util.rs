@@ -151,6 +151,28 @@ where
     }
 }
 
+/// Allows a `std::sync::mpsc::Sender` to be used as a `std::io::Write`.
+pub(crate) struct MpscWriter {
+    sender: std::sync::mpsc::Sender<Vec<u8>>,
+}
+
+impl MpscWriter {
+    pub(crate) fn new(sender: std::sync::mpsc::Sender<Vec<u8>>) -> Self {
+        Self { sender }
+    }
+}
+
+impl Write for MpscWriter {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        self.sender.send(buf.to_vec()).expect("Channel to be open");
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
