@@ -270,6 +270,29 @@ pub(crate) fn delete_layer<P: AsRef<Path>>(
     Ok(())
 }
 
+fn write_layer_sboms<P: AsRef<Path>>(
+    layers_dir: P,
+    layer_name: &LayerName,
+    sboms: &[Sbom],
+) -> Result<(), std::io::Error> {
+    for format in SBOM_FORMATS {
+        default_on_not_found(fs::remove_file(cnb_sbom_path(
+            format,
+            &layers_dir,
+            layer_name,
+        )))?;
+    }
+
+    for sbom in sboms {
+        fs::write(
+            cnb_sbom_path(&sbom.format, &layers_dir, layer_name),
+            &sbom.data,
+        )?;
+    }
+
+    Ok(())
+}
+
 /// Updates layer metadata on disk
 fn write_layer<M: Serialize, P: AsRef<Path>>(
     layers_dir: P,
@@ -287,22 +310,7 @@ fn write_layer<M: Serialize, P: AsRef<Path>>(
     write_toml_file(&layer_content_metadata, layer_content_metadata_path)?;
 
     match layer_sboms {
-        Sboms::Overwrite(layer_sboms) => {
-            for format in SBOM_FORMATS {
-                default_on_not_found(fs::remove_file(cnb_sbom_path(
-                    format,
-                    &layers_dir,
-                    layer_name,
-                )))?;
-            }
-
-            for layer_sbom in layer_sboms {
-                fs::write(
-                    cnb_sbom_path(&layer_sbom.format, &layers_dir, layer_name),
-                    &layer_sbom.data,
-                )?;
-            }
-        }
+        Sboms::Overwrite(sboms) => write_layer_sboms(layers_dir, layer_name, &sboms)?,
         Sboms::Keep => {}
     }
 
