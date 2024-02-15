@@ -242,11 +242,11 @@ pub enum WriteLayerError {
     TomlFileError(#[from] TomlFileError),
 
     #[error("{0}")]
-    WriteLayerExecdError(#[from] WriteLayerExecdError),
+    OverwriteLayerExecdError(#[from] OverwriteLayerExecdError),
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum WriteLayerExecdError {
+pub enum OverwriteLayerExecdError {
     #[error("Unexpected I/O error while writing layer execd programs: {0}")]
     IoError(#[from] std::io::Error),
 
@@ -303,11 +303,11 @@ fn write_layer_sboms<P: AsRef<Path>>(
     Ok(())
 }
 
-fn write_layer_exec_d<P: AsRef<Path>>(
+pub(crate) fn overwrite_layer_exec_d_programs<P: AsRef<Path>>(
     layers_dir: P,
     layer_name: &LayerName,
     exec_d_programs: &HashMap<String, PathBuf>,
-) -> Result<(), WriteLayerExecdError> {
+) -> Result<(), OverwriteLayerExecdError> {
     let layer_dir = layers_dir.as_ref().join(layer_name.as_str());
     let exec_d_dir = layer_dir.join("exec.d");
 
@@ -326,9 +326,9 @@ fn write_layer_exec_d<P: AsRef<Path>>(
             // buildpack author might not be aware of.
             Some(&path)
                 .filter(|path| path.exists())
-                .ok_or_else(|| WriteLayerExecdError::MissingExecDFile(path.clone()))
+                .ok_or_else(|| OverwriteLayerExecdError::MissingExecDFile(path.clone()))
                 .and_then(|path| {
-                    fs::copy(path, exec_d_dir.join(name)).map_err(WriteLayerExecdError::IoError)
+                    fs::copy(path, exec_d_dir.join(name)).map_err(OverwriteLayerExecdError::IoError)
                 })?;
         }
     }
@@ -359,7 +359,7 @@ fn write_layer<M: Serialize, P: AsRef<Path>>(
 
     match layer_exec_d_programs {
         ExecDPrograms::Overwrite(exec_d_programs) => {
-            write_layer_exec_d(layers_dir.as_ref(), layer_name, &exec_d_programs)?;
+            overwrite_layer_exec_d_programs(layers_dir.as_ref(), layer_name, &exec_d_programs)?;
         }
         ExecDPrograms::Keep => {}
     }
@@ -568,7 +568,9 @@ mod tests {
         .unwrap_err();
 
         match write_layer_error {
-            WriteLayerError::WriteLayerExecdError(WriteLayerExecdError::MissingExecDFile(path)) => {
+            WriteLayerError::OverwriteLayerExecdError(
+                OverwriteLayerExecdError::MissingExecDFile(path),
+            ) => {
                 assert_eq!(path, execd_file);
             }
             other => {

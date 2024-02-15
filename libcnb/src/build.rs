@@ -124,6 +124,22 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
         crate::layer::delete_layer(&self.layers_dir, layer_name.as_ref())
             .map_err(crate::Error::DeleteLayerError)
     }
+
+    pub fn overwrite_layer_exec_d_programs<I>(
+        &self,
+        layer_name: impl AsRef<LayerName>,
+        exec_d_programs: I,
+    ) -> crate::Result<(), B::Error>
+    where
+        I: IntoIterator<Item = (String, PathBuf)>,
+    {
+        crate::layer::overwrite_layer_exec_d_programs(
+            &self.layers_dir,
+            layer_name.as_ref(),
+            &exec_d_programs.into_iter().collect(),
+        )
+        .map_err(crate::Error::OverwriteLayerExecdError)
+    }
 }
 
 /// Describes the result of the build phase.
