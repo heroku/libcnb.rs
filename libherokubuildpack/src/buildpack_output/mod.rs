@@ -477,21 +477,27 @@ where
             started: self.started,
             state: state::Stream {
                 started: Instant::now(),
-                write: line_mapped(self.state.write, |mut line| {
-                    // Avoid adding trailing whitespace to the line, if there was none already.
-                    // The `[b'\n']` case is required since `line` includes the trailing newline byte.
-                    if line.is_empty() || line == [b'\n'] {
-                        line
-                    } else {
-                        let mut result: Vec<u8> = Self::CMD_INDENT.into();
-                        result.append(&mut line);
-                        result
-                    }
-                }),
+                write: Self::format_stream_writer(self.state.write),
             },
         }
     }
 
+    fn format_stream_writer<S>(stream_to: S) -> crate::write::MappedWrite<S>
+    where
+        S: Write + Send + Sync,
+    {
+        line_mapped(stream_to, |mut line| {
+            // Avoid adding trailing whitespace to the line, if there was none already.
+            // The `[b'\n']` case is required since `line` includes the trailing newline byte.
+            if line.is_empty() || line == [b'\n'] {
+                line
+            } else {
+                let mut result: Vec<u8> = Self::CMD_INDENT.into();
+                result.append(&mut line);
+                result
+            }
+        })
+    }
     /// Finish a section and transition back to [`state::Started`].
     pub fn finish(self) -> BuildpackOutput<state::Started<W>> {
         BuildpackOutput {
