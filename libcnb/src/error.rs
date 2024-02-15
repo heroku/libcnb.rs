@@ -23,6 +23,9 @@ pub enum Error<E> {
     #[error("Couldn't write exec.d programs to layer: {0}")]
     OverwriteLayerExecdError(#[from] OverwriteLayerExecdError),
 
+    #[error("Couldn't write sboms to layer: {0}")]
+    OverwriteLayerSbomsError(#[from] std::io::Error),
+
     #[error("Process type error: {0}")]
     ProcessTypeError(#[from] ProcessTypeError),
 

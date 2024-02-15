@@ -280,7 +280,7 @@ pub(crate) fn delete_layer<P: AsRef<Path>>(
     Ok(())
 }
 
-fn write_layer_sboms<P: AsRef<Path>>(
+pub(crate) fn overwrite_layer_sboms<P: AsRef<Path>>(
     layers_dir: P,
     layer_name: &LayerName,
     sboms: &[Sbom],
@@ -353,7 +353,7 @@ fn write_layer<M: Serialize, P: AsRef<Path>>(
     write_toml_file(&layer_content_metadata, layer_content_metadata_path)?;
 
     match layer_sboms {
-        Sboms::Overwrite(sboms) => write_layer_sboms(layers_dir.as_ref(), layer_name, &sboms)?,
+        Sboms::Overwrite(sboms) => overwrite_layer_sboms(layers_dir.as_ref(), layer_name, &sboms)?,
         Sboms::Keep => {}
     }
 

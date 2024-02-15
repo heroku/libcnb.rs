@@ -140,6 +140,15 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
         )
         .map_err(crate::Error::OverwriteLayerExecdError)
     }
+
+    pub fn overwrite_layer_sboms(
+        &self,
+        layer_name: impl AsRef<LayerName>,
+        sboms: &[Sbom],
+    ) -> crate::Result<(), B::Error> {
+        crate::layer::overwrite_layer_sboms(&self.layers_dir, layer_name.as_ref(), sboms)
+            .map_err(crate::Error::OverwriteLayerSbomsError)
+    }
 }
 
 /// Describes the result of the build phase.
