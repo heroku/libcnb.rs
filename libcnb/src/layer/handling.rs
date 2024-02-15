@@ -233,12 +233,22 @@ pub enum ReadLayerError {
 }
 
 #[derive(thiserror::Error, Debug)]
+#[allow(clippy::enum_variant_names)]
 pub enum WriteLayerError {
     #[error("Unexpected I/O error while writing layer metadata: {0}")]
     IoError(#[from] std::io::Error),
 
     #[error("Error while writing layer content metadata TOML: {0}")]
     TomlFileError(#[from] TomlFileError),
+
+    #[error("{0}")]
+    WriteLayerExecdError(#[from] WriteLayerExecdError),
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum WriteLayerExecdError {
+    #[error("Unexpected I/O error while writing layer execd programs: {0}")]
+    IoError(#[from] std::io::Error),
 
     #[error("Couldn't find exec.d file for copying: {0}")]
     MissingExecDFile(PathBuf),
@@ -293,6 +303,39 @@ fn write_layer_sboms<P: AsRef<Path>>(
     Ok(())
 }
 
+fn write_layer_exec_d<P: AsRef<Path>>(
+    layers_dir: P,
+    layer_name: &LayerName,
+    exec_d_programs: &HashMap<String, PathBuf>,
+) -> Result<(), WriteLayerExecdError> {
+    let layer_dir = layers_dir.as_ref().join(layer_name.as_str());
+    let exec_d_dir = layer_dir.join("exec.d");
+
+    if exec_d_dir.is_dir() {
+        fs::remove_dir_all(&exec_d_dir)?;
+    }
+
+    if !exec_d_programs.is_empty() {
+        fs::create_dir_all(&exec_d_dir)?;
+
+        for (name, path) in exec_d_programs {
+            // We could just try to copy the file here and let the call-site deal with the
+            // I/O errors when the path does not exist. We're using an explicit error variant
+            // for a missing exec.d binary makes it easier to debug issues with packaging
+            // since the usage of exec.d binaries often relies on implicit packaging the
+            // buildpack author might not be aware of.
+            Some(&path)
+                .filter(|path| path.exists())
+                .ok_or_else(|| WriteLayerExecdError::MissingExecDFile(path.clone()))
+                .and_then(|path| {
+                    fs::copy(path, exec_d_dir.join(name)).map_err(WriteLayerExecdError::IoError)
+                })?;
+        }
+    }
+
+    Ok(())
+}
+
 /// Updates layer metadata on disk
 fn write_layer<M: Serialize, P: AsRef<Path>>(
     layers_dir: P,
@@ -310,35 +353,13 @@ fn write_layer<M: Serialize, P: AsRef<Path>>(
     write_toml_file(&layer_content_metadata, layer_content_metadata_path)?;
 
     match layer_sboms {
-        Sboms::Overwrite(sboms) => write_layer_sboms(layers_dir, layer_name, &sboms)?,
+        Sboms::Overwrite(sboms) => write_layer_sboms(layers_dir.as_ref(), layer_name, &sboms)?,
         Sboms::Keep => {}
     }
 
     match layer_exec_d_programs {
         ExecDPrograms::Overwrite(exec_d_programs) => {
-            let exec_d_dir = layer_dir.join("exec.d");
-
-            if exec_d_dir.is_dir() {
-                fs::remove_dir_all(&exec_d_dir)?;
-            }
-
-            if !exec_d_programs.is_empty() {
-                fs::create_dir_all(&exec_d_dir)?;
-
-                for (name, path) in exec_d_programs {
-                    // We could just try to copy the file here and let the call-site deal with the
-                    // I/O errors when the path does not exist. We're using an explicit error variant
-                    // for a missing exec.d binary makes it easier to debug issues with packaging
-                    // since the usage of exec.d binaries often relies on implicit packaging the
-                    // buildpack author might not be aware of.
-                    Some(&path)
-                        .filter(|path| path.exists())
-                        .ok_or_else(|| WriteLayerError::MissingExecDFile(path.clone()))
-                        .and_then(|path| {
-                            fs::copy(path, exec_d_dir.join(name)).map_err(WriteLayerError::IoError)
-                        })?;
-                }
-            }
+            write_layer_exec_d(layers_dir.as_ref(), layer_name, &exec_d_programs)?;
         }
         ExecDPrograms::Keep => {}
     }
@@ -547,7 +568,7 @@ mod tests {
         .unwrap_err();
 
         match write_layer_error {
-            WriteLayerError::MissingExecDFile(path) => {
+            WriteLayerError::WriteLayerExecdError(WriteLayerExecdError::MissingExecDFile(path)) => {
                 assert_eq!(path, execd_file);
             }
             other => {
