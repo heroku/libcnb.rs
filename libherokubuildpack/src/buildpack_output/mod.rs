@@ -685,7 +685,6 @@ mod test {
         let io = second_stream.finish().finish().finish();
 
         let tab_char = '\t';
-        // TODO: See if there is a way to remove the additional newlines in the trailing newline case.
         let expected = formatdoc! {"
 
             # Heroku Ruby Buildpack
