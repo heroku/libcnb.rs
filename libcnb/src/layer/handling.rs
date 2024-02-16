@@ -368,21 +368,19 @@ fn write_layer<M: Serialize, P: AsRef<Path>>(
     layer_exec_d_programs: ExecDPrograms,
     layer_sboms: Sboms,
 ) -> Result<(), WriteLayerError> {
-    write_layer_metadata(layers_dir.as_ref(), layer_name, layer_content_metadata)?;
+    let layers_dir = layers_dir.as_ref();
 
-    let layer_dir = layers_dir.as_ref().join(layer_name.as_str());
+    write_layer_metadata(layers_dir, layer_name, layer_content_metadata)?;
+
+    let layer_dir = layers_dir.join(layer_name.as_str());
     layer_env.write_to_layer_dir(layer_dir)?;
 
-    match layer_sboms {
-        Sboms::Overwrite(sboms) => overwrite_layer_sboms(layers_dir.as_ref(), layer_name, &sboms)?,
-        Sboms::Keep => {}
+    if let Sboms::Overwrite(sboms) = layer_sboms {
+        overwrite_layer_sboms(layers_dir, layer_name, &sboms)?;
     }
 
-    match layer_exec_d_programs {
-        ExecDPrograms::Overwrite(exec_d_programs) => {
-            overwrite_layer_exec_d_programs(layers_dir.as_ref(), layer_name, &exec_d_programs)?;
-        }
-        ExecDPrograms::Keep => {}
+    if let ExecDPrograms::Overwrite(exec_d_programs) = layer_exec_d_programs {
+        overwrite_layer_exec_d_programs(layers_dir, layer_name, &exec_d_programs)?;
     }
 
     Ok(())
