@@ -233,13 +233,22 @@ pub enum ReadLayerError {
 }
 
 #[derive(thiserror::Error, Debug)]
-#[allow(clippy::enum_variant_names)]
-pub enum WriteLayerError {
+pub enum WriteLayerMetadataError {
     #[error("Unexpected I/O error while writing layer metadata: {0}")]
     IoError(#[from] std::io::Error),
 
     #[error("Error while writing layer content metadata TOML: {0}")]
     TomlFileError(#[from] TomlFileError),
+}
+
+#[derive(thiserror::Error, Debug)]
+#[allow(clippy::enum_variant_names)]
+pub enum WriteLayerError {
+    #[error("{0}")]
+    WriteLayerEnvError(#[from] std::io::Error),
+
+    #[error("{0}")]
+    WriteLayerMetadataError(#[from] WriteLayerMetadataError),
 
     #[error("{0}")]
     OverwriteLayerExecdError(#[from] OverwriteLayerExecdError),
@@ -336,6 +345,20 @@ pub(crate) fn overwrite_layer_exec_d_programs<P: AsRef<Path>>(
     Ok(())
 }
 
+fn write_layer_metadata<M: Serialize, P: AsRef<Path>>(
+    layers_dir: P,
+    layer_name: &LayerName,
+    layer_content_metadata: &LayerContentMetadata<M>,
+) -> Result<(), WriteLayerMetadataError> {
+    let layer_dir = layers_dir.as_ref().join(layer_name.as_str());
+    fs::create_dir_all(layer_dir)?;
+
+    let layer_content_metadata_path = layers_dir.as_ref().join(format!("{layer_name}.toml"));
+    write_toml_file(&layer_content_metadata, layer_content_metadata_path)?;
+
+    Ok(())
+}
+
 /// Updates layer metadata on disk
 fn write_layer<M: Serialize, P: AsRef<Path>>(
     layers_dir: P,
@@ -345,12 +368,10 @@ fn write_layer<M: Serialize, P: AsRef<Path>>(
     layer_exec_d_programs: ExecDPrograms,
     layer_sboms: Sboms,
 ) -> Result<(), WriteLayerError> {
-    let layer_dir = layers_dir.as_ref().join(layer_name.as_str());
-    let layer_content_metadata_path = layers_dir.as_ref().join(format!("{layer_name}.toml"));
+    write_layer_metadata(layers_dir.as_ref(), layer_name, layer_content_metadata)?;
 
-    fs::create_dir_all(&layer_dir)?;
-    layer_env.write_to_layer_dir(&layer_dir)?;
-    write_toml_file(&layer_content_metadata, layer_content_metadata_path)?;
+    let layer_dir = layers_dir.as_ref().join(layer_name.as_str());
+    layer_env.write_to_layer_dir(layer_dir)?;
 
     match layer_sboms {
         Sboms::Overwrite(sboms) => overwrite_layer_sboms(layers_dir.as_ref(), layer_name, &sboms)?,
