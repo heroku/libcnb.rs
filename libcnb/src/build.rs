@@ -10,6 +10,7 @@ use crate::layer::{HandleLayerErrorOrBuildpackError, Layer, LayerData};
 use crate::sbom::Sbom;
 use crate::target::ContextTarget;
 use serde::de::DeserializeOwned;
+use std::borrow::Borrow;
 use std::path::PathBuf;
 
 /// Context for the build phase execution.
@@ -109,25 +110,35 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
         })
     }
 
+    /// Reads the [`LayerData`] for the layer with the given name.
+    ///
+    /// Returns `Ok(None)` is the layer doesn't exist.
     pub fn read_layer<M>(
         &self,
-        layer_name: impl AsRef<LayerName>,
+        layer_name: impl Borrow<LayerName>,
     ) -> crate::Result<Option<LayerData<M>>, B::Error>
     where
         M: DeserializeOwned,
     {
-        crate::layer::read_layer::<M, _>(&self.layers_dir, layer_name.as_ref())
+        crate::layer::read_layer::<M, _>(&self.layers_dir, layer_name.borrow())
             .map_err(crate::Error::ReadLayerError)
     }
 
-    pub fn delete_layer(&self, layer_name: impl AsRef<LayerName>) -> crate::Result<(), B::Error> {
-        crate::layer::delete_layer(&self.layers_dir, layer_name.as_ref())
+    /// Deletes the layer with the given name.
+    ///
+    /// Deletes both the layer directory and any metadata.
+    /// If the layer doesn't exist, this function will not return an error.
+    pub fn delete_layer(&self, layer_name: impl Borrow<LayerName>) -> crate::Result<(), B::Error> {
+        crate::layer::delete_layer(&self.layers_dir, layer_name.borrow())
             .map_err(crate::Error::DeleteLayerError)
     }
 
+    /// Overwrites all exec.d programs of the layer with the given name.
+    ///
+    /// Calling this function for a layer that doesn't exist will result in an error.
     pub fn overwrite_layer_exec_d_programs<I>(
         &self,
-        layer_name: impl AsRef<LayerName>,
+        layer_name: impl Borrow<LayerName>,
         exec_d_programs: I,
     ) -> crate::Result<(), B::Error>
     where
@@ -135,18 +146,21 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     {
         crate::layer::overwrite_layer_exec_d_programs(
             &self.layers_dir,
-            layer_name.as_ref(),
+            layer_name.borrow(),
             &exec_d_programs.into_iter().collect(),
         )
         .map_err(crate::Error::OverwriteLayerExecdError)
     }
 
+    /// Overwrites all SBOMs of the layer with the given name.
+    ///
+    /// Calling this function for a layer that doesn't exist will result in an error.
     pub fn overwrite_layer_sboms(
         &self,
-        layer_name: impl AsRef<LayerName>,
+        layer_name: impl Borrow<LayerName>,
         sboms: &[Sbom],
     ) -> crate::Result<(), B::Error> {
-        crate::layer::overwrite_layer_sboms(&self.layers_dir, layer_name.as_ref(), sboms)
+        crate::layer::overwrite_layer_sboms(&self.layers_dir, layer_name.borrow(), sboms)
             .map_err(crate::Error::OverwriteLayerSbomsError)
     }
 }
