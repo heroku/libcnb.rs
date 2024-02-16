@@ -346,7 +346,7 @@ pub(crate) fn replace_layer_exec_d_programs<P: AsRef<Path>>(
     Ok(())
 }
 
-fn write_layer_metadata<M: Serialize, P: AsRef<Path>>(
+pub(crate) fn write_layer_metadata<M: Serialize, P: AsRef<Path>>(
     layers_dir: P,
     layer_name: &LayerName,
     layer_content_metadata: &LayerContentMetadata<M>,

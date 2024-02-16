@@ -9,7 +9,9 @@ use crate::data::{
 use crate::layer::{HandleLayerErrorOrBuildpackError, Layer, LayerData};
 use crate::sbom::Sbom;
 use crate::target::ContextTarget;
+use libcnb_data::layer_content_metadata::LayerContentMetadata;
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 use std::borrow::Borrow;
 use std::path::PathBuf;
 
@@ -122,6 +124,25 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     {
         crate::layer::read_layer::<M, _>(&self.layers_dir, layer_name.borrow())
             .map_err(crate::Error::ReadLayerError)
+    }
+
+    /// Writes the given [`LayerContentMetadata`] to the layer with the given name.
+    ///
+    /// If the layer doesn't exist, it will be created.
+    pub fn write_layer_metadata<M>(
+        &self,
+        layer_name: impl Borrow<LayerName>,
+        layer_content_metadata: &LayerContentMetadata<M>,
+    ) -> crate::Result<(), B::Error>
+    where
+        M: Serialize,
+    {
+        crate::layer::write_layer_metadata(
+            &self.layers_dir,
+            layer_name.borrow(),
+            layer_content_metadata,
+        )
+        .map_err(crate::Error::WriteLayerMetadataError)
     }
 
     /// Deletes the layer with the given name.
