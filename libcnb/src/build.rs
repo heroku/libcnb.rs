@@ -133,10 +133,10 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
             .map_err(crate::Error::DeleteLayerError)
     }
 
-    /// Overwrites all exec.d programs of the layer with the given name.
+    /// Replaces all (if any) exec.d programs of the layer with the given name.
     ///
     /// Calling this function for a layer that doesn't exist will result in an error.
-    pub fn overwrite_layer_exec_d_programs<I>(
+    pub fn replace_layer_exec_d_programs<I>(
         &self,
         layer_name: impl Borrow<LayerName>,
         exec_d_programs: I,
@@ -144,24 +144,24 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     where
         I: IntoIterator<Item = (String, PathBuf)>,
     {
-        crate::layer::overwrite_layer_exec_d_programs(
+        crate::layer::replace_layer_exec_d_programs(
             &self.layers_dir,
             layer_name.borrow(),
             &exec_d_programs.into_iter().collect(),
         )
-        .map_err(crate::Error::OverwriteLayerExecdError)
+        .map_err(crate::Error::ReplaceLayerExecdProgramsError)
     }
 
-    /// Overwrites all SBOMs of the layer with the given name.
+    /// Replaces all (if any) SBOMs of the layer with the given name.
     ///
     /// Calling this function for a layer that doesn't exist will result in an error.
-    pub fn overwrite_layer_sboms(
+    pub fn replace_layer_sboms(
         &self,
         layer_name: impl Borrow<LayerName>,
         sboms: &[Sbom],
     ) -> crate::Result<(), B::Error> {
-        crate::layer::overwrite_layer_sboms(&self.layers_dir, layer_name.borrow(), sboms)
-            .map_err(crate::Error::OverwriteLayerSbomsError)
+        crate::layer::replace_layer_sboms(&self.layers_dir, layer_name.borrow(), sboms)
+            .map_err(crate::Error::ReplaceLayerSbomsError)
     }
 }
 
