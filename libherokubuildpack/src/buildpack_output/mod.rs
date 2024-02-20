@@ -31,12 +31,12 @@
 //! in the [`state`] module for more information.
 
 use crate::buildpack_output::ansi_escape::ANSI;
-use crate::buildpack_output::util::{prefix_first_rest_lines, prefix_lines, ParagraphInspectWrite};
+use crate::buildpack_output::util::{
+    mpsc_stream_to_output, prefix_first_rest_lines, prefix_lines, ParagraphInspectWrite,
+};
 use crate::write::line_mapped;
 use std::fmt::Debug;
 use std::io::Write;
-use std::sync::mpsc;
-use std::thread;
 use std::time::Instant;
 
 mod ansi_escape;
@@ -537,29 +537,22 @@ where
     pub fn stream_with<F, T>(&mut self, s: impl AsRef<str>, mut f: F) -> T
     where
         F: FnMut(Box<dyn Write + Send + Sync>, Box<dyn Write + Send + Sync>) -> T,
+        T: 'static,
     {
         writeln_now(&mut self.state.write, Self::style(s));
         writeln_now(&mut self.state.write, "");
 
-        let out = thread::scope(|scope| {
-            // Implementation notes
-            //
-            // Constraints:
-            //
-            //  - We cannot consume self which means we cannot move the state.write field. As a
-            //    result, the write struct must stay in the same thread as self.
-            //  - The function passed in must execute concurrently as the writer is emitting.
-            //
-            // The strategy is to use a multiple producer single consumer channel (mpsc). This allows
-            // multiple senders to write at the same time. We create two, one for stdout and one for
-            // stderr, wrap them in a struct that implements `std::io::Write` and pass them to the
-            // function. The channel is then read in a background thread that emits to the current `Write`
-            // held by self.
-            let (send, recv) = mpsc::channel::<Vec<u8>>();
-
-            let duration = Instant::now();
-            // The receiver is moved into the background thread where it waits on input from the senders.
-            scope.spawn(move || {
+        let duration = Instant::now();
+        mpsc_stream_to_output(
+            |sender| {
+                f(
+                    // The Senders are boxed to hide the types from the caller so it can be changed
+                    // in the future. They only need to know they have a `Write + Send + Sync` type.
+                    Box::new(Self::format_stream_writer(sender.clone())),
+                    Box::new(Self::format_stream_writer(sender.clone())),
+                )
+            },
+            move |recv| {
                 // When it receives input, it writes it to the current `Write` value.
                 //
                 // When the senders close their channel this loop will exit
@@ -581,30 +574,8 @@ where
                         style::details(duration_format::human(&duration.elapsed()))
                     )),
                 );
-            });
-
-            let out = {
-                // Wrap the Senders in a struct that implements `std::io::Write` and wrap that in a
-                // mapped writer that implements stream formatting
-                let send_stdout =
-                    Self::format_stream_writer(util::MpscWriter::new(mpsc::Sender::clone(&send)));
-                let send_stderr =
-                    Self::format_stream_writer(util::MpscWriter::new(mpsc::Sender::clone(&send)));
-                f(
-                    // The Senders are boxed to hide the types from the caller so it can be changed
-                    // in the future. They only need to know they have a `Write + Send + Sync` type.
-                    Box::new(send_stdout),
-                    Box::new(send_stderr),
-                )
-            };
-
-            // Close the channel to signal the write thread to finish
-            drop(send);
-
-            out
-        });
-
-        out
+            },
+        )
     }
 
     /// Finish a section and transition back to [`state::Started`].
