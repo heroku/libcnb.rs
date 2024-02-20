@@ -1,8 +1,11 @@
+use std::any::{Any, TypeId};
 use std::fmt::Debug;
 use std::io::Write;
 
+use std::sync::mpsc;
 #[cfg(test)]
 use std::sync::{Arc, Mutex};
+use std::thread;
 
 /// Applies a prefix to the first line and a different prefix to the rest of the lines.
 ///
@@ -173,6 +176,54 @@ impl Write for MpscWriter {
     }
 }
 
+impl Clone for MpscWriter {
+    fn clone(&self) -> Self {
+        Self {
+            sender: self.sender.clone(),
+        }
+    }
+}
+
+/// Simplify streaming many sources to a single output.
+///
+/// This function spawns a thread for the output to receive a stream, and then calls the provided
+/// stream function with a `MpscWriter` that can be used to send data to the output.
+///
+/// The `MpscWriter` is cloneable and can be used to send one or more streams of output at a time.
+/// This is important to be able to stream both stdout and stderr to the same output.
+///
+/// # Panics
+///
+/// If you try to return the `MpscWriter` from the stream function, the function will panic. This
+/// behavior is to prevent a deadlock where the `MpscWriter` being retained would prevent the channel
+/// from closing which will prevent the output stream function from finishing.
+pub(crate) fn mpsc_stream_to_output<S, L, F>(mut stream: S, mut output: L) -> F
+where
+    S: FnMut(MpscWriter) -> F,
+    L: FnMut(mpsc::Receiver<Vec<u8>>) + Send,
+    F: Any,
+{
+    thread::scope(|scope| {
+        let (send, recv) = mpsc::channel::<Vec<u8>>();
+        // The receiver is moved into the background thread where it waits on input from the senders.
+        scope.spawn(move || {
+            output(recv);
+        });
+
+        let out = stream(MpscWriter::new(mpsc::Sender::clone(&send)));
+
+        assert!(
+            TypeId::of::<MpscWriter>() != out.type_id(),
+            "The MpscWriter was leaked. This will cause a deadlock."
+        );
+
+        // Close the channel to signal the write thread to finish
+        drop(send);
+
+        out
+    })
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -247,5 +298,45 @@ mod test {
         assert_eq!("- ", &prefix_lines("", |_, _| String::from("- ")));
         assert_eq!("- \n", &prefix_lines("\n", |_, _| String::from("- ")));
         assert_eq!("- \n- \n", &prefix_lines("\n\n", |_, _| String::from("- ")));
+    }
+
+    #[test]
+    fn test_mpsc_streaming_helper() {
+        let mut output = Vec::new();
+        mpsc_stream_to_output(
+            |mut send| {
+                writeln!(send, "Hello").unwrap();
+                writeln!(send, "World").unwrap();
+            },
+            |recv| {
+                for message in recv {
+                    output.extend(message.iter());
+                }
+            },
+        );
+        assert_eq!("Hello\nWorld\n", &String::from_utf8_lossy(&output));
+    }
+
+    #[test]
+    fn test_mpsc_streaming_cannot_deadlock() {
+        let result = std::panic::catch_unwind(|| {
+            let mut output: Vec<u8> = Vec::new();
+            mpsc_stream_to_output(
+                |mut send| {
+                    writeln!(send, "Hello").unwrap();
+                    writeln!(send, "World").unwrap();
+
+                    // Leaking the writer causes a deadlock
+                    send
+                },
+                |recv| {
+                    for message in recv {
+                        output.extend(message.iter());
+                    }
+                },
+            );
+        });
+
+        assert!(result.is_err(), "Function should panic instead of deadlock");
     }
 }
