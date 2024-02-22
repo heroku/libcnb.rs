@@ -1,5 +1,6 @@
 mod api;
 mod id;
+mod stack;
 mod target;
 mod version;
 
@@ -8,6 +9,7 @@ use crate::sbom::SbomFormat;
 pub use api::*;
 pub use id::*;
 use serde::Deserialize;
+pub use stack::*;
 use std::collections::HashSet;
 pub use target::*;
 pub use version::*;
@@ -119,6 +121,8 @@ impl<BM> BuildpackDescriptor<BM> {
 pub struct ComponentBuildpackDescriptor<BM = GenericMetadata> {
     pub api: BuildpackApi,
     pub buildpack: Buildpack,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub stacks: Vec<Stack>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub targets: Vec<Target>,
     pub metadata: BM,
