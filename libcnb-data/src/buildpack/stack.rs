@@ -6,9 +6,9 @@ use serde::Deserialize;
 #[derive(Deserialize, Debug, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct Stack {
-    id: String,
+    pub id: String,
     #[serde(default)]
-    mixins: Vec<String>,
+    pub mixins: Vec<String>,
 }
 
 #[cfg(test)]

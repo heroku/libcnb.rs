@@ -261,6 +261,20 @@ uri = "https://example.tld/my-license"
 [[buildpack.licenses]]
 uri = "https://example.tld/my-license"
 
+[[stacks]]
+id = "heroku-20"
+
+[[stacks]]
+id = "io.buildpacks.stacks.bionic"
+mixins = []
+
+[[stacks]]
+id = "io.buildpacks.stacks.focal"
+mixins = ["build:jq", "wget"]
+
+[[stacks]]
+id = "*"
+
 [[targets]]
 os = "linux"
 arch = "amd64"
@@ -342,6 +356,27 @@ checksum = "abc123"
                 SbomFormat::CycloneDxJson,
                 SbomFormat::SpdxJson
             ])
+        );
+        assert_eq!(
+            buildpack_descriptor.stacks,
+            [
+                Stack {
+                    id: String::from("heroku-20"),
+                    mixins: Vec::new(),
+                },
+                Stack {
+                    id: String::from("io.buildpacks.stacks.bionic"),
+                    mixins: Vec::new(),
+                },
+                Stack {
+                    id: String::from("io.buildpacks.stacks.focal"),
+                    mixins: vec![String::from("build:jq"), String::from("wget")]
+                },
+                Stack {
+                    id: String::from("*"),
+                    mixins: Vec::new()
+                }
+            ]
         );
         assert_eq!(
             buildpack_descriptor.targets,
@@ -533,6 +568,7 @@ version = "0.0.1"
         );
         assert_eq!(buildpack_descriptor.buildpack.licenses, Vec::new());
         assert_eq!(buildpack_descriptor.buildpack.sbom_formats, HashSet::new());
+        assert_eq!(buildpack_descriptor.stacks, []);
         assert_eq!(buildpack_descriptor.targets, []);
         assert_eq!(buildpack_descriptor.metadata, None);
     }
