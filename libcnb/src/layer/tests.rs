@@ -925,6 +925,7 @@ fn build_context(temp_dir: &TempDir) -> BuildContext<TestBuildpack> {
                 licenses: Vec::new(),
                 sbom_formats: HashSet::new(),
             },
+            stacks: vec![],
             targets: vec![Target {
                 os: Some(String::from("linux")),
                 arch: Some(String::from("amd64")),
