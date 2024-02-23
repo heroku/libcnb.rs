@@ -7,7 +7,7 @@ use serde::Deserialize;
 #[serde(deny_unknown_fields)]
 pub struct Stack {
     pub id: String,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub mixins: Vec<String>,
 }
 
