@@ -248,6 +248,9 @@ pub enum WriteLayerError {
     WriteLayerEnvError(#[from] std::io::Error),
 
     #[error("{0}")]
+    ReplaceLayerSbomsError(#[from] ReplaceLayerSbomsError),
+
+    #[error("{0}")]
     WriteLayerMetadataError(#[from] WriteLayerMetadataError),
 
     #[error("{0}")]
@@ -261,6 +264,18 @@ pub enum ReplaceLayerExecdProgramsError {
 
     #[error("Couldn't find exec.d file for copying: {0}")]
     MissingExecDFile(PathBuf),
+
+    #[error("Layer doesn't exist: {0}")]
+    MissingLayer(LayerName),
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum ReplaceLayerSbomsError {
+    #[error("Layer doesn't exist: {0}")]
+    MissingLayer(LayerName),
+
+    #[error("Unexpected I/O error while replacing layer SBOMs: {0}")]
+    IoError(#[from] std::io::Error),
 }
 
 #[derive(Debug)]
@@ -293,18 +308,22 @@ pub(crate) fn replace_layer_sboms<P: AsRef<Path>>(
     layers_dir: P,
     layer_name: &LayerName,
     sboms: &[Sbom],
-) -> Result<(), std::io::Error> {
+) -> Result<(), ReplaceLayerSbomsError> {
+    let layers_dir = layers_dir.as_ref();
+
+    if !layers_dir.join(layer_name.as_str()).is_dir() {
+        return Err(ReplaceLayerSbomsError::MissingLayer(layer_name.clone()));
+    }
+
     for format in SBOM_FORMATS {
         default_on_not_found(fs::remove_file(cnb_sbom_path(
-            format,
-            &layers_dir,
-            layer_name,
+            format, layers_dir, layer_name,
         )))?;
     }
 
     for sbom in sboms {
         fs::write(
-            cnb_sbom_path(&sbom.format, &layers_dir, layer_name),
+            cnb_sbom_path(&sbom.format, layers_dir, layer_name),
             &sbom.data,
         )?;
     }
@@ -318,6 +337,13 @@ pub(crate) fn replace_layer_exec_d_programs<P: AsRef<Path>>(
     exec_d_programs: &HashMap<String, PathBuf>,
 ) -> Result<(), ReplaceLayerExecdProgramsError> {
     let layer_dir = layers_dir.as_ref().join(layer_name.as_str());
+
+    if !layer_dir.is_dir() {
+        return Err(ReplaceLayerExecdProgramsError::MissingLayer(
+            layer_name.clone(),
+        ));
+    }
+
     let exec_d_dir = layer_dir.join("exec.d");
 
     if exec_d_dir.is_dir() {

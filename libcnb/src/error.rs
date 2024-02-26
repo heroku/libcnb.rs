@@ -1,7 +1,7 @@
 use crate::data::launch::ProcessTypeError;
 use crate::layer::{
     DeleteLayerError, HandleLayerError, ReadLayerError, ReplaceLayerExecdProgramsError,
-    WriteLayerMetadataError,
+    ReplaceLayerSbomsError, WriteLayerMetadataError,
 };
 use libcnb_common::toml_file::TomlFileError;
 use std::fmt::Debug;
@@ -30,7 +30,7 @@ pub enum Error<E> {
     ReplaceLayerExecdProgramsError(#[from] ReplaceLayerExecdProgramsError),
 
     #[error("Couldn't replace SBOMs of layer: {0}")]
-    ReplaceLayerSbomsError(#[from] std::io::Error),
+    ReplaceLayerSbomsError(#[from] ReplaceLayerSbomsError),
 
     #[error("Process type error: {0}")]
     ProcessTypeError(#[from] ProcessTypeError),
