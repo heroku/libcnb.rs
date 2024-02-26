@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `libcnb`:
+    - Low-level layer operations are now exposed via `BuildContext`. In most cases, users do not need to use them. They
+      serve as an escape hatch when the higher-level layers API doesn't support a certain
+      use-case. ([#786](https://github.com/heroku/libcnb.rs/pull/786))
 
 ## [0.19.0] - 2024-02-23
 
