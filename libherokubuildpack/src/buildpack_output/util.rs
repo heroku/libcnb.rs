@@ -212,10 +212,7 @@ where
 
         let out = stream(MpscWriter::new(mpsc::Sender::clone(&send)));
 
-        assert!(
-            TypeId::of::<MpscWriter>() != out.type_id(),
-            "The MpscWriter was leaked. This will cause a deadlock."
-        );
+        assert_ne!(TypeId::of::<MpscWriter>(), out.type_id(), "The MpscWriter was leaked. This will cause a deadlock.");
 
         // Close the channel to signal the write thread to finish
         drop(send);
