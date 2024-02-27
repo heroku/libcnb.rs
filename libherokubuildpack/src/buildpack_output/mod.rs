@@ -503,7 +503,7 @@ where
 
     /// Stream two inputs without consuming
     ///
-    /// The `start_stream` returns a single writter, but running a command often requires two.
+    /// The `start_stream` returns a single writer, but running a command often requires two.
     /// This function allows you to stream both stdout and stderr to the end user using a single writer.
     ///
     /// It takes a step string that will be advertized and a closure that takes two writers and returns a value.
