@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `libherokubuildpack`:
+  - Added a function to stream output (`stream_with`) that is useful for streaming `std::process::Command`-s ([#787](https://github.com/heroku/libcnb.rs/pull/787))
 
 ## [0.21.0] - 2024-04-30
 
