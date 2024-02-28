@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `libherokubuildpack`:
+  - Added `start_timer` mechanism to print to the UI while performing a slow task to let the user know the buildpack is working ([#787](https://github.com/heroku/libcnb.rs/pull/787))
 
 ## [0.19.0] - 2024-02-23
 
