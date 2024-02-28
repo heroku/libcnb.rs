@@ -31,7 +31,9 @@
 //! in the [`state`] module for more information.
 
 use crate::buildpack_output::ansi_escape::ANSI;
-use crate::buildpack_output::util::{prefix_first_rest_lines, prefix_lines, ParagraphInspectWrite};
+use crate::buildpack_output::util::{
+    mpsc_stream_to_output, prefix_first_rest_lines, prefix_lines, ParagraphInspectWrite,
+};
 use crate::write::line_mapped;
 use std::fmt::Debug;
 use std::io::Write;
@@ -477,19 +479,103 @@ where
             started: self.started,
             state: state::Stream {
                 started: Instant::now(),
-                write: line_mapped(self.state.write, |mut line| {
-                    // Avoid adding trailing whitespace to the line, if there was none already.
-                    // The `[b'\n']` case is required since `line` includes the trailing newline byte.
-                    if line.is_empty() || line == [b'\n'] {
-                        line
-                    } else {
-                        let mut result: Vec<u8> = Self::CMD_INDENT.into();
-                        result.append(&mut line);
-                        result
-                    }
-                }),
+                write: Self::format_stream_writer(self.state.write),
             },
         }
+    }
+
+    fn format_stream_writer<S>(stream_to: S) -> crate::write::MappedWrite<S>
+    where
+        S: Write + Send + Sync,
+    {
+        line_mapped(stream_to, |mut line| {
+            // Avoid adding trailing whitespace to the line, if there was none already.
+            // The `[b'\n']` case is required since `line` includes the trailing newline byte.
+            if line.is_empty() || line == [b'\n'] {
+                line
+            } else {
+                let mut result: Vec<u8> = Self::CMD_INDENT.into();
+                result.append(&mut line);
+                result
+            }
+        })
+    }
+
+    /// Stream two inputs without consuming
+    ///
+    /// The `start_stream` returns a single writer, but running a command often requires two.
+    /// This function allows you to stream both stdout and stderr to the end user using a single writer.
+    ///
+    /// It takes a step string that will be advertized and a closure that takes two writers and returns a value.
+    /// The return value is returned from the function.
+    ///
+    /// Example:
+    ///
+    ///
+    /// ```no_run
+    /// use libherokubuildpack::buildpack_output::{style, BuildpackOutput};
+    /// use libherokubuildpack::command::CommandExt;
+    /// use std::process::Command;
+    ///
+    /// let mut output = BuildpackOutput::new(std::io::stdout())
+    ///     .start("Example Buildpack")
+    ///     .section("Streaming");
+    ///
+    ///
+    /// let mut cmd = Command::new("echo");
+    /// cmd.arg("hello world");
+    ///
+    /// let name = style::command(format!("{cmd:?}"));
+    ///
+    /// let result = output.stream_with(format!("Running {name}"), |stdout, stderr| {
+    ///     cmd.output_and_write_streams(stdout, stderr)
+    /// }).unwrap();
+    ///
+    /// output.finish().finish();
+    /// ```
+    #[allow(clippy::missing_panics_doc)]
+    pub fn stream_with<F, T>(&mut self, s: impl AsRef<str>, mut f: F) -> T
+    where
+        F: FnMut(Box<dyn Write + Send + Sync>, Box<dyn Write + Send + Sync>) -> T,
+        T: 'static,
+    {
+        writeln_now(&mut self.state.write, Self::style(s));
+        writeln_now(&mut self.state.write, "");
+
+        let duration = Instant::now();
+        mpsc_stream_to_output(
+            |sender| {
+                f(
+                    // The Senders are boxed to hide the types from the caller so it can be changed
+                    // in the future. They only need to know they have a `Write + Send + Sync` type.
+                    Box::new(Self::format_stream_writer(sender.clone())),
+                    Box::new(Self::format_stream_writer(sender.clone())),
+                )
+            },
+            move |recv| {
+                // When it receives input, it writes it to the current `Write` value.
+                //
+                // When the senders close their channel this loop will exit
+                for message in recv {
+                    self.state
+                        .write
+                        .write_all(&message)
+                        .expect("Writer to not be closed");
+                }
+
+                if !self.state.write_mut().was_paragraph {
+                    writeln_now(&mut self.state.write, "");
+                }
+
+                writeln_now(
+                    &mut self.state.write,
+                    Self::style(format!(
+                        "Done {}",
+                        style::details(duration_format::human(&duration.elapsed()))
+                    )),
+                );
+            },
+        )
     }
 
     /// Finish a section and transition back to [`state::Started`].
@@ -560,6 +646,42 @@ mod test {
     use indoc::formatdoc;
     use libcnb_test::assert_contains;
     use std::fs::File;
+    use std::process::Command;
+
+    #[test]
+    fn stream_with() {
+        let writer = Vec::new();
+        let mut output = BuildpackOutput::new(writer)
+            .start("Example Buildpack")
+            .section("Streaming");
+        let _result = output.stream_with(
+            format!("Running {}", style::command("echo hello world")),
+            |stdout, stderr| {
+                Command::new("echo")
+                    .arg("hello world")
+                    .output_and_write_streams(stdout, stderr)
+            },
+        );
+
+        let io = output.finish().finish();
+        let expected = formatdoc! {"
+
+            # Example Buildpack
+
+            - Streaming
+              - Running `echo hello world`
+
+                  hello world
+
+              - Done (< 0.1s)
+            - Done (finished in < 0.1s)
+        "};
+
+        assert_eq!(
+            expected,
+            strip_ansi_escape_sequences(String::from_utf8_lossy(&io))
+        );
+    }
 
     #[test]
     fn write_paragraph_empty_lines() {
