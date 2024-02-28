@@ -8,6 +8,10 @@ updates:
       - "dependencies"
       - "rust"
       - "skip changelog"
+    groups:
+      opentelemetry:
+        patterns:
+          - "opentelemetry*"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
