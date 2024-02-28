@@ -1,11 +1,11 @@
 //! This module is responsible for the logic involved in the printing to output while
-//! other work is being performed. Such as printing dots while a download is being performed
+//! other work is being performed. Such as printing dots while a download is being performed.
 use std::io::Write;
 use std::sync::mpsc::{channel, Sender};
 use std::thread::JoinHandle;
 use std::time::Duration;
 
-/// Print dots to the given buffer at the given interval
+/// Repeatedly prints `tick` to the given buffer at the given interval. The `start` argument will be printed before the first `tick` and the `end` argument will be printed after the last `tick` when the timer is stopped.
 ///
 /// Returns a struct that allows for manually stopping the timer or will automatically stop
 /// the timer if the guard is dropped. This functionality allows for errors that trigger
@@ -46,7 +46,7 @@ where
     PrintGuard::new(join_handle, sender)
 }
 
-/// Holds the reference to the background printer
+/// Holds the reference to the background printer.
 ///
 /// Ensures that the dot printer is stopped in the event of an error. By signaling
 /// it and joining when this struct is dropped.
@@ -60,7 +60,7 @@ where
 /// documentation in `PrintGuard::stop` below for more details.
 #[derive(Debug)]
 pub(crate) struct PrintGuard<W> {
-    /// Holds the handle to the thread printing dots
+    /// Holds the handle to the thread printing ticks in the background.
     ///
     /// Structs that implement `Drop` must ensure a valid internal state at
     /// all times due to E0509. The handle is wrapped in an option to allow the
@@ -101,7 +101,7 @@ impl<W> PrintGuard<W> {
         guard
     }
 
-    /// The only thing a consumer can do is stop the dots and receive
+    /// The only thing a consumer can do is stop the background printer and receive
     /// the original buffer.
     ///
     /// # Panics
@@ -111,10 +111,10 @@ impl<W> PrintGuard<W> {
     /// To avoid a panic, developers modifying this file must obey the following
     /// rules:
     ///
-    /// - Always consume the struct when accessing the Option value outside of Drop
+    /// - Always consume the struct when accessing the Option value outside of Drop.
     /// - Never construct this struct with a `None` option value.
     ///
-    /// This `Option` wrapping is needed to support a implementing Drop to
+    /// This `Option` wrapping is needed to support implementing Drop to
     /// ensure the printing is stopped. When a struct implements drop it cannot
     /// remove it's internal state due to E0509:
     ///

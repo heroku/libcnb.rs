@@ -574,7 +574,7 @@ impl<W> BuildpackOutput<state::Background<W>>
 where
     W: Write + Send + Sync + 'static,
 {
-    /// Finalize a timer's output
+    /// Finalize a timer's output.
     ///
     /// Once you're finished with your long running task, calling this function
     /// finalizes the timer's output and transitions back to a [`state::Section`].
