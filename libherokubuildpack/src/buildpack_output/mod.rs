@@ -583,6 +583,8 @@ where
         let duration = self.state.started.elapsed();
         let mut io = match self.state.write.stop() {
             Ok(io) => io,
+            // Stdlib docs recommend using `resume_unwind` to resume the thread panic
+            // <https://doc.rust-lang.org/std/thread/type.Result.html>
             Err(e) => std::panic::resume_unwind(e),
         };
 
