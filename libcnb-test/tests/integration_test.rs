@@ -37,7 +37,7 @@ fn build_other_buildpack() {
                 context.pack_stdout,
                 indoc! {"
                     [Discovering process types]
-                    Procfile declares types -> web, worker, echo-args
+                    Procfile declares types -> web, worker
                 "}
             );
         },
@@ -79,7 +79,7 @@ fn build_workspace_composite_buildpack() {
                     Buildpack B
                     
                     [Discovering process types]
-                    Procfile declares types -> web, worker, echo-args
+                    Procfile declares types -> web, worker
                 "}
             );
         },
@@ -103,7 +103,7 @@ fn build_multiple_buildpacks() {
                     Buildpack B
                     
                     [Discovering process types]
-                    Procfile declares types -> web, worker, echo-args
+                    Procfile declares types -> web, worker
                     Buildpack A
                 "}
             );
@@ -484,18 +484,31 @@ fn starting_containers() {
                 },
             );
 
-            // Overriding the default entrypoint, but using the default command.
+            // Overriding the entrypoint only.
             context.start_container(ContainerConfig::new().entrypoint("worker"), |container| {
                 let all_log_output = container.logs_wait();
                 assert_empty!(all_log_output.stderr);
                 assert_eq!(all_log_output.stdout, "this is the worker process!\n");
             });
 
+            // Overriding the command only.
+            context.start_container(
+                // The whole command has to be quoted since the Procfile CNB uses `bash -c`, which
+                // expects the next arg passed to it to be the entire bash command/script. See:
+                // https://github.com/heroku/procfile-cnb/pull/205#discussion_r1505866192
+                ContainerConfig::new().command(["echo 'this is a custom command!'"]),
+                |container| {
+                    let all_log_output = container.logs_wait();
+                    assert_empty!(all_log_output.stderr);
+                    assert_eq!(all_log_output.stdout, "this is a custom command!\n");
+                },
+            );
+
             // Overriding both the entrypoint and command.
             context.start_container(
                 ContainerConfig::new()
-                    .entrypoint("echo-args")
-                    .command(["$GREETING", "$DESIGNATION"])
+                    .entrypoint("launcher")
+                    .command(["echo", "$GREETING", "$DESIGNATION"])
                     .envs([("GREETING", "Hello"), ("DESIGNATION", "World")]),
                 |container| {
                     let all_log_output = container.logs_wait();

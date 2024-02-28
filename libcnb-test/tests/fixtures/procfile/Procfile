@@ -1,3 +1,2 @@
 web: python3 -u -m http.server ${PORT:+"${PORT}"}
 worker: echo 'this is the worker process!'
-echo-args: echo
