@@ -291,7 +291,7 @@ enum Sboms {
 }
 
 /// Does not error if the layer doesn't exist.
-pub(crate) fn delete_layer<P: AsRef<Path>>(
+fn delete_layer<P: AsRef<Path>>(
     layers_dir: P,
     layer_name: &LayerName,
 ) -> Result<(), DeleteLayerError> {
@@ -304,7 +304,7 @@ pub(crate) fn delete_layer<P: AsRef<Path>>(
     Ok(())
 }
 
-pub(crate) fn replace_layer_sboms<P: AsRef<Path>>(
+fn replace_layer_sboms<P: AsRef<Path>>(
     layers_dir: P,
     layer_name: &LayerName,
     sboms: &[Sbom],
@@ -331,7 +331,7 @@ pub(crate) fn replace_layer_sboms<P: AsRef<Path>>(
     Ok(())
 }
 
-pub(crate) fn replace_layer_exec_d_programs<P: AsRef<Path>>(
+fn replace_layer_exec_d_programs<P: AsRef<Path>>(
     layers_dir: P,
     layer_name: &LayerName,
     exec_d_programs: &HashMap<String, PathBuf>,
@@ -372,7 +372,7 @@ pub(crate) fn replace_layer_exec_d_programs<P: AsRef<Path>>(
     Ok(())
 }
 
-pub(crate) fn write_layer_metadata<M: Serialize, P: AsRef<Path>>(
+fn write_layer_metadata<M: Serialize, P: AsRef<Path>>(
     layers_dir: P,
     layer_name: &LayerName,
     layer_content_metadata: &LayerContentMetadata<M>,
@@ -413,7 +413,7 @@ fn write_layer<M: Serialize, P: AsRef<Path>>(
     Ok(())
 }
 
-pub(crate) fn read_layer<M: DeserializeOwned, P: AsRef<Path>>(
+fn read_layer<M: DeserializeOwned, P: AsRef<Path>>(
     layers_dir: P,
     layer_name: &LayerName,
 ) -> Result<Option<LayerData<M>>, ReadLayerError> {
