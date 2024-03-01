@@ -9,10 +9,6 @@ use crate::data::{
 use crate::layer::{HandleLayerErrorOrBuildpackError, Layer, LayerData};
 use crate::sbom::Sbom;
 use crate::target::ContextTarget;
-use libcnb_data::layer_content_metadata::LayerContentMetadata;
-use serde::de::DeserializeOwned;
-use serde::Serialize;
-use std::borrow::Borrow;
 use std::path::PathBuf;
 
 /// Context for the build phase execution.
@@ -110,79 +106,6 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
             }
             HandleLayerErrorOrBuildpackError::BuildpackError(e) => crate::Error::BuildpackError(e),
         })
-    }
-
-    /// Reads the [`LayerData`] for the layer with the given name.
-    ///
-    /// Returns `Ok(None)` is the layer doesn't exist.
-    pub fn read_layer<M>(
-        &self,
-        layer_name: impl Borrow<LayerName>,
-    ) -> crate::Result<Option<LayerData<M>>, B::Error>
-    where
-        M: DeserializeOwned,
-    {
-        crate::layer::read_layer::<M, _>(&self.layers_dir, layer_name.borrow())
-            .map_err(crate::Error::ReadLayerError)
-    }
-
-    /// Writes the given [`LayerContentMetadata`] to the layer with the given name.
-    ///
-    /// If the layer doesn't exist, it will be created.
-    pub fn write_layer_metadata<M>(
-        &self,
-        layer_name: impl Borrow<LayerName>,
-        layer_content_metadata: &LayerContentMetadata<M>,
-    ) -> crate::Result<(), B::Error>
-    where
-        M: Serialize,
-    {
-        crate::layer::write_layer_metadata(
-            &self.layers_dir,
-            layer_name.borrow(),
-            layer_content_metadata,
-        )
-        .map_err(crate::Error::WriteLayerMetadataError)
-    }
-
-    /// Deletes the layer with the given name.
-    ///
-    /// Deletes both the layer directory and any metadata.
-    /// If the layer doesn't exist, this function will not return an error.
-    pub fn delete_layer(&self, layer_name: impl Borrow<LayerName>) -> crate::Result<(), B::Error> {
-        crate::layer::delete_layer(&self.layers_dir, layer_name.borrow())
-            .map_err(crate::Error::DeleteLayerError)
-    }
-
-    /// Replaces all (if any) exec.d programs of the layer with the given name.
-    ///
-    /// Calling this function for a layer that doesn't exist will result in an error.
-    pub fn replace_layer_exec_d_programs<I>(
-        &self,
-        layer_name: impl Borrow<LayerName>,
-        exec_d_programs: I,
-    ) -> crate::Result<(), B::Error>
-    where
-        I: IntoIterator<Item = (String, PathBuf)>,
-    {
-        crate::layer::replace_layer_exec_d_programs(
-            &self.layers_dir,
-            layer_name.borrow(),
-            &exec_d_programs.into_iter().collect(),
-        )
-        .map_err(crate::Error::ReplaceLayerExecdProgramsError)
-    }
-
-    /// Replaces all (if any) SBOMs of the layer with the given name.
-    ///
-    /// Calling this function for a layer that doesn't exist will result in an error.
-    pub fn replace_layer_sboms(
-        &self,
-        layer_name: impl Borrow<LayerName>,
-        sboms: &[Sbom],
-    ) -> crate::Result<(), B::Error> {
-        crate::layer::replace_layer_sboms(&self.layers_dir, layer_name.borrow(), sboms)
-            .map_err(crate::Error::ReplaceLayerSbomsError)
     }
 }
 

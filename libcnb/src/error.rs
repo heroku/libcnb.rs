@@ -1,8 +1,5 @@
 use crate::data::launch::ProcessTypeError;
-use crate::layer::{
-    DeleteLayerError, HandleLayerError, ReadLayerError, ReplaceLayerExecdProgramsError,
-    ReplaceLayerSbomsError, WriteLayerMetadataError,
-};
+use crate::layer::HandleLayerError;
 use libcnb_common::toml_file::TomlFileError;
 use std::fmt::Debug;
 
@@ -16,21 +13,6 @@ pub type Result<T, E> = std::result::Result<T, Error<E>>;
 pub enum Error<E> {
     #[error("HandleLayer error: {0}")]
     HandleLayerError(#[from] HandleLayerError),
-
-    #[error("Couldn't read layer: {0}")]
-    ReadLayerError(#[from] ReadLayerError),
-
-    #[error("Couldn't write layer metadata: {0}")]
-    WriteLayerMetadataError(#[from] WriteLayerMetadataError),
-
-    #[error("Couldn't delete layer: {0}")]
-    DeleteLayerError(#[from] DeleteLayerError),
-
-    #[error("Couldn't replace exec.d programs of layer: {0}")]
-    ReplaceLayerExecdProgramsError(#[from] ReplaceLayerExecdProgramsError),
-
-    #[error("Couldn't replace SBOMs of layer: {0}")]
-    ReplaceLayerSbomsError(#[from] ReplaceLayerSbomsError),
 
     #[error("Process type error: {0}")]
     ProcessTypeError(#[from] ProcessTypeError),
