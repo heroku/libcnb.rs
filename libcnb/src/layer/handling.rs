@@ -128,8 +128,8 @@ fn handle_create_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
             types: Some(layer.types()),
             metadata: layer_result.metadata,
         },
-        ExecDPrograms::Overwrite(layer_result.exec_d_programs),
-        Sboms::Overwrite(layer_result.sboms),
+        ExecDPrograms::Replace(layer_result.exec_d_programs),
+        Sboms::Replace(layer_result.sboms),
     )?;
 
     read_layer(&context.layers_dir, layer_name)?
@@ -154,8 +154,8 @@ fn handle_update_layer<B: Buildpack + ?Sized, L: Layer<Buildpack = B>>(
             types: Some(layer.types()),
             metadata: layer_result.metadata,
         },
-        ExecDPrograms::Overwrite(layer_result.exec_d_programs),
-        Sboms::Overwrite(layer_result.sboms),
+        ExecDPrograms::Replace(layer_result.exec_d_programs),
+        Sboms::Replace(layer_result.sboms),
     )?;
 
     read_layer(&context.layers_dir, &layer_data.name)?
@@ -233,27 +233,61 @@ pub enum ReadLayerError {
 }
 
 #[derive(thiserror::Error, Debug)]
+#[allow(clippy::enum_variant_names)]
 pub enum WriteLayerError {
+    #[error("{0}")]
+    WriteLayerEnvError(#[from] std::io::Error),
+
+    #[error("{0}")]
+    WriteLayerMetadataError(#[from] WriteLayerMetadataError),
+
+    #[error("{0}")]
+    ReplaceLayerExecdProgramsError(#[from] ReplaceLayerExecdProgramsError),
+
+    #[error("{0}")]
+    ReplaceLayerSbomsError(#[from] ReplaceLayerSbomsError),
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum WriteLayerMetadataError {
     #[error("Unexpected I/O error while writing layer metadata: {0}")]
     IoError(#[from] std::io::Error),
 
     #[error("Error while writing layer content metadata TOML: {0}")]
     TomlFileError(#[from] TomlFileError),
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum ReplaceLayerExecdProgramsError {
+    #[error("Unexpected I/O error while replacing layer execd programs: {0}")]
+    IoError(#[from] std::io::Error),
 
     #[error("Couldn't find exec.d file for copying: {0}")]
     MissingExecDFile(PathBuf),
+
+    #[error("Layer doesn't exist: {0}")]
+    MissingLayer(LayerName),
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum ReplaceLayerSbomsError {
+    #[error("Layer doesn't exist: {0}")]
+    MissingLayer(LayerName),
+
+    #[error("Unexpected I/O error while replacing layer SBOMs: {0}")]
+    IoError(#[from] std::io::Error),
 }
 
 #[derive(Debug)]
 enum ExecDPrograms {
     Keep,
-    Overwrite(HashMap<String, PathBuf>),
+    Replace(HashMap<String, PathBuf>),
 }
 
 #[derive(Debug)]
 enum Sboms {
     Keep,
-    Overwrite(Vec<Sbom>),
+    Replace(Vec<Sbom>),
 }
 
 /// Does not error if the layer doesn't exist.
@@ -270,6 +304,88 @@ fn delete_layer<P: AsRef<Path>>(
     Ok(())
 }
 
+fn replace_layer_sboms<P: AsRef<Path>>(
+    layers_dir: P,
+    layer_name: &LayerName,
+    sboms: &[Sbom],
+) -> Result<(), ReplaceLayerSbomsError> {
+    let layers_dir = layers_dir.as_ref();
+
+    if !layers_dir.join(layer_name.as_str()).is_dir() {
+        return Err(ReplaceLayerSbomsError::MissingLayer(layer_name.clone()));
+    }
+
+    for format in SBOM_FORMATS {
+        default_on_not_found(fs::remove_file(cnb_sbom_path(
+            format, layers_dir, layer_name,
+        )))?;
+    }
+
+    for sbom in sboms {
+        fs::write(
+            cnb_sbom_path(&sbom.format, layers_dir, layer_name),
+            &sbom.data,
+        )?;
+    }
+
+    Ok(())
+}
+
+fn replace_layer_exec_d_programs<P: AsRef<Path>>(
+    layers_dir: P,
+    layer_name: &LayerName,
+    exec_d_programs: &HashMap<String, PathBuf>,
+) -> Result<(), ReplaceLayerExecdProgramsError> {
+    let layer_dir = layers_dir.as_ref().join(layer_name.as_str());
+
+    if !layer_dir.is_dir() {
+        return Err(ReplaceLayerExecdProgramsError::MissingLayer(
+            layer_name.clone(),
+        ));
+    }
+
+    let exec_d_dir = layer_dir.join("exec.d");
+
+    if exec_d_dir.is_dir() {
+        fs::remove_dir_all(&exec_d_dir)?;
+    }
+
+    if !exec_d_programs.is_empty() {
+        fs::create_dir_all(&exec_d_dir)?;
+
+        for (name, path) in exec_d_programs {
+            // We could just try to copy the file here and let the call-site deal with the
+            // I/O errors when the path does not exist. We're using an explicit error variant
+            // for a missing exec.d binary makes it easier to debug issues with packaging
+            // since the usage of exec.d binaries often relies on implicit packaging the
+            // buildpack author might not be aware of.
+            Some(&path)
+                .filter(|path| path.exists())
+                .ok_or_else(|| ReplaceLayerExecdProgramsError::MissingExecDFile(path.clone()))
+                .and_then(|path| {
+                    fs::copy(path, exec_d_dir.join(name))
+                        .map_err(ReplaceLayerExecdProgramsError::IoError)
+                })?;
+        }
+    }
+
+    Ok(())
+}
+
+fn write_layer_metadata<M: Serialize, P: AsRef<Path>>(
+    layers_dir: P,
+    layer_name: &LayerName,
+    layer_content_metadata: &LayerContentMetadata<M>,
+) -> Result<(), WriteLayerMetadataError> {
+    let layer_dir = layers_dir.as_ref().join(layer_name.as_str());
+    fs::create_dir_all(layer_dir)?;
+
+    let layer_content_metadata_path = layers_dir.as_ref().join(format!("{layer_name}.toml"));
+    write_toml_file(&layer_content_metadata, layer_content_metadata_path)?;
+
+    Ok(())
+}
+
 /// Updates layer metadata on disk
 fn write_layer<M: Serialize, P: AsRef<Path>>(
     layers_dir: P,
@@ -279,60 +395,19 @@ fn write_layer<M: Serialize, P: AsRef<Path>>(
     layer_exec_d_programs: ExecDPrograms,
     layer_sboms: Sboms,
 ) -> Result<(), WriteLayerError> {
-    let layer_dir = layers_dir.as_ref().join(layer_name.as_str());
-    let layer_content_metadata_path = layers_dir.as_ref().join(format!("{layer_name}.toml"));
+    let layers_dir = layers_dir.as_ref();
 
-    fs::create_dir_all(&layer_dir)?;
-    layer_env.write_to_layer_dir(&layer_dir)?;
-    write_toml_file(&layer_content_metadata, layer_content_metadata_path)?;
+    write_layer_metadata(layers_dir, layer_name, layer_content_metadata)?;
 
-    match layer_sboms {
-        Sboms::Overwrite(layer_sboms) => {
-            for format in SBOM_FORMATS {
-                default_on_not_found(fs::remove_file(cnb_sbom_path(
-                    format,
-                    &layers_dir,
-                    layer_name,
-                )))?;
-            }
+    let layer_dir = layers_dir.join(layer_name.as_str());
+    layer_env.write_to_layer_dir(layer_dir)?;
 
-            for layer_sbom in layer_sboms {
-                fs::write(
-                    cnb_sbom_path(&layer_sbom.format, &layers_dir, layer_name),
-                    &layer_sbom.data,
-                )?;
-            }
-        }
-        Sboms::Keep => {}
+    if let Sboms::Replace(sboms) = layer_sboms {
+        replace_layer_sboms(layers_dir, layer_name, &sboms)?;
     }
 
-    match layer_exec_d_programs {
-        ExecDPrograms::Overwrite(exec_d_programs) => {
-            let exec_d_dir = layer_dir.join("exec.d");
-
-            if exec_d_dir.is_dir() {
-                fs::remove_dir_all(&exec_d_dir)?;
-            }
-
-            if !exec_d_programs.is_empty() {
-                fs::create_dir_all(&exec_d_dir)?;
-
-                for (name, path) in exec_d_programs {
-                    // We could just try to copy the file here and let the call-site deal with the
-                    // I/O errors when the path does not exist. We're using an explicit error variant
-                    // for a missing exec.d binary makes it easier to debug issues with packaging
-                    // since the usage of exec.d binaries often relies on implicit packaging the
-                    // buildpack author might not be aware of.
-                    Some(&path)
-                        .filter(|path| path.exists())
-                        .ok_or_else(|| WriteLayerError::MissingExecDFile(path.clone()))
-                        .and_then(|path| {
-                            fs::copy(path, exec_d_dir.join(name)).map_err(WriteLayerError::IoError)
-                        })?;
-                }
-            }
-        }
-        ExecDPrograms::Keep => {}
+    if let ExecDPrograms::Replace(exec_d_programs) = layer_exec_d_programs {
+        replace_layer_exec_d_programs(layers_dir, layer_name, &exec_d_programs)?;
     }
 
     Ok(())
@@ -484,7 +559,7 @@ mod tests {
                 }),
                 metadata: GenericMetadata::default(),
             },
-            ExecDPrograms::Overwrite(HashMap::from([(String::from("foo"), foo_execd_file)])),
+            ExecDPrograms::Replace(HashMap::from([(String::from("foo"), foo_execd_file)])),
             Sboms::Keep,
         )
         .unwrap();
@@ -533,13 +608,15 @@ mod tests {
                 }),
                 metadata: GenericMetadata::default(),
             },
-            ExecDPrograms::Overwrite(HashMap::from([(String::from("foo"), execd_file.clone())])),
+            ExecDPrograms::Replace(HashMap::from([(String::from("foo"), execd_file.clone())])),
             Sboms::Keep,
         )
         .unwrap_err();
 
         match write_layer_error {
-            WriteLayerError::MissingExecDFile(path) => {
+            WriteLayerError::ReplaceLayerExecdProgramsError(
+                ReplaceLayerExecdProgramsError::MissingExecDFile(path),
+            ) => {
                 assert_eq!(path, execd_file);
             }
             other => {
@@ -587,7 +664,7 @@ mod tests {
                 }),
                 metadata: GenericMetadata::default(),
             },
-            ExecDPrograms::Overwrite(HashMap::from([(String::from("foo"), foo_execd_file)])),
+            ExecDPrograms::Replace(HashMap::from([(String::from("foo"), foo_execd_file)])),
             Sboms::Keep,
         )
         .unwrap();
@@ -611,7 +688,7 @@ mod tests {
                 }),
                 metadata: GenericMetadata::default(),
             },
-            ExecDPrograms::Overwrite(HashMap::from([
+            ExecDPrograms::Replace(HashMap::from([
                 (String::from("bar"), bar_execd_file),
                 (String::from("baz"), baz_execd_file),
             ])),
@@ -708,7 +785,7 @@ mod tests {
                 }),
                 metadata: GenericMetadata::default(),
             },
-            ExecDPrograms::Overwrite(HashMap::from([(String::from("foo"), foo_execd_file)])),
+            ExecDPrograms::Replace(HashMap::from([(String::from("foo"), foo_execd_file)])),
             Sboms::Keep,
         )
         .unwrap();
@@ -764,7 +841,7 @@ mod tests {
                 }),
                 metadata: GenericMetadata::default(),
             },
-            ExecDPrograms::Overwrite(HashMap::from([(String::from("foo"), foo_execd_file)])),
+            ExecDPrograms::Replace(HashMap::from([(String::from("foo"), foo_execd_file)])),
             Sboms::Keep,
         )
         .unwrap();
@@ -786,7 +863,7 @@ mod tests {
                 }),
                 metadata: GenericMetadata::default(),
             },
-            ExecDPrograms::Overwrite(HashMap::new()),
+            ExecDPrograms::Replace(HashMap::new()),
             Sboms::Keep,
         )
         .unwrap();
