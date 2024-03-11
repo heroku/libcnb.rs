@@ -233,28 +233,28 @@ pub enum ReadLayerError {
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum WriteLayerMetadataError {
-    #[error("Unexpected I/O error while writing layer metadata: {0}")]
-    IoError(#[from] std::io::Error),
-
-    #[error("Error while writing layer content metadata TOML: {0}")]
-    TomlFileError(#[from] TomlFileError),
-}
-
-#[derive(thiserror::Error, Debug)]
 #[allow(clippy::enum_variant_names)]
 pub enum WriteLayerError {
     #[error("{0}")]
     WriteLayerEnvError(#[from] std::io::Error),
 
     #[error("{0}")]
-    ReplaceLayerSbomsError(#[from] ReplaceLayerSbomsError),
-
-    #[error("{0}")]
     WriteLayerMetadataError(#[from] WriteLayerMetadataError),
 
     #[error("{0}")]
     ReplaceLayerExecdProgramsError(#[from] ReplaceLayerExecdProgramsError),
+
+    #[error("{0}")]
+    ReplaceLayerSbomsError(#[from] ReplaceLayerSbomsError),
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum WriteLayerMetadataError {
+    #[error("Unexpected I/O error while writing layer metadata: {0}")]
+    IoError(#[from] std::io::Error),
+
+    #[error("Error while writing layer content metadata TOML: {0}")]
+    TomlFileError(#[from] TomlFileError),
 }
 
 #[derive(thiserror::Error, Debug)]
