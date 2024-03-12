@@ -1,16 +1,19 @@
 // This lint triggers when both layer_dir and layers_dir are present which are quite common.
 #![allow(clippy::similar_names)]
 
+use super::public_interface::Layer;
 use crate::build::BuildContext;
 use crate::data::layer::LayerName;
 use crate::data::layer_content_metadata::LayerContentMetadata;
 use crate::generic::GenericMetadata;
-use crate::layer::{ExistingLayerStrategy, Layer, LayerData, MetadataMigration};
+use crate::layer::{ExistingLayerStrategy, LayerData, MetadataMigration};
 use crate::layer_env::LayerEnv;
 use crate::sbom::{cnb_sbom_path, Sbom};
 use crate::util::{default_on_not_found, remove_dir_recursively};
 use crate::Buildpack;
 use crate::{write_toml_file, TomlFileError};
+use libcnb_common::toml_file::read_toml_file;
+use libcnb_data::layer_content_metadata::LayerTypes;
 use libcnb_data::sbom::SBOM_FORMATS;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -279,19 +282,19 @@ pub enum ReplaceLayerSbomsError {
 }
 
 #[derive(Debug)]
-enum ExecDPrograms {
+pub(in crate::layer) enum ExecDPrograms {
     Keep,
     Replace(HashMap<String, PathBuf>),
 }
 
 #[derive(Debug)]
-enum Sboms {
+pub(in crate::layer) enum Sboms {
     Keep,
     Replace(Vec<Sbom>),
 }
 
 /// Does not error if the layer doesn't exist.
-fn delete_layer<P: AsRef<Path>>(
+pub(in crate::layer) fn delete_layer<P: AsRef<Path>>(
     layers_dir: P,
     layer_name: &LayerName,
 ) -> Result<(), DeleteLayerError> {
@@ -304,7 +307,7 @@ fn delete_layer<P: AsRef<Path>>(
     Ok(())
 }
 
-fn replace_layer_sboms<P: AsRef<Path>>(
+pub(in crate::layer) fn replace_layer_sboms<P: AsRef<Path>>(
     layers_dir: P,
     layer_name: &LayerName,
     sboms: &[Sbom],
@@ -331,7 +334,7 @@ fn replace_layer_sboms<P: AsRef<Path>>(
     Ok(())
 }
 
-fn replace_layer_exec_d_programs<P: AsRef<Path>>(
+pub(in crate::layer) fn replace_layer_exec_d_programs<P: AsRef<Path>>(
     layers_dir: P,
     layer_name: &LayerName,
     exec_d_programs: &HashMap<String, PathBuf>,
@@ -372,7 +375,7 @@ fn replace_layer_exec_d_programs<P: AsRef<Path>>(
     Ok(())
 }
 
-fn write_layer_metadata<M: Serialize, P: AsRef<Path>>(
+pub(in crate::layer) fn write_layer_metadata<M: Serialize, P: AsRef<Path>>(
     layers_dir: P,
     layer_name: &LayerName,
     layer_content_metadata: &LayerContentMetadata<M>,
@@ -387,7 +390,7 @@ fn write_layer_metadata<M: Serialize, P: AsRef<Path>>(
 }
 
 /// Updates layer metadata on disk
-fn write_layer<M: Serialize, P: AsRef<Path>>(
+pub(in crate::layer) fn write_layer<M: Serialize, P: AsRef<Path>>(
     layers_dir: P,
     layer_name: &LayerName,
     layer_env: &LayerEnv,
@@ -413,7 +416,7 @@ fn write_layer<M: Serialize, P: AsRef<Path>>(
     Ok(())
 }
 
-fn read_layer<M: DeserializeOwned, P: AsRef<Path>>(
+pub(crate) fn read_layer<M: DeserializeOwned, P: AsRef<Path>>(
     layers_dir: P,
     layer_name: &LayerName,
 ) -> Result<Option<LayerData<M>>, ReadLayerError> {
@@ -446,6 +449,7 @@ fn read_layer<M: DeserializeOwned, P: AsRef<Path>>(
     }
 
     let layer_toml_contents = fs::read_to_string(&layer_toml_path)?;
+
     let layer_content_metadata = toml::from_str::<LayerContentMetadata<M>>(&layer_toml_contents)
         .map_err(ReadLayerError::LayerContentMetadataParseError)?;
 
@@ -457,6 +461,40 @@ fn read_layer<M: DeserializeOwned, P: AsRef<Path>>(
         env: layer_env,
         content_metadata: layer_content_metadata,
     }))
+}
+
+pub(crate) fn replace_layer_types<P: AsRef<Path>>(
+    layers_dir: P,
+    layer_name: &LayerName,
+    layer_types: LayerTypes,
+) -> Result<(), WriteLayerMetadataError> {
+    let layer_content_metadata_path = layers_dir.as_ref().join(format!("{layer_name}.toml"));
+
+    let mut content_metadata =
+        read_toml_file::<LayerContentMetadata>(&layer_content_metadata_path)?;
+    content_metadata.types = Some(layer_types);
+
+    write_toml_file(&content_metadata, &layer_content_metadata_path)
+        .map_err(WriteLayerMetadataError::TomlFileError)
+}
+
+pub(crate) fn replace_layer_metadata<M: Serialize, P: AsRef<Path>>(
+    layers_dir: P,
+    layer_name: &LayerName,
+    metadata: M,
+) -> Result<(), WriteLayerMetadataError> {
+    let layer_content_metadata_path = layers_dir.as_ref().join(format!("{layer_name}.toml"));
+
+    let content_metadata = read_toml_file::<LayerContentMetadata>(&layer_content_metadata_path)?;
+
+    write_toml_file(
+        &LayerContentMetadata {
+            types: content_metadata.types,
+            metadata,
+        },
+        &layer_content_metadata_path,
+    )
+    .map_err(WriteLayerMetadataError::TomlFileError)
 }
 
 #[cfg(test)]
