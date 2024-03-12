@@ -103,6 +103,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     ///     }
     /// }
     /// ```
+    #[deprecated = "The Layer trait API was replaced by LayerDefinitions. Use `cached_layer` and `uncached_layer`."]
     pub fn handle_layer<L: Layer<Buildpack = B>>(
         &self,
         layer_name: LayerName,

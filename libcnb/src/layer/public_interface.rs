@@ -16,6 +16,7 @@ use std::path::{Path, PathBuf};
 /// depending on its state. To use a `Layer` implementation during build, use
 /// [`BuildContext::handle_layer`](crate::build::BuildContext::handle_layer).
 #[allow(unused_variables)]
+#[deprecated = "The Layer trait API was replaced by LayerDefinitions and will be removed soon."]
 pub trait Layer {
     /// The buildpack this layer is used with.
     type Buildpack: Buildpack;
@@ -135,6 +136,7 @@ pub trait Layer {
 
 /// The result of a [`Layer::existing_layer_strategy`] call.
 #[derive(Eq, PartialEq, Clone, Copy, Debug)]
+#[deprecated = "The Layer trait API was replaced by LayerDefinitions and will be removed soon."]
 pub enum ExistingLayerStrategy {
     /// The existing layer should not be modified.
     Keep,
@@ -145,6 +147,7 @@ pub enum ExistingLayerStrategy {
 }
 
 /// The result of a [`Layer::migrate_incompatible_metadata`] call.
+#[deprecated = "The Layer trait API was replaced by LayerDefinitions and will be removed soon."]
 pub enum MetadataMigration<M> {
     /// The layer should be recreated entirely.
     RecreateLayer,
@@ -153,6 +156,7 @@ pub enum MetadataMigration<M> {
 }
 
 /// Information about an existing CNB layer.
+#[deprecated = "The Layer trait API was replaced by LayerDefinitions and will be removed soon."]
 pub struct LayerData<M> {
     pub name: LayerName,
     /// The layer's path, should not be modified outside of a [`Layer`] implementation.
@@ -165,6 +169,7 @@ pub struct LayerData<M> {
 ///
 /// Essentially, this carries additional metadata about a layer this later persisted according
 /// to the CNB spec by libcnb.
+#[deprecated = "The Layer trait API was replaced by LayerDefinitions and will be removed soon."]
 pub struct LayerResult<M> {
     pub metadata: M,
     pub env: Option<LayerEnv>,
@@ -173,6 +178,7 @@ pub struct LayerResult<M> {
 }
 
 /// A builder that simplifies the creation of [`LayerResult`] values.
+#[deprecated = "The Layer trait API was replaced by LayerDefinitions and will be removed soon."]
 pub struct LayerResultBuilder<M> {
     metadata: M,
     env: Option<LayerEnv>,
