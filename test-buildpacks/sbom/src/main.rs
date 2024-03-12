@@ -1,13 +1,12 @@
-mod test_layer;
-mod test_layer_2;
-
-use crate::test_layer::TestLayer;
-use crate::test_layer_2::TestLayer2;
 use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
 use libcnb::data::layer_name;
 use libcnb::data::sbom::SbomFormat;
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::generic::{GenericMetadata, GenericPlatform};
+use libcnb::layer::{
+    CachedLayerDefinition, InspectExistingAction, InvalidMetadataAction, LayerContents,
+    UncachedLayerDefinition,
+};
 use libcnb::sbom::Sbom;
 use libcnb::{buildpack_main, Buildpack};
 
@@ -27,8 +26,53 @@ impl Buildpack for TestBuildpack {
     }
 
     fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildResult, Self::Error> {
-        context.handle_layer(layer_name!("test"), TestLayer)?;
-        context.handle_layer(layer_name!("test2"), TestLayer2)?;
+        let test_layer = context.cached_layer(
+            layer_name!("test"),
+            CachedLayerDefinition {
+                build: true,
+                launch: true,
+                invalid_metadata: &|_| InvalidMetadataAction::DeleteLayer,
+                inspect_existing: &|_: &GenericMetadata, _| InspectExistingAction::Keep,
+            },
+        )?;
+
+        test_layer.replace_sboms(&[
+            Sbom::from_bytes(
+                SbomFormat::CycloneDxJson,
+                *include_bytes!("../etc/cyclonedx_3.sbom.json"),
+            ),
+            Sbom::from_bytes(
+                SbomFormat::SpdxJson,
+                *include_bytes!("../etc/spdx_3.sbom.json"),
+            ),
+            Sbom::from_bytes(
+                SbomFormat::SyftJson,
+                *include_bytes!("../etc/syft_3.sbom.json"),
+            ),
+        ])?;
+
+        let test_layer2 = context.uncached_layer(
+            layer_name!("test2"),
+            UncachedLayerDefinition {
+                build: true,
+                launch: true,
+            },
+        )?;
+
+        test_layer2.replace_sboms(&[
+            Sbom::from_bytes(
+                SbomFormat::CycloneDxJson,
+                *include_bytes!("../etc/cyclonedx_2.sbom.json"),
+            ),
+            Sbom::from_bytes(
+                SbomFormat::SpdxJson,
+                *include_bytes!("../etc/spdx_2.sbom.json"),
+            ),
+            Sbom::from_bytes(
+                SbomFormat::SyftJson,
+                *include_bytes!("../etc/syft_2.sbom.json"),
+            ),
+        ])?;
 
         BuildResultBuilder::new()
             .launch_sbom(Sbom::from_bytes(
