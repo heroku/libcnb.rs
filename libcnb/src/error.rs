@@ -1,4 +1,5 @@
 use crate::data::launch::ProcessTypeError;
+use crate::layer::execute::ExecuteLayerDefinitionError;
 use crate::layer::HandleLayerError;
 use libcnb_common::toml_file::TomlFileError;
 use std::fmt::Debug;
@@ -13,6 +14,9 @@ pub type Result<T, E> = std::result::Result<T, Error<E>>;
 pub enum Error<E> {
     #[error("HandleLayer error: {0}")]
     HandleLayerError(#[from] HandleLayerError),
+
+    #[error("ExecuteLayerDefinitionError error: {0}")]
+    ExecuteLayerDefinitionError(#[from] ExecuteLayerDefinitionError),
 
     #[error("Process type error: {0}")]
     ProcessTypeError(#[from] ProcessTypeError),

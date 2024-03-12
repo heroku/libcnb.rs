@@ -6,9 +6,17 @@ use crate::data::store::Store;
 use crate::data::{
     buildpack::ComponentBuildpackDescriptor, buildpack_plan::BuildpackPlan, launch::Launch,
 };
-use crate::layer::{HandleLayerErrorOrBuildpackError, Layer, LayerData};
+use crate::layer::{
+    CachedLayerDefinition, HandleLayerErrorOrBuildpackError, InspectExistingAction, IntoAction,
+    InvalidMetadataAction, Layer, LayerData, LayerRef, UncachedLayerDefinition,
+};
 use crate::sbom::Sbom;
 use crate::target::ContextTarget;
+use libcnb_data::generic::GenericMetadata;
+use libcnb_data::layer_content_metadata::LayerTypes;
+use serde::de::DeserializeOwned;
+use serde::Serialize;
+use std::borrow::Borrow;
 use std::path::PathBuf;
 
 /// Context for the build phase execution.
@@ -24,7 +32,7 @@ pub struct BuildContext<B: Buildpack + ?Sized> {
 }
 
 impl<B: Buildpack + ?Sized> BuildContext<B> {
-    /// Handles the given [`Layer`] implementation in this context.
+    /// Handles the given [`LayerRef`] implementation in this context.
     ///
     /// It will ensure that the layer with the given name is created and/or updated accordingly and
     /// handles all errors that can occur during the process. After this method has executed, the
@@ -40,7 +48,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     /// # use libcnb::data::layer_content_metadata::LayerTypes;
     /// # use libcnb::detect::{DetectContext, DetectResult};
     /// # use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};
-    /// # use libcnb::layer::{Layer, LayerResult, LayerResultBuilder};
+    /// # use libcnb::layer::{Layer, LayerRef, LayerResultBuilder, LayerResult};
     /// # use libcnb::Buildpack;
     /// # use serde::Deserialize;
     /// # use serde::Serialize;
@@ -106,6 +114,51 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
             }
             HandleLayerErrorOrBuildpackError::BuildpackError(e) => crate::Error::BuildpackError(e),
         })
+    }
+
+    pub fn uncached_layer(
+        &self,
+        layer_name: LayerName,
+        layer_definition: impl Borrow<UncachedLayerDefinition>,
+    ) -> crate::Result<LayerRef<B, (), ()>, B::Error> {
+        let layer_definition = layer_definition.borrow();
+
+        crate::layer::execute(
+            LayerTypes {
+                launch: layer_definition.launch,
+                build: layer_definition.build,
+                cache: false,
+            },
+            &|_| InvalidMetadataAction::DeleteLayer,
+            &|_: &GenericMetadata, _| InspectExistingAction::Delete,
+            layer_name,
+            &self.layers_dir,
+        )
+    }
+
+    pub fn cached_layer<'a, M, X, Y, O, I>(
+        &self,
+        layer_name: LayerName,
+        layer_definition: impl Borrow<CachedLayerDefinition<'a, M, O, I>>,
+    ) -> crate::Result<LayerRef<B, X, Y>, B::Error>
+    where
+        M: 'a + Serialize + DeserializeOwned,
+        O: 'a + IntoAction<InvalidMetadataAction<M>, X, B::Error>,
+        I: 'a + IntoAction<InspectExistingAction, Y, B::Error>,
+    {
+        let layer_definition = layer_definition.borrow();
+
+        crate::layer::execute(
+            LayerTypes {
+                launch: layer_definition.launch,
+                build: layer_definition.build,
+                cache: true,
+            },
+            layer_definition.invalid_metadata,
+            layer_definition.inspect_existing,
+            layer_name,
+            &self.layers_dir,
+        )
     }
 }
 
