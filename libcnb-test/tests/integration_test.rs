@@ -495,7 +495,7 @@ fn starting_containers() {
             context.start_container(
                 // The whole command has to be quoted since the Procfile CNB uses `bash -c`, which
                 // expects the next arg passed to it to be the entire bash command/script. See:
-                // https://github.com/heroku/procfile-cnb/pull/205#discussion_r1505866192
+                // https://github.com/heroku/buildpacks-procfile/pull/205#discussion_r1505866192
                 ContainerConfig::new().command(["echo 'this is a custom command!'"]),
                 |container| {
                     let all_log_output = container.logs_wait();
