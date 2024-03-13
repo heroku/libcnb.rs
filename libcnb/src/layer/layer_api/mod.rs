@@ -10,12 +10,17 @@ use serde::Serialize;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
+mod handling;
+#[cfg(test)]
+mod tests;
+
 /// Represents a buildpack layer written with the libcnb framework.
 ///
 /// Buildpack authors implement this trait to define how a layer is created/updated/removed
 /// depending on its state. To use a `Layer` implementation during build, use
 /// [`BuildContext::handle_layer`](crate::build::BuildContext::handle_layer).
 #[allow(unused_variables)]
+#[deprecated = "The Layer trait API was replaced by LayerDefinitions and will be removed soon."]
 pub trait Layer {
     /// The buildpack this layer is used with.
     type Buildpack: Buildpack;
@@ -135,6 +140,7 @@ pub trait Layer {
 
 /// The result of a [`Layer::existing_layer_strategy`] call.
 #[derive(Eq, PartialEq, Clone, Copy, Debug)]
+#[deprecated = "The Layer trait API was replaced by LayerDefinitions and will be removed soon."]
 pub enum ExistingLayerStrategy {
     /// The existing layer should not be modified.
     Keep,
@@ -145,6 +151,7 @@ pub enum ExistingLayerStrategy {
 }
 
 /// The result of a [`Layer::migrate_incompatible_metadata`] call.
+#[deprecated = "The Layer trait API was replaced by LayerDefinitions and will be removed soon."]
 pub enum MetadataMigration<M> {
     /// The layer should be recreated entirely.
     RecreateLayer,
@@ -153,6 +160,7 @@ pub enum MetadataMigration<M> {
 }
 
 /// Information about an existing CNB layer.
+#[deprecated = "The Layer trait API was replaced by LayerDefinitions and will be removed soon."]
 pub struct LayerData<M> {
     pub name: LayerName,
     /// The layer's path, should not be modified outside of a [`Layer`] implementation.
@@ -165,6 +173,7 @@ pub struct LayerData<M> {
 ///
 /// Essentially, this carries additional metadata about a layer this later persisted according
 /// to the CNB spec by libcnb.
+#[deprecated = "The Layer trait API was replaced by LayerDefinitions and will be removed soon."]
 pub struct LayerResult<M> {
     pub metadata: M,
     pub env: Option<LayerEnv>,
@@ -173,6 +182,7 @@ pub struct LayerResult<M> {
 }
 
 /// A builder that simplifies the creation of [`LayerResult`] values.
+#[deprecated = "The Layer trait API was replaced by LayerDefinitions and will be removed soon."]
 pub struct LayerResultBuilder<M> {
     metadata: M,
     env: Option<LayerEnv>,
@@ -255,8 +265,8 @@ impl<M> LayerResultBuilder<M> {
     ///
     /// This method returns the [`LayerResult`] wrapped in a [`Result`] even though its technically
     /// not fallible. This is done to simplify using this method in the contexts it's most often
-    /// used in: a layer's [create](crate::layer::Layer::create) and/or
-    /// [update](crate::layer::Layer::update) methods.
+    /// used in: a layer's [create](crate::layer::LayerRef::create) and/or
+    /// [update](crate::layer::LayerRef::update) methods.
     ///
     /// See [`build_unwrapped`](Self::build_unwrapped) for an unwrapped version of this method.
     pub fn build<E>(self) -> Result<LayerResult<M>, E> {
