@@ -1,12 +1,8 @@
 //! Provides types and helpers to work with layers.
 
-mod handling;
-mod public_interface;
+mod layer_api;
+pub(in crate::layer) mod shared;
+mod struct_api;
 
-pub(crate) mod struct_api;
-#[cfg(test)]
-mod tests;
-
-pub(crate) use handling::*;
-pub use public_interface::*;
+pub use layer_api::*;
 pub use struct_api::*;

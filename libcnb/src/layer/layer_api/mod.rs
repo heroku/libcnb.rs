@@ -10,6 +10,10 @@ use serde::Serialize;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
+mod handling;
+#[cfg(test)]
+mod tests;
+
 /// Represents a buildpack layer written with the libcnb framework.
 ///
 /// Buildpack authors implement this trait to define how a layer is created/updated/removed
