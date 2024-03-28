@@ -10,7 +10,6 @@ use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::generic::{GenericMetadata, GenericPlatform};
 use libcnb::sbom::Sbom;
 use libcnb::{buildpack_main, Buildpack};
-use std::io::Error;
 
 // Suppress warnings due to the `unused_crate_dependencies` lint not handling integration tests well.
 #[cfg(test)]
@@ -61,14 +60,6 @@ impl Buildpack for TestBuildpack {
 }
 
 #[derive(Debug)]
-pub(crate) enum TestBuildpackError {
-    IOError(std::io::Error),
-}
-
-impl From<std::io::Error> for TestBuildpackError {
-    fn from(io_error: Error) -> Self {
-        Self::IOError(io_error)
-    }
-}
+enum TestBuildpackError {}
 
 buildpack_main!(TestBuildpack);
