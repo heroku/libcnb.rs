@@ -3,7 +3,6 @@ use libcnb::data::store::Store;
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::generic::{GenericMetadata, GenericPlatform};
 use libcnb::{buildpack_main, Buildpack};
-use std::io::Error;
 use toml::toml;
 
 // Suppress warnings due to the `unused_crate_dependencies` lint not handling integration tests well.
@@ -35,14 +34,6 @@ impl Buildpack for TestBuildpack {
 }
 
 #[derive(Debug)]
-pub(crate) enum TestBuildpackError {
-    IOError(std::io::Error),
-}
-
-impl From<std::io::Error> for TestBuildpackError {
-    fn from(io_error: Error) -> Self {
-        Self::IOError(io_error)
-    }
-}
+enum TestBuildpackError {}
 
 buildpack_main!(TestBuildpack);

@@ -29,14 +29,15 @@ impl Layer for TestLayer {
         layer_path: &Path,
     ) -> Result<LayerResult<Self::Metadata>, <Self::Buildpack as Buildpack>::Error> {
         let directory = layer_path.join("sub_directory");
-        fs::create_dir_all(&directory)?;
+        fs::create_dir_all(&directory).expect("Couldn't create subdirectory");
 
-        fs::write(directory.join("foo.txt"), "hello world!")?;
+        fs::write(directory.join("foo.txt"), "hello world!").expect("Couldn't write file");
 
         // By making the sub-directory read-only, files inside it cannot be deleted. This would
         // cause issues when libcnb.rs tries to delete a cached layer directory unless libcnb.rs
         // handles this case explicitly.
-        fs::set_permissions(&directory, Permissions::from_mode(0o555))?;
+        fs::set_permissions(&directory, Permissions::from_mode(0o555))
+            .expect("Couldn't set permissions to read-only");
 
         LayerResultBuilder::new(GenericMetadata::default()).build()
     }

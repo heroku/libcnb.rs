@@ -68,7 +68,7 @@ impl Layer for TestLayer {
             layer_path.join(TEST_LAYER_CREATE_FILE_NAME),
             TEST_LAYER_CREATE_FILE_CONTENTS,
         )
-        .map_err(TestBuildpackError::IoError)?;
+        .expect("Couldn't write file");
 
         LayerResultBuilder::new(TestLayerMetadata {
             version: self.write_version.clone(),
@@ -94,7 +94,7 @@ impl Layer for TestLayer {
             layer_data.path.join(TEST_LAYER_UPDATE_FILE_NAME),
             TEST_LAYER_UPDATE_FILE_CONTENTS,
         )
-        .map_err(TestBuildpackError::IoError)?;
+        .expect("Couldn't write file");
 
         LayerResultBuilder::new(layer_data.content_metadata.metadata.clone()).build()
     }
@@ -955,6 +955,4 @@ impl Buildpack for TestBuildpack {
 }
 
 #[derive(Debug)]
-enum TestBuildpackError {
-    IoError(std::io::Error),
-}
+enum TestBuildpackError {}
