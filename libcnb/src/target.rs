@@ -25,12 +25,12 @@ pub struct ContextTarget {
     ///
     /// For example: `ubuntu` or `alpine`.
     ///
-    /// CNB `lifecycle` sources this value from the build OCI image's `io.buildpacks.distro.name` label.
+    /// CNB `lifecycle` sources this value from the build OCI image's `io.buildpacks.base.distro.name` label.
     pub distro_name: Option<String>,
     /// The version of the operating system distribution.
     ///
     /// For example: `18.02` or `3.19`.
     ///
-    /// CNB `lifecycle` sources this value from the build OCI image's `io.buildpacks.distro.version` label.
+    /// CNB `lifecycle` sources this value from the build OCI image's `io.buildpacks.base.distro.version` label.
     pub distro_version: Option<String>,
 }

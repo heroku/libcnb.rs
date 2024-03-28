@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `libcnb`:
   - `WriteLayerError` changed to contain more specific error enums instead of generic ones. ([#786](https://github.com/heroku/libcnb.rs/pull/786))
 
+### Fixed
+
+- `libcnb`
+  - Fixed the Docker label names mentioned in the rustdocs for `ContextTarget`'s `distro_name` and `distro_version`. ([#811](https://github.com/heroku/libcnb.rs/pull/811))
+
 ## [0.19.0] - 2024-02-23
 
 ### Added
