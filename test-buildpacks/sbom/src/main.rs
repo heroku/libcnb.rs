@@ -4,7 +4,7 @@ use libcnb::data::sbom::SbomFormat;
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::generic::{GenericMetadata, GenericPlatform};
 use libcnb::layer::{
-    CachedLayerDefinition, InspectExistingAction, InvalidMetadataAction, LayerContents,
+    CachedLayerDefinition, InspectExistingAction, InvalidMetadataAction,
     UncachedLayerDefinition,
 };
 use libcnb::sbom::Sbom;

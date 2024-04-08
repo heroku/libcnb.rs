@@ -1,3 +1,7 @@
+// The whole API is deprecated and relies on itself for implementation. To avoid necessary warnings,
+// the use of deprecated code is allowed in this module.
+#![allow(deprecated)]
+
 use crate::build::BuildContext;
 use crate::data::layer::LayerName;
 use crate::data::layer_content_metadata::{LayerContentMetadata, LayerTypes};
@@ -10,7 +14,7 @@ use serde::Serialize;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-mod handling;
+pub(crate) mod handling;
 #[cfg(test)]
 mod tests;
 

@@ -1,7 +1,7 @@
 pub(crate) mod execute;
 
-use crate::layer::handling::{replace_layer_exec_d_programs, replace_layer_sboms};
-use crate::layer::{HandleLayerError, WriteLayerError};
+use crate::layer::shared::{replace_layer_exec_d_programs, replace_layer_sboms, WriteLayerError};
+use crate::layer::LayerError;
 use crate::layer_env::LayerEnv;
 use crate::sbom::Sbom;
 use crate::Buildpack;
@@ -129,26 +129,23 @@ where
     where
         M: Serialize,
     {
-        crate::layer::replace_layer_metadata(&self.layers_dir, &self.name, metadata).map_err(
-            |error| {
-                crate::Error::HandleLayerError(HandleLayerError::WriteLayerError(
+        crate::layer::shared::replace_layer_metadata(&self.layers_dir, &self.name, metadata)
+            .map_err(|error| {
+                crate::Error::LayerError(LayerError::WriteLayerError(
                     WriteLayerError::WriteLayerMetadataError(error),
                 ))
-            },
-        )
+            })
     }
 
-    pub fn replace_env(&self, env: LayerEnv) -> crate::Result<(), B::Error> {
-        env.write_to_layer_dir(self.path()).map_err(|a| {
-            crate::Error::HandleLayerError(HandleLayerError::WriteLayerError(
-                WriteLayerError::WriteLayerEnvError(a),
-            ))
+    pub fn replace_env(&self, env: &LayerEnv) -> crate::Result<(), B::Error> {
+        env.write_to_layer_dir(self.path()).map_err(|error| {
+            crate::Error::LayerError(LayerError::WriteLayerError(WriteLayerError::IoError(error)))
         })
     }
 
     pub fn replace_sboms(&self, sboms: &[Sbom]) -> crate::Result<(), B::Error> {
         replace_layer_sboms(&self.layers_dir, &self.name, sboms).map_err(|error| {
-            crate::Error::HandleLayerError(HandleLayerError::WriteLayerError(
+            crate::Error::LayerError(LayerError::WriteLayerError(
                 WriteLayerError::ReplaceLayerSbomsError(error),
             ))
         })
@@ -165,7 +162,7 @@ where
             .collect::<HashMap<_, _>>();
 
         replace_layer_exec_d_programs(&self.layers_dir, &self.name, &programs).map_err(|error| {
-            crate::Error::HandleLayerError(HandleLayerError::WriteLayerError(
+            crate::Error::LayerError(LayerError::WriteLayerError(
                 WriteLayerError::ReplaceLayerExecdProgramsError(error),
             ))
         })
