@@ -26,4 +26,6 @@ use indoc as _;
 #[cfg(test)]
 use libcnb as _;
 #[cfg(test)]
+use regex_lite as _;
+#[cfg(test)]
 use ureq as _;
