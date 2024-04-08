@@ -1,12 +1,15 @@
 // This lint triggers when both layer_dir and layers_dir are present which are quite common.
 #![allow(clippy::similar_names)]
 
+use crate::sbom::{cnb_sbom_path, Sbom};
 use crate::util::{default_on_not_found, remove_dir_recursively};
 use libcnb_common::toml_file::{read_toml_file, write_toml_file, TomlFileError};
 use libcnb_data::layer::LayerName;
 use libcnb_data::layer_content_metadata::{LayerContentMetadata, LayerTypes};
+use libcnb_data::sbom::SBOM_FORMATS;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -77,15 +80,23 @@ pub(in crate::layer) fn write_layer<M: Serialize, P: AsRef<Path>>(
 ) -> Result<(), WriteLayerError> {
     let layers_dir = layers_dir.as_ref();
     fs::create_dir_all(layers_dir.join(layer_name.as_str()))?;
-    replace_layer_metadata(layers_dir, layer_name, layer_content_metadata)?;
+    replace_layer_metadata(layers_dir, layer_name, layer_content_metadata)
+        .map_err(WriteLayerError::WriteLayerMetadataError)?;
 
     Ok(())
 }
 
 #[derive(thiserror::Error, Debug)]
+#[allow(clippy::enum_variant_names)]
 pub enum WriteLayerError {
     #[error("Layer content metadata couldn't be parsed!")]
     WriteLayerMetadataError(WriteLayerMetadataError),
+
+    #[error("TODO")]
+    ReplaceLayerSbomsError(ReplaceLayerSbomsError),
+
+    #[error("TODO")]
+    ReplaceLayerExecdProgramsError(ReplaceLayerExecdProgramsError),
 
     #[error("Unexpected I/O error while writing layer: {0}")]
     IoError(#[from] std::io::Error),
@@ -145,6 +156,95 @@ pub(crate) fn replace_layer_types<P: AsRef<Path>>(
         .map_err(WriteLayerMetadataError::TomlFileError)
 }
 
+pub(crate) fn replace_layer_sboms<P: AsRef<Path>>(
+    layers_dir: P,
+    layer_name: &LayerName,
+    sboms: &[Sbom],
+) -> Result<(), ReplaceLayerSbomsError> {
+    let layers_dir = layers_dir.as_ref();
+
+    if !layers_dir.join(layer_name.as_str()).is_dir() {
+        return Err(ReplaceLayerSbomsError::MissingLayer(layer_name.clone()));
+    }
+
+    for format in SBOM_FORMATS {
+        default_on_not_found(fs::remove_file(cnb_sbom_path(
+            format, layers_dir, layer_name,
+        )))?;
+    }
+
+    for sbom in sboms {
+        fs::write(
+            cnb_sbom_path(&sbom.format, layers_dir, layer_name),
+            &sbom.data,
+        )?;
+    }
+
+    Ok(())
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum ReplaceLayerSbomsError {
+    #[error("Layer doesn't exist: {0}")]
+    MissingLayer(LayerName),
+
+    #[error("Unexpected I/O error while replacing layer SBOMs: {0}")]
+    IoError(#[from] std::io::Error),
+}
+
+pub(in crate::layer) fn replace_layer_exec_d_programs<P: AsRef<Path>>(
+    layers_dir: P,
+    layer_name: &LayerName,
+    exec_d_programs: &HashMap<String, PathBuf>,
+) -> Result<(), ReplaceLayerExecdProgramsError> {
+    let layer_dir = layers_dir.as_ref().join(layer_name.as_str());
+
+    if !layer_dir.is_dir() {
+        return Err(ReplaceLayerExecdProgramsError::MissingLayer(
+            layer_name.clone(),
+        ));
+    }
+
+    let exec_d_dir = layer_dir.join("exec.d");
+
+    if exec_d_dir.is_dir() {
+        fs::remove_dir_all(&exec_d_dir)?;
+    }
+
+    if !exec_d_programs.is_empty() {
+        fs::create_dir_all(&exec_d_dir)?;
+
+        for (name, path) in exec_d_programs {
+            // We could just try to copy the file here and let the call-site deal with the
+            // I/O errors when the path does not exist. We're using an explicit error variant
+            // for a missing exec.d binary makes it easier to debug issues with packaging
+            // since the usage of exec.d binaries often relies on implicit packaging the
+            // buildpack author might not be aware of.
+            Some(&path)
+                .filter(|path| path.exists())
+                .ok_or_else(|| ReplaceLayerExecdProgramsError::MissingExecDFile(path.clone()))
+                .and_then(|path| {
+                    fs::copy(path, exec_d_dir.join(name))
+                        .map_err(ReplaceLayerExecdProgramsError::IoError)
+                })?;
+        }
+    }
+
+    Ok(())
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum ReplaceLayerExecdProgramsError {
+    #[error("Unexpected I/O error while replacing layer execd programs: {0}")]
+    IoError(#[from] std::io::Error),
+
+    #[error("Couldn't find exec.d file for copying: {0}")]
+    MissingExecDFile(PathBuf),
+
+    #[error("Layer doesn't exist: {0}")]
+    MissingLayer(LayerName),
+}
+
 #[derive(thiserror::Error, Debug)]
 pub enum WriteLayerMetadataError {
     #[error("Unexpected I/O error while writing layer metadata: {0}")]
@@ -152,4 +252,22 @@ pub enum WriteLayerMetadataError {
 
     #[error("Error while writing layer content metadata TOML: {0}")]
     TomlFileError(#[from] TomlFileError),
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum LayerError {
+    #[error("{0}")]
+    ReadLayerError(#[from] ReadLayerError),
+    #[error("{0}")]
+    WriteLayerError(#[from] WriteLayerError),
+    #[error("{0}")]
+    DeleteLayerError(#[from] DeleteLayerError),
+    #[error("Cannot read generic layer metadata: {0}")]
+    CouldNotReadGenericLayerMetadata(TomlFileError),
+    #[error("Cannot read layer {0} after creating it")]
+    CouldNotReadLayerAfterCreate(LayerName),
+    #[error("Unexpected I/O error: {0}")]
+    IoError(#[from] std::io::Error),
+    #[error("Unexpected missing layer")]
+    UnexpectedMissingLayer,
 }

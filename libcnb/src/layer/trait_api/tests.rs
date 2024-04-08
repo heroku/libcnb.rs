@@ -14,7 +14,7 @@ use crate::data::buildpack_id;
 use crate::data::layer_content_metadata::LayerTypes;
 use crate::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use crate::generic::{GenericMetadata, GenericPlatform};
-use crate::layer::layer_api::handling::handle_layer;
+use crate::layer::trait_api::handling::handle_layer;
 use crate::layer::{
     ExistingLayerStrategy, Layer, LayerData, LayerResult, LayerResultBuilder, MetadataMigration,
 };

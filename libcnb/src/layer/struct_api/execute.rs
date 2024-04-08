@@ -1,12 +1,13 @@
 use crate::layer::shared::{
-    delete_layer, read_layer, replace_layer_metadata, replace_layer_types, DeleteLayerError,
-    ReadLayerError, WriteLayerError,
+    delete_layer, read_layer, replace_layer_metadata, replace_layer_types, ReadLayerError,
+    WriteLayerError,
 };
 use crate::layer::{
-    EmptyReason, InspectExistingAction, IntoAction, InvalidMetadataAction, LayerContents, LayerRef,
+    EmptyReason, InspectExistingAction, IntoAction, InvalidMetadataAction, LayerContents,
+    LayerError, LayerRef,
 };
 use crate::Buildpack;
-use libcnb_common::toml_file::{read_toml_file, TomlFileError};
+use libcnb_common::toml_file::read_toml_file;
 use libcnb_data::generic::GenericMetadata;
 use libcnb_data::layer::LayerName;
 use libcnb_data::layer_content_metadata::{LayerContentMetadata, LayerTypes};
@@ -14,21 +15,6 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
-
-#[derive(thiserror::Error, Debug)]
-#[allow(clippy::enum_variant_names)]
-pub enum ExecuteLayerDefinitionError {
-    #[error("{0}")]
-    ReadLayerError(#[from] ReadLayerError),
-    #[error("{0}")]
-    WriteLayerError(#[from] WriteLayerError),
-    #[error("{0}")]
-    DeleteLayerError(#[from] DeleteLayerError),
-    #[error("Cannot read generic layer metadata: {0}")]
-    CouldNotReadGenericLayerMetadata(TomlFileError),
-    #[error("Cannot read layer {0} after creating it")]
-    CouldNotReadLayerAfterCreate(LayerName),
-}
 
 #[allow(clippy::too_many_lines)]
 pub(crate) fn execute<B, M, MA, IA, MC, IC>(
@@ -53,8 +39,7 @@ where
 
             match inspect_action {
                 (InspectExistingAction::Delete, cause) => {
-                    delete_layer(layers_dir, &layer_name)
-                        .map_err(ExecuteLayerDefinitionError::DeleteLayerError)?;
+                    delete_layer(layers_dir, &layer_name).map_err(LayerError::DeleteLayerError)?;
 
                     create_layer(
                         layer_types,
@@ -68,9 +53,7 @@ where
                     // a) they might be different from what is currently on disk
                     // b) the cache field will be removed by CNB lifecycle on cache restore
                     replace_layer_types(layers_dir, &layer_name, layer_types).map_err(|error| {
-                        ExecuteLayerDefinitionError::WriteLayerError(
-                            WriteLayerError::WriteLayerMetadataError(error),
-                        )
+                        LayerError::WriteLayerError(WriteLayerError::WriteLayerMetadataError(error))
                     })?;
 
                     Ok(LayerRef {
@@ -86,7 +69,7 @@ where
             let layer_content_metadata = read_toml_file::<LayerContentMetadata>(
                 layers_dir.join(format!("{}.toml", &layer_name)),
             )
-            .map_err(ExecuteLayerDefinitionError::CouldNotReadGenericLayerMetadata)?;
+            .map_err(LayerError::CouldNotReadGenericLayerMetadata)?;
 
             let invalid_metadata_action = invalid_metadata(&layer_content_metadata.metadata)
                 .into_action()
@@ -94,8 +77,7 @@ where
 
             match invalid_metadata_action {
                 (InvalidMetadataAction::DeleteLayer, cause) => {
-                    delete_layer(layers_dir, &layer_name)
-                        .map_err(ExecuteLayerDefinitionError::DeleteLayerError)?;
+                    delete_layer(layers_dir, &layer_name).map_err(LayerError::DeleteLayerError)?;
 
                     create_layer(
                         layer_types,
@@ -106,9 +88,7 @@ where
                 }
                 (InvalidMetadataAction::ReplaceMetadata(metadata), _) => {
                     replace_layer_metadata(layers_dir, &layer_name, metadata).map_err(|error| {
-                        ExecuteLayerDefinitionError::WriteLayerError(
-                            WriteLayerError::WriteLayerMetadataError(error),
-                        )
+                        LayerError::WriteLayerError(WriteLayerError::WriteLayerMetadataError(error))
                     })?;
 
                     execute(
@@ -121,9 +101,7 @@ where
                 }
             }
         }
-        Err(read_layer_error) => Err(ExecuteLayerDefinitionError::ReadLayerError(
-            read_layer_error,
-        ))?,
+        Err(read_layer_error) => Err(LayerError::ReadLayerError(read_layer_error))?,
     }
 }
 
@@ -144,13 +122,11 @@ where
             metadata: GenericMetadata::default(),
         },
     )
-    .map_err(ExecuteLayerDefinitionError::WriteLayerError)?;
+    .map_err(LayerError::WriteLayerError)?;
 
     let layer_data = read_layer::<GenericMetadata, _>(layers_dir, layer_name)
-        .map_err(ExecuteLayerDefinitionError::ReadLayerError)?
-        .ok_or(ExecuteLayerDefinitionError::CouldNotReadLayerAfterCreate(
-            layer_name.clone(),
-        ))?;
+        .map_err(LayerError::ReadLayerError)?
+        .ok_or(LayerError::CouldNotReadLayerAfterCreate(layer_name.clone()))?;
 
     Ok(LayerRef {
         name: layer_data.name,

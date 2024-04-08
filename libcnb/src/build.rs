@@ -6,9 +6,10 @@ use crate::data::store::Store;
 use crate::data::{
     buildpack::ComponentBuildpackDescriptor, buildpack_plan::BuildpackPlan, launch::Launch,
 };
+use crate::layer::handling::LayerErrorOrBuildpackError;
 use crate::layer::{
-    CachedLayerDefinition, HandleLayerErrorOrBuildpackError, InspectExistingAction, IntoAction,
-    InvalidMetadataAction, Layer, LayerData, LayerRef, UncachedLayerDefinition,
+    CachedLayerDefinition, InspectExistingAction, IntoAction, InvalidMetadataAction, LayerRef,
+    UncachedLayerDefinition,
 };
 use crate::sbom::Sbom;
 use crate::Target;
@@ -104,16 +105,17 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     /// }
     /// ```
     #[deprecated = "The Layer trait API was replaced by LayerDefinitions. Use `cached_layer` and `uncached_layer`."]
-    pub fn handle_layer<L: Layer<Buildpack = B>>(
+    #[allow(deprecated)]
+    pub fn handle_layer<L: crate::layer::Layer<Buildpack = B>>(
         &self,
         layer_name: LayerName,
         layer: L,
-    ) -> crate::Result<LayerData<L::Metadata>, B::Error> {
-        crate::layer::handle_layer(self, layer_name, layer).map_err(|error| match error {
-            HandleLayerErrorOrBuildpackError::HandleLayerError(e) => {
-                crate::Error::HandleLayerError(e)
+    ) -> crate::Result<crate::layer::LayerData<L::Metadata>, B::Error> {
+        crate::layer::trait_api::handling::handle_layer(self, layer_name, layer).map_err(|error| {
+            match error {
+                LayerErrorOrBuildpackError::LayerError(e) => crate::Error::LayerError(e),
+                LayerErrorOrBuildpackError::BuildpackError(e) => crate::Error::BuildpackError(e),
             }
-            HandleLayerErrorOrBuildpackError::BuildpackError(e) => crate::Error::BuildpackError(e),
         })
     }
 
