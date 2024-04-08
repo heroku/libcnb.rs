@@ -33,7 +33,7 @@ pub struct BuildContext<B: Buildpack + ?Sized> {
 }
 
 impl<B: Buildpack + ?Sized> BuildContext<B> {
-    /// Handles the given [`LayerRef`] implementation in this context.
+    /// Handles the given [`Layer`] implementation in this context.
     ///
     /// It will ensure that the layer with the given name is created and/or updated accordingly and
     /// handles all errors that can occur during the process. After this method has executed, the
@@ -49,7 +49,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     /// # use libcnb::data::layer_content_metadata::LayerTypes;
     /// # use libcnb::detect::{DetectContext, DetectResult};
     /// # use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};
-    /// # use libcnb::layer::{Layer, LayerRef, LayerResultBuilder, LayerResult};
+    /// # use libcnb::layer::{Layer, LayerResult, LayerResultBuilder};
     /// # use libcnb::Buildpack;
     /// # use serde::Deserialize;
     /// # use serde::Serialize;
