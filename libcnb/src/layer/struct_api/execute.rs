@@ -16,7 +16,6 @@ use serde::Serialize;
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
-#[allow(clippy::too_many_lines)]
 pub(crate) fn execute<B, M, MA, IA, MC, IC>(
     layer_types: LayerTypes,
     invalid_metadata: &dyn Fn(&GenericMetadata) -> MA,
