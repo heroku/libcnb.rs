@@ -35,8 +35,9 @@ impl Buildpack for TestBuildpack {
         )?;
 
         let directory = layer.path().join("sub_directory");
+        fs::create_dir_all(&directory).expect("Couldn't create subdirectory");
 
-        fs::write(directory.join("foo.txt"), "hello world!").expect("Couldn't create subdirectory");
+        fs::write(directory.join("foo.txt"), "hello world!").expect("Couldn't write file");
 
         // By making the sub-directory read-only, files inside it cannot be deleted. This would
         // cause issues when libcnb.rs tries to delete a cached layer directory unless libcnb.rs

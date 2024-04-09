@@ -1,6 +1,6 @@
 use crate::layer::shared::{
-    delete_layer, read_layer, replace_layer_metadata, replace_layer_types, ReadLayerError,
-    WriteLayerError,
+    delete_layer, read_layer, replace_layer_metadata, replace_layer_types,
+    write_layer_content_metadata, ReadLayerError, WriteLayerError, WriteLayerMetadataError,
 };
 use crate::layer::{
     EmptyReason, InspectExistingAction, IntoAction, InvalidMetadataAction, LayerContents,
@@ -13,6 +13,7 @@ use libcnb_data::layer::LayerName;
 use libcnb_data::layer_content_metadata::{LayerContentMetadata, LayerTypes};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use std::fs;
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
@@ -114,7 +115,13 @@ fn create_layer<X, Y, B>(
 where
     B: Buildpack + ?Sized,
 {
-    crate::layer::shared::write_layer(
+    fs::create_dir_all(layers_dir.join(layer_name.as_str())).map_err(|error| {
+        crate::Error::LayerError(LayerError::WriteLayerError(
+            WriteLayerError::WriteLayerMetadataError(WriteLayerMetadataError::IoError(error)),
+        ))
+    })?;
+
+    write_layer_content_metadata(
         layers_dir,
         layer_name,
         &LayerContentMetadata {
@@ -122,6 +129,7 @@ where
             metadata: GenericMetadata::default(),
         },
     )
+    .map_err(WriteLayerError::WriteLayerMetadataError)
     .map_err(LayerError::WriteLayerError)?;
 
     let layer_data = read_layer::<GenericMetadata, _>(layers_dir, layer_name)

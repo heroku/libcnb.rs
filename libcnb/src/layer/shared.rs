@@ -72,20 +72,6 @@ pub enum ReadLayerError {
     IoError(#[from] std::io::Error),
 }
 
-/// Updates layer metadata on disk
-pub(in crate::layer) fn write_layer<M: Serialize, P: AsRef<Path>>(
-    layers_dir: P,
-    layer_name: &LayerName,
-    layer_content_metadata: &LayerContentMetadata<M>,
-) -> Result<(), WriteLayerError> {
-    let layers_dir = layers_dir.as_ref();
-    fs::create_dir_all(layers_dir.join(layer_name.as_str()))?;
-    replace_layer_metadata(layers_dir, layer_name, layer_content_metadata)
-        .map_err(WriteLayerError::WriteLayerMetadataError)?;
-
-    Ok(())
-}
-
 #[derive(thiserror::Error, Debug)]
 #[allow(clippy::enum_variant_names)]
 pub enum WriteLayerError {
@@ -120,6 +106,17 @@ pub(in crate::layer) fn delete_layer<P: AsRef<Path>>(
 pub enum DeleteLayerError {
     #[error("I/O error while deleting existing layer: {0}")]
     IoError(#[from] std::io::Error),
+}
+
+pub(in crate::layer) fn write_layer_content_metadata<M: Serialize, P: AsRef<Path>>(
+    layers_dir: P,
+    layer_name: &LayerName,
+    content_metadata: &LayerContentMetadata<M>,
+) -> Result<(), WriteLayerMetadataError> {
+    let layer_content_metadata_path = layers_dir.as_ref().join(format!("{layer_name}.toml"));
+
+    write_toml_file(content_metadata, layer_content_metadata_path)
+        .map_err(WriteLayerMetadataError::TomlFileError)
 }
 
 pub(in crate::layer) fn replace_layer_metadata<M: Serialize, P: AsRef<Path>>(
