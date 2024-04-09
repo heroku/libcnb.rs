@@ -26,6 +26,6 @@ use indoc as _;
 #[cfg(test)]
 use libcnb as _;
 #[cfg(test)]
-use regex_lite as _;
-#[cfg(test)]
 use ureq as _;
+// This dependency is used by the `assert_not_contains` and `assert_not_contains_match` macros
+use regex_lite as _;
