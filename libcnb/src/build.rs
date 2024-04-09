@@ -33,13 +33,13 @@ pub struct BuildContext<B: Buildpack + ?Sized> {
 }
 
 impl<B: Buildpack + ?Sized> BuildContext<B> {
-    /// Handles the given [`Layer`] implementation in this context.
+    /// Handles the given [`crate::layer::Layer`] implementation in this context.
     ///
     /// It will ensure that the layer with the given name is created and/or updated accordingly and
     /// handles all errors that can occur during the process. After this method has executed, the
     /// layer will exist on disk or an error has been returned by this method.
     ///
-    /// Use the returned [`LayerData`] to access the layers metadata and environment variables for
+    /// Use the returned [`crate::layer::LayerData`] to access the layers metadata and environment variables for
     /// subsequent logic or layers.
     ///
     /// # Example:
