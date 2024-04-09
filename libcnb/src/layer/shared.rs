@@ -271,3 +271,183 @@ pub enum LayerError {
     #[error("Unexpected missing layer")]
     UnexpectedMissingLayer,
 }
+
+#[cfg(test)]
+mod test {
+    use crate::layer::ReadLayerError;
+    use libcnb_data::generic::GenericMetadata;
+    use libcnb_data::layer_content_metadata::{LayerContentMetadata, LayerTypes};
+    use libcnb_data::layer_name;
+    use serde::Deserialize;
+    use std::fs;
+    use tempfile::tempdir;
+
+    #[test]
+    fn read_layer() {
+        #[derive(Deserialize, Debug, Eq, PartialEq)]
+        struct TestLayerMetadata {
+            version: String,
+            sha: String,
+        }
+
+        let layer_name = layer_name!("foo");
+        let temp_dir = tempdir().unwrap();
+        let layers_dir = temp_dir.path();
+        let layer_dir = layers_dir.join(layer_name.as_str());
+
+        fs::create_dir_all(&layer_dir).unwrap();
+        fs::write(
+            layers_dir.join(format!("{layer_name}.toml")),
+            r#"
+            [types]
+            launch = true
+            build = false
+            cache = true
+
+            [metadata]
+            version = "1.0"
+            sha = "2608a36467a6fec50be1672bfbf88b04b9ec8efaafa58c71d9edf73519ed8e2c"
+            "#,
+        )
+        .unwrap();
+
+        let layer_data = super::read_layer::<TestLayerMetadata, _>(layers_dir, &layer_name)
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(layer_data.path, layer_dir);
+
+        assert_eq!(layer_data.name, layer_name);
+
+        assert_eq!(
+            layer_data.metadata.types,
+            Some(LayerTypes {
+                launch: true,
+                build: false,
+                cache: true
+            })
+        );
+
+        assert_eq!(
+            layer_data.metadata.metadata,
+            TestLayerMetadata {
+                version: String::from("1.0"),
+                sha: String::from(
+                    "2608a36467a6fec50be1672bfbf88b04b9ec8efaafa58c71d9edf73519ed8e2c"
+                )
+            }
+        );
+    }
+
+    #[test]
+    fn read_malformed_toml_layer() {
+        let layer_name = layer_name!("foo");
+        let temp_dir = tempdir().unwrap();
+        let layers_dir = temp_dir.path();
+        let layer_dir = layers_dir.join(layer_name.as_str());
+
+        fs::create_dir_all(layer_dir).unwrap();
+        fs::write(
+            layers_dir.join(format!("{layer_name}.toml")),
+            r"
+            [types
+            build = true
+            launch = true
+            cache = true
+            ",
+        )
+        .unwrap();
+
+        match super::read_layer::<GenericMetadata, _>(layers_dir, &layer_name) {
+            Err(ReadLayerError::LayerContentMetadataParseError(toml_error)) => {
+                assert_eq!(toml_error.span(), Some(19..20));
+            }
+            _ => panic!("Expected ReadLayerError::LayerContentMetadataParseError!"),
+        }
+    }
+
+    #[test]
+    fn read_incompatible_metadata_layer() {
+        #[derive(Deserialize, Debug, Eq, PartialEq)]
+        struct TestLayerMetadata {
+            version: String,
+            sha: String,
+        }
+
+        let layer_name = layer_name!("foo");
+        let temp_dir = tempdir().unwrap();
+        let layers_dir = temp_dir.path();
+        let layer_dir = layers_dir.join(layer_name.as_str());
+
+        fs::create_dir_all(layer_dir).unwrap();
+        fs::write(
+            layers_dir.join(format!("{layer_name}.toml")),
+            r#"
+            [types]
+            build = true
+            launch = true
+            cache = true
+
+            [metadata]
+            version = "1.0"
+            "#,
+        )
+        .unwrap();
+
+        match super::read_layer::<TestLayerMetadata, _>(layers_dir, &layer_name) {
+            Err(ReadLayerError::LayerContentMetadataParseError(toml_error)) => {
+                assert_eq!(toml_error.span(), Some(110..148));
+            }
+            _ => panic!("Expected ReadLayerError::LayerContentMetadataParseError!"),
+        }
+    }
+
+    #[test]
+    fn read_layer_without_layer_directory() {
+        let layer_name = layer_name!("foo");
+        let temp_dir = tempdir().unwrap();
+        let layers_dir = temp_dir.path();
+        let layer_dir = layers_dir.join(layer_name.as_str());
+
+        fs::create_dir_all(layer_dir).unwrap();
+
+        match super::read_layer::<GenericMetadata, _>(layers_dir, &layer_name) {
+            Ok(Some(layer_data)) => {
+                assert_eq!(
+                    layer_data.metadata,
+                    LayerContentMetadata {
+                        types: None,
+                        metadata: None
+                    }
+                );
+            }
+            _ => panic!("Expected Ok(Some(_)!"),
+        }
+    }
+
+    #[test]
+    fn read_layer_without_layer_content_metadata() {
+        let layer_name = layer_name!("foo");
+        let temp_dir = tempdir().unwrap();
+        let layers_dir = temp_dir.path();
+
+        fs::write(layers_dir.join(format!("{layer_name}.toml")), "").unwrap();
+
+        match super::read_layer::<GenericMetadata, _>(layers_dir, &layer_name) {
+            Ok(None) => {}
+            _ => panic!("Expected Ok(None)!"),
+        }
+    }
+
+    #[test]
+    fn read_nonexistent_layer() {
+        let layer_name = layer_name!("foo");
+        let temp_dir = tempdir().unwrap();
+        let layers_dir = temp_dir.path();
+
+        match super::read_layer::<GenericMetadata, _>(layers_dir, &layer_name) {
+            Ok(None) => {}
+            _ => panic!("Expected Ok(None)!"),
+        }
+    }
+}
