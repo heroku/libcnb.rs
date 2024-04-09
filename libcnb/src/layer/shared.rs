@@ -141,7 +141,7 @@ pub(in crate::layer) fn replace_layer_metadata<M: Serialize, P: AsRef<Path>>(
     .map_err(WriteLayerMetadataError::TomlFileError)
 }
 
-pub(crate) fn replace_layer_types<P: AsRef<Path>>(
+pub(in crate::layer) fn replace_layer_types<P: AsRef<Path>>(
     layers_dir: P,
     layer_name: &LayerName,
     layer_types: LayerTypes,
