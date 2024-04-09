@@ -72,15 +72,18 @@ pub enum ReadLayerError {
     IoError(#[from] std::io::Error),
 }
 
-/// Updates layer metadata on disk
 pub(in crate::layer) fn write_layer<M: Serialize, P: AsRef<Path>>(
     layers_dir: P,
     layer_name: &LayerName,
     layer_content_metadata: &LayerContentMetadata<M>,
 ) -> Result<(), WriteLayerError> {
-    let layers_dir = layers_dir.as_ref();
-    fs::create_dir_all(layers_dir.join(layer_name.as_str()))?;
-    replace_layer_metadata(layers_dir, layer_name, layer_content_metadata)
+    let layer_dir = layers_dir.as_ref().join(layer_name.as_str());
+    fs::create_dir_all(layer_dir)?;
+
+    let layer_content_metadata_path = layers_dir.as_ref().join(format!("{layer_name}.toml"));
+
+    write_toml_file(&layer_content_metadata, layer_content_metadata_path)
+        .map_err(WriteLayerMetadataError::TomlFileError)
         .map_err(WriteLayerError::WriteLayerMetadataError)?;
 
     Ok(())

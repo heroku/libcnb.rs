@@ -8,12 +8,11 @@ use crate::data::layer_content_metadata::LayerContentMetadata;
 use crate::generic::GenericMetadata;
 use crate::layer::shared::{
     delete_layer, replace_layer_exec_d_programs, replace_layer_sboms, ReadLayerError,
-    WriteLayerError, WriteLayerMetadataError,
+    WriteLayerError,
 };
 use crate::layer::{ExistingLayerStrategy, LayerData, LayerError, MetadataMigration};
 use crate::layer_env::LayerEnv;
 use crate::sbom::Sbom;
-use crate::write_toml_file;
 use crate::Buildpack;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -212,20 +211,6 @@ pub(in crate::layer) enum Sboms {
     Replace(Vec<Sbom>),
 }
 
-pub(in crate::layer) fn write_layer_metadata<M: Serialize, P: AsRef<Path>>(
-    layers_dir: P,
-    layer_name: &LayerName,
-    layer_content_metadata: &LayerContentMetadata<M>,
-) -> Result<(), WriteLayerMetadataError> {
-    let layer_dir = layers_dir.as_ref().join(layer_name.as_str());
-    fs::create_dir_all(layer_dir)?;
-
-    let layer_content_metadata_path = layers_dir.as_ref().join(format!("{layer_name}.toml"));
-    write_toml_file(&layer_content_metadata, layer_content_metadata_path)?;
-
-    Ok(())
-}
-
 /// Updates layer metadata on disk
 pub(in crate::layer) fn write_layer<M: Serialize, P: AsRef<Path>>(
     layers_dir: P,
@@ -237,8 +222,7 @@ pub(in crate::layer) fn write_layer<M: Serialize, P: AsRef<Path>>(
 ) -> Result<(), WriteLayerError> {
     let layers_dir = layers_dir.as_ref();
 
-    write_layer_metadata(layers_dir, layer_name, layer_content_metadata)
-        .map_err(WriteLayerError::WriteLayerMetadataError)?;
+    crate::layer::shared::write_layer(layers_dir, layer_name, layer_content_metadata)?;
 
     let layer_dir = layers_dir.join(layer_name.as_str());
     layer_env.write_to_layer_dir(layer_dir)?;
@@ -285,8 +269,6 @@ mod tests {
     use crate::layer::shared::ReplaceLayerExecdProgramsError;
     use crate::layer_env::{ModificationBehavior, Scope};
     use crate::read_toml_file;
-    use serde::Deserialize;
-    use std::ffi::OsString;
     use std::fs;
     use tempfile::tempdir;
 
