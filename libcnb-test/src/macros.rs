@@ -211,7 +211,7 @@ right: `{:?}`: {}"#,
 /// use libcnb_test::assert_not_contains_match;
 ///
 /// let output = "Hello World!\nHello Integration Test!";
-/// assert_not_contains_match!(output, "Test!$");
+/// assert_not_contains_match!(output, "^Test!");
 /// ```
 #[macro_export]
 macro_rules! assert_not_contains_match {
