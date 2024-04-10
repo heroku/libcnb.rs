@@ -6,7 +6,7 @@ use crate::data::store::Store;
 use crate::data::{
     buildpack::ComponentBuildpackDescriptor, buildpack_plan::BuildpackPlan, launch::Launch,
 };
-use crate::layer::handling::LayerErrorOrBuildpackError;
+use crate::layer::trait_api::handling::LayerErrorOrBuildpackError;
 use crate::layer::{
     CachedLayerDefinition, InspectExistingAction, IntoAction, InvalidMetadataAction, LayerRef,
     UncachedLayerDefinition,
@@ -126,7 +126,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     ) -> crate::Result<LayerRef<B, (), ()>, B::Error> {
         let layer_definition = layer_definition.borrow();
 
-        crate::layer::execute(
+        crate::layer::struct_api::handling::handle_layer(
             LayerTypes {
                 launch: layer_definition.launch,
                 build: layer_definition.build,
@@ -151,7 +151,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     {
         let layer_definition = layer_definition.borrow();
 
-        crate::layer::execute(
+        crate::layer::struct_api::handling::handle_layer(
             LayerTypes {
                 launch: layer_definition.launch,
                 build: layer_definition.build,

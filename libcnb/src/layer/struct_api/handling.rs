@@ -16,7 +16,7 @@ use serde::Serialize;
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
-pub(crate) fn execute<B, M, MA, IA, MC, IC>(
+pub(crate) fn handle_layer<B, M, MA, IA, MC, IC>(
     layer_types: LayerTypes,
     invalid_metadata: &dyn Fn(&GenericMetadata) -> MA,
     inspect_existing: &dyn Fn(&M, &Path) -> IA,
@@ -90,7 +90,7 @@ where
                         LayerError::WriteLayerError(WriteLayerError::WriteLayerMetadataError(error))
                     })?;
 
-                    execute(
+                    handle_layer(
                         layer_types,
                         invalid_metadata,
                         inspect_existing,

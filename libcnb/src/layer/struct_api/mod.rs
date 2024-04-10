@@ -1,11 +1,10 @@
-pub(crate) mod execute;
+pub(crate) mod handling;
 
 use crate::layer::shared::{replace_layer_exec_d_programs, replace_layer_sboms, WriteLayerError};
 use crate::layer::LayerError;
 use crate::layer_env::LayerEnv;
 use crate::sbom::Sbom;
 use crate::Buildpack;
-pub(crate) use execute::execute;
 use libcnb_data::generic::GenericMetadata;
 use libcnb_data::layer::LayerName;
 use serde::Serialize;
