@@ -11,21 +11,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `libcnb`:
+  - Made `Target` (the type of `DetectContext::target` and `BuildContext::target`) public. ([#815](https://github.com/heroku/libcnb.rs/pull/815))
 - `libcnb-test`
-    - Added the macro `assert_contains_match!` for testing if a value contains a regular expression match.
-    - Added the macro `assert_not_contains_match!` for testing if a value does not contain a regular expression match.
+  - Added the macro `assert_contains_match!` for testing if a value contains a regular expression match.
+  - Added the macro `assert_not_contains_match!` for testing if a value does not contain a regular expression match.
 
 ### Changed
 
 - `libcnb`:
-    - `WriteLayerError` changed to contain more specific error enums instead of generic
-      ones. ([#786](https://github.com/heroku/libcnb.rs/pull/786))
-
-### Fixed
-
-- `libcnb`
-    - Fixed the Docker label names mentioned in the rustdocs for `ContextTarget`'s `distro_name`
-      and `distro_version`. ([#811](https://github.com/heroku/libcnb.rs/pull/811))
+  - `WriteLayerError` changed to contain more specific error enums instead of generic ones. ([#786](https://github.com/heroku/libcnb.rs/pull/786))
+- `libcnb-data`:
+  - Renamed `Target` to `BuildpackTarget` to disambiguate it from the new `libcnb::Target`. ([#815](https://github.com/heroku/libcnb.rs/pull/815))
 
 ## [0.19.0] - 2024-02-23
 
@@ -60,8 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- Types, errors, macros and functions related to stacks. The concept of stacks has been removed from the CNB spec.
-  Use `Target` instead. ([#773](https://github.com/heroku/libcnb.rs/pull/773))
+- Types, errors, macros and functions related to stacks. The concept of stacks has been removed from the CNB spec. Use targets instead. ([#773](https://github.com/heroku/libcnb.rs/pull/773))
 
 ## [0.17.0] - 2023-12-06
 

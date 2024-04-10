@@ -19,9 +19,8 @@ use crate::layer::{
     MetadataMigration,
 };
 use crate::layer_env::{LayerEnv, ModificationBehavior, Scope};
-use crate::target::ContextTarget;
-use crate::{read_toml_file, Buildpack, Env, LIBCNB_SUPPORTED_BUILDPACK_API};
-use libcnb_data::buildpack::{BuildpackVersion, ComponentBuildpackDescriptor, Target};
+use crate::{read_toml_file, Buildpack, Env, Target, LIBCNB_SUPPORTED_BUILDPACK_API};
+use libcnb_data::buildpack::{BuildpackTarget, BuildpackVersion, ComponentBuildpackDescriptor};
 use libcnb_data::buildpack_plan::BuildpackPlan;
 use libcnb_data::layer_content_metadata::LayerContentMetadata;
 use libcnb_data::layer_name;
@@ -901,7 +900,7 @@ fn build_context(temp_dir: &TempDir) -> BuildContext<TestBuildpack> {
         layers_dir,
         app_dir,
         buildpack_dir,
-        target: ContextTarget {
+        target: Target {
             os: String::from("linux"),
             arch: String::from("amd64"),
             arch_variant: None,
@@ -925,12 +924,12 @@ fn build_context(temp_dir: &TempDir) -> BuildContext<TestBuildpack> {
                 licenses: Vec::new(),
                 sbom_formats: HashSet::new(),
             },
-            stacks: vec![],
-            targets: vec![Target {
+            stacks: Vec::new(),
+            targets: vec![BuildpackTarget {
                 os: Some(String::from("linux")),
                 arch: Some(String::from("amd64")),
                 variant: None,
-                distros: vec![],
+                distros: Vec::new(),
             }],
             metadata: GenericMetadata::default(),
         },
