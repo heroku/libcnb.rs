@@ -92,13 +92,13 @@ pub(in crate::layer) fn write_layer<M: Serialize, P: AsRef<Path>>(
 #[derive(thiserror::Error, Debug)]
 #[allow(clippy::enum_variant_names)]
 pub enum WriteLayerError {
-    #[error("Layer content metadata couldn't be parsed!")]
+    #[error("{0}")]
     WriteLayerMetadataError(WriteLayerMetadataError),
 
-    #[error("TODO")]
+    #[error("{0}")]
     ReplaceLayerSbomsError(ReplaceLayerSbomsError),
 
-    #[error("TODO")]
+    #[error("{0}")]
     ReplaceLayerExecdProgramsError(ReplaceLayerExecdProgramsError),
 
     #[error("Unexpected I/O error while writing layer: {0}")]
