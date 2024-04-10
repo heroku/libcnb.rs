@@ -2,7 +2,7 @@ use serde::Deserialize;
 
 #[derive(Debug, Eq, PartialEq, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct Target {
+pub struct BuildpackTarget {
     pub os: Option<String>,
     pub arch: Option<String>,
     pub variant: Option<String>,

@@ -1,7 +1,7 @@
 //! Provides detect phase specific types and helpers.
 
 use crate::buildpack::Buildpack;
-use crate::target::ContextTarget;
+use crate::Target;
 use crate::{data::build_plan::BuildPlan, data::buildpack::ComponentBuildpackDescriptor};
 use std::fmt::Debug;
 use std::path::PathBuf;
@@ -10,7 +10,7 @@ use std::path::PathBuf;
 pub struct DetectContext<B: Buildpack + ?Sized> {
     pub app_dir: PathBuf,
     pub buildpack_dir: PathBuf,
-    pub target: ContextTarget,
+    pub target: Target,
     pub platform: B::Platform,
     pub buildpack_descriptor: ComponentBuildpackDescriptor<B::Metadata>,
 }

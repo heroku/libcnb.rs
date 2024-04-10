@@ -1,4 +1,4 @@
-pub struct ContextTarget {
+pub struct Target {
     /// The name of the target operating system.
     ///
     /// The value should conform to [Go's `$GOOS`](https://golang.org/doc/install/source#environment), for example
