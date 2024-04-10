@@ -29,6 +29,7 @@ pub use error::*;
 pub use libcnb_common::toml_file::*;
 pub use platform::*;
 pub use runtime::*;
+pub use target::*;
 
 #[cfg(all(test, not(feature = "trace")))]
 use serde_json as _;

@@ -81,7 +81,7 @@ impl<BM> BuildpackDescriptor<BM> {
 ///
 /// # Example:
 /// ```
-/// use libcnb_data::buildpack::{ComponentBuildpackDescriptor, Target};
+/// use libcnb_data::buildpack::{BuildpackTarget, ComponentBuildpackDescriptor};
 /// use libcnb_data::buildpack_id;
 ///
 /// let toml_str = r#"
@@ -108,11 +108,11 @@ impl<BM> BuildpackDescriptor<BM> {
 /// assert_eq!(buildpack_descriptor.buildpack.id, buildpack_id!("foo/bar"));
 /// assert_eq!(
 ///     buildpack_descriptor.targets,
-///     [Target {
+///     [BuildpackTarget {
 ///         os: Some(String::from("linux")),
 ///         arch: None,
 ///         variant: None,
-///         distros: vec![]
+///         distros: Vec::new()
 ///     }]
 /// );
 /// ```
@@ -124,7 +124,7 @@ pub struct ComponentBuildpackDescriptor<BM = GenericMetadata> {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub stacks: Vec<Stack>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub targets: Vec<Target>,
+    pub targets: Vec<BuildpackTarget>,
     pub metadata: BM,
     // As of 2024-02-09, the CNB spec does not forbid component buildpacks
     // to contain `order`. This is a change from buildpack API 0.9 where `order`
@@ -381,7 +381,7 @@ checksum = "abc123"
         assert_eq!(
             buildpack_descriptor.targets,
             [
-                Target {
+                BuildpackTarget {
                     os: Some(String::from("linux")),
                     arch: Some(String::from("amd64")),
                     variant: None,
@@ -390,19 +390,19 @@ checksum = "abc123"
                         version: String::from("18.04"),
                     }],
                 },
-                Target {
+                BuildpackTarget {
                     os: Some(String::from("linux")),
                     arch: Some(String::from("arm")),
                     variant: Some(String::from("v8")),
                     distros: Vec::new(),
                 },
-                Target {
+                BuildpackTarget {
                     os: Some(String::from("windows")),
                     arch: Some(String::from("amd64")),
                     variant: None,
                     distros: Vec::new(),
                 },
-                Target {
+                BuildpackTarget {
                     os: None,
                     arch: None,
                     variant: None,

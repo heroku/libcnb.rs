@@ -5,11 +5,10 @@ use crate::detect::{DetectContext, InnerDetectResult};
 use crate::error::Error;
 use crate::platform::Platform;
 use crate::sbom::cnb_sbom_path;
-use crate::target::ContextTarget;
 #[cfg(feature = "trace")]
 use crate::tracing::start_trace;
 use crate::util::is_not_found_error_kind;
-use crate::{exit_code, TomlFileError, LIBCNB_SUPPORTED_BUILDPACK_API};
+use crate::{exit_code, Target, TomlFileError, LIBCNB_SUPPORTED_BUILDPACK_API};
 use libcnb_common::toml_file::{read_toml_file, write_toml_file};
 use libcnb_data::buildpack::ComponentBuildpackDescriptor;
 use libcnb_data::store::Store;
@@ -358,7 +357,7 @@ fn read_buildpack_descriptor<BD: DeserializeOwned, E: Debug>() -> crate::Result<
     })
 }
 
-fn context_target<E>() -> crate::Result<ContextTarget, E>
+fn context_target<E>() -> crate::Result<Target, E>
 where
     E: Debug,
 {
@@ -368,7 +367,7 @@ where
     let distro_name = env::var("CNB_TARGET_DISTRO_NAME").ok();
     let distro_version = env::var("CNB_TARGET_DISTRO_VERSION").ok();
 
-    Ok(ContextTarget {
+    Ok(Target {
         os,
         arch,
         arch_variant,

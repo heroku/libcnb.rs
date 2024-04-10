@@ -8,7 +8,7 @@ use crate::data::{
 };
 use crate::layer::{HandleLayerErrorOrBuildpackError, Layer, LayerData};
 use crate::sbom::Sbom;
-use crate::target::ContextTarget;
+use crate::Target;
 use std::path::PathBuf;
 
 /// Context for the build phase execution.
@@ -16,7 +16,7 @@ pub struct BuildContext<B: Buildpack + ?Sized> {
     pub layers_dir: PathBuf,
     pub app_dir: PathBuf,
     pub buildpack_dir: PathBuf,
-    pub target: ContextTarget,
+    pub target: Target,
     pub platform: B::Platform,
     pub buildpack_plan: BuildpackPlan,
     pub buildpack_descriptor: ComponentBuildpackDescriptor<B::Metadata>,
