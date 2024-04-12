@@ -41,7 +41,6 @@ pub fn move_directory_contents(
 #[cfg(test)]
 mod test {
     use std::collections::HashMap;
-    use std::fs;
     use std::path::PathBuf;
 
     use tempfile::tempdir;

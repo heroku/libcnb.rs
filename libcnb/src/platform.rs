@@ -65,7 +65,6 @@ pub(crate) fn read_platform_env(platform_dir: impl AsRef<Path>) -> std::io::Resu
 mod tests {
     use super::*;
     use std::ffi::OsString;
-    use std::fs;
 
     #[test]
     fn read_platform_env_reads_correct_env_vars() {

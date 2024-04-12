@@ -232,7 +232,6 @@ pub struct Group {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::sbom::SbomFormat;
 
     #[test]
     #[allow(clippy::too_many_lines)]

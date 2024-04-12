@@ -12,7 +12,6 @@ pub struct Target {
     /// `amd64` or `arm64`.
     ///
     /// CNB `lifecycle` sources this value from the build OCI image's [`architecture` property](https://github.com/opencontainers/image-spec/blob/main/config.md#properties).
-    /// ``
     pub arch: String,
     /// The variant of the specified CPU architecture.
     ///
@@ -29,7 +28,7 @@ pub struct Target {
     pub distro_name: Option<String>,
     /// The version of the operating system distribution.
     ///
-    /// For example: `18.02` or `3.19`.
+    /// For example: `22.04` or `3.19`.
     ///
     /// CNB `lifecycle` sources this value from the build OCI image's `io.buildpacks.base.distro.version` label.
     pub distro_version: Option<String>,
