@@ -160,7 +160,7 @@ mod test {
     fn test_paragraph_inspect_write() {
         use std::io::Write;
 
-        let buffer: Vec<u8> = vec![];
+        let buffer: Vec<u8> = Vec::new();
         let mut inspect_write = ParagraphInspectWrite::new(buffer);
         assert!(!inspect_write.was_paragraph);
 

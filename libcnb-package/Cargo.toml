@@ -16,7 +16,7 @@ workspace = true
 
 [dependencies]
 cargo_metadata = "0.18.1"
-ignore = "0.4"
+ignore = "0.4.22"
 indoc = "2.0.5"
 libcnb-common.workspace = true
 libcnb-data.workspace = true

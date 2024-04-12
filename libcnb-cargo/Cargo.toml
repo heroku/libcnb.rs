@@ -32,5 +32,5 @@ pathdiff = "0.2.1"
 thiserror = "1.0.58"
 
 [dev-dependencies]
-tempfile = "3.10.1"
 libcnb-common.workspace = true
+tempfile = "3.10.1"
