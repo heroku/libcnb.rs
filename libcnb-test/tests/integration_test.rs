@@ -683,7 +683,7 @@ fn address_for_port_when_container_crashed() {
                         .command(["echo 'some stdout'; echo 'some stderr' >&2; exit 1"])
                         .expose_port(TEST_PORT),
                     |container| {
-                        container_name = container.container_name.clone();
+                        container_name.clone_from(&container.container_name);
                         // Wait for the container to actually exit, otherwise `address_for_port()` will succeed.
                         thread::sleep(Duration::from_secs(1));
                         let _ = container.address_for_port(TEST_PORT);

@@ -104,7 +104,7 @@ impl BuildpackTrace {
     }
     /// Add a named event to the underlying span.
     pub(crate) fn add_event(&mut self, name: &'static str) {
-        self.span.add_event(name, vec![]);
+        self.span.add_event(name, Vec::new());
     }
 }
 
@@ -139,8 +139,8 @@ mod tests {
             homepage: None,
             clear_env: false,
             description: None,
-            keywords: vec![],
-            licenses: vec![],
+            keywords: Vec::new(),
+            licenses: Vec::new(),
             sbom_formats: HashSet::new(),
         };
         let telemetry_path = "/tmp/libcnb-telemetry/company_com_foo-bar.jsonl";
