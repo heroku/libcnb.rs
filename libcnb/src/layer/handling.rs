@@ -462,14 +462,12 @@ fn read_layer<M: DeserializeOwned, P: AsRef<Path>>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::data::layer_content_metadata::{LayerContentMetadata, LayerTypes};
+    use crate::data::layer_content_metadata::LayerTypes;
     use crate::data::layer_name;
-    use crate::generic::GenericMetadata;
     use crate::layer_env::{ModificationBehavior, Scope};
     use crate::read_toml_file;
     use serde::Deserialize;
     use std::ffi::OsString;
-    use std::fs;
 
     use tempfile::tempdir;
 

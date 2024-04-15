@@ -190,7 +190,6 @@ pub(crate) use libcnb_newtype;
 
 #[cfg(test)]
 mod tests {
-    use super::libcnb_newtype;
     use serde_test::{assert_de_tokens, assert_de_tokens_error, Token};
 
     libcnb_newtype!(

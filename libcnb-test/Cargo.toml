@@ -15,16 +15,16 @@ include = ["src/**/*", "LICENSE", "README.md"]
 workspace = true
 
 [dependencies]
-fastrand = "2.0.1"
+fastrand = "2.0.2"
 fs_extra = "1.3.0"
 libcnb-common.workspace = true
 libcnb-data.workspace = true
 libcnb-package.workspace = true
 regex-lite = "0.1.5"
-tempfile = "3.10.0"
-thiserror = "1.0.57"
+tempfile = "3.10.1"
+thiserror = "1.0.58"
 
 [dev-dependencies]
-indoc = "2.0.4"
-ureq = { version = "2.9.6", default-features = false }
+indoc = "2.0.5"
 libcnb.workspace = true
+ureq = { version = "2.9.6", default-features = false }

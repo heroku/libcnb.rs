@@ -53,7 +53,7 @@ id = "*"
             toml::from_str::<Stack>(toml_str),
             Ok(Stack {
                 id: String::from("*"),
-                mixins: vec![],
+                mixins: Vec::new(),
             }),
         );
     }

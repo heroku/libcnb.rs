@@ -7,8 +7,8 @@ rust-version.workspace = true
 workspace = true
 
 [dependencies]
+fastrand = "2.0.2"
 libcnb.workspace = true
-fastrand = "2.0.1"
 
 [dev-dependencies]
 libcnb-test.workspace = true
