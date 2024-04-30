@@ -21,6 +21,6 @@ indoc = "2.0.5"
 libcnb-common.workspace = true
 libcnb-data.workspace = true
 petgraph = { version = "0.6.4", default-features = false }
-thiserror = "1.0.58"
+thiserror = "1.0.59"
 uriparse = "0.6.4"
 which = "6.0.1"
