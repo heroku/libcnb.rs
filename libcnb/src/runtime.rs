@@ -364,6 +364,9 @@ where
     let os = env::var("CNB_TARGET_OS").map_err(Error::CannotDetermineTargetOs)?;
     let arch = env::var("CNB_TARGET_ARCH").map_err(Error::CannotDetermineTargetArch)?;
     let arch_variant = env::var("CNB_TARGET_ARCH_VARIANT").ok();
+    // Whilst the Buildpack API spec says these env vars are optional they will always be set in
+    // practice, so we treat them as mandatory to improve buildpack author UX. See:
+    // https://github.com/heroku/libcnb.rs/issues/820
     let distro_name =
         env::var("CNB_TARGET_DISTRO_NAME").map_err(Error::CannotDetermineTargetDistroName)?;
     let distro_version =
