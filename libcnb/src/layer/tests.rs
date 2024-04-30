@@ -904,8 +904,8 @@ fn build_context(temp_dir: &TempDir) -> BuildContext<TestBuildpack> {
             os: String::from("linux"),
             arch: String::from("amd64"),
             arch_variant: None,
-            distro_name: Some(String::from("ubuntu")),
-            distro_version: Some(String::from("22.04")),
+            distro_name: String::from("ubuntu"),
+            distro_version: String::from("22.04"),
         },
         platform: GenericPlatform::new(Env::new()),
         buildpack_plan: BuildpackPlan {
