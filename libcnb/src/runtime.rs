@@ -364,8 +364,10 @@ where
     let os = env::var("CNB_TARGET_OS").map_err(Error::CannotDetermineTargetOs)?;
     let arch = env::var("CNB_TARGET_ARCH").map_err(Error::CannotDetermineTargetArch)?;
     let arch_variant = env::var("CNB_TARGET_ARCH_VARIANT").ok();
-    let distro_name = env::var("CNB_TARGET_DISTRO_NAME").ok();
-    let distro_version = env::var("CNB_TARGET_DISTRO_VERSION").ok();
+    let distro_name =
+        env::var("CNB_TARGET_DISTRO_NAME").map_err(Error::CannotDetermineTargetDistroName)?;
+    let distro_version =
+        env::var("CNB_TARGET_DISTRO_VERSION").map_err(Error::CannotDetermineTargetDistroVersion)?;
 
     Ok(Target {
         os,

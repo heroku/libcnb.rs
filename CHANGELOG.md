@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `libcnb`:
+  - `Target` now implements `Debug`. ([#821](https://github.com/heroku/libcnb.rs/pull/821))
+
+### Changed
+
+- `libcnb`:
+  - Changed the type of `Target`'s `distro_name` and `distro_version` fields from `Option<String>` to `String`. ([#821](https://github.com/heroku/libcnb.rs/pull/821))
+  - The libcnb runtime now enforces that the `CNB_TARGET_DISTRO_NAME` and `CNB_TARGET_DISTRO_VERSION` env vars have been set by `lifecycle`. ([#821](https://github.com/heroku/libcnb.rs/pull/821))
 
 ## [0.20.0] - 2024-04-12
 

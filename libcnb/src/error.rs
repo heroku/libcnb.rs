@@ -29,6 +29,12 @@ pub enum Error<E> {
     #[error("Couldn't determine target arch: {0}")]
     CannotDetermineTargetArch(std::env::VarError),
 
+    #[error("Couldn't determine target distro name: {0}. Ensure the `io.buildpacks.base.distro.*` Docker labels are set on the base image.")]
+    CannotDetermineTargetDistroName(std::env::VarError),
+
+    #[error("Couldn't determine target distro version: {0}. Ensure the `io.buildpacks.base.distro.*` Docker labels are set on the base image.")]
+    CannotDetermineTargetDistroVersion(std::env::VarError),
+
     #[error("Couldn't create platform from platform path: {0}")]
     CannotCreatePlatformFromPath(std::io::Error),
 
