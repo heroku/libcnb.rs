@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `libcnb`:
+  - `Target` now implements `Eq`, `PartialEq`, `Serialize`, and `Deserialize`. ([#823](https://github.com/heroku/libcnb.rs/pull/823))
 
 ## [0.21.0] - 2024-04-30
 
