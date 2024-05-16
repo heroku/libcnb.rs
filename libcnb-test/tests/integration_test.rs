@@ -29,7 +29,7 @@ const TEST_PORT: u16 = 12345;
 #[ignore = "integration test"]
 fn build_other_buildpack() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "tests/fixtures/procfile")
+        BuildConfig::new("heroku/builder:22", "tests/target/fixtures/procfile")
             .buildpacks([BuildpackReference::Other(String::from(PROCFILE_URL))]),
         |context| {
             assert_empty!(context.pack_stderr);
@@ -48,7 +48,7 @@ fn build_other_buildpack() {
 #[ignore = "integration test"]
 fn build_workspace_component_buildpack() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "tests/fixtures/empty").buildpacks([
+        BuildConfig::new("heroku/builder:22", "tests/target/fixtures/empty").buildpacks([
             BuildpackReference::WorkspaceBuildpack(buildpack_id!("libcnb-test/a")),
         ]),
         |context| {
@@ -67,7 +67,7 @@ fn build_workspace_component_buildpack() {
 #[ignore = "integration test"]
 fn build_workspace_composite_buildpack() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "tests/fixtures/procfile").buildpacks([
+        BuildConfig::new("heroku/builder:22", "tests/target/fixtures/procfile").buildpacks([
             BuildpackReference::WorkspaceBuildpack(buildpack_id!("libcnb-test/composite")),
         ]),
         |context| {
@@ -90,7 +90,7 @@ fn build_workspace_composite_buildpack() {
 #[ignore = "integration test"]
 fn build_multiple_buildpacks() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "tests/fixtures/procfile").buildpacks([
+        BuildConfig::new("heroku/builder:22", "tests/target/fixtures/procfile").buildpacks([
             BuildpackReference::WorkspaceBuildpack(buildpack_id!("libcnb-test/b")),
             BuildpackReference::Other(String::from(PROCFILE_URL)),
             BuildpackReference::WorkspaceBuildpack(buildpack_id!("libcnb-test/a")),
@@ -115,7 +115,7 @@ fn build_multiple_buildpacks() {
 #[ignore = "integration test"]
 fn rebuild() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "tests/fixtures/procfile")
+        BuildConfig::new("heroku/builder:22", "tests/target/fixtures/procfile")
             .buildpacks([BuildpackReference::Other(String::from(PROCFILE_URL))]),
         |context| {
             assert_empty!(context.pack_stderr);
@@ -134,7 +134,7 @@ fn rebuild() {
 #[ignore = "integration test"]
 fn packaging_failure_missing_buildpack_toml() {
     let err = panic::catch_unwind(|| {
-        TestRunner::default().build(BuildConfig::new("invalid!", "tests/fixtures/empty"), |_| {
+        TestRunner::default().build(BuildConfig::new("invalid!", "tests/target/fixtures/empty"), |_| {
             unreachable!("The test should panic prior to the TestContext being invoked.");
         });
     })
@@ -162,7 +162,7 @@ fn packaging_failure_missing_buildpack_toml() {
 )]
 fn packaging_failure_invalid_buildpack_toml() {
     TestRunner::default().build(
-        BuildConfig::new("invalid!", "tests/fixtures/empty").buildpacks([
+        BuildConfig::new("invalid!", "tests/target/fixtures/empty").buildpacks([
             BuildpackReference::WorkspaceBuildpack(buildpack_id!(
                 "libcnb-test/invalid-buildpack-toml"
             )),
@@ -180,7 +180,7 @@ fn packaging_failure_invalid_buildpack_toml() {
 )]
 fn packaging_failure_composite_buildpack_missing_package_toml() {
     TestRunner::default().build(
-        BuildConfig::new("invalid!", "tests/fixtures/empty").buildpacks([
+        BuildConfig::new("invalid!", "tests/target/fixtures/empty").buildpacks([
             BuildpackReference::WorkspaceBuildpack(buildpack_id!(
                 "libcnb-test/composite-missing-package-toml"
             )),
@@ -198,7 +198,7 @@ fn packaging_failure_composite_buildpack_missing_package_toml() {
 )]
 fn packaging_failure_invalid_cargo_toml() {
     TestRunner::default().build(
-        BuildConfig::new("invalid!", "tests/fixtures/empty").buildpacks([
+        BuildConfig::new("invalid!", "tests/target/fixtures/empty").buildpacks([
             BuildpackReference::WorkspaceBuildpack(buildpack_id!("libcnb-test/invalid-cargo-toml")),
         ]),
         |_| {
@@ -214,7 +214,7 @@ fn packaging_failure_invalid_cargo_toml() {
 )]
 fn packaging_failure_compile_error() {
     TestRunner::default().build(
-        BuildConfig::new("invalid!", "tests/fixtures/empty").buildpacks([
+        BuildConfig::new("invalid!", "tests/target/fixtures/empty").buildpacks([
             BuildpackReference::WorkspaceBuildpack(buildpack_id!("libcnb-test/compile-error")),
         ]),
         |_| {
@@ -228,7 +228,7 @@ fn packaging_failure_compile_error() {
 fn packaging_failure_non_existent_workspace_buildpack() {
     let err = panic::catch_unwind(|| {
         TestRunner::default().build(
-            BuildConfig::new("invalid!", "tests/fixtures/empty").buildpacks([
+            BuildConfig::new("invalid!", "tests/target/fixtures/empty").buildpacks([
                 BuildpackReference::WorkspaceBuildpack(buildpack_id!("non-existent")),
             ]),
             |_| {
@@ -266,7 +266,7 @@ pack command failed with exit code 1!
 ERROR: failed to build: invalid builder 'invalid!'")]
 fn unexpected_pack_failure() {
     TestRunner::default().build(
-        BuildConfig::new("invalid!", "tests/fixtures/empty").buildpacks(Vec::new()),
+        BuildConfig::new("invalid!", "tests/target/fixtures/empty").buildpacks(Vec::new()),
         |_| {
             unreachable!("The test should panic prior to the TestContext being invoked.");
         },
@@ -286,7 +286,7 @@ fn unexpected_pack_failure() {
 ")]
 fn unexpected_pack_success() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "tests/fixtures/procfile")
+        BuildConfig::new("heroku/builder:22", "tests/target/fixtures/procfile")
             .buildpacks([BuildpackReference::Other(String::from(PROCFILE_URL))])
             .expected_pack_result(PackResult::Failure),
         |_| {
@@ -299,7 +299,7 @@ fn unexpected_pack_success() {
 #[ignore = "integration test"]
 fn expected_pack_failure() {
     TestRunner::default().build(
-        BuildConfig::new("invalid!", "tests/fixtures/empty")
+        BuildConfig::new("invalid!", "tests/target/fixtures/empty")
             .buildpacks(Vec::new())
             .expected_pack_result(PackResult::Failure),
         |context| {
@@ -319,7 +319,7 @@ fn expected_pack_failure() {
 )]
 fn expected_pack_failure_still_panics_for_non_pack_failure() {
     TestRunner::default().build(
-        BuildConfig::new("invalid!", "tests/fixtures/empty")
+        BuildConfig::new("invalid!", "tests/target/fixtures/empty")
             .expected_pack_result(PackResult::Failure),
         |_| {
             unreachable!("The test should panic prior to the TestContext being invoked.");
@@ -331,7 +331,7 @@ fn expected_pack_failure_still_panics_for_non_pack_failure() {
 #[ignore = "integration test"]
 fn app_dir_preprocessor() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "tests/fixtures/nested_dirs")
+        BuildConfig::new("heroku/builder:22", "tests/target/fixtures/nested_dirs")
             .buildpacks([BuildpackReference::Other(String::from(PROCFILE_URL))])
             .app_dir_preprocessor(|app_dir| {
                 assert!(app_dir.join("file1.txt").exists());
@@ -370,7 +370,7 @@ fn app_dir_preprocessor() {
     let fixture_dir = env::var("CARGO_MANIFEST_DIR")
         .map(PathBuf::from)
         .unwrap()
-        .join("tests/fixtures/nested_dirs");
+        .join("tests/target/fixtures/nested_dirs");
     assert!(fixture_dir.join("file1.txt").exists());
     assert!(!fixture_dir.join("Procfile").exists());
 }
@@ -381,7 +381,7 @@ fn app_dir_absolute_path() {
     let absolute_app_dir = env::var("CARGO_MANIFEST_DIR")
         .map(PathBuf::from)
         .unwrap()
-        .join("tests/fixtures/procfile")
+        .join("tests/target/fixtures/procfile")
         .canonicalize()
         .unwrap();
 
@@ -397,7 +397,7 @@ fn app_dir_absolute_path() {
 fn app_dir_invalid_path() {
     let err = panic::catch_unwind(|| {
         TestRunner::default().build(
-            BuildConfig::new("invalid!", "tests/fixtures/non-existent-fixture")
+            BuildConfig::new("invalid!", "tests/target/fixtures/non-existent-fixture")
                 .buildpacks(Vec::new())
                 .app_dir_preprocessor(|_| {
                     unreachable!("The app dir should be validated before the preprocessor is run.");
@@ -414,7 +414,7 @@ fn app_dir_invalid_path() {
             env::var("CARGO_MANIFEST_DIR")
                 .map(PathBuf::from)
                 .unwrap()
-                .join("tests/fixtures/non-existent-fixture")
+                .join("tests/target/fixtures/non-existent-fixture")
                 .display()
         )
     );
@@ -431,7 +431,7 @@ pack command failed with exit code 1!
 ERROR: image 'libcnbtest_")]
 fn download_sbom_files_failure() {
     TestRunner::default().build(
-        BuildConfig::new("invalid!", "tests/fixtures/empty")
+        BuildConfig::new("invalid!", "tests/target/fixtures/empty")
             .buildpacks(Vec::new())
             .expected_pack_result(PackResult::Failure),
         |context| {
@@ -444,7 +444,7 @@ fn download_sbom_files_failure() {
 #[ignore = "integration test"]
 fn starting_containers() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "tests/fixtures/procfile")
+        BuildConfig::new("heroku/builder:22", "tests/target/fixtures/procfile")
             .buildpacks([BuildpackReference::Other(String::from(PROCFILE_URL))]),
         |context| {
             // Using the default entrypoint and command.
@@ -536,7 +536,7 @@ docker command failed with exit code 127!
 docker: Error response from daemon:")]
 fn start_container_spawn_failure() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "tests/fixtures/procfile")
+        BuildConfig::new("heroku/builder:22", "tests/target/fixtures/procfile")
             .buildpacks([BuildpackReference::Other(String::from(PROCFILE_URL))]),
         |context| {
             context.start_container(
@@ -560,7 +560,7 @@ docker command failed with exit code 1!
 Error response from daemon:")]
 fn shell_exec_when_container_has_crashed() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "tests/fixtures/procfile")
+        BuildConfig::new("heroku/builder:22", "tests/target/fixtures/procfile")
             .buildpacks([BuildpackReference::Other(String::from(PROCFILE_URL))]),
         |context| {
             context.start_container(
@@ -592,7 +592,7 @@ some stdout
 ")]
 fn shell_exec_nonzero_exit_status() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "tests/fixtures/procfile")
+        BuildConfig::new("heroku/builder:22", "tests/target/fixtures/procfile")
             .buildpacks([BuildpackReference::Other(String::from(PROCFILE_URL))]),
         |context| {
             context.start_container(ContainerConfig::new(), |container| {
@@ -619,7 +619,7 @@ some stdout
 ")]
 fn run_shell_command_nonzero_exit_status() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "tests/fixtures/procfile")
+        BuildConfig::new("heroku/builder:22", "tests/target/fixtures/procfile")
             .buildpacks([BuildpackReference::Other(String::from(PROCFILE_URL))]),
         |context| {
             context.run_shell_command("echo 'some stdout'; echo 'some stderr' >&2; exit 1");
@@ -631,7 +631,7 @@ fn run_shell_command_nonzero_exit_status() {
 #[ignore = "integration test"]
 fn logs_work_after_container_crashed() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "tests/fixtures/procfile")
+        BuildConfig::new("heroku/builder:22", "tests/target/fixtures/procfile")
             .buildpacks([BuildpackReference::Other(String::from(PROCFILE_URL))]),
         |context| {
             context.start_container(
@@ -656,7 +656,7 @@ fn logs_work_after_container_crashed() {
 )]
 fn address_for_port_when_port_not_exposed() {
     TestRunner::default().build(
-        BuildConfig::new("heroku/builder:22", "tests/fixtures/procfile")
+        BuildConfig::new("heroku/builder:22", "tests/target/fixtures/procfile")
             .buildpacks([BuildpackReference::Other(String::from(PROCFILE_URL))]),
         |context| {
             context.start_container(ContainerConfig::new(), |container| {
@@ -674,7 +674,7 @@ fn address_for_port_when_container_crashed() {
     // AssertUnwindSafe is required so that `container_name`` can be mutated across the unwind boundary.
     let err = panic::catch_unwind(panic::AssertUnwindSafe(|| {
         TestRunner::default().build(
-            BuildConfig::new("heroku/builder:22", "tests/fixtures/procfile")
+            BuildConfig::new("heroku/builder:22", "tests/target/fixtures/procfile")
                 .buildpacks([BuildpackReference::Other(String::from(PROCFILE_URL))]),
             |context| {
                 context.start_container(
