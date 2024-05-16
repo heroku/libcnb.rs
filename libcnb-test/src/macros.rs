@@ -513,19 +513,29 @@ right: `Regex(\"(?m)Eggs\")`: We need eggs!")]
     }
 
     #[test]
-    #[should_panic(
-        expected = "should be a valid regex: Error { msg: \"found open group without closing ')'\" }"
-    )]
+    #[should_panic(expected = "should be a valid regex: Syntax(
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+regex parse error:
+    (?m)(unclosed group
+        ^
+error: unclosed group
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+)")]
     fn contains_match_with_invalid_regex() {
-        assert_contains_match!("Hello World!", "(unclosed capture");
+        assert_contains_match!("Hello World!", "(unclosed group");
     }
 
     #[test]
-    #[should_panic(
-        expected = "should be a valid regex: Error { msg: \"found open group without closing ')'\" }"
-    )]
+    #[should_panic(expected = "should be a valid regex: Syntax(
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+regex parse error:
+    (?m)(unclosed group
+        ^
+error: unclosed group
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+)")]
     fn contains_match_with_invalid_regex_and_args() {
-        assert_contains_match!("Hello World!", "(unclosed capture", "This should fail.");
+        assert_contains_match!("Hello World!", "(unclosed group", "This should fail.");
     }
 
     #[test]
@@ -602,18 +612,28 @@ right: `Regex(\"(?m)Eggs!$\")`: We must not have eggs!")]
     }
 
     #[test]
-    #[should_panic(
-        expected = "should be a valid regex: Error { msg: \"found open group without closing ')'\" }"
-    )]
+    #[should_panic(expected = "should be a valid regex: Syntax(
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+regex parse error:
+    (?m)(unclosed group
+        ^
+error: unclosed group
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+)")]
     fn not_contains_match_with_invalid_regex() {
-        assert_not_contains_match!("Hello World!", "(unclosed capture");
+        assert_not_contains_match!("Hello World!", "(unclosed group");
     }
 
     #[test]
-    #[should_panic(
-        expected = "should be a valid regex: Error { msg: \"found open group without closing ')'\" }"
-    )]
+    #[should_panic(expected = "should be a valid regex: Syntax(
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+regex parse error:
+    (?m)(unclosed group
+        ^
+error: unclosed group
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+)")]
     fn not_contains_match_with_invalid_regex_and_args() {
-        assert_not_contains_match!("Hello World!", "(unclosed capture", "This will fail");
+        assert_not_contains_match!("Hello World!", "(unclosed group", "This will fail");
     }
 }
