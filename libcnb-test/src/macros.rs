@@ -161,7 +161,7 @@ value (escaped): `{:?}`: {}"#,
 #[macro_export]
 macro_rules! assert_contains_match {
     ($left:expr, $right:expr $(,)?) => {{
-        let regex = regex_lite::Regex::new(&format!("(?m){}", $right)).expect("should be a valid regex");
+        let regex = regex::Regex::new(&format!("(?m){}", $right)).expect("should be a valid regex");
         if !regex.is_match(&$left) {
             ::std::panic!(
                 r#"assertion failed: `(left matches right pattern)`
@@ -178,7 +178,7 @@ right: `{:?}`"#,
     }};
 
     ($left:expr, $right:expr, $($arg:tt)+) => {{
-        let regex = regex_lite::Regex::new(&format!("(?m){}", $right)).expect("should be a valid regex");
+        let regex = regex::Regex::new(&format!("(?m){}", $right)).expect("should be a valid regex");
         if !regex.is_match(&$left) {
             ::std::panic!(
                 r#"assertion failed: `(left matches right pattern)`
@@ -216,7 +216,7 @@ right: `{:?}`: {}"#,
 #[macro_export]
 macro_rules! assert_not_contains_match {
     ($left:expr, $right:expr $(,)?) => {{
-        let regex = regex_lite::Regex::new(&format!("(?m){}", $right)).expect("should be a valid regex");
+        let regex = regex::Regex::new(&format!("(?m){}", $right)).expect("should be a valid regex");
         if regex.is_match(&$left) {
             ::std::panic!(
                 r#"assertion failed: `(left does not match right pattern)`
@@ -233,7 +233,7 @@ right: `{:?}`"#,
     }};
 
     ($left:expr, $right:expr, $($arg:tt)+) => {{
-        let regex = regex_lite::Regex::new(&format!("(?m){}", $right)).expect("should be a valid regex");
+        let regex = regex::Regex::new(&format!("(?m){}", $right)).expect("should be a valid regex");
         if regex.is_match(&$left) {
             ::std::panic!(
                 r#"assertion failed: `(left does not match right pattern)`
