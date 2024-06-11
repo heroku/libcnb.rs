@@ -114,7 +114,7 @@ pub struct Process {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub default: bool,
     #[serde(
-        rename = "working-directory",
+        rename = "working-dir",
         default,
         skip_serializing_if = "WorkingDirectory::is_app"
     )]
@@ -405,7 +405,7 @@ command = ["foo"]
             r#"type = "web"
 command = ["foo"]
 default = true
-working-directory = "dist"
+working-dir = "dist"
 "#
         );
     }
