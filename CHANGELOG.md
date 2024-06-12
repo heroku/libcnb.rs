@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `libcnb-data`:
+  - The working directory for launch processes specifying a `WorkingDirectory::Directory` value is now respected. ([#831](https://github.com/heroku/libcnb.rs/pull/831))
 
 ## [0.21.0] - 2024-04-30
 
