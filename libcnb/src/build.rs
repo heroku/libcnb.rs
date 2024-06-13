@@ -104,7 +104,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     ///     }
     /// }
     /// ```
-    #[deprecated = "The Layer trait API was replaced by LayerDefinitions. Use `cached_layer` and `uncached_layer`."]
+    #[deprecated = "The Layer trait API was replaced by a struct based API. Use `cached_layer` and `uncached_layer`."]
     #[allow(deprecated)]
     pub fn handle_layer<L: crate::layer::Layer<Buildpack = B>>(
         &self,
@@ -119,6 +119,263 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
         })
     }
 
+    /// Creates a cached layer, potentially re-using a previously cached version.
+    ///
+    /// Buildpack code uses this function to create a cached layer and will get back a reference to
+    /// the layer directory on disk. Intricacies of the CNB spec are automatically handled such as
+    /// the maintenance of TOML files. Buildpack code can also specify a callback for cached layer
+    /// invalidation.
+    ///
+    /// Users of this function pass in a [`CachedLayerDefinition`] that describes the desired layer
+    /// and the returned `LayerRef` can then be used to modify the layer like any other path. This
+    /// allows users to be flexible when and how the layer is modified and to abstract layer
+    /// creation away if necessary.
+    ///
+    /// # Basic Example
+    /// ```rust
+    /// # use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
+    /// # use libcnb::detect::{DetectContext, DetectResult};
+    /// # use libcnb::generic::GenericPlatform;
+    /// # use libcnb::layer::{
+    /// #     CachedLayerDefinition, InspectExistingAction, InvalidMetadataAction, LayerContents,
+    /// # };
+    /// # use libcnb::layer_env::{LayerEnv, ModificationBehavior, Scope};
+    /// # use libcnb::Buildpack;
+    /// # use libcnb_data::generic::GenericMetadata;
+    /// # use libcnb_data::layer_name;
+    /// # use std::fs;
+    /// #
+    /// # struct ExampleBuildpack;
+    /// #
+    /// # #[derive(Debug)]
+    /// # enum ExampleBuildpackError {
+    /// #     WriteDataError(std::io::Error),
+    /// # }
+    /// #
+    /// # impl Buildpack for ExampleBuildpack {
+    /// #    type Platform = GenericPlatform;
+    /// #    type Metadata = GenericMetadata;
+    /// #    type Error = ExampleBuildpackError;
+    /// #
+    /// #    fn detect(&self, context: DetectContext<Self>) -> libcnb::Result<DetectResult, Self::Error> {
+    /// #        unimplemented!()
+    /// #    }
+    /// #
+    /// #    fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildResult, Self::Error> {
+    /// let layer_ref = context.cached_layer(
+    ///     layer_name!("example_layer"),
+    ///     CachedLayerDefinition {
+    ///         build: false,
+    ///         launch: false,
+    ///         // Will be called if a cached version of the layer was found, but the metadata
+    ///         // could not be parsed. In this example, we instruct libcnb to always delete the
+    ///         // existing layer in such a case. But we can implement any logic here if we want.
+    ///         invalid_metadata: &|_| InvalidMetadataAction::DeleteLayer,
+    ///         // Will be called if a cached version of the layer was found. This allows us to
+    ///         // inspect the contents and metadata to decide if we want to keep the existing
+    ///         // layer or let libcnb delete the existing layer and create a new one for us.
+    ///         // This is libcnb's method to implement cache invalidations for layers.
+    ///         inspect_existing: &|_: &GenericMetadata, _| InspectExistingAction::KeepLayer,
+    ///     },
+    /// )?;
+    ///
+    /// // At this point, a layer exists on disk. It might contain cached data or might be empty.
+    /// // Since we need to conditionally work with the layer contents based on its state, we can
+    /// // inspect the `contents` field of the layer reference to get detailed information about
+    /// // the current layer contents and the cause(s) for the state.
+    /// //
+    /// // In the majority of cases, we don't need more details beyond if it's empty or not and can
+    /// // ignore the details. This is what we do in this example. See the later example for a more
+    /// // complex situation.
+    /// match layer_ref.contents {
+    ///     LayerContents::Empty { .. } => {
+    ///         println!("Creating new example layer!");
+    ///
+    ///         // Modify the layer contents with regular Rust functions:
+    ///         fs::write(
+    ///             layer_ref.path().join("data.txt"),
+    ///             "Here is some example data",
+    ///         )
+    ///         .map_err(ExampleBuildpackError::WriteDataError)?;
+    ///
+    ///         // Use functions on LayerRef for common CNB specific layer modifications:
+    ///         layer_ref.replace_env(LayerEnv::new().chainable_insert(
+    ///             Scope::All,
+    ///             ModificationBehavior::Append,
+    ///             "PLANET",
+    ///             "LV-246",
+    ///         ))?;
+    ///     }
+    ///     LayerContents::Cached { .. } => {
+    ///         println!("Reusing example layer from previous run!");
+    ///     }
+    /// }
+    /// #
+    /// #        BuildResultBuilder::new().build()
+    /// #    }
+    /// # }
+    /// #
+    /// # impl From<ExampleBuildpackError> for libcnb::Error<ExampleBuildpackError> {
+    /// #    fn from(value: ExampleBuildpackError) -> Self {
+    /// #        Self::BuildpackError(value)
+    /// #    }
+    /// # }
+    /// ```
+    ///
+    /// # More complex example
+    /// ```rust
+    /// # use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
+    /// # use libcnb::detect::{DetectContext, DetectResult};
+    /// # use libcnb::generic::GenericPlatform;
+    /// # use libcnb::layer::{
+    /// #     CachedLayerDefinition, EmptyLayerCause, InspectExistingAction, InvalidMetadataAction,
+    /// #     LayerContents,
+    /// # };
+    /// # use libcnb::Buildpack;
+    /// # use libcnb_data::generic::GenericMetadata;
+    /// # use libcnb_data::layer_name;
+    /// # use serde::{Deserialize, Serialize};
+    /// # use std::fs;
+    /// #
+    /// # struct ExampleBuildpack;
+    /// #
+    /// # #[derive(Debug)]
+    /// # enum ExampleBuildpackError {
+    /// #     UnexpectedIoError(std::io::Error),
+    /// # }
+    /// #
+    /// #[derive(Deserialize, Serialize)]
+    /// struct ExampleLayerMetadata {
+    ///     lang_runtime_version: String,
+    /// }
+    ///
+    /// enum CustomCause {
+    ///     Ok,
+    ///     LegacyVersion,
+    ///     HasBrokenModule,
+    ///     MissingModulesFile,
+    /// }
+    ///
+    /// # impl Buildpack for ExampleBuildpack {
+    /// #     type Platform = GenericPlatform;
+    /// #     type Metadata = GenericMetadata;
+    /// #     type Error = ExampleBuildpackError;
+    /// #
+    /// #     fn detect(&self, _: DetectContext<Self>) -> libcnb::Result<DetectResult, Self::Error> {
+    /// #         unimplemented!()
+    /// #     }
+    /// #
+    /// fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildResult, Self::Error> {
+    ///     let layer_ref = context.cached_layer(
+    ///         layer_name!("example_layer"),
+    ///         CachedLayerDefinition {
+    ///             build: false,
+    ///             launch: false,
+    ///             invalid_metadata: &|_| InvalidMetadataAction::DeleteLayer,
+    ///             inspect_existing: &|metadata: &ExampleLayerMetadata, layer_dir| {
+    ///                 if metadata.lang_runtime_version.starts_with("0.") {
+    ///                     Ok((
+    ///                         InspectExistingAction::DeleteLayer,
+    ///                         CustomCause::LegacyVersion,
+    ///                     ))
+    ///                 } else {
+    ///                     let file_path = layer_dir.join("modules.txt");
+    ///
+    ///                     if file_path.is_file() {
+    ///                         // This is a fallible operation where an unexpected IO error occurs
+    ///                         // during operation. In this example, we chose not to map it to
+    ///                         // a layer action but let it automatically "bubble up". This error will
+    ///                         // end up in the regular libcnb buildpack on_error.
+    ///                         let file_contents = fs::read_to_string(&file_path)
+    ///                             .map_err(ExampleBuildpackError::UnexpectedIoError)?;
+    ///
+    ///                         if file_contents == "known-broken-0.1c" {
+    ///                             Ok((
+    ///                                 InspectExistingAction::DeleteLayer,
+    ///                                 CustomCause::HasBrokenModule,
+    ///                             ))
+    ///                         } else {
+    ///                             Ok((InspectExistingAction::KeepLayer, CustomCause::Ok))
+    ///                         }
+    ///                     } else {
+    ///                         Ok((
+    ///                             InspectExistingAction::DeleteLayer,
+    ///                             CustomCause::MissingModulesFile,
+    ///                         ))
+    ///                     }
+    ///                 }
+    ///             },
+    ///         },
+    ///     )?;
+    ///
+    ///     match layer_ref.contents {
+    ///         LayerContents::Empty { ref cause } => {
+    ///             // Since the cause is just a regular Rust value, we can match it with regular
+    ///             // Rust syntax and be as complex or simple as we need.
+    ///             let message = match cause {
+    ///                 EmptyLayerCause::Inspect {
+    ///                     cause: CustomCause::LegacyVersion,
+    ///                 } => "Re-installing language runtime (legacy cached version)",
+    ///                 EmptyLayerCause::Inspect {
+    ///                     cause: CustomCause::HasBrokenModule | CustomCause::MissingModulesFile,
+    ///                 } => "Re-installing language runtime (broken modules detected)",
+    ///                 _ => "Installing language runtime",
+    ///             };
+    ///
+    ///             println!("{message}");
+    ///
+    ///             // Code to install the language runtime would go here
+    ///
+    ///             layer_ref.replace_metadata(ExampleLayerMetadata {
+    ///                 lang_runtime_version: String::from("1.0.0"),
+    ///             })?;
+    ///         }
+    ///         LayerContents::Cached { .. } => {
+    ///             println!("Re-using cached language runtime");
+    ///         }
+    ///     }
+    ///
+    ///     BuildResultBuilder::new().build()
+    /// }
+    /// # }
+    /// #
+    /// # impl From<ExampleBuildpackError> for libcnb::Error<ExampleBuildpackError> {
+    /// #     fn from(value: ExampleBuildpackError) -> Self {
+    /// #         Self::BuildpackError(value)
+    /// #     }
+    /// # }
+    /// ```
+    pub fn cached_layer<'a, M, MA, EA, MAC, EAC>(
+        &self,
+        layer_name: LayerName,
+        layer_definition: impl Borrow<CachedLayerDefinition<'a, M, MA, EA>>,
+    ) -> crate::Result<LayerRef<B, MAC, EAC>, B::Error>
+    where
+        M: 'a + Serialize + DeserializeOwned,
+        MA: 'a + IntoAction<InvalidMetadataAction<M>, MAC, B::Error>,
+        EA: 'a + IntoAction<InspectExistingAction, EAC, B::Error>,
+    {
+        let layer_definition = layer_definition.borrow();
+
+        crate::layer::struct_api::handling::handle_layer(
+            LayerTypes {
+                launch: layer_definition.launch,
+                build: layer_definition.build,
+                cache: true,
+            },
+            layer_definition.invalid_metadata,
+            layer_definition.inspect_existing,
+            layer_name,
+            &self.layers_dir,
+        )
+    }
+
+    /// Creates an uncached layer.
+    ///
+    /// If the layer already exists because it was cached in a previous buildpack run, the existing
+    /// data will be deleted.
+    ///
+    /// This function is essentially the same as [`BuildContext::uncached_layer`] but simpler.
     pub fn uncached_layer(
         &self,
         layer_name: LayerName,
@@ -133,32 +390,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
                 cache: false,
             },
             &|_| InvalidMetadataAction::DeleteLayer,
-            &|_: &GenericMetadata, _| InspectExistingAction::Delete,
-            layer_name,
-            &self.layers_dir,
-        )
-    }
-
-    pub fn cached_layer<'a, M, X, Y, O, I>(
-        &self,
-        layer_name: LayerName,
-        layer_definition: impl Borrow<CachedLayerDefinition<'a, M, O, I>>,
-    ) -> crate::Result<LayerRef<B, X, Y>, B::Error>
-    where
-        M: 'a + Serialize + DeserializeOwned,
-        O: 'a + IntoAction<InvalidMetadataAction<M>, X, B::Error>,
-        I: 'a + IntoAction<InspectExistingAction, Y, B::Error>,
-    {
-        let layer_definition = layer_definition.borrow();
-
-        crate::layer::struct_api::handling::handle_layer(
-            LayerTypes {
-                launch: layer_definition.launch,
-                build: layer_definition.build,
-                cache: true,
-            },
-            layer_definition.invalid_metadata,
-            layer_definition.inspect_existing,
+            &|_: &GenericMetadata, _| InspectExistingAction::DeleteLayer,
             layer_name,
             &self.layers_dir,
         )

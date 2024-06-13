@@ -3,7 +3,7 @@ use crate::layer::shared::{
     WriteLayerError,
 };
 use crate::layer::{
-    EmptyReason, InspectExistingAction, IntoAction, InvalidMetadataAction, LayerContents,
+    EmptyLayerCause, InspectExistingAction, IntoAction, InvalidMetadataAction, LayerContents,
     LayerError, LayerRef,
 };
 use crate::Buildpack;
@@ -16,38 +16,43 @@ use serde::Serialize;
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
-pub(crate) fn handle_layer<B, M, MA, IA, MC, IC>(
+pub(crate) fn handle_layer<B, M, MA, EA, MAC, EAC>(
     layer_types: LayerTypes,
     invalid_metadata: &dyn Fn(&GenericMetadata) -> MA,
-    inspect_existing: &dyn Fn(&M, &Path) -> IA,
+    inspect_existing: &dyn Fn(&M, &Path) -> EA,
     layer_name: LayerName,
     layers_dir: &Path,
-) -> crate::Result<LayerRef<B, MC, IC>, B::Error>
+) -> crate::Result<LayerRef<B, MAC, EAC>, B::Error>
 where
     B: Buildpack + ?Sized,
     M: Serialize + DeserializeOwned,
-    MA: IntoAction<InvalidMetadataAction<M>, MC, B::Error>,
-    IA: IntoAction<InspectExistingAction, IC, B::Error>,
+    MA: IntoAction<InvalidMetadataAction<M>, MAC, B::Error>,
+    EA: IntoAction<InspectExistingAction, EAC, B::Error>,
 {
     match read_layer::<M, _>(layers_dir, &layer_name) {
-        Ok(None) => create_layer(layer_types, &layer_name, layers_dir, EmptyReason::Uncached),
+        Ok(None) => create_layer(
+            layer_types,
+            &layer_name,
+            layers_dir,
+            EmptyLayerCause::Uncached,
+        ),
         Ok(Some(layer_data)) => {
             let inspect_action = inspect_existing(&layer_data.metadata.metadata, &layer_data.path)
                 .into_action()
                 .map_err(crate::Error::BuildpackError)?;
 
             match inspect_action {
-                (InspectExistingAction::Delete, cause) => {
+                (InspectExistingAction::DeleteLayer, cause) => {
                     delete_layer(layers_dir, &layer_name).map_err(LayerError::DeleteLayerError)?;
 
                     create_layer(
                         layer_types,
                         &layer_name,
                         layers_dir,
-                        EmptyReason::Inspect(cause),
+                        EmptyLayerCause::Inspect { cause },
                     )
                 }
-                (InspectExistingAction::Keep, cause) => {
+                (InspectExistingAction::KeepLayer, cause) => {
                     // Always write the layer types as:
                     // a) they might be different from what is currently on disk
                     // b) the cache field will be removed by CNB lifecycle on cache restore
@@ -59,7 +64,7 @@ where
                         name: layer_data.name,
                         layers_dir: PathBuf::from(layers_dir),
                         buildpack: PhantomData,
-                        contents: LayerContents::Cached(cause),
+                        contents: LayerContents::Cached { cause },
                     })
                 }
             }
@@ -82,7 +87,7 @@ where
                         layer_types,
                         &layer_name,
                         layers_dir,
-                        EmptyReason::MetadataInvalid(cause),
+                        EmptyLayerCause::MetadataInvalid { cause },
                     )
                 }
                 (InvalidMetadataAction::ReplaceMetadata(metadata), _) => {
@@ -104,12 +109,12 @@ where
     }
 }
 
-fn create_layer<X, Y, B>(
+fn create_layer<B, MAC, EAC>(
     layer_types: LayerTypes,
     layer_name: &LayerName,
     layers_dir: &Path,
-    empty_reason: EmptyReason<X, Y>,
-) -> Result<LayerRef<B, X, Y>, crate::Error<B::Error>>
+    empty_layer_cause: EmptyLayerCause<MAC, EAC>,
+) -> Result<LayerRef<B, MAC, EAC>, crate::Error<B::Error>>
 where
     B: Buildpack + ?Sized,
 {
@@ -131,6 +136,8 @@ where
         name: layer_data.name,
         layers_dir: PathBuf::from(layers_dir),
         buildpack: PhantomData,
-        contents: LayerContents::Empty(empty_reason),
+        contents: LayerContents::Empty {
+            cause: empty_layer_cause,
+        },
     })
 }
