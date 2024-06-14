@@ -14,25 +14,25 @@ uses Cargo features to allow opt-out of certain modules if they're not needed.
 
 The feature names line up with the modules in this crate. All features are enabled by default.
 
-* **command** -
+* `command` -
   Enabled helpers to work with `std::process::Command`.
-* **download** -
+* `download` -
   Enables helpers to download files over HTTP.
-* **digest** -
+* `digest` -
   Enables helpers to create checksums of files.
-* **error** -
+* `error` -
   Enables helpers to achieve consistent error logging.
-* **log** -
+* `log` -
   Enables helpers for logging.
-* **buildpack_output** -
+* `buildpack_output` -
   Enables helpers for user-facing buildpack output.
-* **tar** -
+* `tar` -
   Enables helpers for working with tarballs.
-* **toml** -
+* `toml` -
   Enables helpers for working with TOML data.
-* **fs** -
+* `fs` -
   Enables helpers for filesystem related tasks.
-* **write** -
+* `write` -
   Enables `std::io::Write` proxy implementations.
 
 [Docs]: https://img.shields.io/docsrs/libherokubuildpack
