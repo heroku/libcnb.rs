@@ -8,7 +8,7 @@ use crate::data::{
 };
 use crate::layer::trait_api::handling::LayerErrorOrBuildpackError;
 use crate::layer::{
-    CachedLayerDefinition, InspectExistingAction, IntoAction, InvalidMetadataAction, LayerRef,
+    CachedLayerDefinition, InspectRestoredAction, IntoAction, InvalidMetadataAction, LayerRef,
     UncachedLayerDefinition,
 };
 use crate::sbom::Sbom;
@@ -137,7 +137,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     /// # use libcnb::detect::{DetectContext, DetectResult};
     /// # use libcnb::generic::GenericPlatform;
     /// # use libcnb::layer::{
-    /// #     CachedLayerDefinition, InspectExistingAction, InvalidMetadataAction, LayerContents,
+    /// #     CachedLayerDefinition, InspectRestoredAction, InvalidMetadataAction, LayerState,
     /// # };
     /// # use libcnb::layer_env::{LayerEnv, ModificationBehavior, Scope};
     /// # use libcnb::Buildpack;
@@ -175,7 +175,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     ///         // inspect the contents and metadata to decide if we want to keep the existing
     ///         // layer or let libcnb delete the existing layer and create a new one for us.
     ///         // This is libcnb's method to implement cache invalidations for layers.
-    ///         inspect_existing: &|_: &GenericMetadata, _| InspectExistingAction::KeepLayer,
+    ///         inspect_restored: &|_: &GenericMetadata, _| InspectRestoredAction::KeepLayer,
     ///     },
     /// )?;
     ///
@@ -187,8 +187,8 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     /// // In the majority of cases, we don't need more details beyond if it's empty or not and can
     /// // ignore the details. This is what we do in this example. See the later example for a more
     /// // complex situation.
-    /// match layer_ref.contents {
-    ///     LayerContents::Empty { .. } => {
+    /// match layer_ref.state {
+    ///     LayerState::Empty { .. } => {
     ///         println!("Creating new example layer!");
     ///
     ///         // Modify the layer contents with regular Rust functions:
@@ -206,7 +206,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     ///             "LV-246",
     ///         ))?;
     ///     }
-    ///     LayerContents::Cached { .. } => {
+    ///     LayerState::Restored { .. } => {
     ///         println!("Reusing example layer from previous run!");
     ///     }
     /// }
@@ -228,8 +228,8 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     /// # use libcnb::detect::{DetectContext, DetectResult};
     /// # use libcnb::generic::GenericPlatform;
     /// # use libcnb::layer::{
-    /// #     CachedLayerDefinition, EmptyLayerCause, InspectExistingAction, InvalidMetadataAction,
-    /// #     LayerContents,
+    /// #     CachedLayerDefinition, EmptyLayerCause, InspectRestoredAction, InvalidMetadataAction,
+    /// #     LayerState,
     /// # };
     /// # use libcnb::Buildpack;
     /// # use libcnb_data::generic::GenericMetadata;
@@ -272,10 +272,10 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     ///             build: false,
     ///             launch: false,
     ///             invalid_metadata: &|_| InvalidMetadataAction::DeleteLayer,
-    ///             inspect_existing: &|metadata: &ExampleLayerMetadata, layer_dir| {
+    ///             inspect_restored: &|metadata: &ExampleLayerMetadata, layer_dir| {
     ///                 if metadata.lang_runtime_version.starts_with("0.") {
     ///                     Ok((
-    ///                         InspectExistingAction::DeleteLayer,
+    ///                         InspectRestoredAction::DeleteLayer,
     ///                         CustomCause::LegacyVersion,
     ///                     ))
     ///                 } else {
@@ -291,15 +291,15 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     ///
     ///                         if file_contents == "known-broken-0.1c" {
     ///                             Ok((
-    ///                                 InspectExistingAction::DeleteLayer,
+    ///                                 InspectRestoredAction::DeleteLayer,
     ///                                 CustomCause::HasBrokenModule,
     ///                             ))
     ///                         } else {
-    ///                             Ok((InspectExistingAction::KeepLayer, CustomCause::Ok))
+    ///                             Ok((InspectRestoredAction::KeepLayer, CustomCause::Ok))
     ///                         }
     ///                     } else {
     ///                         Ok((
-    ///                             InspectExistingAction::DeleteLayer,
+    ///                             InspectRestoredAction::DeleteLayer,
     ///                             CustomCause::MissingModulesFile,
     ///                         ))
     ///                     }
@@ -308,8 +308,8 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     ///         },
     ///     )?;
     ///
-    ///     match layer_ref.contents {
-    ///         LayerContents::Empty { ref cause } => {
+    ///     match layer_ref.state {
+    ///         LayerState::Empty { ref cause } => {
     ///             // Since the cause is just a regular Rust value, we can match it with regular
     ///             // Rust syntax and be as complex or simple as we need.
     ///             let message = match cause {
@@ -330,7 +330,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     ///                 lang_runtime_version: String::from("1.0.0"),
     ///             })?;
     ///         }
-    ///         LayerContents::Cached { .. } => {
+    ///         LayerState::Restored { .. } => {
     ///             println!("Re-using cached language runtime");
     ///         }
     ///     }
@@ -345,15 +345,15 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     /// #     }
     /// # }
     /// ```
-    pub fn cached_layer<'a, M, MA, EA, MAC, EAC>(
+    pub fn cached_layer<'a, M, MA, IA, MAC, IAC>(
         &self,
         layer_name: impl Borrow<LayerName>,
-        layer_definition: impl Borrow<CachedLayerDefinition<'a, M, MA, EA>>,
-    ) -> crate::Result<LayerRef<B, MAC, EAC>, B::Error>
+        layer_definition: impl Borrow<CachedLayerDefinition<'a, M, MA, IA>>,
+    ) -> crate::Result<LayerRef<B, MAC, IAC>, B::Error>
     where
         M: 'a + Serialize + DeserializeOwned,
         MA: 'a + IntoAction<InvalidMetadataAction<M>, MAC, B::Error>,
-        EA: 'a + IntoAction<InspectExistingAction, EAC, B::Error>,
+        IA: 'a + IntoAction<InspectRestoredAction, IAC, B::Error>,
     {
         let layer_definition = layer_definition.borrow();
 
@@ -364,7 +364,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
                 cache: true,
             },
             layer_definition.invalid_metadata,
-            layer_definition.inspect_existing,
+            layer_definition.inspect_restored,
             layer_name.borrow(),
             &self.layers_dir,
         )
@@ -390,7 +390,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
                 cache: false,
             },
             &|_| InvalidMetadataAction::DeleteLayer,
-            &|_: &GenericMetadata, _| InspectExistingAction::DeleteLayer,
+            &|_: &GenericMetadata, _| InspectRestoredAction::DeleteLayer,
             layer_name.borrow(),
             &self.layers_dir,
         )

@@ -121,7 +121,7 @@ pub(in crate::layer) fn delete_layer<P: AsRef<Path>>(
 
 #[derive(thiserror::Error, Debug)]
 pub enum DeleteLayerError {
-    #[error("I/O error while deleting existing layer: {0}")]
+    #[error("I/O error while deleting layer: {0}")]
     IoError(#[from] std::io::Error),
 }
 

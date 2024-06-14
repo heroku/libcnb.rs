@@ -3,8 +3,8 @@ use crate::layer::shared::{
     WriteLayerError,
 };
 use crate::layer::{
-    EmptyLayerCause, InspectExistingAction, IntoAction, InvalidMetadataAction, LayerContents,
-    LayerError, LayerRef,
+    EmptyLayerCause, InspectRestoredAction, IntoAction, InvalidMetadataAction, LayerError,
+    LayerRef, LayerState,
 };
 use crate::Buildpack;
 use libcnb_common::toml_file::read_toml_file;
@@ -16,18 +16,18 @@ use serde::Serialize;
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
-pub(crate) fn handle_layer<B, M, MA, EA, MAC, EAC>(
+pub(crate) fn handle_layer<B, M, MA, IA, MAC, IAC>(
     layer_types: LayerTypes,
     invalid_metadata: &dyn Fn(&GenericMetadata) -> MA,
-    inspect_existing: &dyn Fn(&M, &Path) -> EA,
+    inspect_restored: &dyn Fn(&M, &Path) -> IA,
     layer_name: &LayerName,
     layers_dir: &Path,
-) -> crate::Result<LayerRef<B, MAC, EAC>, B::Error>
+) -> crate::Result<LayerRef<B, MAC, IAC>, B::Error>
 where
     B: Buildpack + ?Sized,
     M: Serialize + DeserializeOwned,
     MA: IntoAction<InvalidMetadataAction<M>, MAC, B::Error>,
-    EA: IntoAction<InspectExistingAction, EAC, B::Error>,
+    IA: IntoAction<InspectRestoredAction, IAC, B::Error>,
 {
     match read_layer::<M, _>(layers_dir, layer_name) {
         Ok(None) => create_layer(
@@ -37,12 +37,12 @@ where
             EmptyLayerCause::Uncached,
         ),
         Ok(Some(layer_data)) => {
-            let inspect_action = inspect_existing(&layer_data.metadata.metadata, &layer_data.path)
+            let inspect_action = inspect_restored(&layer_data.metadata.metadata, &layer_data.path)
                 .into_action()
                 .map_err(crate::Error::BuildpackError)?;
 
             match inspect_action {
-                (InspectExistingAction::DeleteLayer, cause) => {
+                (InspectRestoredAction::DeleteLayer, cause) => {
                     delete_layer(layers_dir, layer_name).map_err(LayerError::DeleteLayerError)?;
 
                     create_layer(
@@ -52,7 +52,7 @@ where
                         EmptyLayerCause::Inspect { cause },
                     )
                 }
-                (InspectExistingAction::KeepLayer, cause) => {
+                (InspectRestoredAction::KeepLayer, cause) => {
                     // Always write the layer types as:
                     // a) they might be different from what is currently on disk
                     // b) the cache field will be removed by CNB lifecycle on cache restore
@@ -64,7 +64,7 @@ where
                         name: layer_data.name,
                         layers_dir: PathBuf::from(layers_dir),
                         buildpack: PhantomData,
-                        contents: LayerContents::Cached { cause },
+                        state: LayerState::Restored { cause },
                     })
                 }
             }
@@ -98,7 +98,7 @@ where
                     handle_layer(
                         layer_types,
                         invalid_metadata,
-                        inspect_existing,
+                        inspect_restored,
                         layer_name,
                         layers_dir,
                     )
@@ -109,12 +109,12 @@ where
     }
 }
 
-fn create_layer<B, MAC, EAC>(
+fn create_layer<B, MAC, IAC>(
     layer_types: LayerTypes,
     layer_name: &LayerName,
     layers_dir: &Path,
-    empty_layer_cause: EmptyLayerCause<MAC, EAC>,
-) -> Result<LayerRef<B, MAC, EAC>, crate::Error<B::Error>>
+    empty_layer_cause: EmptyLayerCause<MAC, IAC>,
+) -> Result<LayerRef<B, MAC, IAC>, crate::Error<B::Error>>
 where
     B: Buildpack + ?Sized,
 {
@@ -136,7 +136,7 @@ where
         name: layer_data.name,
         layers_dir: PathBuf::from(layers_dir),
         buildpack: PhantomData,
-        contents: LayerContents::Empty {
+        state: LayerState::Empty {
             cause: empty_layer_cause,
         },
     })
@@ -148,9 +148,7 @@ mod tests {
     use crate::build::{BuildContext, BuildResult};
     use crate::detect::{DetectContext, DetectResult};
     use crate::generic::{GenericError, GenericPlatform};
-    use crate::layer::{
-        EmptyLayerCause, InspectExistingAction, InvalidMetadataAction, LayerContents,
-    };
+    use crate::layer::{EmptyLayerCause, InspectRestoredAction, InvalidMetadataAction, LayerState};
     use crate::Buildpack;
     use libcnb_common::toml_file::read_toml_file;
     use libcnb_data::generic::GenericMetadata;
@@ -179,7 +177,7 @@ mod tests {
         .unwrap();
 
         assert_eq!(layer_ref.layers_dir, temp_dir.path());
-        assert_eq!(layer_ref.contents, LayerContents::Empty { cause });
+        assert_eq!(layer_ref.state, LayerState::Empty { cause });
         assert!(temp_dir.path().join(&*layer_name).is_dir());
         assert_eq!(
             read_toml_file::<LayerContentMetadata<GenericMetadata>>(
@@ -206,7 +204,7 @@ mod tests {
             TestBuildpack,
             GenericMetadata,
             InvalidMetadataAction<GenericMetadata>,
-            InspectExistingAction,
+            InspectRestoredAction,
             (),
             (),
         >(
@@ -216,7 +214,7 @@ mod tests {
                 cache: true,
             },
             &|_| panic!("invalid_metadata callback should not be called!"),
-            &|_, _| panic!("inspect_existing callback should not be called!"),
+            &|_, _| panic!("inspect_restored callback should not be called!"),
             &layer_name,
             temp_dir.path(),
         )
@@ -239,8 +237,8 @@ mod tests {
             }
         );
         assert_eq!(
-            layer_ref.contents,
-            LayerContents::Empty {
+            layer_ref.state,
+            LayerState::Empty {
                 cause: EmptyLayerCause::Uncached
             }
         );
@@ -273,7 +271,7 @@ mod tests {
                 &|metadata, path| {
                     assert_eq!(metadata, &Some(toml! { answer = 42 }));
                     assert_eq!(path, temp_dir.path().join(&*layer_name.clone()));
-                    (InspectExistingAction::KeepLayer, KEEP_CAUSE)
+                    (InspectRestoredAction::KeepLayer, KEEP_CAUSE)
                 },
                 &layer_name,
                 temp_dir.path(),
@@ -296,10 +294,7 @@ mod tests {
                 metadata: Some(toml! { answer = 42 })
             }
         );
-        assert_eq!(
-            layer_ref.contents,
-            LayerContents::Cached { cause: KEEP_CAUSE }
-        );
+        assert_eq!(layer_ref.state, LayerState::Restored { cause: KEEP_CAUSE });
     }
 
     #[test]
@@ -329,7 +324,7 @@ mod tests {
                 &|metadata, path| {
                     assert_eq!(metadata, &Some(toml! { answer = 42 }));
                     assert_eq!(path, temp_dir.path().join(&*layer_name.clone()));
-                    (InspectExistingAction::DeleteLayer, DELETE_CAUSE)
+                    (InspectRestoredAction::DeleteLayer, DELETE_CAUSE)
                 },
                 &layer_name,
                 temp_dir.path(),
@@ -353,8 +348,8 @@ mod tests {
             }
         );
         assert_eq!(
-            layer_ref.contents,
-            LayerContents::Empty {
+            layer_ref.state,
+            LayerState::Empty {
                 cause: EmptyLayerCause::Inspect {
                     cause: DELETE_CAUSE
                 }
@@ -387,7 +382,7 @@ mod tests {
             TestBuildpack,
             TestLayerMetadata,
             _,
-            (InspectExistingAction, &str),
+            (InspectRestoredAction, &str),
             &str,
             _,
         >(
@@ -400,7 +395,7 @@ mod tests {
                 assert_eq!(metadata, &Some(toml! { answer = 42 }));
                 (InvalidMetadataAction::DeleteLayer, DELETE_CAUSE)
             },
-            &|_, _| panic!("inspect_existing callback should not be called!"),
+            &|_, _| panic!("inspect_restored callback should not be called!"),
             &layer_name,
             temp_dir.path(),
         )
@@ -423,8 +418,8 @@ mod tests {
             }
         );
         assert_eq!(
-            layer_ref.contents,
-            LayerContents::Empty {
+            layer_ref.state,
+            LayerState::Empty {
                 cause: EmptyLayerCause::MetadataInvalid {
                     cause: DELETE_CAUSE
                 }
@@ -479,7 +474,7 @@ mod tests {
                     }
                 );
 
-                (InspectExistingAction::KeepLayer, KEEP_CAUSE)
+                (InspectRestoredAction::KeepLayer, KEEP_CAUSE)
             },
             &layer_name,
             temp_dir.path(),
@@ -505,10 +500,7 @@ mod tests {
             }
         );
 
-        assert_eq!(
-            layer_ref.contents,
-            LayerContents::Cached { cause: KEEP_CAUSE }
-        );
+        assert_eq!(layer_ref.state, LayerState::Restored { cause: KEEP_CAUSE });
     }
 
     struct TestBuildpack;
