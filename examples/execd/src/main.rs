@@ -1,18 +1,12 @@
-// This example uses the older trait Layer API. The example will be updated to the newer API
-// before the next libcnb.rs release.
-#![allow(deprecated)]
-
-mod layer;
-
-use crate::layer::ExecDLayer;
 use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
 use libcnb::data::layer_name;
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};
-use libcnb::{buildpack_main, Buildpack};
+use libcnb::{additional_buildpack_binary_path, buildpack_main, Buildpack};
 
 // Suppress warnings due to the `unused_crate_dependencies` lint not handling integration tests well.
 use fastrand as _;
+use libcnb::layer::UncachedLayerDefinition;
 #[cfg(test)]
 use libcnb_test as _;
 
@@ -28,7 +22,19 @@ impl Buildpack for ExecDBuildpack {
     }
 
     fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildResult, Self::Error> {
-        context.handle_layer(layer_name!("layer_name"), ExecDLayer)?;
+        let layer_ref = context.uncached_layer(
+            layer_name!("layer_name"),
+            UncachedLayerDefinition {
+                build: false,
+                launch: true,
+            },
+        )?;
+
+        layer_ref.replace_exec_d_programs([(
+            "dice_roller",
+            additional_buildpack_binary_path!("dice_roller"),
+        )])?;
+
         BuildResultBuilder::new().build()
     }
 }
