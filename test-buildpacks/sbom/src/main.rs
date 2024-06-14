@@ -1,17 +1,11 @@
-// This test buildpack uses the older trait Layer API. It will be updated to the newer API
-// before the next libcnb.rs release.
-#![allow(deprecated)]
-
-mod test_layer;
-mod test_layer_2;
-
-use crate::test_layer::TestLayer;
-use crate::test_layer_2::TestLayer2;
 use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
 use libcnb::data::layer_name;
 use libcnb::data::sbom::SbomFormat;
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::generic::{GenericMetadata, GenericPlatform};
+use libcnb::layer::{
+    CachedLayerDefinition, InspectRestoredAction, InvalidMetadataAction, LayerState,
+};
 use libcnb::sbom::Sbom;
 use libcnb::{buildpack_main, Buildpack};
 
@@ -31,8 +25,64 @@ impl Buildpack for TestBuildpack {
     }
 
     fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildResult, Self::Error> {
-        context.handle_layer(layer_name!("test"), TestLayer)?;
-        context.handle_layer(layer_name!("test2"), TestLayer2)?;
+        let first_layer_ref = context.cached_layer(
+            layer_name!("test"),
+            CachedLayerDefinition {
+                build: true,
+                launch: true,
+                invalid_metadata: &|_| InvalidMetadataAction::DeleteLayer,
+                inspect_restored: &|_: &GenericMetadata, _| InspectRestoredAction::KeepLayer,
+            },
+        )?;
+
+        match first_layer_ref.state {
+            LayerState::Restored { .. } => {
+                first_layer_ref.replace_sboms(&[])?;
+            }
+            LayerState::Empty { .. } => {
+                first_layer_ref.replace_sboms(&[
+                    Sbom::from_bytes(
+                        SbomFormat::CycloneDxJson,
+                        *include_bytes!("../etc/cyclonedx_3.sbom.json"),
+                    ),
+                    Sbom::from_bytes(
+                        SbomFormat::SpdxJson,
+                        *include_bytes!("../etc/spdx_3.sbom.json"),
+                    ),
+                    Sbom::from_bytes(
+                        SbomFormat::SyftJson,
+                        *include_bytes!("../etc/syft_3.sbom.json"),
+                    ),
+                ])?;
+            }
+        }
+
+        let second_layer_ref = context.cached_layer(
+            layer_name!("test2"),
+            CachedLayerDefinition {
+                build: true,
+                launch: true,
+                invalid_metadata: &|_| InvalidMetadataAction::DeleteLayer,
+                inspect_restored: &|_: &GenericMetadata, _| InspectRestoredAction::KeepLayer,
+            },
+        )?;
+
+        if let LayerState::Empty { .. } = second_layer_ref.state {
+            second_layer_ref.replace_sboms(&[
+                Sbom::from_bytes(
+                    SbomFormat::CycloneDxJson,
+                    *include_bytes!("../etc/cyclonedx_2.sbom.json"),
+                ),
+                Sbom::from_bytes(
+                    SbomFormat::SpdxJson,
+                    *include_bytes!("../etc/spdx_2.sbom.json"),
+                ),
+                Sbom::from_bytes(
+                    SbomFormat::SyftJson,
+                    *include_bytes!("../etc/syft_2.sbom.json"),
+                ),
+            ])?;
+        }
 
         BuildResultBuilder::new()
             .launch_sbom(Sbom::from_bytes(
