@@ -347,7 +347,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     /// ```
     pub fn cached_layer<'a, M, MA, EA, MAC, EAC>(
         &self,
-        layer_name: LayerName,
+        layer_name: impl Borrow<LayerName>,
         layer_definition: impl Borrow<CachedLayerDefinition<'a, M, MA, EA>>,
     ) -> crate::Result<LayerRef<B, MAC, EAC>, B::Error>
     where
@@ -365,7 +365,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
             },
             layer_definition.invalid_metadata,
             layer_definition.inspect_existing,
-            layer_name,
+            layer_name.borrow(),
             &self.layers_dir,
         )
     }
@@ -378,7 +378,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     /// This function is essentially the same as [`BuildContext::uncached_layer`] but simpler.
     pub fn uncached_layer(
         &self,
-        layer_name: LayerName,
+        layer_name: impl Borrow<LayerName>,
         layer_definition: impl Borrow<UncachedLayerDefinition>,
     ) -> crate::Result<LayerRef<B, (), ()>, B::Error> {
         let layer_definition = layer_definition.borrow();
@@ -391,7 +391,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
             },
             &|_| InvalidMetadataAction::DeleteLayer,
             &|_: &GenericMetadata, _| InspectExistingAction::DeleteLayer,
-            layer_name,
+            layer_name.borrow(),
             &self.layers_dir,
         )
     }

@@ -66,7 +66,7 @@ pub enum InspectExistingAction {
 /// Framework metadata about the layer contents.
 ///
 /// See: [`BuildContext::cached_layer`] and [`BuildContext::uncached_layer`]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum LayerContents<MAC, EAC> {
     /// The layer contains validated cached contents from a previous buildpack run.
     ///
@@ -77,7 +77,7 @@ pub enum LayerContents<MAC, EAC> {
 }
 
 /// The cause of a layer being empty.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum EmptyLayerCause<MAC, EAC> {
     /// The layer wasn't cached in a previous buildpack run and was freshly created.
     Uncached,

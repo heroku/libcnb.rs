@@ -20,7 +20,7 @@ pub(crate) fn handle_layer<B, M, MA, EA, MAC, EAC>(
     layer_types: LayerTypes,
     invalid_metadata: &dyn Fn(&GenericMetadata) -> MA,
     inspect_existing: &dyn Fn(&M, &Path) -> EA,
-    layer_name: LayerName,
+    layer_name: &LayerName,
     layers_dir: &Path,
 ) -> crate::Result<LayerRef<B, MAC, EAC>, B::Error>
 where
@@ -29,10 +29,10 @@ where
     MA: IntoAction<InvalidMetadataAction<M>, MAC, B::Error>,
     EA: IntoAction<InspectExistingAction, EAC, B::Error>,
 {
-    match read_layer::<M, _>(layers_dir, &layer_name) {
+    match read_layer::<M, _>(layers_dir, layer_name) {
         Ok(None) => create_layer(
             layer_types,
-            &layer_name,
+            layer_name,
             layers_dir,
             EmptyLayerCause::Uncached,
         ),
@@ -43,11 +43,11 @@ where
 
             match inspect_action {
                 (InspectExistingAction::DeleteLayer, cause) => {
-                    delete_layer(layers_dir, &layer_name).map_err(LayerError::DeleteLayerError)?;
+                    delete_layer(layers_dir, layer_name).map_err(LayerError::DeleteLayerError)?;
 
                     create_layer(
                         layer_types,
-                        &layer_name,
+                        layer_name,
                         layers_dir,
                         EmptyLayerCause::Inspect { cause },
                     )
@@ -56,7 +56,7 @@ where
                     // Always write the layer types as:
                     // a) they might be different from what is currently on disk
                     // b) the cache field will be removed by CNB lifecycle on cache restore
-                    replace_layer_types(layers_dir, &layer_name, layer_types).map_err(|error| {
+                    replace_layer_types(layers_dir, layer_name, layer_types).map_err(|error| {
                         LayerError::WriteLayerError(WriteLayerError::WriteLayerMetadataError(error))
                     })?;
 
@@ -71,7 +71,7 @@ where
         }
         Err(ReadLayerError::LayerContentMetadataParseError(_)) => {
             let layer_content_metadata = read_toml_file::<LayerContentMetadata>(
-                layers_dir.join(format!("{}.toml", &layer_name)),
+                layers_dir.join(format!("{layer_name}.toml")),
             )
             .map_err(LayerError::CouldNotReadGenericLayerMetadata)?;
 
@@ -81,17 +81,17 @@ where
 
             match invalid_metadata_action {
                 (InvalidMetadataAction::DeleteLayer, cause) => {
-                    delete_layer(layers_dir, &layer_name).map_err(LayerError::DeleteLayerError)?;
+                    delete_layer(layers_dir, layer_name).map_err(LayerError::DeleteLayerError)?;
 
                     create_layer(
                         layer_types,
-                        &layer_name,
+                        layer_name,
                         layers_dir,
                         EmptyLayerCause::MetadataInvalid { cause },
                     )
                 }
                 (InvalidMetadataAction::ReplaceMetadata(metadata), _) => {
-                    replace_layer_metadata(layers_dir, &layer_name, metadata).map_err(|error| {
+                    replace_layer_metadata(layers_dir, layer_name, metadata).map_err(|error| {
                         LayerError::WriteLayerError(WriteLayerError::WriteLayerMetadataError(error))
                     })?;
 
@@ -140,4 +140,389 @@ where
             cause: empty_layer_cause,
         },
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::handle_layer;
+    use crate::build::{BuildContext, BuildResult};
+    use crate::detect::{DetectContext, DetectResult};
+    use crate::generic::{GenericError, GenericPlatform};
+    use crate::layer::{
+        EmptyLayerCause, InspectExistingAction, InvalidMetadataAction, LayerContents,
+    };
+    use crate::Buildpack;
+    use libcnb_common::toml_file::read_toml_file;
+    use libcnb_data::generic::GenericMetadata;
+    use libcnb_data::layer_content_metadata::{LayerContentMetadata, LayerTypes};
+    use libcnb_data::layer_name;
+    use serde::{Deserialize, Serialize};
+    use tempfile::tempdir;
+    use toml::toml;
+
+    #[test]
+    fn create_layer() {
+        let temp_dir = tempdir().unwrap();
+
+        let cause = EmptyLayerCause::Inspect { cause: () };
+        let layer_name = layer_name!("test_layer");
+        let layer_ref = super::create_layer::<TestBuildpack, (), ()>(
+            LayerTypes {
+                launch: true,
+                build: true,
+                cache: false,
+            },
+            &layer_name,
+            temp_dir.path(),
+            cause,
+        )
+        .unwrap();
+
+        assert_eq!(layer_ref.layers_dir, temp_dir.path());
+        assert_eq!(layer_ref.contents, LayerContents::Empty { cause });
+        assert!(temp_dir.path().join(&*layer_name).is_dir());
+        assert_eq!(
+            read_toml_file::<LayerContentMetadata<GenericMetadata>>(
+                temp_dir.path().join(format!("{layer_name}.toml"))
+            )
+            .unwrap(),
+            LayerContentMetadata {
+                types: Some(LayerTypes {
+                    launch: true,
+                    build: true,
+                    cache: false,
+                }),
+                metadata: GenericMetadata::default()
+            }
+        );
+    }
+
+    #[test]
+    fn handle_layer_uncached() {
+        let temp_dir = tempdir().unwrap();
+
+        let layer_name = layer_name!("test_layer");
+        let layer_ref = handle_layer::<
+            TestBuildpack,
+            GenericMetadata,
+            InvalidMetadataAction<GenericMetadata>,
+            InspectExistingAction,
+            (),
+            (),
+        >(
+            LayerTypes {
+                build: true,
+                launch: true,
+                cache: true,
+            },
+            &|_| panic!("invalid_metadata callback should not be called!"),
+            &|_, _| panic!("inspect_existing callback should not be called!"),
+            &layer_name,
+            temp_dir.path(),
+        )
+        .unwrap();
+
+        assert_eq!(layer_ref.path(), temp_dir.path().join(&*layer_name));
+        assert!(layer_ref.path().is_dir());
+        assert_eq!(
+            read_toml_file::<LayerContentMetadata<GenericMetadata>>(
+                temp_dir.path().join(format!("{layer_name}.toml"))
+            )
+            .unwrap(),
+            LayerContentMetadata {
+                types: Some(LayerTypes {
+                    build: true,
+                    launch: true,
+                    cache: true,
+                }),
+                metadata: GenericMetadata::default()
+            }
+        );
+        assert_eq!(
+            layer_ref.contents,
+            LayerContents::Empty {
+                cause: EmptyLayerCause::Uncached
+            }
+        );
+    }
+
+    #[test]
+    fn handle_layer_cached_keep() {
+        const KEEP_CAUSE: &str = "cause";
+
+        let temp_dir = tempdir().unwrap();
+        let layer_name = layer_name!("test_layer");
+
+        // Create a layer as if it was restored by the CNB lifecyle, most notably WITHOUT layer
+        // types but WITH metadata.
+        std::fs::create_dir_all(temp_dir.path().join(&*layer_name)).unwrap();
+        std::fs::write(
+            temp_dir.path().join(format!("{layer_name}.toml")),
+            "[metadata]\nanswer=42",
+        )
+        .unwrap();
+
+        let layer_ref =
+            handle_layer::<TestBuildpack, _, InvalidMetadataAction<GenericMetadata>, _, (), _>(
+                LayerTypes {
+                    build: true,
+                    launch: true,
+                    cache: true,
+                },
+                &|_| panic!("invalid_metadata callback should not be called!"),
+                &|metadata, path| {
+                    assert_eq!(metadata, &Some(toml! { answer = 42 }));
+                    assert_eq!(path, temp_dir.path().join(&*layer_name.clone()));
+                    (InspectExistingAction::KeepLayer, KEEP_CAUSE)
+                },
+                &layer_name,
+                temp_dir.path(),
+            )
+            .unwrap();
+
+        assert_eq!(layer_ref.path(), temp_dir.path().join(&*layer_name));
+        assert!(layer_ref.path().is_dir());
+        assert_eq!(
+            read_toml_file::<LayerContentMetadata<_>>(
+                temp_dir.path().join(format!("{layer_name}.toml"))
+            )
+            .unwrap(),
+            LayerContentMetadata {
+                types: Some(LayerTypes {
+                    build: true,
+                    launch: true,
+                    cache: true,
+                }),
+                metadata: Some(toml! { answer = 42 })
+            }
+        );
+        assert_eq!(
+            layer_ref.contents,
+            LayerContents::Cached { cause: KEEP_CAUSE }
+        );
+    }
+
+    #[test]
+    fn handle_layer_cached_delete() {
+        const DELETE_CAUSE: &str = "cause";
+
+        let temp_dir = tempdir().unwrap();
+        let layer_name = layer_name!("test_layer");
+
+        // Create a layer as if it was restored by the CNB lifecyle, most notably WITHOUT layer
+        // types but WITH metadata.
+        std::fs::create_dir_all(temp_dir.path().join(&*layer_name)).unwrap();
+        std::fs::write(
+            temp_dir.path().join(format!("{layer_name}.toml")),
+            "[metadata]\nanswer=42",
+        )
+        .unwrap();
+
+        let layer_ref =
+            handle_layer::<TestBuildpack, _, InvalidMetadataAction<GenericMetadata>, _, (), _>(
+                LayerTypes {
+                    build: true,
+                    launch: true,
+                    cache: true,
+                },
+                &|_| panic!("invalid_metadata callback should not be called!"),
+                &|metadata, path| {
+                    assert_eq!(metadata, &Some(toml! { answer = 42 }));
+                    assert_eq!(path, temp_dir.path().join(&*layer_name.clone()));
+                    (InspectExistingAction::DeleteLayer, DELETE_CAUSE)
+                },
+                &layer_name,
+                temp_dir.path(),
+            )
+            .unwrap();
+
+        assert_eq!(layer_ref.path(), temp_dir.path().join(&*layer_name));
+        assert!(layer_ref.path().is_dir());
+        assert_eq!(
+            read_toml_file::<LayerContentMetadata<_>>(
+                temp_dir.path().join(format!("{layer_name}.toml"))
+            )
+            .unwrap(),
+            LayerContentMetadata {
+                types: Some(LayerTypes {
+                    build: true,
+                    launch: true,
+                    cache: true,
+                }),
+                metadata: GenericMetadata::default()
+            }
+        );
+        assert_eq!(
+            layer_ref.contents,
+            LayerContents::Empty {
+                cause: EmptyLayerCause::Inspect {
+                    cause: DELETE_CAUSE
+                }
+            }
+        );
+    }
+
+    #[test]
+    fn handle_layer_cached_invalid_metadata_delete() {
+        const DELETE_CAUSE: &str = "cause";
+
+        #[derive(Serialize, Deserialize)]
+        struct TestLayerMetadata {
+            planet: String,
+        }
+
+        let temp_dir = tempdir().unwrap();
+        let layer_name = layer_name!("test_layer");
+
+        // Create a layer as if it was restored by the CNB lifecyle, most notably WITHOUT layer
+        // types but WITH metadata.
+        std::fs::create_dir_all(temp_dir.path().join(&*layer_name)).unwrap();
+        std::fs::write(
+            temp_dir.path().join(format!("{layer_name}.toml")),
+            "[metadata]\nanswer=42",
+        )
+        .unwrap();
+
+        let layer_ref = handle_layer::<
+            TestBuildpack,
+            TestLayerMetadata,
+            _,
+            (InspectExistingAction, &str),
+            &str,
+            _,
+        >(
+            LayerTypes {
+                build: true,
+                launch: true,
+                cache: true,
+            },
+            &|metadata| {
+                assert_eq!(metadata, &Some(toml! { answer = 42 }));
+                (InvalidMetadataAction::DeleteLayer, DELETE_CAUSE)
+            },
+            &|_, _| panic!("inspect_existing callback should not be called!"),
+            &layer_name,
+            temp_dir.path(),
+        )
+        .unwrap();
+
+        assert_eq!(layer_ref.path(), temp_dir.path().join(&*layer_name));
+        assert!(layer_ref.path().is_dir());
+        assert_eq!(
+            read_toml_file::<LayerContentMetadata<_>>(
+                temp_dir.path().join(format!("{layer_name}.toml"))
+            )
+            .unwrap(),
+            LayerContentMetadata {
+                types: Some(LayerTypes {
+                    build: true,
+                    launch: true,
+                    cache: true,
+                }),
+                metadata: GenericMetadata::default()
+            }
+        );
+        assert_eq!(
+            layer_ref.contents,
+            LayerContents::Empty {
+                cause: EmptyLayerCause::MetadataInvalid {
+                    cause: DELETE_CAUSE
+                }
+            }
+        );
+    }
+
+    #[test]
+    fn handle_layer_cached_invalid_metadata_replace() {
+        const KEEP_CAUSE: &str = "cause";
+
+        #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+        struct TestLayerMetadata {
+            planet: String,
+        }
+
+        let temp_dir = tempdir().unwrap();
+        let layer_name = layer_name!("test_layer");
+
+        // Create a layer as if it was restored by the CNB lifecyle, most notably WITHOUT layer
+        // types but WITH metadata.
+        std::fs::create_dir_all(temp_dir.path().join(&*layer_name)).unwrap();
+        std::fs::write(
+            temp_dir.path().join(&*layer_name).join("data.txt"),
+            "some_data",
+        )
+        .unwrap();
+        std::fs::write(
+            temp_dir.path().join(format!("{layer_name}.toml")),
+            "[metadata]\nanswer=42",
+        )
+        .unwrap();
+
+        let layer_ref = handle_layer::<TestBuildpack, TestLayerMetadata, _, _, _, _>(
+            LayerTypes {
+                build: true,
+                launch: true,
+                cache: true,
+            },
+            &|metadata| {
+                assert_eq!(metadata, &Some(toml! { answer = 42 }));
+
+                InvalidMetadataAction::ReplaceMetadata(TestLayerMetadata {
+                    planet: String::from("LV-246"),
+                })
+            },
+            &|metadata, _| {
+                assert_eq!(
+                    metadata,
+                    &TestLayerMetadata {
+                        planet: String::from("LV-246"),
+                    }
+                );
+
+                (InspectExistingAction::KeepLayer, KEEP_CAUSE)
+            },
+            &layer_name,
+            temp_dir.path(),
+        )
+        .unwrap();
+
+        assert_eq!(layer_ref.path(), temp_dir.path().join(&*layer_name));
+        assert!(layer_ref.path().is_dir());
+        assert_eq!(
+            read_toml_file::<LayerContentMetadata<_>>(
+                temp_dir.path().join(format!("{layer_name}.toml"))
+            )
+            .unwrap(),
+            LayerContentMetadata {
+                types: Some(LayerTypes {
+                    build: true,
+                    launch: true,
+                    cache: true,
+                }),
+                metadata: TestLayerMetadata {
+                    planet: String::from("LV-246")
+                }
+            }
+        );
+
+        assert_eq!(
+            layer_ref.contents,
+            LayerContents::Cached { cause: KEEP_CAUSE }
+        );
+    }
+
+    struct TestBuildpack;
+    impl Buildpack for TestBuildpack {
+        type Platform = GenericPlatform;
+        type Metadata = GenericMetadata;
+        type Error = GenericError;
+
+        fn detect(&self, _: DetectContext<Self>) -> crate::Result<DetectResult, Self::Error> {
+            unimplemented!()
+        }
+
+        fn build(&self, _: BuildContext<Self>) -> crate::Result<BuildResult, Self::Error> {
+            unimplemented!()
+        }
+    }
 }
