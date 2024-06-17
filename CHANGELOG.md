@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `libcnb`:
-  - A new API for working with layers as been added. Check `BuildContext::cached_layer` for a starting point how to work with this API. ([#814](https://github.com/heroku/libcnb.rs/pull/814))
+  - A new API for working with layers has been added. See the `BuildContext::cached_layer` and `BuildContext::uncached_layer` docs for examples of how to use this API. ([#814](https://github.com/heroku/libcnb.rs/pull/814))
 
 ### Changed
 
