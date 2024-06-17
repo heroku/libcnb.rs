@@ -251,7 +251,7 @@ mod tests {
         let temp_dir = tempdir().unwrap();
         let layer_name = layer_name!("test_layer");
 
-        // Create a layer as if it was restored by the CNB lifecyle, most notably WITHOUT layer
+        // Create a layer as if it was restored by the CNB lifecycle, most notably WITHOUT layer
         // types but WITH metadata.
         std::fs::create_dir_all(temp_dir.path().join(&*layer_name)).unwrap();
         std::fs::write(
@@ -304,7 +304,7 @@ mod tests {
         let temp_dir = tempdir().unwrap();
         let layer_name = layer_name!("test_layer");
 
-        // Create a layer as if it was restored by the CNB lifecyle, most notably WITHOUT layer
+        // Create a layer as if it was restored by the CNB lifecycle, most notably WITHOUT layer
         // types but WITH metadata.
         std::fs::create_dir_all(temp_dir.path().join(&*layer_name)).unwrap();
         std::fs::write(
@@ -369,7 +369,7 @@ mod tests {
         let temp_dir = tempdir().unwrap();
         let layer_name = layer_name!("test_layer");
 
-        // Create a layer as if it was restored by the CNB lifecyle, most notably WITHOUT layer
+        // Create a layer as if it was restored by the CNB lifecycle, most notably WITHOUT layer
         // types but WITH metadata.
         std::fs::create_dir_all(temp_dir.path().join(&*layer_name)).unwrap();
         std::fs::write(
@@ -439,7 +439,7 @@ mod tests {
         let temp_dir = tempdir().unwrap();
         let layer_name = layer_name!("test_layer");
 
-        // Create a layer as if it was restored by the CNB lifecyle, most notably WITHOUT layer
+        // Create a layer as if it was restored by the CNB lifecycle, most notably WITHOUT layer
         // types but WITH metadata.
         std::fs::create_dir_all(temp_dir.path().join(&*layer_name)).unwrap();
         std::fs::write(

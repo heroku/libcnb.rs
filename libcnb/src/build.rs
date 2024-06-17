@@ -128,7 +128,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     ///
     /// Users of this function pass in a [`CachedLayerDefinition`] that describes the desired layer
     /// and the returned `LayerRef` can then be used to modify the layer like any other path. This
-    /// allows users to be flexible when and how the layer is modified and to abstract layer
+    /// allows users to be flexible in how and when the layer is modified and to abstract layer
     /// creation away if necessary.
     ///
     /// # Basic Example
@@ -181,7 +181,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     ///
     /// // At this point, a layer exists on disk. It might contain cached data or might be empty.
     /// // Since we need to conditionally work with the layer contents based on its state, we can
-    /// // inspect the `contents` field of the layer reference to get detailed information about
+    /// // inspect the `state` field of the layer reference to get detailed information about
     /// // the current layer contents and the cause(s) for the state.
     /// //
     /// // In the majority of cases, we don't need more details beyond if it's empty or not and can
