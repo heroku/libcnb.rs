@@ -8,7 +8,7 @@ use crate::data::{
 };
 use crate::layer::trait_api::handling::LayerErrorOrBuildpackError;
 use crate::layer::{
-    CachedLayerDefinition, InspectRestoredAction, IntoAction, InvalidMetadataAction, LayerRef,
+    CachedLayerDefinition, IntoAction, InvalidMetadataAction, LayerRef, RestoredLayerAction,
     UncachedLayerDefinition,
 };
 use crate::sbom::Sbom;
@@ -137,7 +137,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     /// # use libcnb::detect::{DetectContext, DetectResult};
     /// # use libcnb::generic::GenericPlatform;
     /// # use libcnb::layer::{
-    /// #     CachedLayerDefinition, InspectRestoredAction, InvalidMetadataAction, LayerState,
+    /// #     CachedLayerDefinition, RestoredLayerAction, InvalidMetadataAction, LayerState,
     /// # };
     /// # use libcnb::layer_env::{LayerEnv, ModificationBehavior, Scope};
     /// # use libcnb::Buildpack;
@@ -170,12 +170,12 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     ///         // Will be called if a cached version of the layer was found, but the metadata
     ///         // could not be parsed. In this example, we instruct libcnb to always delete the
     ///         // existing layer in such a case. But we can implement any logic here if we want.
-    ///         invalid_metadata: &|_| InvalidMetadataAction::DeleteLayer,
+    ///         invalid_metadata_action: &|_| InvalidMetadataAction::DeleteLayer,
     ///         // Will be called if a cached version of the layer was found. This allows us to
     ///         // inspect the contents and metadata to decide if we want to keep the existing
     ///         // layer or let libcnb delete the existing layer and create a new one for us.
     ///         // This is libcnb's method to implement cache invalidations for layers.
-    ///         inspect_restored: &|_: &GenericMetadata, _| InspectRestoredAction::KeepLayer,
+    ///         restored_layer_action: &|_: &GenericMetadata, _| RestoredLayerAction::KeepLayer,
     ///     },
     /// )?;
     ///
@@ -228,7 +228,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     /// # use libcnb::detect::{DetectContext, DetectResult};
     /// # use libcnb::generic::GenericPlatform;
     /// # use libcnb::layer::{
-    /// #     CachedLayerDefinition, EmptyLayerCause, InspectRestoredAction, InvalidMetadataAction,
+    /// #     CachedLayerDefinition, EmptyLayerCause, RestoredLayerAction, InvalidMetadataAction,
     /// #     LayerState,
     /// # };
     /// # use libcnb::Buildpack;
@@ -271,11 +271,11 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     ///         CachedLayerDefinition {
     ///             build: false,
     ///             launch: false,
-    ///             invalid_metadata: &|_| InvalidMetadataAction::DeleteLayer,
-    ///             inspect_restored: &|metadata: &ExampleLayerMetadata, layer_dir| {
+    ///             invalid_metadata_action: &|_| InvalidMetadataAction::DeleteLayer,
+    ///             restored_layer_action: &|metadata: &ExampleLayerMetadata, layer_dir| {
     ///                 if metadata.lang_runtime_version.starts_with("0.") {
     ///                     Ok((
-    ///                         InspectRestoredAction::DeleteLayer,
+    ///                         RestoredLayerAction::DeleteLayer,
     ///                         CustomCause::LegacyVersion,
     ///                     ))
     ///                 } else {
@@ -291,15 +291,15 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     ///
     ///                         if file_contents == "known-broken-0.1c" {
     ///                             Ok((
-    ///                                 InspectRestoredAction::DeleteLayer,
+    ///                                 RestoredLayerAction::DeleteLayer,
     ///                                 CustomCause::HasBrokenModule,
     ///                             ))
     ///                         } else {
-    ///                             Ok((InspectRestoredAction::KeepLayer, CustomCause::Ok))
+    ///                             Ok((RestoredLayerAction::KeepLayer, CustomCause::Ok))
     ///                         }
     ///                     } else {
     ///                         Ok((
-    ///                             InspectRestoredAction::DeleteLayer,
+    ///                             RestoredLayerAction::DeleteLayer,
     ///                             CustomCause::MissingModulesFile,
     ///                         ))
     ///                     }
@@ -345,15 +345,15 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     /// #     }
     /// # }
     /// ```
-    pub fn cached_layer<'a, M, MA, IA, MAC, IAC>(
+    pub fn cached_layer<'a, M, MA, RA, MAC, RAC>(
         &self,
         layer_name: impl Borrow<LayerName>,
-        layer_definition: impl Borrow<CachedLayerDefinition<'a, M, MA, IA>>,
-    ) -> crate::Result<LayerRef<B, MAC, IAC>, B::Error>
+        layer_definition: impl Borrow<CachedLayerDefinition<'a, M, MA, RA>>,
+    ) -> crate::Result<LayerRef<B, MAC, RAC>, B::Error>
     where
         M: 'a + Serialize + DeserializeOwned,
         MA: 'a + IntoAction<InvalidMetadataAction<M>, MAC, B::Error>,
-        IA: 'a + IntoAction<InspectRestoredAction, IAC, B::Error>,
+        RA: 'a + IntoAction<RestoredLayerAction, RAC, B::Error>,
     {
         let layer_definition = layer_definition.borrow();
 
@@ -363,8 +363,8 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
                 build: layer_definition.build,
                 cache: true,
             },
-            layer_definition.invalid_metadata,
-            layer_definition.inspect_restored,
+            layer_definition.invalid_metadata_action,
+            layer_definition.restored_layer_action,
             layer_name.borrow(),
             &self.layers_dir,
         )
@@ -390,7 +390,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
                 cache: false,
             },
             &|_| InvalidMetadataAction::DeleteLayer,
-            &|_: &GenericMetadata, _| InspectRestoredAction::DeleteLayer,
+            &|_: &GenericMetadata, _| RestoredLayerAction::DeleteLayer,
             layer_name.borrow(),
             &self.layers_dir,
         )

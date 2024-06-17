@@ -19,7 +19,7 @@ use std::path::{Path, PathBuf};
 /// A definition for a cached layer.
 ///
 /// Refer to the docs of [`BuildContext::cached_layer`] for usage examples.
-pub struct CachedLayerDefinition<'a, M, MA, IA> {
+pub struct CachedLayerDefinition<'a, M, MA, RA> {
     /// Whether the layer is intended for build.
     pub build: bool,
     /// Whether the layer is intended for launch.
@@ -28,10 +28,10 @@ pub struct CachedLayerDefinition<'a, M, MA, IA> {
     ///
     /// Allows replacing the metadata before continuing (i.e. migration to a newer version) or
     /// deleting the layer.
-    pub invalid_metadata: &'a dyn Fn(&GenericMetadata) -> MA,
+    pub invalid_metadata_action: &'a dyn Fn(&GenericMetadata) -> MA,
     /// Callback when the layer was restored from cache to validate the contents and metadata.
     /// Can be used to delete existing cached layers.
-    pub inspect_restored: &'a dyn Fn(&M, &Path) -> IA,
+    pub restored_layer_action: &'a dyn Fn(&M, &Path) -> RA,
 }
 
 /// A definition for an uncached layer.
@@ -56,7 +56,7 @@ pub enum InvalidMetadataAction<M> {
 
 /// The action to take after inspecting restored layer data.
 #[derive(Copy, Clone, Debug)]
-pub enum InspectRestoredAction {
+pub enum RestoredLayerAction {
     /// Delete the restored layer.
     DeleteLayer,
     /// Keep the layer as-is.
@@ -67,30 +67,30 @@ pub enum InspectRestoredAction {
 ///
 /// See: [`BuildContext::cached_layer`] and [`BuildContext::uncached_layer`]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum LayerState<MAC, IAC> {
+pub enum LayerState<MAC, RAC> {
     /// The layer contains validated cached contents from a previous buildpack run.
     ///
-    /// See: `inspect_restored` in [`CachedLayerDefinition`].
-    Restored { cause: IAC },
+    /// See: `restored_layer_action` in [`CachedLayerDefinition`].
+    Restored { cause: RAC },
     /// The layer is empty. Inspect the contained [`EmptyLayerCause`] for the cause.
-    Empty { cause: EmptyLayerCause<MAC, IAC> },
+    Empty { cause: EmptyLayerCause<MAC, RAC> },
 }
 
 /// The cause of a layer being empty.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum EmptyLayerCause<MAC, IAC> {
+pub enum EmptyLayerCause<MAC, RAC> {
     /// The layer wasn't cached in a previous buildpack run and was freshly created.
     Uncached,
     /// The layer was cached in a previous buildpack run, but the metadata was invalid and couldn't
     /// be converted into a valid form. Subsequently, the layer was deleted entirely.
     ///
-    /// See: `invalid_metadata` in [`CachedLayerDefinition`].
+    /// See: `invalid_metadata_action` in [`CachedLayerDefinition`].
     MetadataInvalid { cause: MAC },
-    /// The layer was cached in a previous buildpack run, but the `inspect_restored` function
+    /// The layer was cached in a previous buildpack run, but the `restored_layer_action` function
     /// rejected the contents and/or metadata.
     ///
-    /// See: `inspect_restored` in [`CachedLayerDefinition`].
-    Inspect { cause: IAC },
+    /// See: `restored_layer_action` in [`CachedLayerDefinition`].
+    Inspect { cause: RAC },
 }
 
 /// A value-to-value conversion for layer actions.
@@ -101,10 +101,10 @@ pub enum EmptyLayerCause<MAC, IAC> {
 /// Implement this trait if you want to use your own types as actions.
 ///
 /// libcnb ships with generic implementations for the majority of the use-cases:
-/// - Using [`InspectRestoredAction`] or [`InvalidMetadataAction`] directly.
-/// - Using [`InspectRestoredAction`] or [`InvalidMetadataAction`] directly, wrapped in a Result.
-/// - Using [`InspectRestoredAction`] or [`InvalidMetadataAction`] with a cause value in a tuple.
-/// - Using [`InspectRestoredAction`] or [`InvalidMetadataAction`] with a cause value in a tuple, wrapped in a Result.
+/// - Using [`RestoredLayerAction`] or [`InvalidMetadataAction`] directly.
+/// - Using [`RestoredLayerAction`] or [`InvalidMetadataAction`] directly, wrapped in a Result.
+/// - Using [`RestoredLayerAction`] or [`InvalidMetadataAction`] with a cause value in a tuple.
+/// - Using [`RestoredLayerAction`] or [`InvalidMetadataAction`] with a cause value in a tuple, wrapped in a Result.
 pub trait IntoAction<T, C, E> {
     fn into_action(self) -> Result<(T, C), E>;
 }
@@ -143,7 +143,7 @@ impl<T, C, E> IntoAction<T, C, E> for Result<(T, C), E> {
 /// exec.d programs.
 ///
 /// To obtain a such a reference, use [`BuildContext::cached_layer`] or [`BuildContext::uncached_layer`].
-pub struct LayerRef<B, MAC, IAC>
+pub struct LayerRef<B, MAC, RAC>
 where
     B: Buildpack + ?Sized,
 {
@@ -154,10 +154,10 @@ where
     // the layers_dir here.
     layers_dir: PathBuf,
     buildpack: PhantomData<B>,
-    pub state: LayerState<MAC, IAC>,
+    pub state: LayerState<MAC, RAC>,
 }
 
-impl<B, MAC, IAC> LayerRef<B, MAC, IAC>
+impl<B, MAC, RAC> LayerRef<B, MAC, RAC>
 where
     B: Buildpack,
 {

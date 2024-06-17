@@ -3,8 +3,8 @@ use crate::layer::shared::{
     WriteLayerError,
 };
 use crate::layer::{
-    EmptyLayerCause, InspectRestoredAction, IntoAction, InvalidMetadataAction, LayerError,
-    LayerRef, LayerState,
+    EmptyLayerCause, IntoAction, InvalidMetadataAction, LayerError, LayerRef, LayerState,
+    RestoredLayerAction,
 };
 use crate::Buildpack;
 use libcnb_common::toml_file::read_toml_file;
@@ -16,18 +16,18 @@ use serde::Serialize;
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
-pub(crate) fn handle_layer<B, M, MA, IA, MAC, IAC>(
+pub(crate) fn handle_layer<B, M, MA, RA, MAC, RAC>(
     layer_types: LayerTypes,
-    invalid_metadata: &dyn Fn(&GenericMetadata) -> MA,
-    inspect_restored: &dyn Fn(&M, &Path) -> IA,
+    invalid_metadata_action_fn: &dyn Fn(&GenericMetadata) -> MA,
+    restored_layer_action_fn: &dyn Fn(&M, &Path) -> RA,
     layer_name: &LayerName,
     layers_dir: &Path,
-) -> crate::Result<LayerRef<B, MAC, IAC>, B::Error>
+) -> crate::Result<LayerRef<B, MAC, RAC>, B::Error>
 where
     B: Buildpack + ?Sized,
     M: Serialize + DeserializeOwned,
     MA: IntoAction<InvalidMetadataAction<M>, MAC, B::Error>,
-    IA: IntoAction<InspectRestoredAction, IAC, B::Error>,
+    RA: IntoAction<RestoredLayerAction, RAC, B::Error>,
 {
     match read_layer::<M, _>(layers_dir, layer_name) {
         Ok(None) => create_layer(
@@ -37,12 +37,13 @@ where
             EmptyLayerCause::Uncached,
         ),
         Ok(Some(layer_data)) => {
-            let inspect_action = inspect_restored(&layer_data.metadata.metadata, &layer_data.path)
-                .into_action()
-                .map_err(crate::Error::BuildpackError)?;
+            let inspect_action =
+                restored_layer_action_fn(&layer_data.metadata.metadata, &layer_data.path)
+                    .into_action()
+                    .map_err(crate::Error::BuildpackError)?;
 
             match inspect_action {
-                (InspectRestoredAction::DeleteLayer, cause) => {
+                (RestoredLayerAction::DeleteLayer, cause) => {
                     delete_layer(layers_dir, layer_name).map_err(LayerError::DeleteLayerError)?;
 
                     create_layer(
@@ -52,7 +53,7 @@ where
                         EmptyLayerCause::Inspect { cause },
                     )
                 }
-                (InspectRestoredAction::KeepLayer, cause) => {
+                (RestoredLayerAction::KeepLayer, cause) => {
                     // Always write the layer types as:
                     // a) they might be different from what is currently on disk
                     // b) the cache field will be removed by CNB lifecycle on cache restore
@@ -75,9 +76,10 @@ where
             )
             .map_err(LayerError::CouldNotReadGenericLayerMetadata)?;
 
-            let invalid_metadata_action = invalid_metadata(&layer_content_metadata.metadata)
-                .into_action()
-                .map_err(crate::Error::BuildpackError)?;
+            let invalid_metadata_action =
+                invalid_metadata_action_fn(&layer_content_metadata.metadata)
+                    .into_action()
+                    .map_err(crate::Error::BuildpackError)?;
 
             match invalid_metadata_action {
                 (InvalidMetadataAction::DeleteLayer, cause) => {
@@ -97,8 +99,8 @@ where
 
                     handle_layer(
                         layer_types,
-                        invalid_metadata,
-                        inspect_restored,
+                        invalid_metadata_action_fn,
+                        restored_layer_action_fn,
                         layer_name,
                         layers_dir,
                     )
@@ -109,12 +111,12 @@ where
     }
 }
 
-fn create_layer<B, MAC, IAC>(
+fn create_layer<B, MAC, RAC>(
     layer_types: LayerTypes,
     layer_name: &LayerName,
     layers_dir: &Path,
-    empty_layer_cause: EmptyLayerCause<MAC, IAC>,
-) -> Result<LayerRef<B, MAC, IAC>, crate::Error<B::Error>>
+    empty_layer_cause: EmptyLayerCause<MAC, RAC>,
+) -> Result<LayerRef<B, MAC, RAC>, crate::Error<B::Error>>
 where
     B: Buildpack + ?Sized,
 {
@@ -148,7 +150,7 @@ mod tests {
     use crate::build::{BuildContext, BuildResult};
     use crate::detect::{DetectContext, DetectResult};
     use crate::generic::{GenericError, GenericPlatform};
-    use crate::layer::{EmptyLayerCause, InspectRestoredAction, InvalidMetadataAction, LayerState};
+    use crate::layer::{EmptyLayerCause, InvalidMetadataAction, LayerState, RestoredLayerAction};
     use crate::Buildpack;
     use libcnb_common::toml_file::read_toml_file;
     use libcnb_data::generic::GenericMetadata;
@@ -204,7 +206,7 @@ mod tests {
             TestBuildpack,
             GenericMetadata,
             InvalidMetadataAction<GenericMetadata>,
-            InspectRestoredAction,
+            RestoredLayerAction,
             (),
             (),
         >(
@@ -213,8 +215,8 @@ mod tests {
                 launch: true,
                 cache: true,
             },
-            &|_| panic!("invalid_metadata callback should not be called!"),
-            &|_, _| panic!("inspect_restored callback should not be called!"),
+            &|_| panic!("invalid_metadata_action callback should not be called!"),
+            &|_, _| panic!("restored_layer_action callback should not be called!"),
             &layer_name,
             temp_dir.path(),
         )
@@ -267,11 +269,11 @@ mod tests {
                     launch: true,
                     cache: true,
                 },
-                &|_| panic!("invalid_metadata callback should not be called!"),
+                &|_| panic!("invalid_metadata_action callback should not be called!"),
                 &|metadata, path| {
                     assert_eq!(metadata, &Some(toml! { answer = 42 }));
                     assert_eq!(path, temp_dir.path().join(&*layer_name.clone()));
-                    (InspectRestoredAction::KeepLayer, KEEP_CAUSE)
+                    (RestoredLayerAction::KeepLayer, KEEP_CAUSE)
                 },
                 &layer_name,
                 temp_dir.path(),
@@ -320,11 +322,11 @@ mod tests {
                     launch: true,
                     cache: true,
                 },
-                &|_| panic!("invalid_metadata callback should not be called!"),
+                &|_| panic!("invalid_metadata_action callback should not be called!"),
                 &|metadata, path| {
                     assert_eq!(metadata, &Some(toml! { answer = 42 }));
                     assert_eq!(path, temp_dir.path().join(&*layer_name.clone()));
-                    (InspectRestoredAction::DeleteLayer, DELETE_CAUSE)
+                    (RestoredLayerAction::DeleteLayer, DELETE_CAUSE)
                 },
                 &layer_name,
                 temp_dir.path(),
@@ -382,7 +384,7 @@ mod tests {
             TestBuildpack,
             TestLayerMetadata,
             _,
-            (InspectRestoredAction, &str),
+            (RestoredLayerAction, &str),
             &str,
             _,
         >(
@@ -395,7 +397,7 @@ mod tests {
                 assert_eq!(metadata, &Some(toml! { answer = 42 }));
                 (InvalidMetadataAction::DeleteLayer, DELETE_CAUSE)
             },
-            &|_, _| panic!("inspect_restored callback should not be called!"),
+            &|_, _| panic!("restored_layer_action callback should not be called!"),
             &layer_name,
             temp_dir.path(),
         )
@@ -474,7 +476,7 @@ mod tests {
                     }
                 );
 
-                (InspectRestoredAction::KeepLayer, KEEP_CAUSE)
+                (RestoredLayerAction::KeepLayer, KEEP_CAUSE)
             },
             &layer_name,
             temp_dir.path(),
