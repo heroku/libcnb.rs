@@ -166,10 +166,11 @@ where
         self.layers_dir.join(self.name.as_str())
     }
 
-    /// Replaces the existing layer metadata with a new value.
+    /// Writes the given layer metadata to disk.
     ///
-    /// The new value does not have to be of the same type as the existing metadata.
-    pub fn replace_metadata<M>(&self, metadata: M) -> crate::Result<(), B::Error>
+    /// Any existing layer metadata will be overwritten. The new value does not have to be of the
+    /// same type as the existing metadata.
+    pub fn write_metadata<M>(&self, metadata: M) -> crate::Result<(), B::Error>
     where
         M: Serialize,
     {
@@ -181,8 +182,10 @@ where
             })
     }
 
-    /// Replaces the existing layer environment with a new one.
-    pub fn replace_env(&self, env: impl Borrow<LayerEnv>) -> crate::Result<(), B::Error> {
+    /// Writes the given layer environment to disk.
+    ///
+    /// Any existing layer environment will be overwritten.
+    pub fn write_env(&self, env: impl Borrow<LayerEnv>) -> crate::Result<(), B::Error> {
         env.borrow()
             .write_to_layer_dir(self.path())
             .map_err(|error| {
@@ -192,8 +195,10 @@ where
             })
     }
 
-    /// Replace all existing layer SBOMs with new ones.
-    pub fn replace_sboms(&self, sboms: &[Sbom]) -> crate::Result<(), B::Error> {
+    /// Writes the given SBOMs to disk.
+    ///
+    /// Any existing SBOMs will be overwritten.
+    pub fn write_sboms(&self, sboms: &[Sbom]) -> crate::Result<(), B::Error> {
         replace_layer_sboms(&self.layers_dir, &self.name, sboms).map_err(|error| {
             crate::Error::LayerError(LayerError::WriteLayerError(
                 WriteLayerError::ReplaceLayerSbomsError(error),
@@ -201,8 +206,10 @@ where
         })
     }
 
-    /// Replace all existing layer exec.d programs with new ones.
-    pub fn replace_exec_d_programs<P, S>(&self, programs: P) -> crate::Result<(), B::Error>
+    /// Writes the given exec.d programs to disk.
+    ///
+    /// Any existing exec.d programs will be overwritten.
+    pub fn write_exec_d_programs<P, S>(&self, programs: P) -> crate::Result<(), B::Error>
     where
         S: Into<String>,
         P: IntoIterator<Item = (S, PathBuf)>,

@@ -199,7 +199,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     ///         .map_err(ExampleBuildpackError::WriteDataError)?;
     ///
     ///         // Use functions on LayerRef for common CNB specific layer modifications:
-    ///         layer_ref.replace_env(LayerEnv::new().chainable_insert(
+    ///         layer_ref.write_env(LayerEnv::new().chainable_insert(
     ///             Scope::All,
     ///             ModificationBehavior::Append,
     ///             "PLANET",
@@ -326,7 +326,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     ///
     ///             // Code to install the language runtime would go here
     ///
-    ///             layer_ref.replace_metadata(ExampleLayerMetadata {
+    ///             layer_ref.write_metadata(ExampleLayerMetadata {
     ///                 lang_runtime_version: String::from("1.0.0"),
     ///             })?;
     ///         }
