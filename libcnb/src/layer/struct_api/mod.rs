@@ -4,7 +4,7 @@ pub(crate) mod handling;
 #[allow(unused)]
 use crate::build::BuildContext;
 use crate::layer::shared::{replace_layer_exec_d_programs, replace_layer_sboms, WriteLayerError};
-use crate::layer::LayerError;
+use crate::layer::{LayerError, ReadLayerError};
 use crate::layer_env::LayerEnv;
 use crate::sbom::Sbom;
 use crate::Buildpack;
@@ -193,6 +193,13 @@ where
                     error,
                 )))
             })
+    }
+
+    /// Reads the current layer environment from disk.
+    pub fn read_env(&self) -> crate::Result<LayerEnv, B::Error> {
+        LayerEnv::read_from_layer_dir(self.path()).map_err(|error| {
+            crate::Error::LayerError(LayerError::ReadLayerError(ReadLayerError::IoError(error)))
+        })
     }
 
     /// Writes the given SBOMs to disk.
