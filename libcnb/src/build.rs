@@ -127,7 +127,7 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     /// invalidation.
     ///
     /// Users of this function pass in a [`CachedLayerDefinition`] that describes the desired layer
-    /// and the returned `LayerRef` can then be used to modify the layer like any other path. This
+    /// and the returned [`LayerRef`] can then be used to modify the layer like any other path. This
     /// allows users to be flexible in how and when the layer is modified and to abstract layer
     /// creation away if necessary.
     ///
