@@ -1,10 +1,13 @@
 //! Provides types and helpers to work with layers.
 
-mod handling;
-mod public_interface;
+pub(crate) mod shared;
+pub(crate) mod struct_api;
+pub(crate) mod trait_api;
 
-#[cfg(test)]
-mod tests;
+pub use shared::DeleteLayerError;
+pub use shared::LayerError;
+pub use shared::ReadLayerError;
+pub use shared::WriteLayerError;
 
-pub(crate) use handling::*;
-pub use public_interface::*;
+pub use struct_api::*;
+pub use trait_api::*;

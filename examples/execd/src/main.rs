@@ -1,3 +1,7 @@
+// This example uses the older trait Layer API. The example will be updated to the newer API
+// before the next libcnb.rs release.
+#![allow(deprecated)]
+
 mod layer;
 
 use crate::layer::ExecDLayer;

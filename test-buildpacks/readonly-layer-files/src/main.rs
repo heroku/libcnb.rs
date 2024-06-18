@@ -1,3 +1,7 @@
+// This test buildpack uses the older trait Layer API. It will be updated to the newer API
+// before the next libcnb.rs release.
+#![allow(deprecated)]
+
 mod layer;
 
 use crate::layer::TestLayer;

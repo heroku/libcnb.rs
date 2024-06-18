@@ -14,9 +14,9 @@ use crate::data::buildpack_id;
 use crate::data::layer_content_metadata::LayerTypes;
 use crate::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use crate::generic::{GenericMetadata, GenericPlatform};
+use crate::layer::trait_api::handling::handle_layer;
 use crate::layer::{
-    handle_layer, ExistingLayerStrategy, Layer, LayerData, LayerResult, LayerResultBuilder,
-    MetadataMigration,
+    ExistingLayerStrategy, Layer, LayerData, LayerResult, LayerResultBuilder, MetadataMigration,
 };
 use crate::layer_env::{LayerEnv, ModificationBehavior, Scope};
 use crate::{read_toml_file, Buildpack, Env, Target, LIBCNB_SUPPORTED_BUILDPACK_API};

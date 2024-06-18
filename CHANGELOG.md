@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `libcnb`:
+  - A new API for working with layers has been added. See the `BuildContext::cached_layer` and `BuildContext::uncached_layer` docs for examples of how to use this API. ([#814](https://github.com/heroku/libcnb.rs/pull/814))
+
+### Changed
+
+- `libcnb`:
+  - The `Layer` trait and related types and functions have been deprecated. Please migrate to the new API. ([#814](https://github.com/heroku/libcnb.rs/pull/814))
+  - Errors related to layers have been restructured. While this is technically a breaking change, buildpacks usually don't have to be modified in practice. ([#814](https://github.com/heroku/libcnb.rs/pull/814))
+
 ### Fixed
 
 - `libcnb-data`:
