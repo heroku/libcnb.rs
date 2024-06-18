@@ -2,7 +2,7 @@ use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
 use libcnb::data::layer_name;
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::generic::{GenericMetadata, GenericPlatform};
-use libcnb::layer::{CachedLayerDefinition, InspectRestoredAction, InvalidMetadataAction};
+use libcnb::layer::{CachedLayerDefinition, InvalidMetadataAction, RestoredLayerAction};
 use libcnb::{buildpack_main, Buildpack};
 use std::fs;
 use std::fs::Permissions;
@@ -29,8 +29,8 @@ impl Buildpack for TestBuildpack {
             CachedLayerDefinition {
                 build: true,
                 launch: true,
-                invalid_metadata: &|_| InvalidMetadataAction::DeleteLayer,
-                inspect_restored: &|_: &GenericMetadata, _| InspectRestoredAction::DeleteLayer,
+                invalid_metadata_action: &|_| InvalidMetadataAction::DeleteLayer,
+                restored_layer_action: &|_: &GenericMetadata, _| RestoredLayerAction::DeleteLayer,
             },
         )?;
 

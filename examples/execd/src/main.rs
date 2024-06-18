@@ -30,7 +30,7 @@ impl Buildpack for ExecDBuildpack {
             },
         )?;
 
-        layer_ref.replace_exec_d_programs([(
+        layer_ref.write_exec_d_programs([(
             "dice_roller",
             additional_buildpack_binary_path!("dice_roller"),
         )])?;

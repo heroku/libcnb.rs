@@ -4,7 +4,7 @@ use libcnb::data::sbom::SbomFormat;
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::generic::{GenericMetadata, GenericPlatform};
 use libcnb::layer::{
-    CachedLayerDefinition, InspectRestoredAction, InvalidMetadataAction, LayerState,
+    CachedLayerDefinition, InvalidMetadataAction, LayerState, RestoredLayerAction,
 };
 use libcnb::sbom::Sbom;
 use libcnb::{buildpack_main, Buildpack};
@@ -30,17 +30,17 @@ impl Buildpack for TestBuildpack {
             CachedLayerDefinition {
                 build: true,
                 launch: true,
-                invalid_metadata: &|_| InvalidMetadataAction::DeleteLayer,
-                inspect_restored: &|_: &GenericMetadata, _| InspectRestoredAction::KeepLayer,
+                invalid_metadata_action: &|_| InvalidMetadataAction::DeleteLayer,
+                restored_layer_action: &|_: &GenericMetadata, _| RestoredLayerAction::KeepLayer,
             },
         )?;
 
         match first_layer_ref.state {
             LayerState::Restored { .. } => {
-                first_layer_ref.replace_sboms(&[])?;
+                first_layer_ref.write_sboms(&[])?;
             }
             LayerState::Empty { .. } => {
-                first_layer_ref.replace_sboms(&[
+                first_layer_ref.write_sboms(&[
                     Sbom::from_bytes(
                         SbomFormat::CycloneDxJson,
                         *include_bytes!("../etc/cyclonedx_3.sbom.json"),
@@ -62,13 +62,13 @@ impl Buildpack for TestBuildpack {
             CachedLayerDefinition {
                 build: true,
                 launch: true,
-                invalid_metadata: &|_| InvalidMetadataAction::DeleteLayer,
-                inspect_restored: &|_: &GenericMetadata, _| InspectRestoredAction::KeepLayer,
+                invalid_metadata_action: &|_| InvalidMetadataAction::DeleteLayer,
+                restored_layer_action: &|_: &GenericMetadata, _| RestoredLayerAction::KeepLayer,
             },
         )?;
 
         if let LayerState::Empty { .. } = second_layer_ref.state {
-            second_layer_ref.replace_sboms(&[
+            second_layer_ref.write_sboms(&[
                 Sbom::from_bytes(
                     SbomFormat::CycloneDxJson,
                     *include_bytes!("../etc/cyclonedx_2.sbom.json"),
