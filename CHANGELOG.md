@@ -34,6 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `libcnb`:
   - `Target` now implements `Clone` and `Debug`. ([#821](https://github.com/heroku/libcnb.rs/pull/821))
+- `libcnb-test`
+  - Added the macro `assert_contains_match!` for testing if a value contains a regular expression match.
+  - Added the macro `assert_not_contains_match!` for testing if a value does not contain a regular expression match.
 
 ### Changed
 
@@ -47,9 +50,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `libcnb`:
   - Made `Target` (the type of `DetectContext::target` and `BuildContext::target`) public. ([#815](https://github.com/heroku/libcnb.rs/pull/815))
-- `libcnb-test`
-  - Added the macro `assert_contains_match!` for testing if a value contains a regular expression match.
-  - Added the macro `assert_not_contains_match!` for testing if a value does not contain a regular expression match.
 
 ### Changed
 
