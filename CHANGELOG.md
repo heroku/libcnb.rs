@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [0.22.0] - 2024-06-18
+
 ### Added
 
 - `libcnb`:
@@ -31,6 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `libcnb`:
   - `Target` now implements `Clone` and `Debug`. ([#821](https://github.com/heroku/libcnb.rs/pull/821))
+- `libcnb-test`
+  - Added the macro `assert_contains_match!` for testing if a value contains a regular expression match.
+  - Added the macro `assert_not_contains_match!` for testing if a value does not contain a regular expression match.
 
 ### Changed
 
@@ -44,9 +50,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `libcnb`:
   - Made `Target` (the type of `DetectContext::target` and `BuildContext::target`) public. ([#815](https://github.com/heroku/libcnb.rs/pull/815))
-- `libcnb-test`
-  - Added the macro `assert_contains_match!` for testing if a value contains a regular expression match.
-  - Added the macro `assert_not_contains_match!` for testing if a value does not contain a regular expression match.
 
 ### Changed
 
@@ -310,7 +313,8 @@ version number. See the changelog below for other changes.
 
 - Remove support for legacy BOM. Remove `Launch::bom`, `Build::bom`, `bom::Bom`, `bom::Entry`. ([#489](https://github.com/heroku/libcnb.rs/pull/489))
 
-[unreleased]: https://github.com/heroku/libcnb.rs/compare/v0.21.0...HEAD
+[unreleased]: https://github.com/heroku/libcnb.rs/compare/v0.22.0...HEAD
+[0.22.0]: https://github.com/heroku/libcnb.rs/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/heroku/libcnb.rs/compare/v0.20.0...v0.21.0
 [0.20.0]: https://github.com/heroku/libcnb.rs/compare/v0.19.0...v0.20.0
 [0.19.0]: https://github.com/heroku/libcnb.rs/compare/v0.18.0...v0.19.0

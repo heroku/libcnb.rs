@@ -31,7 +31,7 @@ buildpack_output = []
 write = []
 
 [dependencies]
-crossbeam-utils = { version = "0.8.19", optional = true }
+crossbeam-utils = { version = "0.8.20", optional = true }
 # The default `miniz_oxide` flate2 backend has poor performance in debug/under QEMU:
 # https://github.com/rust-lang/flate2-rs/issues/297
 # Ideally we'd use the fastest `zlib-ng` backend, however it fails to cross-compile:
@@ -41,9 +41,9 @@ flate2 = { version = "1.0.30", default-features = false, features = ["zlib"], op
 libcnb = { workspace = true, optional = true }
 pathdiff = { version = "0.2.1", optional = true }
 sha2 = { version = "0.10.8", optional = true }
-tar = { version = "0.4.40", default-features = false, optional = true }
+tar = { version = "0.4.41", default-features = false, optional = true }
 termcolor = { version = "1.4.1", optional = true }
-thiserror = { version = "1.0.59", optional = true }
+thiserror = { version = "1.0.61", optional = true }
 toml = { workspace = true, optional = true }
 ureq = { version = "2.9.7", default-features = false, features = ["tls"], optional = true }
 
