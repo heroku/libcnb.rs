@@ -54,12 +54,12 @@ pub enum InvalidMetadataAction<M> {
     ReplaceMetadata(M),
 }
 
-/// The action to take after inspecting restored layer data.
+/// The action to take when a previously cached layer was restored.
 #[derive(Copy, Clone, Debug)]
 pub enum RestoredLayerAction {
     /// Delete the restored layer.
     DeleteLayer,
-    /// Keep the layer as-is.
+    /// Keep the restored layer. It can then be used as-is or updated if required.
     KeepLayer,
 }
 
@@ -196,6 +196,9 @@ where
     }
 
     /// Reads the current layer environment from disk.
+    ///
+    /// Note that this includes implicit entries such as adding `bin/` to `PATH`. See [`LayerEnv`]
+    /// docs for details on implicit entries.
     pub fn read_env(&self) -> crate::Result<LayerEnv, B::Error> {
         LayerEnv::read_from_layer_dir(self.path()).map_err(|error| {
             crate::Error::LayerError(LayerError::ReadLayerError(ReadLayerError::IoError(error)))
