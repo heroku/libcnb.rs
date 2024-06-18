@@ -384,6 +384,74 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     /// data will be deleted.
     ///
     /// This function is essentially the same as [`BuildContext::uncached_layer`] but simpler.
+    ///
+    /// # Example
+    /// ```rust
+    /// # use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
+    /// # use libcnb::detect::{DetectContext, DetectResult};
+    /// # use libcnb::generic::GenericPlatform;
+    /// # use libcnb::layer::{
+    /// #     UncachedLayerDefinition, RestoredLayerAction, InvalidMetadataAction, LayerState,
+    /// # };
+    /// # use libcnb::layer_env::{LayerEnv, ModificationBehavior, Scope};
+    /// # use libcnb::Buildpack;
+    /// # use libcnb_data::generic::GenericMetadata;
+    /// # use libcnb_data::layer_name;
+    /// # use std::fs;
+    /// #
+    /// # struct ExampleBuildpack;
+    /// #
+    /// # #[derive(Debug)]
+    /// # enum ExampleBuildpackError {
+    /// #     WriteDataError(std::io::Error),
+    /// # }
+    /// #
+    /// # impl Buildpack for ExampleBuildpack {
+    /// #    type Platform = GenericPlatform;
+    /// #    type Metadata = GenericMetadata;
+    /// #    type Error = ExampleBuildpackError;
+    /// #
+    /// #    fn detect(&self, context: DetectContext<Self>) -> libcnb::Result<DetectResult, Self::Error> {
+    /// #        unimplemented!()
+    /// #    }
+    /// #
+    /// #    fn build(&self, context: BuildContext<Self>) -> libcnb::Result<BuildResult, Self::Error> {
+    /// let layer_ref = context.uncached_layer(
+    ///     layer_name!("example_layer"),
+    ///     UncachedLayerDefinition {
+    ///         build: false,
+    ///         launch: false,
+    ///     },
+    /// )?;
+    ///
+    /// println!("Creating new example layer!");
+    ///
+    /// // Modify the layer contents with regular Rust functions:
+    /// fs::write(
+    ///     layer_ref.path().join("incantation.txt"),
+    ///     "Phol ende uuodan uuorun zi holza. Du uuart demo balderes uolon sin uuoz birenkit.",
+    /// )
+    /// .map_err(ExampleBuildpackError::WriteDataError)?;
+    ///
+    /// // Use functions on LayerRef for common CNB specific layer modifications:
+    /// layer_ref.write_env(LayerEnv::new().chainable_insert(
+    ///     Scope::All,
+    ///     ModificationBehavior::Append,
+    ///     "PLANET",
+    ///     "LV-246",
+    /// ))?;
+    ///
+    /// #
+    /// #        BuildResultBuilder::new().build()
+    /// #    }
+    /// # }
+    /// #
+    /// # impl From<ExampleBuildpackError> for libcnb::Error<ExampleBuildpackError> {
+    /// #    fn from(value: ExampleBuildpackError) -> Self {
+    /// #        Self::BuildpackError(value)
+    /// #    }
+    /// # }
+    /// ```
     pub fn uncached_layer(
         &self,
         layer_name: impl Borrow<LayerName>,
