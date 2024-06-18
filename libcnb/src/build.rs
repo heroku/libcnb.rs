@@ -131,6 +131,9 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     /// allows users to be flexible in how and when the layer is modified and to abstract layer
     /// creation away if necessary.
     ///
+    /// See [`IntoAction`] for details which values can be returned from the
+    /// `invalid_metadata_action` and `restored_layer_action` functions.
+    ///
     /// # Basic Example
     /// ```rust
     /// # use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
