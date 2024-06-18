@@ -274,6 +274,11 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     ///             invalid_metadata_action: &|_| InvalidMetadataAction::DeleteLayer,
     ///             restored_layer_action: &|metadata: &ExampleLayerMetadata, layer_dir| {
     ///                 if metadata.lang_runtime_version.starts_with("0.") {
+    ///                     // The return value for restored_layer_action can be anything with an
+    ///                     // IntoAction implementation. libcnb provides built-in implementations
+    ///                     // for raw RestoredLayerAction/InvalidMetadataAction values, tuples of
+    ///                     // actions with a cause value (of any type) plus variants that are wrapped
+    ///                     // in a Result. See IntoAction for details.
     ///                     Ok((
     ///                         RestoredLayerAction::DeleteLayer,
     ///                         CustomCause::LegacyVersion,
