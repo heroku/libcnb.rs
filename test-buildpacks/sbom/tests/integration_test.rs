@@ -113,8 +113,7 @@ fn test() {
 
         context.rebuild(&build_config, |context| {
             context.download_sbom_files(|sbom_files| {
-                // The 'test' layer does not return any SBOM files in its update implementation. This
-                // must result in no SBOM files being used from previous build.
+                // The buildpack removes restored SBOMs from the 'test' layer.
                 assert!(!sbom_files
                     .path_for(
                         &buildpack_id,
