@@ -37,12 +37,12 @@ where
             EmptyLayerCause::NewlyCreated,
         ),
         Ok(Some(layer_data)) => {
-            let inspect_action =
+            let restored_layer_action =
                 restored_layer_action_fn(&layer_data.metadata.metadata, &layer_data.path)
                     .into_action()
                     .map_err(crate::Error::BuildpackError)?;
 
-            match inspect_action {
+            match restored_layer_action {
                 (RestoredLayerAction::DeleteLayer, cause) => {
                     delete_layer(layers_dir, layer_name).map_err(LayerError::DeleteLayerError)?;
 
