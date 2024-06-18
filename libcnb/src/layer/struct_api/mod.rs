@@ -79,18 +79,18 @@ pub enum LayerState<MAC, RAC> {
 /// The cause of a layer being empty.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum EmptyLayerCause<MAC, RAC> {
-    /// The layer wasn't cached in a previous buildpack run and was freshly created.
-    Uncached,
+    /// The layer wasn't cached in a previous buildpack run and was newly created.
+    NewlyCreated,
     /// The layer was cached in a previous buildpack run, but the metadata was invalid and couldn't
     /// be converted into a valid form. Subsequently, the layer was deleted entirely.
     ///
     /// See: `invalid_metadata_action` in [`CachedLayerDefinition`].
-    MetadataInvalid { cause: MAC },
+    InvalidMetadataAction { cause: MAC },
     /// The layer was cached in a previous buildpack run, but the `restored_layer_action` function
     /// rejected the contents and/or metadata.
     ///
     /// See: `restored_layer_action` in [`CachedLayerDefinition`].
-    Inspect { cause: RAC },
+    RestoredLayerAction { cause: RAC },
 }
 
 /// A value-to-value conversion for layer actions.

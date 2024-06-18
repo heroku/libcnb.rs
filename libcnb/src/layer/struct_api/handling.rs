@@ -34,7 +34,7 @@ where
             layer_types,
             layer_name,
             layers_dir,
-            EmptyLayerCause::Uncached,
+            EmptyLayerCause::NewlyCreated,
         ),
         Ok(Some(layer_data)) => {
             let inspect_action =
@@ -50,7 +50,7 @@ where
                         layer_types,
                         layer_name,
                         layers_dir,
-                        EmptyLayerCause::Inspect { cause },
+                        EmptyLayerCause::RestoredLayerAction { cause },
                     )
                 }
                 (RestoredLayerAction::KeepLayer, cause) => {
@@ -89,7 +89,7 @@ where
                         layer_types,
                         layer_name,
                         layers_dir,
-                        EmptyLayerCause::MetadataInvalid { cause },
+                        EmptyLayerCause::InvalidMetadataAction { cause },
                     )
                 }
                 (InvalidMetadataAction::ReplaceMetadata(metadata), _) => {
@@ -164,7 +164,7 @@ mod tests {
     fn create_layer() {
         let temp_dir = tempdir().unwrap();
 
-        let cause = EmptyLayerCause::Inspect { cause: () };
+        let cause = EmptyLayerCause::RestoredLayerAction { cause: () };
         let layer_name = layer_name!("test_layer");
         let layer_ref = super::create_layer::<TestBuildpack, (), ()>(
             LayerTypes {
@@ -241,7 +241,7 @@ mod tests {
         assert_eq!(
             layer_ref.state,
             LayerState::Empty {
-                cause: EmptyLayerCause::Uncached
+                cause: EmptyLayerCause::NewlyCreated
             }
         );
     }
@@ -352,7 +352,7 @@ mod tests {
         assert_eq!(
             layer_ref.state,
             LayerState::Empty {
-                cause: EmptyLayerCause::Inspect {
+                cause: EmptyLayerCause::RestoredLayerAction {
                     cause: DELETE_CAUSE
                 }
             }
@@ -422,7 +422,7 @@ mod tests {
         assert_eq!(
             layer_ref.state,
             LayerState::Empty {
-                cause: EmptyLayerCause::MetadataInvalid {
+                cause: EmptyLayerCause::InvalidMetadataAction {
                     cause: DELETE_CAUSE
                 }
             }

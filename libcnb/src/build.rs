@@ -313,10 +313,10 @@ impl<B: Buildpack + ?Sized> BuildContext<B> {
     ///             // Since the cause is just a regular Rust value, we can match it with regular
     ///             // Rust syntax and be as complex or simple as we need.
     ///             let message = match cause {
-    ///                 EmptyLayerCause::Inspect {
+    ///                 EmptyLayerCause::RestoredLayerAction {
     ///                     cause: CustomCause::LegacyVersion,
     ///                 } => "Re-installing language runtime (legacy cached version)",
-    ///                 EmptyLayerCause::Inspect {
+    ///                 EmptyLayerCause::RestoredLayerAction {
     ///                     cause: CustomCause::HasBrokenModule | CustomCause::MissingModulesFile,
     ///                 } => "Re-installing language runtime (broken modules detected)",
     ///                 _ => "Installing language runtime",
