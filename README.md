@@ -71,8 +71,8 @@ Then, add the `libcnb` dependency to your project's `Cargo.toml`:
 cargo add libcnb
 ```
 
-Note: If you get an error about `cargo add` not being a supported command, make sure you are
-using Rust 1.62+, or else install [cargo-edit](https://github.com/killercup/cargo-edit).
+Note: If you get an error about `cargo add` not being a supported command, your Rust version is too old
+and will need to be updated (ideally to the latest stable version).
 
 Since we're writing a Cloud Native Buildpack, we also need a `buildpack.toml`. Use the template below and write it to a
 file named `buildpack.toml` in the root of your project, right next to `Cargo.toml`.
