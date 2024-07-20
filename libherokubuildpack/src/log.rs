@@ -14,12 +14,12 @@ pub fn log_error(header: impl AsRef<str>, body: impl AsRef<str>) {
         .set_color(ColorSpec::new().set_fg(Some(Color::Red)).set_bold(true))
         .unwrap();
     writeln!(&mut stream, "\n[Error: {}]", header.as_ref()).unwrap();
-    stream.reset().unwrap();
 
     stream
         .set_color(ColorSpec::new().set_fg(Some(Color::Red)))
         .unwrap();
     writeln!(&mut stream, "{}", body.as_ref()).unwrap();
+    stream.reset().unwrap();
     stream.flush().unwrap();
 }
 
@@ -36,12 +36,12 @@ pub fn log_warning(header: impl AsRef<str>, body: impl AsRef<str>) {
         .set_color(ColorSpec::new().set_fg(Some(Color::Yellow)).set_bold(true))
         .unwrap();
     writeln!(&mut stream, "\n[Warning: {}]", header.as_ref()).unwrap();
-    stream.reset().unwrap();
 
     stream
         .set_color(ColorSpec::new().set_fg(Some(Color::Yellow)))
         .unwrap();
     writeln!(&mut stream, "{}", body.as_ref()).unwrap();
+    stream.reset().unwrap();
     stream.flush().unwrap();
 }
 
