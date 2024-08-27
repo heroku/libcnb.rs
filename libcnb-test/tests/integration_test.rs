@@ -263,7 +263,12 @@ pack command failed with exit code 1!
 
 ## stderr:
 
-ERROR: failed to build: invalid builder 'invalid!'")]
+ERROR: forbidden image name: parsing builder image invalid!: could not parse reference: invalid!
+
+## stdout:
+
+
+")]
 fn unexpected_pack_failure() {
     TestRunner::default().build(
         BuildConfig::new("invalid!", "tests/fixtures/empty").buildpacks(Vec::new()),
@@ -306,7 +311,7 @@ fn expected_pack_failure() {
             assert_empty!(context.pack_stdout);
             assert_contains!(
                 context.pack_stderr,
-                "ERROR: failed to build: invalid builder 'invalid!'"
+                "ERROR: forbidden image name: parsing builder image invalid!"
             );
         },
     );

@@ -62,7 +62,7 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2.7.3
       - name: Install Pack CLI
-        uses: buildpacks/github-actions/setup-pack@v5.7.2
+        uses: buildpacks/github-actions/setup-pack@v5.7.4
       - name: Run integration tests
         # Runs only tests annotated with the `ignore` attribute (which in this repo, are the integration tests).
         run: cargo test -- --ignored
@@ -93,4 +93,4 @@ jobs:
         # This image used the experimental image extensions feature which has to be explicitly enabled and doesn't
         # work with `--trust-builder`. To unblock CI, the builder has been changed to `heroku/builder:22`. As soon as
         # we can, we should use a non-libc builder again.
-        run: pack build example-basics --force-color --builder heroku/builder:22 --trust-builder --buildpack packaged/x86_64-unknown-linux-musl/debug/libcnb-examples_basics --path examples/
+        run: pack build example-basics --force-color --builder heroku/builder:22 --trust-builder --trust-extra-buildpacks --buildpack packaged/x86_64-unknown-linux-musl/debug/libcnb-examples_basics --path examples/

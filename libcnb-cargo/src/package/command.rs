@@ -147,6 +147,7 @@ fn eprint_pack_command_hint(
                 .to_string_lossy()
         );
     }
+    eprintln!("  --trust-extra-buildpacks \\");
     eprintln!("  --path /path/to/application");
     eprintln!();
 }

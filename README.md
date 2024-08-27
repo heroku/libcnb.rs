@@ -189,6 +189,7 @@ Successfully wrote buildpack directory: packaged/x86_64-unknown-linux-musl/debug
 💡 To test your buildpack locally with pack, run:
 pack build my-image-name \
   --buildpack packaged/x86_64-unknown-linux-musl/debug/libcnb-examples_my-buildpack \
+  --trust-extra-buildpacks \
   --path /path/to/application
 
 /Users/example/src/my-buildpack/packaged/x86_64-unknown-linux-musl/debug/libcnb-examples_my-buildpack
@@ -206,7 +207,7 @@ application code at all, we just create an empty directory and use that as our a
 
 ```console
 $ mkdir bogus-app
-$ pack build my-image --buildpack packaged/x86_64-unknown-linux-musl/debug/libcnb-examples_my-buildpack --path bogus-app --builder heroku/builder:22
+$ pack build my-image --buildpack packaged/x86_64-unknown-linux-musl/debug/libcnb-examples_my-buildpack --trust-extra-buildpacks --path bogus-app --builder heroku/builder:22
 ...
 ===> ANALYZING
 Image with name "my-image" not found

@@ -14,6 +14,7 @@ pub(crate) struct PackBuildCommand {
     path: PathBuf,
     pull_policy: PullPolicy,
     trust_builder: bool,
+    trust_extra_buildpacks: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -65,6 +66,7 @@ impl PackBuildCommand {
             // Prevent redundant image-pulling, which slows tests and risks hitting registry rate limits.
             pull_policy: PullPolicy::IfNotPresent,
             trust_builder: true,
+            trust_extra_buildpacks: true,
         }
     }
 
@@ -124,6 +126,10 @@ impl From<PackBuildCommand> for Command {
 
         if pack_build_command.trust_builder {
             command.arg("--trust-builder");
+        }
+
+        if pack_build_command.trust_extra_buildpacks {
+            command.arg("--trust-extra-buildpacks");
         }
 
         command
@@ -188,6 +194,7 @@ mod tests {
             path: PathBuf::from("/tmp/foo/bar"),
             pull_policy: PullPolicy::IfNotPresent,
             trust_builder: true,
+            trust_extra_buildpacks: true,
         };
 
         let command: Command = input.clone().into();
@@ -218,6 +225,7 @@ mod tests {
                 "--env",
                 "ENV_FOO=FOO_VALUE",
                 "--trust-builder",
+                "--trust-extra-buildpacks",
             ]
         );
 
