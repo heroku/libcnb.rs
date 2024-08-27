@@ -30,7 +30,9 @@ unused_crate_dependencies = "warn"
 
 [workspace.lints.clippy]
 panic_in_result_fn = "warn"
-pedantic = "warn"
+# The explicit priority is required due to https://github.com/rust-lang/cargo/issues/13565.
+pedantic = { level = "warn", priority = -1 }
+
 unwrap_used = "warn"
 # In most cases adding error docs provides little value.
 missing_errors_doc = "allow"
