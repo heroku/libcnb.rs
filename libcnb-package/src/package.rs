@@ -64,7 +64,7 @@ fn package_libcnb_buildpack(
     destination: &Path,
 ) -> Result<(), PackageLibcnbBuildpackError> {
     let cargo_metadata = MetadataCommand::new()
-        .manifest_path(&buildpack_directory.join("Cargo.toml"))
+        .manifest_path(buildpack_directory.join("Cargo.toml"))
         .exec()
         .map_err(PackageLibcnbBuildpackError::CargoMetadataError)?;
 
