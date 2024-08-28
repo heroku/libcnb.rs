@@ -15,7 +15,7 @@ The framework:
 Integration tests require the following to be available on the host:
 
 - [Docker](https://docs.docker.com/engine/install/)
-- [Pack CLI](https://buildpacks.io/docs/install-pack/)
+- [Pack CLI](https://buildpacks.io/docs/install-pack/) v0.35.1+
 - [Cross-compilation prerequisites](https://docs.rs/libcnb/latest/libcnb/#cross-compilation-prerequisites) (however `libcnb-cargo` itself is not required)
 
 Only local Docker daemons are fully supported. As such, if you are using Circle CI you must use the

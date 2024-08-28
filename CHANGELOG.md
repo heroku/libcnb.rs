@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `libcnb-test`:
+  - `pack build` is now run with `--trust-extra-buildpacks` to force the builder to be trusted after upstream changes in Pack CLI. Pack CLI v0.35.1+ is now required to use `libcnb-test`. ([#855](https://github.com/heroku/libcnb.rs/pull/855))
 
 ## [0.22.0] - 2024-06-18
 
