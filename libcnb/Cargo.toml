@@ -26,10 +26,10 @@ libcnb-proc-macros.workspace = true
 opentelemetry = { version = "0.21.0", optional = true }
 opentelemetry_sdk = { version = "0.21.2", optional = true }
 opentelemetry-stdout = { version = "0.2.0", optional = true, features = ["trace"] }
-serde = { version = "1.0.203", features = ["derive"] }
-thiserror = "1.0.61"
+serde = { version = "1.0.209", features = ["derive"] }
+thiserror = "1.0.63"
 toml.workspace = true
 
 [dev-dependencies]
-serde_json = "1.0.117"
-tempfile = "3.10.1"
+serde_json = "1.0.127"
+tempfile = "3.12.0"
