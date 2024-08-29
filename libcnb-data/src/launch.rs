@@ -66,7 +66,7 @@ impl LaunchBuilder {
         self
     }
 
-    /// Adds multiple processes to the launch configuration.
+    /// Adds multiple labels to the launch configuration.
     pub fn labels<I: IntoIterator<Item = L>, L: Into<Label>>(&mut self, labels: I) -> &mut Self {
         for label in labels {
             self.label(label);
