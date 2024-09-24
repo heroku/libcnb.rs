@@ -8,13 +8,6 @@ mod semver;
 mod sha2;
 mod unit;
 
-#[allow(unused_imports, unreachable_pub)]
-#[cfg(feature = "semver")]
-pub use semver::*;
-#[allow(unused_imports, unreachable_pub)]
-#[cfg(feature = "sha2")]
-pub use sha2::*;
-
 use crate::inventory::artifact::{Arch, Artifact, Os};
 use crate::inventory::checksum::Digest;
 use crate::inventory::version::ArtifactRequirement;
