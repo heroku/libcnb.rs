@@ -1,4 +1,4 @@
-use crate::checksum::Digest;
+use crate::inventory::checksum::Digest;
 use sha2::digest::crypto_common::OutputSizeUser;
 use sha2::{Sha256, Sha512};
 
