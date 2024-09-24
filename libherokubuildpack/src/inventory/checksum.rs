@@ -101,7 +101,7 @@ pub(crate) mod tests {
             Checksum {
                 name: String::from("bogus"),
                 value: hex::decode(hex_string).unwrap(),
-                digest: Default::default(),
+                digest: PhantomData,
             }
         }
     }
