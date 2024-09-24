@@ -8,10 +8,10 @@ mod semver;
 mod sha2;
 mod unit;
 
-#[allow(unused_imports)]
+#[allow(unused_imports, unreachable_pub)]
 #[cfg(feature = "semver")]
 pub use semver::*;
-#[allow(unused_imports)]
+#[allow(unused_imports, unreachable_pub)]
 #[cfg(feature = "sha2")]
 pub use sha2::*;
 
