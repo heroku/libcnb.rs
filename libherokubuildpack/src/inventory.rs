@@ -39,6 +39,7 @@ impl<V, D, M> Default for Inventory<V, D, M> {
 }
 
 impl<V, D, M> Inventory<V, D, M> {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
