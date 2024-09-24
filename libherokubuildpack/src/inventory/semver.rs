@@ -1,4 +1,4 @@
-use crate::version::VersionRequirement;
+use crate::inventory::version::VersionRequirement;
 
 impl VersionRequirement<semver::Version> for semver::VersionReq {
     fn satisfies(&self, version: &semver::Version) -> bool {
