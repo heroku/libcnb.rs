@@ -20,7 +20,6 @@ use crate::inventory::checksum::Digest;
 use crate::inventory::version::ArtifactRequirement;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use std::cmp;
 use std::cmp::Ordering;
 use std::fmt::Formatter;
 use std::str::FromStr;
