@@ -126,6 +126,7 @@ where
     D: Digest,
     M: Serialize + DeserializeOwned,
 {
+    #![allow(clippy::unwrap_used)]
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_str(&toml::to_string(self).unwrap())
     }
