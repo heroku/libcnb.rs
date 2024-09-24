@@ -1,4 +1,4 @@
-use crate::checksum::{Checksum, Digest};
+use crate::inventory::checksum::{Checksum, Digest};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
@@ -106,7 +106,7 @@ impl FromStr for Arch {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::version::VersionRequirement;
+    use crate::inventory::version::VersionRequirement;
 
     #[test]
     fn test_arch_display_format() {

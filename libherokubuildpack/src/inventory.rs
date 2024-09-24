@@ -15,9 +15,9 @@ pub use semver::*;
 #[cfg(feature = "sha2")]
 pub use sha2::*;
 
-use crate::artifact::{Arch, Artifact, Os};
-use crate::checksum::Digest;
-use crate::version::ArtifactRequirement;
+use crate::inventory::artifact::{Arch, Artifact, Os};
+use crate::inventory::checksum::Digest;
+use crate::inventory::version::ArtifactRequirement;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::cmp;
