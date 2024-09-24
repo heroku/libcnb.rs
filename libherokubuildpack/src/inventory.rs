@@ -1,3 +1,20 @@
+pub mod artifact;
+pub mod checksum;
+pub mod version;
+
+#[cfg(feature = "semver")]
+mod semver;
+#[cfg(feature = "sha2")]
+mod sha2;
+mod unit;
+
+#[allow(unused_imports)]
+#[cfg(feature = "semver")]
+pub use semver::*;
+#[allow(unused_imports)]
+#[cfg(feature = "sha2")]
+pub use sha2::*;
+
 use crate::artifact::{Arch, Artifact, Os};
 use crate::checksum::Digest;
 use crate::version::ArtifactRequirement;
@@ -116,8 +133,8 @@ where
 
 #[cfg(test)]
 mod test {
-    use crate::artifact::{Arch, Artifact, Os};
-    use crate::checksum::tests::BogusDigest;
+    use crate::inventory::artifact::{Arch, Artifact, Os};
+    use crate::inventory::checksum::tests::BogusDigest;
     use crate::inventory::Inventory;
 
     #[test]
