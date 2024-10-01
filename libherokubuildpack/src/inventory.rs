@@ -90,6 +90,12 @@ use std::fmt::Formatter;
 use std::str::FromStr;
 
 /// Represents an inventory of artifacts.
+///
+/// An inventory can be read directly from a TOML file on disk and used by a buildpack to resolve
+/// requirements for a specific artifact to download.
+///
+/// The inventory can be manipulated in-memory and then re-serialized to disk to facilitate both
+/// reading and writing inventory files.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Inventory<V, D, M> {
     #[serde(bound = "V: Serialize + DeserializeOwned, D: Digest, M: Serialize + DeserializeOwned")]
@@ -103,11 +109,16 @@ impl<V, D, M> Default for Inventory<V, D, M> {
 }
 
 impl<V, D, M> Inventory<V, D, M> {
+    /// Creates a new empty inventory
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Add a new artifact to the in-memory inventory
+    ///
+    /// For removal, you can use the `Vec::retain` method on the artifacts attribute
+    /// to remove artifacts that match a given predicate.
     pub fn push(&mut self, artifact: Artifact<V, D, M>) {
         self.artifacts.push(artifact);
     }
