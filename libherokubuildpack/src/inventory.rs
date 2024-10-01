@@ -1,3 +1,75 @@
+//! # Inventory
+//!
+//! Many buildpacks need to provided artifacts from different URLs. A helpful pattern
+//! is to provide a list of artifacts in a TOML file, which can be parsed and used by
+//! the buildpack to download the correct artifact. For example, a Ruby buildpack
+//! might need to download pre-compiled Ruby binary versions that are hosted on S3.
+//!
+//! This module contains code that can be used to produce and consume such an inventory file.
+//!
+//! ## Features
+//!
+//! - Version lookup and comparison: To implement the inventory, you'll need to define how
+//!   versions are compared. This allows the inventory code to find an appropriate artifact
+//!   based on whatever custom version logic you need. If you don't need custom logic, you can
+//!   use the included TODO feature.
+//! - Architecture aware: Beyond version specifiers, buildpack authors may need to provide different
+//!   artifacts for different computer architectures such as ARM64 or AMD64. The inventory encodes
+//!   this information which is used to select the correct artifact.
+//! - Checksum validation: In addition to knowing the URL of an artifact, buildp authors
+//!   want to be confident that the artifact they download is the correct one. To accomplish this
+//!   the inventory contains a checksum of the download and can be used to validate the download
+//!   has not been modified or tampered with. To use sha256 or sha512 checksums out of the box,
+//!   enable the TODO feature
+//! - Extensible with metadata: The default inventory format covers a lot of common use cases,
+//!   but if you need more, you can extend it by adding custom metadata to each artifact.
+//!
+//! ## Example consumer
+//!
+//! This example uses the TODO and TODO features to parse an existing inventory file, compare
+//! versions via semver logic
+//!
+//! ```no_run,rust
+//! use libherokubuildpack::inventory::{artifact::{Os, Arch}, Inventory};
+//! use semver::{Version, VersionReq};
+//! use libherokubuildpack::digest::sha256;
+//! use libherokubuildpack::download::download_file;
+//! use std::path::Path;
+//!
+//! #[cfg(feature = "sha2")]
+//! #[cfg(feature = "semver")]
+//! use sha2::Sha256;
+//!
+//! let inventory: Inventory<Version, Sha256, Option<()>> =
+//! std::fs::read_to_string("inventory.toml")
+//!     .unwrap()
+//!     .parse()
+//!     .unwrap();
+//! let requirement = VersionReq::parse("= 1.0.0").unwrap();
+//! if let Some(artifact) = inventory.resolve(Os::Linux, Arch::Amd64, &requirement) {
+//!     // Downloading the artifact
+//!     println!("Installing {requirement:?} from {}", artifact.url);
+//!     let path = Path::new("path/to/binary");
+//!     download_file(&artifact.url, &path)
+//!        .unwrap();
+//!
+//!     // Validating the checksum
+//!     sha256(&path)
+//!         .and_then(|downloaded_file_digest| {
+//!             let checksum = hex::encode(artifact.checksum.value.clone());
+//!             if downloaded_file_digest == checksum {
+//!                 Ok(())
+//!             } else {
+//!                 panic!(
+//!                     "Invalid checksum for download {url}: expected {checksum:?}, got {downloaded_file_digest:?}",
+//!                     url = artifact.url,
+//!                 )
+//!             }
+//!         })
+//! } else {
+//!     panic!("Could not install artifact {requirement:?} from inventory.toml");
+//! }
+//! ```
 pub mod artifact;
 pub mod checksum;
 pub mod version;
