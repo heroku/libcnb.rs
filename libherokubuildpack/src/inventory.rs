@@ -112,6 +112,9 @@ impl<V, D, M> Inventory<V, D, M> {
         self.artifacts.push(artifact);
     }
 
+    /// Return a single artifact as the best match given the input constraints
+    ///
+    /// If multiple artifacts match the constraints, the one with the highest version is returned.
     pub fn resolve<R>(&self, os: Os, arch: Arch, requirement: &R) -> Option<&Artifact<V, D, M>>
     where
         V: Ord,
@@ -128,6 +131,10 @@ impl<V, D, M> Inventory<V, D, M> {
             .max_by_key(|artifact| &artifact.version)
     }
 
+    /// Resolve logic for Artifacts that implement `PartialOrd` rather than `Ord`
+    ///
+    /// Some version implementations are only partially ordered. One example could be f32 which is not totally ordered
+    /// because NaN is not comparable to any other number.
     pub fn partial_resolve<R>(
         &self,
         os: Os,
