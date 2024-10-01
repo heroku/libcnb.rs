@@ -30,11 +30,11 @@
 //! versions via semver logic
 //!
 //! ```no_run,rust
-//! use libherokubuildpack::inventory::{artifact::{Os, Arch}, Inventory};
+//! use libherokubuildpack::inventory::{artifact::{Os, Arch}, Inventory, checksum::Checksum};
 //! use semver::{Version, VersionReq};
-//! use libherokubuildpack::digest::sha256;
 //! use libherokubuildpack::download::download_file;
 //! use std::path::Path;
+//! use std::str::FromStr;
 //!
 //! #[cfg(feature = "sha2")]
 //! #[cfg(feature = "semver")]
@@ -54,18 +54,19 @@
 //!        .unwrap();
 //!
 //!     // Validating the checksum
-//!     sha256(&path)
+//!     Checksum::<Sha256>::from_str(&std::fs::read_to_string(&path).unwrap())
 //!         .and_then(|downloaded_file_digest| {
-//!             let checksum = hex::encode(artifact.checksum.value.clone());
-//!             if downloaded_file_digest == checksum {
+//!             if downloaded_file_digest == artifact.checksum {
 //!                 Ok(())
 //!             } else {
 //!                 panic!(
-//!                     "Invalid checksum for download {url}: expected {checksum:?}, got {downloaded_file_digest:?}",
+//!                     "Invalid checksum for download {url}: expected {expected:?}, got {actual:?}",
 //!                     url = artifact.url,
+//!                     expected = hex::encode(&artifact.checksum.value),
+//!                     actual = hex::encode(&downloaded_file_digest.value),
 //!                 )
 //!             }
-//!         })
+//!         }).unwrap()
 //! } else {
 //!     panic!("Could not install artifact {requirement:?} from inventory.toml");
 //! }
