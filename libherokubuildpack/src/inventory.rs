@@ -2,7 +2,7 @@ pub mod artifact;
 pub mod checksum;
 pub mod version;
 
-#[cfg(feature = "semver")]
+#[cfg(feature = "inventory-semver")]
 mod semver;
 #[cfg(feature = "sha2")]
 mod sha2;
