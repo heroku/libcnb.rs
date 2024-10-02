@@ -9,7 +9,7 @@ use std::str::FromStr;
 /// An inventory is made up of multiple artifacts that have a version that
 /// can be compared to each other and a URL where the artifact can be downloaded.
 ///
-/// Some artifacts may be OS or architectures specific. The checksum value can
+/// Artifacts are OS and architectures specific. The checksum value can
 /// be used to validate an artifact once it has been downloaded.
 ///
 /// Metadata can be used to store additional information about the artifact.

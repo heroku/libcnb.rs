@@ -1,11 +1,11 @@
 //! # Inventory
 //!
-//! Many buildpacks need to provided artifacts from different URLs. A helpful pattern
+//! Many buildpacks need to provide artifacts from different URLs. A helpful pattern
 //! is to provide a list of artifacts in a TOML file, which can be parsed and used by
 //! the buildpack to download the correct artifact. For example, a Ruby buildpack
-//! might need to download pre-compiled Ruby binary versions that are hosted on S3.
+//! might need to download pre-compiled Ruby binaries hosted on S3.
 //!
-//! This module contains code that can be used to produce and consume such an inventory file.
+//! This module can be used to produce and consume such an inventory file.
 //!
 //! ## Features
 //!
@@ -117,9 +117,6 @@ impl<V, D, M> Inventory<V, D, M> {
     }
 
     /// Add a new artifact to the in-memory inventory
-    ///
-    /// For removal, you can use the `Vec::retain` method on the artifacts attribute
-    /// to remove artifacts that match a given predicate.
     pub fn push(&mut self, artifact: Artifact<V, D, M>) {
         self.artifacts.push(artifact);
     }
