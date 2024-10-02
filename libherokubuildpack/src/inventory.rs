@@ -4,7 +4,7 @@ pub mod version;
 
 #[cfg(feature = "inventory-semver")]
 mod semver;
-#[cfg(feature = "sha2")]
+#[cfg(feature = "inventory-sha2")]
 mod sha2;
 mod unit;
 

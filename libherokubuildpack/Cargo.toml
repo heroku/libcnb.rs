@@ -18,14 +18,14 @@ all-features = true
 workspace = true
 
 [features]
-default = ["command", "download", "digest", "error", "inventory", "log", "inventory-semver", "sha2", "tar", "toml", "fs", "write", "buildpack_output"]
+default = ["command", "download", "digest", "error", "inventory", "log", "inventory-semver", "inventory-sha2", "tar", "toml", "fs", "write", "buildpack_output"]
 download = ["dep:ureq", "dep:thiserror"]
 digest = ["dep:sha2"]
 error = ["log", "dep:libcnb"]
 inventory = ["dep:hex", "dep:serde", "dep:thiserror", "dep:toml"]
 log = ["dep:termcolor"]
 inventory-semver = ["dep:semver"]
-sha2 = ["dep:sha2"]
+inventory-sha2 = ["dep:sha2"]
 tar = ["dep:tar", "dep:flate2"]
 toml = ["dep:toml"]
 fs = ["dep:pathdiff"]
