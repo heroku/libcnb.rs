@@ -12,7 +12,7 @@
 //! - Version lookup and comparison: To implement the inventory, you'll need to define how
 //!   versions are compared. This allows the inventory code to find an appropriate artifact
 //!   based on whatever custom version logic you need. If you don't need custom logic, you can
-//!   use the included TODO feature.
+//!   use the included `inventory-semver` feature.
 //! - Architecture aware: Beyond version specifiers, buildpack authors may need to provide different
 //!   artifacts for different computer architectures such as ARM64 or AMD64. The inventory encodes
 //!   this information which is used to select the correct artifact.
@@ -20,14 +20,14 @@
 //!   want to be confident that the artifact they download is the correct one. To accomplish this
 //!   the inventory contains a checksum of the download and can be used to validate the download
 //!   has not been modified or tampered with. To use sha256 or sha512 checksums out of the box,
-//!   enable the TODO feature
+//!   enable the `inventory-sha2` feature
 //! - Extensible with metadata: The default inventory format covers a lot of common use cases,
 //!   but if you need more, you can extend it by adding custom metadata to each artifact.
 //!
 //! ## Example consumer
 //!
-//! This example uses the TODO and TODO features to parse an existing inventory file, compare
-//! versions via semver logic
+//! This example uses the `inventory-semver` and `inventory-sha2` features to parse an existing
+//! inventory file, compare versions via semver logic:
 //!
 //! ```no_run,rust
 //! use libherokubuildpack::inventory::{artifact::{Os, Arch}, Inventory, checksum::Checksum};
@@ -36,8 +36,8 @@
 //! use std::path::Path;
 //! use std::str::FromStr;
 //!
-//! #[cfg(feature = "sha2")]
-//! #[cfg(feature = "semver")]
+//! #[cfg(feature = "inventory-sha2")]
+//! #[cfg(feature = "inventory-semver")]
 //! use sha2::Sha256;
 //!
 //! let inventory: Inventory<Version, Sha256, Option<()>> =
