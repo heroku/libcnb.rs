@@ -4,6 +4,15 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use std::str::FromStr;
 
+/// Representation of a downloadable artifact such as a binary tarball.
+///
+/// An inventory is made up of multiple artifacts that have a version that
+/// can be compared to each other and a URL where the artifact can be downloaded.
+///
+/// Artifacts are OS and architectures specific. The checksum value can
+/// be used to validate an artifact once it has been downloaded.
+///
+/// Metadata can be used to store additional information about the artifact.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Artifact<V, D, M> {
     #[serde(bound = "V: Serialize + DeserializeOwned")]
