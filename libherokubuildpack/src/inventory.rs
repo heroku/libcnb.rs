@@ -81,7 +81,13 @@
 //! // Verify checksum of the resolved artifact
 //! let downloaded_data = "foo";  // Example downloaded file content
 //! let downloaded_checksum = Sha256::digest(downloaded_data).to_vec();
-//! assert_eq!(resolved_artifact.checksum.value, downloaded_checksum);
+//!
+//! assert_eq!(downloaded_checksum, resolved_artifact.checksum.value);
+//! println!(
+//!     "Successfully downloaded {} with checksum {}",
+//!     resolved_artifact.url,
+//!     hex::encode(&resolved_artifact.checksum.value)
+//! );
 //! ```
 pub mod artifact;
 pub mod checksum;
