@@ -12,6 +12,8 @@ pub mod download;
 pub mod error;
 #[cfg(feature = "fs")]
 pub mod fs;
+#[cfg(feature = "inventory")]
+pub mod inventory;
 #[cfg(feature = "log")]
 pub mod log;
 #[cfg(feature = "tar")]
