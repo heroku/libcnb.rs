@@ -24,52 +24,64 @@
 //! - Extensible with metadata: The default inventory format covers a lot of common use cases,
 //!   but if you need more, you can extend it by adding custom metadata to each artifact.
 //!
-//! ## Example consumer
+//! ## Example usage
 //!
-//! This example uses the `inventory-semver` and `inventory-sha2` features to parse an existing
-//! inventory file, compare versions via semver logic:
+//! This example demonstrates:
+//! * Creating an artifact using the `inventory-sha2` and `inventory-semver` features.
+//! * Adding the artifact to an inventory.
+//! * Serializing and deserializing the inventory [to](Inventory#method.fmt) and [from](Inventory::from_str) TOML.
+//! * [Resolving an inventory artifact](Inventory::resolve) specifying relevant OS, architecture, and version requirements.
+//! * Using the resolved artifact's checksum value to verify "downloaded" data.
 //!
-//! ```no_run,rust
-//! use libherokubuildpack::inventory::{artifact::{Os, Arch}, Inventory, checksum::Checksum};
+//! ```rust
+//! use libherokubuildpack::inventory::{artifact::{Arch, Artifact, Os}, Inventory, checksum::Checksum};
 //! use semver::{Version, VersionReq};
-//! use libherokubuildpack::download::download_file;
-//! use std::path::Path;
-//! use std::str::FromStr;
+//! use sha2::{Sha256, Digest};
 //!
-//! #[cfg(feature = "inventory-sha2")]
-//! #[cfg(feature = "inventory-semver")]
-//! use sha2::Sha256;
+//! // Create an artifact with a SHA256 checksum and `semver::Version`
+//! let new_artifact = Artifact {
+//!     version: Version::new(1, 0, 0),
+//!     os: Os::Linux,
+//!     arch: Arch::Arm64,
+//!     url: "https://example.com/foo.txt".to_string(),
+//!     checksum: "sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
+//!         .parse::<Checksum<Sha256>>()
+//!         .unwrap(),
+//!     metadata: None,
+//! };
 //!
-//! let inventory: Inventory<Version, Sha256, Option<()>> =
-//! std::fs::read_to_string("inventory.toml")
-//!     .unwrap()
-//!     .parse()
+//! // Create an inventory and add the artifact
+//! let mut inventory = Inventory::<Version, Sha256, Option<()>>::new();
+//! inventory.push(new_artifact.clone());
+//!
+//! // Serialize the inventory to TOML
+//! let inventory_toml = inventory.to_string();
+//! assert_eq!(
+//!     r#"[[artifacts]]
+//! version = "1.0.0"
+//! os = "linux"
+//! arch = "arm64"
+//! url = "https://example.com/foo.txt"
+//! checksum = "sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
+//! "#,
+//!     inventory_toml
+//! );
+//!
+//! // Deserialize the inventory from TOML
+//! let parsed_inventory = inventory_toml
+//!     .parse::<Inventory<Version, Sha256, Option<()>>>()
 //!     .unwrap();
-//! let requirement = VersionReq::parse("= 1.0.0").unwrap();
-//! if let Some(artifact) = inventory.resolve(Os::Linux, Arch::Amd64, &requirement) {
-//!     // Downloading the artifact
-//!     println!("Installing {requirement:?} from {}", artifact.url);
-//!     let path = Path::new("path/to/binary");
-//!     download_file(&artifact.url, &path)
-//!        .unwrap();
 //!
-//!     // Validating the checksum
-//!     Checksum::<Sha256>::from_str(&std::fs::read_to_string(&path).unwrap())
-//!         .and_then(|downloaded_file_digest| {
-//!             if downloaded_file_digest == artifact.checksum {
-//!                 Ok(())
-//!             } else {
-//!                 panic!(
-//!                     "Invalid checksum for download {url}: expected {expected:?}, got {actual:?}",
-//!                     url = artifact.url,
-//!                     expected = hex::encode(&artifact.checksum.value),
-//!                     actual = hex::encode(&downloaded_file_digest.value),
-//!                 )
-//!             }
-//!         }).unwrap()
-//! } else {
-//!     panic!("Could not install artifact {requirement:?} from inventory.toml");
-//! }
+//! // Resolve the artifact by OS, architecture, and version requirement
+//! let version_req = VersionReq::parse("=1.0.0").unwrap();
+//! let resolved_artifact = parsed_inventory.resolve(Os::Linux, Arch::Arm64, &version_req).unwrap();
+//!
+//! assert_eq!(&new_artifact, resolved_artifact);
+//!
+//! // Verify checksum of the resolved artifact
+//! let downloaded_data = "foo";  // Example downloaded file content
+//! let downloaded_checksum = Sha256::digest(downloaded_data).to_vec();
+//! assert_eq!(resolved_artifact.checksum.value, downloaded_checksum);
 //! ```
 pub mod artifact;
 pub mod checksum;
