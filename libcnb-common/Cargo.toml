@@ -14,6 +14,6 @@ include = ["src/**/*", "LICENSE", "README.md"]
 workspace = true
 
 [dependencies]
-serde = { version = "1.0.209", features = ["derive"] }
-thiserror = "1.0.63"
+serde = { version = "1.0.210", features = ["derive"] }
+thiserror = "1.0.64"
 toml.workspace = true
