@@ -40,16 +40,16 @@ crossbeam-utils = { version = "0.8.20", optional = true }
 # Ideally we'd use the fastest `zlib-ng` backend, however it fails to cross-compile:
 # https://github.com/rust-lang/libz-sys/issues/93
 # As such we have to use the next best alternate backend, which is `zlib`.
-flate2 = { version = "1.0.33", default-features = false, features = ["zlib"], optional = true }
+flate2 = { version = "1.0.34", default-features = false, features = ["zlib"], optional = true }
 hex = { version = "0.4.3", optional = true }
 libcnb = { workspace = true, optional = true }
-pathdiff = { version = "0.2.1", optional = true }
-semver = { version = "1.0.21", features = ["serde"], optional = true }
-serde = { version = "1.0.209", features = ["derive"], optional = true }
+pathdiff = { version = "0.2.2", optional = true }
+semver = { version = "1.0.23", features = ["serde"], optional = true }
+serde = { version = "1.0.210", features = ["derive"], optional = true }
 sha2 = { version = "0.10.8", optional = true }
-tar = { version = "0.4.41", default-features = false, optional = true }
+tar = { version = "0.4.42", default-features = false, optional = true }
 termcolor = { version = "1.4.1", optional = true }
-thiserror = { version = "1.0.63", optional = true }
+thiserror = { version = "1.0.64", optional = true }
 toml = { workspace = true, optional = true }
 ureq = { version = "2.10.1", default-features = false, features = ["tls"], optional = true }
 
@@ -57,4 +57,4 @@ ureq = { version = "2.10.1", default-features = false, features = ["tls"], optio
 indoc = "2.0.5"
 libcnb-test = { workspace = true }
 serde_test = "1.0.177"
-tempfile = "3.12.0"
+tempfile = "3.13.0"
