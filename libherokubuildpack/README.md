@@ -22,6 +22,12 @@ The feature names line up with the modules in this crate. All features are enabl
   Enables helpers to create checksums of files.
 * `error` -
   Enables helpers to achieve consistent error logging.
+* `inventory` -
+  Enables artifact inventory module.
+* `inventory-semver` -
+  Enables inventory helpers to work with `semver::Version`.
+* `inventory-sha2` -
+  Enables inventory helpers to work with `sha2::Sha256` and `sha2::Sha512`.
 * `log` -
   Enables helpers for logging.
 * `buildpack_output` -
