@@ -31,6 +31,7 @@ pub struct ContainerConfig {
     pub(crate) command: Option<Vec<String>>,
     pub(crate) env: HashMap<String, String>,
     pub(crate) exposed_ports: HashSet<u16>,
+    pub(crate) volumes: Option<Vec<String>>,
 }
 
 impl ContainerConfig {
@@ -196,6 +197,33 @@ impl ContainerConfig {
             self.env(key.into(), value.into());
         });
 
+        self
+    }
+
+    /// Attaches container volumes. Useful for integration tests that
+    /// depend on persistent storage shared between container executions.
+    ///
+    /// See: [Docker CLI, Mount Volume](https://docs.docker.com/reference/cli/docker/container/run/#volume)
+    ///
+    /// # Example
+    /// ```no_run
+    /// use libcnb_test::{BuildConfig, ContainerConfig, TestRunner};
+    ///
+    /// TestRunner::default().build(
+    ///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app"),
+    ///     |context| {
+    ///         // ...
+    ///         context.start_container(
+    ///             ContainerConfig::new().volumes(["/shared/cache:/workspace/cache"]),
+    ///             |container| {
+    ///                 // ...
+    ///             },
+    ///         );
+    ///     },
+    /// );
+    /// ```
+    pub fn volumes<I: IntoIterator<Item = S>, S: Into<String>>(&mut self, volumes: I) -> &mut Self {
+        self.volumes = Some(volumes.into_iter().map(S::into).collect());
         self
     }
 }

@@ -13,6 +13,7 @@ pub(crate) struct DockerRunCommand {
     image_name: String,
     platform: Option<String>,
     remove: bool,
+    volumes: Option<Vec<String>>,
 }
 
 impl DockerRunCommand {
@@ -27,6 +28,7 @@ impl DockerRunCommand {
             image_name: image_name.into(),
             platform: None,
             remove: false,
+            volumes: None,
         }
     }
 
@@ -67,6 +69,14 @@ impl DockerRunCommand {
         self.remove = remove;
         self
     }
+
+    pub(crate) fn volumes<I: IntoIterator<Item = S>, S: Into<String>>(
+        &mut self,
+        volumes: I,
+    ) -> &mut Self {
+        self.volumes = Some(volumes.into_iter().map(S::into).collect());
+        self
+    }
 }
 
 impl From<DockerRunCommand> for Command {
@@ -96,6 +106,12 @@ impl From<DockerRunCommand> for Command {
 
         for port in &docker_run_command.exposed_ports {
             command.args(["--publish", &format!("127.0.0.1::{port}")]);
+        }
+
+        if let Some(container_volumes) = docker_run_command.volumes {
+            command.args(container_volumes.into_iter().fold(vec![], |acc, v| {
+                [acc, vec!["--volume".to_string(), v]].concat()
+            }));
         }
 
         command.arg(docker_run_command.image_name);
@@ -315,6 +331,7 @@ mod tests {
         docker_run_command.expose_port(55555);
         docker_run_command.platform("linux/amd64");
         docker_run_command.remove(true);
+        docker_run_command.volumes(["./.test-cache:/cache"]);
 
         let command: Command = docker_run_command.clone().into();
         assert_eq!(
@@ -337,6 +354,8 @@ mod tests {
                 "127.0.0.1::12345",
                 "--publish",
                 "127.0.0.1::55555",
+                "--volume",
+                "./.test-cache:/cache",
                 "my-image",
                 "echo",
                 "hello",

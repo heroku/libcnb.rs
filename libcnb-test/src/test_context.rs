@@ -112,6 +112,10 @@ impl<'a> TestContext<'a> {
             docker_run_command.expose_port(*port);
         });
 
+        if let Some(volume) = &config.volumes {
+            docker_run_command.volumes(volume);
+        }
+
         // We create the ContainerContext early to ensure the cleanup in ContainerContext::drop
         // is still performed even if the Docker command panics.
         let container_context = ContainerContext {
