@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::path::{Path, PathBuf};
 
 /// Config used when starting a container.
 ///
@@ -31,6 +32,7 @@ pub struct ContainerConfig {
     pub(crate) command: Option<Vec<String>>,
     pub(crate) env: HashMap<String, String>,
     pub(crate) exposed_ports: HashSet<u16>,
+    pub(crate) volumes: HashMap<PathBuf, PathBuf>,
 }
 
 impl ContainerConfig {
@@ -166,6 +168,37 @@ impl ContainerConfig {
     /// ```
     pub fn env(&mut self, key: impl Into<String>, value: impl Into<String>) -> &mut Self {
         self.env.insert(key.into(), value.into());
+        self
+    }
+
+    /// Mounts a named volume `source` into the container `destination`. Useful for integration
+    /// tests that depend on persistent storage shared between container executions.
+    ///
+    /// See: [Docker CLI, Mount Volume](https://docs.docker.com/reference/cli/docker/container/run/#volume)
+    ///
+    /// # Example
+    /// ```no_run
+    /// use libcnb_test::{BuildConfig, ContainerConfig, TestRunner};
+    /// use std::path::PathBuf;
+    ///
+    /// TestRunner::default().build(
+    ///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app"),
+    ///     |context| {
+    ///         // ...
+    ///         context.start_container(
+    ///             ContainerConfig::new().volume(PathBuf::from("/shared/cache"), PathBuf::from("/workspace/cache")),
+    ///             |container| {
+    ///                 // ...
+    ///             },
+    ///         );
+    ///     },
+    /// );
+    /// ```
+    pub fn volume(&mut self, source: impl AsRef<Path>, destination: impl AsRef<Path>) -> &mut Self {
+        self.volumes.insert(
+            source.as_ref().to_path_buf(),
+            destination.as_ref().to_path_buf(),
+        );
         self
     }
 
