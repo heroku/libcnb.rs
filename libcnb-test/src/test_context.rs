@@ -112,8 +112,8 @@ impl<'a> TestContext<'a> {
             docker_run_command.expose_port(*port);
         });
 
-        config.volumes.iter().for_each(|(source, destination)| {
-            docker_run_command.volume(source, destination);
+        config.bind_mounts.iter().for_each(|(source, target)| {
+            docker_run_command.bind_mount(source, target);
         });
 
         // We create the ContainerContext early to ensure the cleanup in ContainerContext::drop

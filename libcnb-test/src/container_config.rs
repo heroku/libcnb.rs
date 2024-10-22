@@ -32,7 +32,7 @@ pub struct ContainerConfig {
     pub(crate) command: Option<Vec<String>>,
     pub(crate) env: HashMap<String, String>,
     pub(crate) exposed_ports: HashSet<u16>,
-    pub(crate) volumes: HashMap<PathBuf, PathBuf>,
+    pub(crate) bind_mounts: HashMap<PathBuf, PathBuf>,
 }
 
 impl ContainerConfig {
@@ -171,22 +171,21 @@ impl ContainerConfig {
         self
     }
 
-    /// Mounts a named volume `source` into the container `destination`. Useful for integration
-    /// tests that depend on persistent storage shared between container executions.
+    /// Mount a `source` file or directory on the host machine into the container `target`. Useful
+    /// for integration tests that depend on persistent storage shared between container executions.
     ///
-    /// See: [Docker CLI, Mount Volume](https://docs.docker.com/reference/cli/docker/container/run/#volume)
+    /// See: [Docker Engine: Bind Mounts](https://docs.docker.com/engine/storage/bind-mounts/)
     ///
     /// # Example
     /// ```no_run
     /// use libcnb_test::{BuildConfig, ContainerConfig, TestRunner};
-    /// use std::path::PathBuf;
     ///
     /// TestRunner::default().build(
     ///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app"),
     ///     |context| {
     ///         // ...
     ///         context.start_container(
-    ///             ContainerConfig::new().volume(PathBuf::from("/shared/cache"), PathBuf::from("/workspace/cache")),
+    ///             ContainerConfig::new().bind_mount("/shared/cache", "/workspace/cache"),
     ///             |container| {
     ///                 // ...
     ///             },
@@ -194,12 +193,12 @@ impl ContainerConfig {
     ///     },
     /// );
     /// ```
-    pub fn volume(
+    pub fn bind_mount(
         &mut self,
         source: impl Into<PathBuf>,
-        destination: impl Into<PathBuf>,
+        target: impl Into<PathBuf>,
     ) -> &mut Self {
-        self.volumes.insert(source.into(), destination.into());
+        self.bind_mounts.insert(source.into(), target.into());
         self
     }
 
