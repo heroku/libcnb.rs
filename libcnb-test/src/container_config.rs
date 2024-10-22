@@ -1,5 +1,5 @@
 use std::collections::{HashMap, HashSet};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 /// Config used when starting a container.
 ///
@@ -194,11 +194,12 @@ impl ContainerConfig {
     ///     },
     /// );
     /// ```
-    pub fn volume(&mut self, source: impl AsRef<Path>, destination: impl AsRef<Path>) -> &mut Self {
-        self.volumes.insert(
-            source.as_ref().to_path_buf(),
-            destination.as_ref().to_path_buf(),
-        );
+    pub fn volume(
+        &mut self,
+        source: impl Into<PathBuf>,
+        destination: impl Into<PathBuf>,
+    ) -> &mut Self {
+        self.volumes.insert(source.into(), destination.into());
         self
     }
 
