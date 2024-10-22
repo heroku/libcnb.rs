@@ -171,8 +171,8 @@ impl ContainerConfig {
         self
     }
 
-    /// Mount a `source` file or directory on the host machine into the container `target`. Useful
-    /// for integration tests that depend on persistent storage shared between container executions.
+    /// Mount a host file or directory `source` into the container `target`. Useful for
+    /// integration tests that depend on persistent storage shared between container executions.
     ///
     /// See: [Docker Engine: Bind Mounts](https://docs.docker.com/engine/storage/bind-mounts/)
     ///
