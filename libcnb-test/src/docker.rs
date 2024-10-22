@@ -335,7 +335,7 @@ mod tests {
         docker_run_command.platform("linux/amd64");
         docker_run_command.remove(true);
         docker_run_command.volume(PathBuf::from("./test-cache"), PathBuf::from("/cache"));
-        docker_run_command.volume(PathBuf::from("foo"), PathBuf::from("/bar"));
+        docker_run_command.volume("foo", "/bar");
 
         let command: Command = docker_run_command.clone().into();
         assert_eq!(
