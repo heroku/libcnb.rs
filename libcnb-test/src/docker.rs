@@ -1,4 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet};
+use std::path::PathBuf;
 use std::process::Command;
 
 /// Represents a `docker run` command.
@@ -13,6 +14,7 @@ pub(crate) struct DockerRunCommand {
     image_name: String,
     platform: Option<String>,
     remove: bool,
+    bind_mounts: BTreeMap<PathBuf, PathBuf>,
 }
 
 impl DockerRunCommand {
@@ -27,6 +29,7 @@ impl DockerRunCommand {
             image_name: image_name.into(),
             platform: None,
             remove: false,
+            bind_mounts: BTreeMap::new(),
         }
     }
 
@@ -67,6 +70,11 @@ impl DockerRunCommand {
         self.remove = remove;
         self
     }
+
+    pub(crate) fn bind_mount<P: Into<PathBuf>>(&mut self, source: P, target: P) -> &mut Self {
+        self.bind_mounts.insert(source.into(), target.into());
+        self
+    }
 }
 
 impl From<DockerRunCommand> for Command {
@@ -96,6 +104,17 @@ impl From<DockerRunCommand> for Command {
 
         for port in &docker_run_command.exposed_ports {
             command.args(["--publish", &format!("127.0.0.1::{port}")]);
+        }
+
+        for (source, target) in &docker_run_command.bind_mounts {
+            command.args([
+                "--mount",
+                &format!(
+                    "type=bind,source={},target={}",
+                    source.to_string_lossy(),
+                    target.to_string_lossy()
+                ),
+            ]);
         }
 
         command.arg(docker_run_command.image_name);
@@ -315,6 +334,8 @@ mod tests {
         docker_run_command.expose_port(55555);
         docker_run_command.platform("linux/amd64");
         docker_run_command.remove(true);
+        docker_run_command.bind_mount(PathBuf::from("./test-cache"), PathBuf::from("/cache"));
+        docker_run_command.bind_mount("foo", "/bar");
 
         let command: Command = docker_run_command.clone().into();
         assert_eq!(
@@ -337,6 +358,10 @@ mod tests {
                 "127.0.0.1::12345",
                 "--publish",
                 "127.0.0.1::55555",
+                "--mount",
+                "type=bind,source=./test-cache,target=/cache",
+                "--mount",
+                "type=bind,source=foo,target=/bar",
                 "my-image",
                 "echo",
                 "hello",

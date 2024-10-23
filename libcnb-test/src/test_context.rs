@@ -112,6 +112,10 @@ impl<'a> TestContext<'a> {
             docker_run_command.expose_port(*port);
         });
 
+        config.bind_mounts.iter().for_each(|(source, target)| {
+            docker_run_command.bind_mount(source, target);
+        });
+
         // We create the ContainerContext early to ensure the cleanup in ContainerContext::drop
         // is still performed even if the Docker command panics.
         let container_context = ContainerContext {

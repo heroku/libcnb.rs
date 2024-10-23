@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::path::PathBuf;
 
 /// Config used when starting a container.
 ///
@@ -31,6 +32,7 @@ pub struct ContainerConfig {
     pub(crate) command: Option<Vec<String>>,
     pub(crate) env: HashMap<String, String>,
     pub(crate) exposed_ports: HashSet<u16>,
+    pub(crate) bind_mounts: HashMap<PathBuf, PathBuf>,
 }
 
 impl ContainerConfig {
@@ -166,6 +168,37 @@ impl ContainerConfig {
     /// ```
     pub fn env(&mut self, key: impl Into<String>, value: impl Into<String>) -> &mut Self {
         self.env.insert(key.into(), value.into());
+        self
+    }
+
+    /// Mount a host file or directory `source` into the container `target`. Useful for
+    /// integration tests that depend on persistent storage shared between container executions.
+    ///
+    /// See: [Docker Engine: Bind Mounts](https://docs.docker.com/engine/storage/bind-mounts/)
+    ///
+    /// # Example
+    /// ```no_run
+    /// use libcnb_test::{BuildConfig, ContainerConfig, TestRunner};
+    ///
+    /// TestRunner::default().build(
+    ///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app"),
+    ///     |context| {
+    ///         // ...
+    ///         context.start_container(
+    ///             ContainerConfig::new().bind_mount("/shared/cache", "/workspace/cache"),
+    ///             |container| {
+    ///                 // ...
+    ///             },
+    ///         );
+    ///     },
+    /// );
+    /// ```
+    pub fn bind_mount(
+        &mut self,
+        source: impl Into<PathBuf>,
+        target: impl Into<PathBuf>,
+    ) -> &mut Self {
+        self.bind_mounts.insert(source.into(), target.into());
         self
     }
 
