@@ -45,11 +45,11 @@ hex = { version = "0.4.3", optional = true }
 libcnb = { workspace = true, optional = true }
 pathdiff = { version = "0.2.2", optional = true }
 semver = { version = "1.0.23", features = ["serde"], optional = true }
-serde = { version = "1.0.210", features = ["derive"], optional = true }
+serde = { version = "1.0.213", features = ["derive"], optional = true }
 sha2 = { version = "0.10.8", optional = true }
 tar = { version = "0.4.42", default-features = false, optional = true }
 termcolor = { version = "1.4.1", optional = true }
-thiserror = { version = "1.0.64", optional = true }
+thiserror = { version = "1.0.65", optional = true }
 toml = { workspace = true, optional = true }
 ureq = { version = "2.10.1", default-features = false, features = ["tls"], optional = true }
 
