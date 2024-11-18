@@ -29,7 +29,7 @@ clap = { version = "4.5.20", default-features = false, features = [
 libcnb-data.workspace = true
 libcnb-package.workspace = true
 pathdiff = "0.2.2"
-thiserror = "1.0.65"
+thiserror = "2.0.3"
 
 [dev-dependencies]
 libcnb-common.workspace = true

@@ -22,7 +22,7 @@ libcnb-data.workspace = true
 libcnb-package.workspace = true
 regex = "1.11.0"
 tempfile = "3.13.0"
-thiserror = "1.0.65"
+thiserror = "2.0.3"
 
 [dev-dependencies]
 indoc = "2.0.5"
