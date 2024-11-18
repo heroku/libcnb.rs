@@ -4,8 +4,8 @@ Common utilities for buildpacks written with [libcnb.rs](https://github.com/hero
 only used for official Heroku buildpacks. It was moved into the libcnb.rs repository as an incubator for utilities that
 might find their way into libcnb.rs proper.
 
-This crate is optional and not required to write buildpacks with libcnb.rs. It provides helpers that buildpack authors 
-commonly need. Examples are digest generation, filesystem utilities, HTTP download helpers and tarball extraction. 
+This crate is optional and not required to write buildpacks with libcnb.rs. It provides helpers that buildpack authors
+commonly need. Examples are digest generation, filesystem utilities, HTTP download helpers and tarball extraction.
 
 ## Crate Features
 
@@ -30,8 +30,6 @@ The feature names line up with the modules in this crate. All features are enabl
   Enables inventory helpers to work with `sha2::Sha256` and `sha2::Sha512`.
 * `log` -
   Enables helpers for logging.
-* `buildpack_output` -
-  Enables helpers for user-facing buildpack output.
 * `tar` -
   Enables helpers for working with tarballs.
 * `toml` -
