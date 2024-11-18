@@ -18,7 +18,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.25.0"
+version = "0.26.0"
 rust-version = "1.76"
 edition = "2021"
 license = "BSD-3-Clause"
@@ -39,10 +39,10 @@ missing_errors_doc = "allow"
 module_name_repetitions = "allow"
 
 [workspace.dependencies]
-libcnb = { version = "=0.25.0", path = "libcnb" }
-libcnb-common = { version = "=0.25.0", path = "libcnb-common" }
-libcnb-data = { version = "=0.25.0", path = "libcnb-data" }
-libcnb-package = { version = "=0.25.0", path = "libcnb-package" }
-libcnb-proc-macros = { version = "=0.25.0", path = "libcnb-proc-macros" }
-libcnb-test = { version = "=0.25.0", path = "libcnb-test" }
+libcnb = { version = "=0.26.0", path = "libcnb" }
+libcnb-common = { version = "=0.26.0", path = "libcnb-common" }
+libcnb-data = { version = "=0.26.0", path = "libcnb-data" }
+libcnb-package = { version = "=0.26.0", path = "libcnb-package" }
+libcnb-proc-macros = { version = "=0.26.0", path = "libcnb-proc-macros" }
+libcnb-test = { version = "=0.26.0", path = "libcnb-test" }
 toml = { version = "0.8.19" }
