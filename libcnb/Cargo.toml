@@ -19,7 +19,7 @@ trace = ["dep:opentelemetry", "dep:opentelemetry_sdk", "dep:opentelemetry-stdout
 
 [dependencies]
 anyhow = { version = "1.0.91", optional = true }
-cyclonedx-bom = { version = "0.7.0", optional = true }
+cyclonedx-bom = { version = "0.8.0", optional = true }
 libcnb-common.workspace = true
 libcnb-data.workspace = true
 libcnb-proc-macros.workspace = true
