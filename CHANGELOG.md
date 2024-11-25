@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `libcnb-test`:
+  - The host returned by `TestContext::start_container` will now use IPv6 `::1` rather than IPv4 `127.0.0.1`. If you are using `ContainerContext::address_for_port` to assemble a URL, you may need to wrap the parsed `ip` in brackets `http://[{ip}]` ([]())
 
 ## [0.26.0] - 2024-11-18
 

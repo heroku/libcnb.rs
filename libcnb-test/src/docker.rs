@@ -103,7 +103,7 @@ impl From<DockerRunCommand> for Command {
         }
 
         for port in &docker_run_command.exposed_ports {
-            command.args(["--publish", &format!("127.0.0.1::{port}")]);
+            command.args(["--publish", &format!("[::1]::{port}")]);
         }
 
         for (source, target) in &docker_run_command.bind_mounts {
@@ -355,9 +355,9 @@ mod tests {
                 "--env",
                 "FOO=1",
                 "--publish",
-                "127.0.0.1::12345",
+                "[::1]::12345",
                 "--publish",
-                "127.0.0.1::55555",
+                "[::1]::55555",
                 "--mount",
                 "type=bind,source=./test-cache,target=/cache",
                 "--mount",
