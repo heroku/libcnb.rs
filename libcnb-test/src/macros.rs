@@ -16,12 +16,12 @@ macro_rules! assert_contains {
     ($left:expr, $right:expr $(,)?) => {{
         if !$left.contains($right) {
             ::std::panic!(
-                r#"assertion failed: `(left contains right)`
+                r"assertion failed: `(left contains right)`
 left (unescaped):
 {}
 
 left (escaped): `{:?}`
-right: `{:?}`"#,
+right: `{:?}`",
                 $left,
                 $left,
                 $right,
@@ -32,12 +32,12 @@ right: `{:?}`"#,
     ($left:expr, $right:expr, $($arg:tt)+) => {{
         if !$left.contains($right) {
             ::std::panic!(
-                r#"assertion failed: `(left contains right)`
+                r"assertion failed: `(left contains right)`
 left (unescaped):
 {}
 
 left (escaped): `{:?}`
-right: `{:?}`: {}"#,
+right: `{:?}`: {}",
                 $left,
                 $left,
                 $right,
@@ -65,12 +65,12 @@ macro_rules! assert_not_contains {
     ($left:expr, $right:expr $(,)?) => {{
         if $left.contains($right) {
             ::std::panic!(
-                r#"assertion failed: `(left does not contain right)`
+                r"assertion failed: `(left does not contain right)`
 left (unescaped):
 {}
 
 left (escaped): `{:?}`
-right: `{:?}`"#,
+right: `{:?}`",
                 $left,
                 $left,
                 $right,
@@ -81,12 +81,12 @@ right: `{:?}`"#,
     ($left:expr, $right:expr, $($arg:tt)+) => {{
         if $left.contains($right) {
             ::std::panic!(
-                r#"assertion failed: `(left does not contain right)`
+                r"assertion failed: `(left does not contain right)`
 left (unescaped):
 {}
 
 left (escaped): `{:?}`
-right: `{:?}`: {}"#,
+right: `{:?}`: {}",
                 $left,
                 $left,
                 $right,
@@ -114,11 +114,11 @@ macro_rules! assert_empty {
     ($value:expr $(,)?) => {{
         if !$value.is_empty() {
             ::std::panic!(
-                r#"assertion failed: `(is empty)`
+                r"assertion failed: `(is empty)`
 value (unescaped):
 {}
 
-value (escaped): `{:?}`"#,
+value (escaped): `{:?}`",
                 $value,
                 $value,
             )
@@ -128,11 +128,11 @@ value (escaped): `{:?}`"#,
     ($value:expr, $($arg:tt)+) => {{
         if !$value.is_empty() {
             ::std::panic!(
-                r#"assertion failed: `(is empty)`
+                r"assertion failed: `(is empty)`
 value (unescaped):
 {}
 
-value (escaped): `{:?}`: {}"#,
+value (escaped): `{:?}`: {}",
                 $value,
                 $value,
                 ::core::format_args!($($arg)+)
@@ -164,12 +164,12 @@ macro_rules! assert_contains_match {
         let regex = regex::Regex::new(&format!("(?m){}", $right)).expect("should be a valid regex");
         if !regex.is_match(&$left) {
             ::std::panic!(
-                r#"assertion failed: `(left matches right pattern)`
+                r"assertion failed: `(left matches right pattern)`
 left (unescaped):
 {}
 
 left (escaped): `{:?}`
-right: `{:?}`"#,
+right: `{:?}`",
                 $left,
                 $left,
                 regex
@@ -181,12 +181,12 @@ right: `{:?}`"#,
         let regex = regex::Regex::new(&format!("(?m){}", $right)).expect("should be a valid regex");
         if !regex.is_match(&$left) {
             ::std::panic!(
-                r#"assertion failed: `(left matches right pattern)`
+                r"assertion failed: `(left matches right pattern)`
 left (unescaped):
 {}
 
 left (escaped): `{:?}`
-right: `{:?}`: {}"#,
+right: `{:?}`: {}",
                 $left,
                 $left,
                 regex,
@@ -219,12 +219,12 @@ macro_rules! assert_not_contains_match {
         let regex = regex::Regex::new(&format!("(?m){}", $right)).expect("should be a valid regex");
         if regex.is_match(&$left) {
             ::std::panic!(
-                r#"assertion failed: `(left does not match right pattern)`
+                r"assertion failed: `(left does not match right pattern)`
 left (unescaped):
 {}
 
 left (escaped): `{:?}`
-right: `{:?}`"#,
+right: `{:?}`",
                 $left,
                 $left,
                 regex
@@ -236,12 +236,12 @@ right: `{:?}`"#,
         let regex = regex::Regex::new(&format!("(?m){}", $right)).expect("should be a valid regex");
         if regex.is_match(&$left) {
             ::std::panic!(
-                r#"assertion failed: `(left does not match right pattern)`
+                r"assertion failed: `(left does not match right pattern)`
 left (unescaped):
 {}
 
 left (escaped): `{:?}`
-right: `{:?}`: {}"#,
+right: `{:?}`: {}",
                 $left,
                 $left,
                 regex,

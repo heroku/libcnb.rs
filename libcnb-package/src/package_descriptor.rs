@@ -111,7 +111,7 @@ pub(crate) fn buildpack_id_from_libcnb_dependency(
     Some(&dependency.uri)
         .filter(|uri| {
             uri.scheme()
-                .map_or(false, |scheme| scheme.as_str() == "libcnb")
+                .is_some_and(|scheme| scheme.as_str() == "libcnb")
         })
         .map(|uri| uri.path().to_string().parse())
         .transpose()

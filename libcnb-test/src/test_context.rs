@@ -24,7 +24,7 @@ pub struct TestContext<'a> {
     pub(crate) runner: &'a TestRunner,
 }
 
-impl<'a> TestContext<'a> {
+impl TestContext<'_> {
     /// Starts a detached container using the provided [`ContainerConfig`].
     ///
     /// After the passed function has returned, the Docker container is removed.
