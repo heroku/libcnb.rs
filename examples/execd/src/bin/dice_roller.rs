@@ -61,8 +61,8 @@ mod tests {
             .get("ROLL_1D20")
             .map(|value| value.parse::<u32>().unwrap());
 
-        assert!(roll_1d6_value.map_or(false, |value| (1..=6).contains(&value)));
-        assert!(roll_4d6_value.map_or(false, |value| (4..=32).contains(&value)));
-        assert!(roll_1d20_value.map_or(false, |value| (1..=20).contains(&value)));
+        assert!(roll_1d6_value.is_some_and(|value| (1..=6).contains(&value)));
+        assert!(roll_4d6_value.is_some_and(|value| (4..=32).contains(&value)));
+        assert!(roll_1d20_value.is_some_and(|value| (1..=20).contains(&value)));
     }
 }
