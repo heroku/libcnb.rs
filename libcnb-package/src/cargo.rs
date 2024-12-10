@@ -43,10 +43,6 @@ fn cargo_binary_target_names_from_root_package(
     root_package
         .targets
         .iter()
-        .filter_map(|target| is_binary_target(target).then_some(target.name.clone()))
+        .filter_map(|target| target.is_bin().then_some(target.name.clone()))
         .collect()
-}
-
-fn is_binary_target(target: &cargo_metadata::Target) -> bool {
-    target.is_bin()
 }
