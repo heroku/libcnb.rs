@@ -19,7 +19,7 @@ path = "src/main.rs"
 workspace = true
 
 [dependencies]
-clap = { version = "4.5.21", default-features = false, features = [
+clap = { version = "4.5.23", default-features = false, features = [
   "derive",
   "error-context",
   "help",
@@ -28,8 +28,8 @@ clap = { version = "4.5.21", default-features = false, features = [
 ] }
 libcnb-data.workspace = true
 libcnb-package.workspace = true
-pathdiff = "0.2.2"
-thiserror = "2.0.3"
+pathdiff = "0.2.3"
+thiserror = "2.0.6"
 
 [dev-dependencies]
 libcnb-common.workspace = true

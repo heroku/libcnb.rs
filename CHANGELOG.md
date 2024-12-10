@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [0.26.1] - 2024-12-10
+
 ### Fixed
 
 - `libherokubuildpack`:
@@ -345,7 +348,8 @@ version number. See the changelog below for other changes.
 
 - Remove support for legacy BOM. Remove `Launch::bom`, `Build::bom`, `bom::Bom`, `bom::Entry`. ([#489](https://github.com/heroku/libcnb.rs/pull/489))
 
-[unreleased]: https://github.com/heroku/libcnb.rs/compare/v0.26.0...HEAD
+[unreleased]: https://github.com/heroku/libcnb.rs/compare/v0.26.1...HEAD
+[0.26.1]: https://github.com/heroku/libcnb.rs/compare/v0.26.0...v0.26.1
 [0.26.0]: https://github.com/heroku/libcnb.rs/compare/v0.25.0...v0.26.0
 [0.25.0]: https://github.com/heroku/libcnb.rs/compare/v0.24.0...v0.25.0
 [0.24.0]: https://github.com/heroku/libcnb.rs/compare/v0.23.0...v0.24.0
