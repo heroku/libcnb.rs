@@ -48,5 +48,5 @@ fn cargo_binary_target_names_from_root_package(
 }
 
 fn is_binary_target(target: &cargo_metadata::Target) -> bool {
-    target.kind.contains(&String::from("bin"))
+    target.is_bin()
 }
