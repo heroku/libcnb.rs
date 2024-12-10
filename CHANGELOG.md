@@ -9,13 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `libherokubuildpack`:
+  - Fixed `log_header`, `log_error` and `log_warning` to correctly reset the ANSI colour styles at the end of each line. ([#890](https://github.com/heroku/libcnb.rs/pull/890))
 
 ## [0.26.0] - 2024-11-18
 
 ### Changed
 
 - `libherokubuildpack`:
-  - Removed `buildpack_output` module. This functionality from ([#721](https://github.com/heroku/libcnb.rs/pull/721)) was experimental. The API was not stable and it is being removed. A similar API is available at [bullet_stream](https://crates.io/crates/bullet_stream). ([#852](https://github.com/heroku/libcnb.rs/pull/852)
+  - Removed `buildpack_output` module. This functionality from ([#721](https://github.com/heroku/libcnb.rs/pull/721)) was experimental. The API was not stable and it is being removed. A similar API is available at [bullet_stream](https://crates.io/crates/bullet_stream). ([#852](https://github.com/heroku/libcnb.rs/pull/852))
 
 ## [0.25.0] - 2024-10-23
 

@@ -1,4 +1,4 @@
-use std::io::Write;
+use std::io::{self, Write};
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 /// # Panics
@@ -10,16 +10,14 @@ use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 #[allow(clippy::unwrap_used)]
 pub fn log_error(header: impl AsRef<str>, body: impl AsRef<str>) {
     let mut stream = StandardStream::stderr(ColorChoice::Always);
-    stream
-        .set_color(ColorSpec::new().set_fg(Some(Color::Red)).set_bold(true))
-        .unwrap();
-    writeln!(&mut stream, "\n[Error: {}]", header.as_ref()).unwrap();
-    stream.reset().unwrap();
+    write_styled_message(
+        &mut stream,
+        format!("\n[Error: {}]", header.as_ref()),
+        ColorSpec::new().set_fg(Some(Color::Red)).set_bold(true),
+    )
+    .unwrap();
 
-    stream
-        .set_color(ColorSpec::new().set_fg(Some(Color::Red)))
-        .unwrap();
-    writeln!(&mut stream, "{}", body.as_ref()).unwrap();
+    write_styled_message(&mut stream, body, ColorSpec::new().set_fg(Some(Color::Red))).unwrap();
     stream.flush().unwrap();
 }
 
@@ -32,16 +30,19 @@ pub fn log_error(header: impl AsRef<str>, body: impl AsRef<str>) {
 #[allow(clippy::unwrap_used)]
 pub fn log_warning(header: impl AsRef<str>, body: impl AsRef<str>) {
     let mut stream = StandardStream::stderr(ColorChoice::Always);
-    stream
-        .set_color(ColorSpec::new().set_fg(Some(Color::Yellow)).set_bold(true))
-        .unwrap();
-    writeln!(&mut stream, "\n[Warning: {}]", header.as_ref()).unwrap();
-    stream.reset().unwrap();
+    write_styled_message(
+        &mut stream,
+        format!("\n[Warning: {}]", header.as_ref()),
+        ColorSpec::new().set_fg(Some(Color::Yellow)).set_bold(true),
+    )
+    .unwrap();
 
-    stream
-        .set_color(ColorSpec::new().set_fg(Some(Color::Yellow)))
-        .unwrap();
-    writeln!(&mut stream, "{}", body.as_ref()).unwrap();
+    write_styled_message(
+        &mut stream,
+        body,
+        ColorSpec::new().set_fg(Some(Color::Yellow)),
+    )
+    .unwrap();
     stream.flush().unwrap();
 }
 
@@ -54,11 +55,12 @@ pub fn log_warning(header: impl AsRef<str>, body: impl AsRef<str>) {
 #[allow(clippy::unwrap_used)]
 pub fn log_header(title: impl AsRef<str>) {
     let mut stream = StandardStream::stdout(ColorChoice::Always);
-    stream
-        .set_color(ColorSpec::new().set_fg(Some(Color::Magenta)).set_bold(true))
-        .unwrap();
-    writeln!(&mut stream, "\n[{}]", title.as_ref()).unwrap();
-    stream.reset().unwrap();
+    write_styled_message(
+        &mut stream,
+        format!("\n[{}]", title.as_ref()),
+        ColorSpec::new().set_fg(Some(Color::Magenta)).set_bold(true),
+    )
+    .unwrap();
     stream.flush().unwrap();
 }
 
@@ -71,4 +73,23 @@ pub fn log_header(title: impl AsRef<str>) {
 pub fn log_info(message: impl AsRef<str>) {
     println!("{}", message.as_ref());
     std::io::stdout().flush().unwrap();
+}
+
+// Styles each line of text separately, so that when buildpack output is streamed to the
+// user (and prefixes like `remote:` added) the line colour doesn't leak into the prefixes.
+fn write_styled_message(
+    stream: &mut StandardStream,
+    message: impl AsRef<str>,
+    spec: &ColorSpec,
+) -> io::Result<()> {
+    // Using `.split('\n')` rather than `.lines()` since the latter eats trailing newlines in
+    // the passed message, which would (a) prevent the caller from being able to add spacing at
+    // the end of their message and (b) differ from the `println!` / `writeln!` behaviour.
+    for line in message.as_ref().split('\n') {
+        stream.set_color(spec)?;
+        write!(stream, "{line}")?;
+        stream.reset()?;
+        writeln!(stream)?;
+    }
+    Ok(())
 }
