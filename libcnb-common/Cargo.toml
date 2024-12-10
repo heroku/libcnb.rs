@@ -15,5 +15,5 @@ workspace = true
 
 [dependencies]
 serde = { version = "1.0.215", features = ["derive"] }
-thiserror = "2.0.3"
+thiserror = "2.0.6"
 toml.workspace = true
