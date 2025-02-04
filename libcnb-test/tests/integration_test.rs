@@ -40,7 +40,7 @@ fn build_other_buildpack() {
 
                     - Processes from `Procfile`
                       - web: `python3 -u -m http.server ${PORT:+\"${PORT}\"}`
-                      - worker: `echo 'this is the worker process!'
+                      - worker: `echo 'this is the worker process!'`
                 "}
             );
         },
@@ -85,7 +85,7 @@ fn build_workspace_composite_buildpack() {
 
                     - Processes from `Procfile`
                       - web: `python3 -u -m http.server ${PORT:+\"${PORT}\"}`
-                      - worker: `echo 'this is the worker process!'
+                      - worker: `echo 'this is the worker process!'`
                 "}
             );
         },
@@ -112,7 +112,8 @@ fn build_multiple_buildpacks() {
 
                     - Processes from `Procfile`
                       - web: `python3 -u -m http.server ${PORT:+\"${PORT}\"}`
-                      - worker: `echo 'this is the worker process!'
+                      - worker: `echo 'this is the worker process!'`
+                    - Done (finished in < 0.1s)
                     Buildpack A
                 "}
             );
