@@ -36,8 +36,11 @@ fn build_other_buildpack() {
             assert_contains!(
                 context.pack_stdout,
                 indoc! {"
-                    [Discovering process types]
-                    Procfile declares types -> web, worker
+                    ## Procfile Buildpack
+
+                    - Processes from `Procfile`
+                      - web: `python3 -u -m http.server ${PORT:+\"${PORT}\"}`
+                      - worker: `echo 'this is the worker process!'`
                 "}
             );
         },
@@ -77,9 +80,12 @@ fn build_workspace_composite_buildpack() {
                 indoc! {"
                     Buildpack A
                     Buildpack B
-                    
-                    [Discovering process types]
-                    Procfile declares types -> web, worker
+
+                    ## Procfile Buildpack
+
+                    - Processes from `Procfile`
+                      - web: `python3 -u -m http.server ${PORT:+\"${PORT}\"}`
+                      - worker: `echo 'this is the worker process!'`
                 "}
             );
         },
@@ -101,9 +107,13 @@ fn build_multiple_buildpacks() {
                 context.pack_stdout,
                 indoc! {"
                     Buildpack B
-                    
-                    [Discovering process types]
-                    Procfile declares types -> web, worker
+
+                    ## Procfile Buildpack
+
+                    - Processes from `Procfile`
+                      - web: `python3 -u -m http.server ${PORT:+\"${PORT}\"}`
+                      - worker: `echo 'this is the worker process!'`
+                    - Done (finished in < 0.1s)
                     Buildpack A
                 "}
             );
@@ -706,15 +716,15 @@ fn address_for_port_when_container_crashed() {
             Error: No public port '12345' published for {container_name}
 
             This normally means that the container crashed. Container logs:
-            
+
             ## stderr:
-            
+
             some stderr
-            
+
             ## stdout:
-            
+
             some stdout
-            
+
         "}
     );
 }
