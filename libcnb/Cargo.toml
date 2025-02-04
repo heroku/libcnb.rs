@@ -15,7 +15,11 @@ include = ["src/**/*", "LICENSE", "README.md"]
 workspace = true
 
 [features]
-trace = ["dep:opentelemetry", "dep:opentelemetry_sdk", "dep:opentelemetry-stdout"]
+trace = [
+    "dep:opentelemetry",
+    "dep:opentelemetry_sdk",
+    "dep:opentelemetry-stdout",
+]
 
 [dependencies]
 anyhow = { version = "1.0.94", optional = true }
@@ -23,9 +27,11 @@ cyclonedx-bom = { version = "0.8.0", optional = true }
 libcnb-common.workspace = true
 libcnb-data.workspace = true
 libcnb-proc-macros.workspace = true
-opentelemetry = { version = "0.21.0", optional = true }
-opentelemetry_sdk = { version = "0.21.2", optional = true }
-opentelemetry-stdout = { version = "0.2.0", optional = true, features = ["trace"] }
+opentelemetry = { version = "0.24", optional = true }
+opentelemetry_sdk = { version = "0.24", optional = true }
+opentelemetry-stdout = { version = "0.5", optional = true, features = [
+    "trace",
+] }
 serde = { version = "1.0.215", features = ["derive"] }
 thiserror = "2.0.6"
 toml.workspace = true

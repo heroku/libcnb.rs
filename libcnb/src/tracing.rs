@@ -75,12 +75,10 @@ pub(crate) fn start_trace(buildpack: &Buildpack, phase_name: &'static str) -> Bu
     // Get a tracer identified by the instrumentation scope/library. The libcnb
     // crate name/version seems to map well to the suggestion here:
     // https://opentelemetry.io/docs/specs/otel/trace/api/#get-a-tracer.
-    let tracer = provider.versioned_tracer(
-        env!("CARGO_PKG_NAME"),
-        Some(env!("CARGO_PKG_VERSION")),
-        None as Option<&str>,
-        None,
-    );
+    let tracer = provider
+        .tracer_builder(env!("CARGO_PKG_NAME"))
+        .with_version(env!("CARGO_PKG_VERSION"))
+        .build();
 
     let mut span = tracer.start(trace_name);
     span.set_attributes([
@@ -190,6 +188,6 @@ mod tests {
         // Check error status
         assert!(tracing_contents
             .contains("\"message\":\"Custom { kind: Other, error: \\\"it's broken\\\" }"));
-        assert!(tracing_contents.contains("\"code\":1"));
+        assert!(tracing_contents.contains("\"code\":2"));
     }
 }
