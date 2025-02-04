@@ -30,7 +30,7 @@ jobs:
         run: rustup update
 
       - name: Rust Cache
-        uses: Swatinem/rust-cache@v2.7.5
+        uses: Swatinem/rust-cache@v2.7.7
 
       - name: Install cargo-release
         run: cargo install cargo-release
