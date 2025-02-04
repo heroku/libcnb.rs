@@ -273,7 +273,7 @@ pack command failed with exit code 1!
 
 ## stderr:
 
-ERROR: forbidden image name: parsing builder image invalid!: could not parse reference: invalid!
+ERROR: could not parse reference: invalid-builder!
 
 ## stdout:
 
@@ -281,7 +281,7 @@ ERROR: forbidden image name: parsing builder image invalid!: could not parse ref
 ")]
 fn unexpected_pack_failure() {
     TestRunner::default().build(
-        BuildConfig::new("invalid!", "tests/fixtures/empty").buildpacks(Vec::new()),
+        BuildConfig::new("invalid-builder!", "tests/fixtures/empty").buildpacks(Vec::new()),
         |_| {
             unreachable!("The test should panic prior to the TestContext being invoked.");
         },
@@ -314,14 +314,14 @@ fn unexpected_pack_success() {
 #[ignore = "integration test"]
 fn expected_pack_failure() {
     TestRunner::default().build(
-        BuildConfig::new("invalid!", "tests/fixtures/empty")
+        BuildConfig::new("invalid-builder!", "tests/fixtures/empty")
             .buildpacks(Vec::new())
             .expected_pack_result(PackResult::Failure),
         |context| {
             assert_empty!(context.pack_stdout);
             assert_contains!(
                 context.pack_stderr,
-                "ERROR: forbidden image name: parsing builder image invalid!"
+                "ERROR: could not parse reference: invalid-builder!"
             );
         },
     );
