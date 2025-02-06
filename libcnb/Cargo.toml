@@ -18,7 +18,7 @@ workspace = true
 trace = [
     "dep:opentelemetry",
     "dep:opentelemetry_sdk",
-    # "dep:opentelemetry_proto ",
+    "dep:opentelemetry-proto ",
     "dep:serde_json",
 ]
 
@@ -31,7 +31,7 @@ libcnb-proc-macros.workspace = true
 futures-core = "0.3"
 opentelemetry = { version = "0.27.0", optional = true }
 opentelemetry_sdk = { version = "0.27.0", optional = true }
-opentelemetry-proto = { version = "0.27.0", optional = false }
+opentelemetry-proto = { version = "0.27.0", optional = true }
 serde = { version = "1.0.215", features = ["derive"] }
 serde_json = { version = "1.0.133", optional = true }
 thiserror = "2.0.6"
