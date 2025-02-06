@@ -18,7 +18,7 @@ workspace = true
 trace = [
     "dep:opentelemetry",
     "dep:opentelemetry_sdk",
-    "dep:opentelemetry-stdout",
+    "dep:opentelemetry_proto ",
 ]
 
 [dependencies]
@@ -27,15 +27,14 @@ cyclonedx-bom = { version = "0.8.0", optional = true }
 libcnb-common.workspace = true
 libcnb-data.workspace = true
 libcnb-proc-macros.workspace = true
+futures-core = "0.3"
 opentelemetry = { version = "0.24", optional = true }
 opentelemetry_sdk = { version = "0.24", optional = true }
-opentelemetry-stdout = { version = "0.5", optional = true, features = [
-    "trace",
-] }
+opentelemetry-proto = { version = "0.7", optional = true }
 serde = { version = "1.0.215", features = ["derive"] }
+serde_json = "1.0.133"
 thiserror = "2.0.6"
 toml.workspace = true
 
 [dev-dependencies]
-serde_json = "1.0.133"
 tempfile = "3.14.0"
