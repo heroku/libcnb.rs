@@ -1,22 +1,21 @@
 use futures_core::future::BoxFuture;
 use libcnb_data::buildpack::Buildpack;
 use opentelemetry::{
-    global,
+    global::{self, BoxedSpan},
     trace::{Span as SpanTrait, Status, TraceError, Tracer, TracerProvider as TracerProviderTrait},
-    KeyValue,
+    InstrumentationScope, KeyValue,
 };
 use opentelemetry_proto::transform::common::tonic::ResourceAttributesWithSchema;
 use opentelemetry_proto::transform::trace::tonic::group_spans_by_resource_and_scope;
 use opentelemetry_sdk::{
     export::trace::SpanExporter,
-    trace::{Config, Span, TracerProvider},
+    trace::TracerProvider,
     Resource,
 };
 use std::{
     fmt::Debug,
-    fs::{File, OpenOptions},
-    io::{BufWriter, Error, LineWriter, Write},
-    path::{Path, PathBuf},
+    io::Write,
+    path::Path,
     sync::{Arc, Mutex},
 };
 
@@ -33,7 +32,7 @@ const TELEMETRY_EXPORT_ROOT: &str = "/tmp/libcnb-telemetry";
 /// a single CNB build or detect phase.
 pub(crate) struct BuildpackTrace {
     provider: TracerProvider,
-    span: Span,
+    span: BoxedSpan,
 }
 
 /// Start an OpenTelemetry trace and span that exports to an
@@ -51,27 +50,28 @@ pub(crate) fn start_trace(buildpack: &Buildpack, phase_name: &'static str) -> Bu
         let _ = std::fs::create_dir_all(parent_dir);
     }
 
-    let provider_builder =
-        TracerProvider::builder().with_config(Config::default().with_resource(Resource::new([
-            // Associate the tracer provider with service attributes. The buildpack
-            // name/version seems to map well to the suggestion here
-            // https://opentelemetry.io/docs/specs/semconv/resource/#service.
-            KeyValue::new("service.name", buildpack.id.to_string()),
-            KeyValue::new("service.version", buildpack.version.to_string()),
-        ])));
+    let resource = Resource::new([
+        // Define a resource that defines the trace provider.
+        // The buildpac name/version seems to map well to the suggestion here
+        // https://opentelemetry.io/docs/specs/semconv/resource/#service.
+        KeyValue::new("service.name", buildpack.id.to_string()),
+        KeyValue::new("service.version", buildpack.version.to_string()),
+    ]);
+
+    let provider_builder = TracerProvider::builder().with_resource(resource.clone());
 
     let provider = match std::fs::File::options()
         .create(true)
         .append(true)
         .open(&tracing_file_path)
-        .map(FileExporter::new)
+        .map(|file| FileExporter::new(file, resource))
     {
         // Write tracing data to a file, which may be read by other
         // services. Wrap with a BufWriter to prevent serde from sending each
         // JSON token to IO, and instead send entire JSON objects to IO.
         Ok(exporter) => provider_builder.with_simple_exporter(exporter),
-        // Failed tracing shouldn't fail a build, and any logging here would
-        // likely confuse the user, so send telemetry to /dev/null on errors.
+        // Failed tracing shouldn't fail a build, and any export logging here
+        // would likely confuse the user, so we won't export when the file has IO errors
         Err(_) => provider_builder,
     }
     .build();
@@ -82,10 +82,11 @@ pub(crate) fn start_trace(buildpack: &Buildpack, phase_name: &'static str) -> Bu
     // Get a tracer identified by the instrumentation scope/library. The libcnb
     // crate name/version seems to map well to the suggestion here:
     // https://opentelemetry.io/docs/specs/otel/trace/api/#get-a-tracer.
-    let tracer = provider
-        .tracer_builder(env!("CARGO_PKG_NAME"))
-        .with_version(env!("CARGO_PKG_VERSION"))
-        .build();
+    let tracer = global::tracer_provider().tracer_with_scope(
+        InstrumentationScope::builder(env!("CARGO_PKG_NAME"))
+            .with_version(env!("CARGO_PKG_VERSION"))
+            .build(),
+    );
 
     let mut span = tracer.start(trace_name);
     span.set_attributes([
@@ -117,19 +118,21 @@ impl Drop for BuildpackTrace {
     fn drop(&mut self) {
         self.span.end();
         self.provider.force_flush();
-        global::shutdown_tracer_provider();
+        self.provider.shutdown().ok();
     }
 }
 
 #[derive(Debug)]
 struct FileExporter<W: Write + Send + Debug> {
-    w: Arc<Mutex<W>>,
+    resource: Resource,
+    writer: Arc<Mutex<W>>,
 }
 
 impl<W: Write + Send + Debug> FileExporter<W> {
-    fn new(w: W) -> Self {
+    fn new(w: W, r: Resource) -> Self {
         Self {
-            w: Arc::new(Mutex::new(w)),
+            resource: r,
+            writer: Arc::new(Mutex::new(w)),
         }
     }
 }
@@ -139,8 +142,7 @@ impl<W: Write + Send + Debug> SpanExporter for FileExporter<W> {
         &mut self,
         batch: Vec<opentelemetry_sdk::export::trace::SpanData>,
     ) -> BoxFuture<'static, opentelemetry_sdk::export::trace::ExportResult> {
-        let resource = ResourceAttributesWithSchema::default();
-
+        let resource = ResourceAttributesWithSchema::from(&self.resource);
         let data = group_spans_by_resource_and_scope(batch, &resource);
         let json = serde_json::to_string(&data);
         let line = match json {
@@ -149,7 +151,7 @@ impl<W: Write + Send + Debug> SpanExporter for FileExporter<W> {
                 return Box::pin(std::future::ready(Err(TraceError::from(e.to_string()))));
             }
         };
-        let mut file = match self.w.lock() {
+        let mut file = match self.writer.lock() {
             Ok(f) => f,
             Err(e) => {
                 return Box::pin(std::future::ready(Err(TraceError::from(e.to_string()))));
