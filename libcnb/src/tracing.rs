@@ -7,14 +7,10 @@ use opentelemetry::{
 };
 use opentelemetry_proto::transform::common::tonic::ResourceAttributesWithSchema;
 use opentelemetry_proto::transform::trace::tonic::group_spans_by_resource_and_scope;
-use opentelemetry_sdk::{
-    export::trace::SpanExporter,
-    trace::TracerProvider,
-    Resource,
-};
+use opentelemetry_sdk::{export::trace::SpanExporter, trace::TracerProvider, Resource};
 use std::{
     fmt::Debug,
-    io::Write,
+    io::{LineWriter, Write},
     path::Path,
     sync::{Arc, Mutex},
 };
@@ -124,15 +120,15 @@ impl Drop for BuildpackTrace {
 
 #[derive(Debug)]
 struct FileExporter<W: Write + Send + Debug> {
+    writer: Arc<Mutex<LineWriter<W>>>,
     resource: Resource,
-    writer: Arc<Mutex<W>>,
 }
 
 impl<W: Write + Send + Debug> FileExporter<W> {
-    fn new(w: W, r: Resource) -> Self {
+    fn new(writer: W, resource: Resource) -> Self {
         Self {
-            resource: r,
-            writer: Arc::new(Mutex::new(w)),
+            writer: Arc::new(Mutex::new(LineWriter::new(writer))),
+            resource,
         }
     }
 }
@@ -144,20 +140,19 @@ impl<W: Write + Send + Debug> SpanExporter for FileExporter<W> {
     ) -> BoxFuture<'static, opentelemetry_sdk::export::trace::ExportResult> {
         let resource = ResourceAttributesWithSchema::from(&self.resource);
         let data = group_spans_by_resource_and_scope(batch, &resource);
-        let json = serde_json::to_string(&data);
-        let line = match json {
-            Ok(line) => line,
-            Err(e) => {
-                return Box::pin(std::future::ready(Err(TraceError::from(e.to_string()))));
-            }
-        };
-        let mut file = match self.writer.lock() {
+        let mut writer = match self.writer.lock() {
             Ok(f) => f,
             Err(e) => {
                 return Box::pin(std::future::ready(Err(TraceError::from(e.to_string()))));
             }
         };
-        match file.write_all(line.as_bytes()) {
+        match serde_json::to_writer(writer.get_mut(), &data) {
+            Ok(()) => (),
+            Err(e) => {
+                return Box::pin(std::future::ready(Err(TraceError::from(e.to_string()))));
+            }
+        };
+        match writer.flush() {
             Ok(()) => Box::pin(std::future::ready(Ok(()))),
             Err(e) => Box::pin(std::future::ready(Err(TraceError::from(e.to_string())))),
         }
