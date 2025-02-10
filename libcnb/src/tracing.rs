@@ -2,12 +2,17 @@ use futures_core::future::BoxFuture;
 use libcnb_data::buildpack::Buildpack;
 use opentelemetry::{
     global::{self, BoxedSpan},
-    trace::{Span as SpanTrait, Status, TraceError, Tracer, TracerProvider as TracerProviderTrait},
+    trace::{Span as SpanTrait, Status, Tracer, TracerProvider as TracerProviderTrait},
     InstrumentationScope, KeyValue,
 };
 use opentelemetry_proto::transform::common::tonic::ResourceAttributesWithSchema;
 use opentelemetry_proto::transform::trace::tonic::group_spans_by_resource_and_scope;
-use opentelemetry_sdk::{export::trace::SpanExporter, trace::TracerProvider, Resource};
+use opentelemetry_sdk::{
+    error::{OTelSdkError, OTelSdkResult},
+    trace::SdkTracerProvider,
+    trace::SpanExporter,
+    Resource,
+};
 use std::{
     fmt::Debug,
     io::{LineWriter, Write},
@@ -27,7 +32,7 @@ const TELEMETRY_EXPORT_ROOT: &str = "/tmp/libcnb-telemetry";
 /// Represents an OpenTelemetry tracer provider and single span tracing
 /// a single CNB build or detect phase.
 pub(crate) struct BuildpackTrace {
-    provider: TracerProvider,
+    provider: SdkTracerProvider,
     span: BoxedSpan,
 }
 
@@ -46,15 +51,17 @@ pub(crate) fn start_trace(buildpack: &Buildpack, phase_name: &'static str) -> Bu
         let _ = std::fs::create_dir_all(parent_dir);
     }
 
-    let resource = Resource::new([
+    let resource = Resource::builder()
         // Define a resource that defines the trace provider.
         // The buildpac name/version seems to map well to the suggestion here
         // https://opentelemetry.io/docs/specs/semconv/resource/#service.
-        KeyValue::new("service.name", buildpack.id.to_string()),
-        KeyValue::new("service.version", buildpack.version.to_string()),
-    ]);
+        .with_attributes([
+            KeyValue::new("service.name", buildpack.id.to_string()),
+            KeyValue::new("service.version", buildpack.version.to_string()),
+        ])
+        .build();
 
-    let provider_builder = TracerProvider::builder().with_resource(resource.clone());
+    let provider_builder = SdkTracerProvider::builder().with_resource(resource.clone());
 
     let provider = match std::fs::File::options()
         .create(true)
@@ -113,7 +120,7 @@ impl BuildpackTrace {
 impl Drop for BuildpackTrace {
     fn drop(&mut self) {
         self.span.end();
-        self.provider.force_flush();
+        self.provider.force_flush().ok();
         self.provider.shutdown().ok();
     }
 }
@@ -136,26 +143,42 @@ impl<W: Write + Send + Debug> FileExporter<W> {
 impl<W: Write + Send + Debug> SpanExporter for FileExporter<W> {
     fn export(
         &mut self,
-        batch: Vec<opentelemetry_sdk::export::trace::SpanData>,
-    ) -> BoxFuture<'static, opentelemetry_sdk::export::trace::ExportResult> {
+        batch: Vec<opentelemetry_sdk::trace::SpanData>,
+    ) -> BoxFuture<'static, OTelSdkResult> {
         let resource = ResourceAttributesWithSchema::from(&self.resource);
         let data = group_spans_by_resource_and_scope(batch, &resource);
         let mut writer = match self.writer.lock() {
             Ok(f) => f,
             Err(e) => {
-                return Box::pin(std::future::ready(Err(TraceError::from(e.to_string()))));
+                return Box::pin(std::future::ready(Err(OTelSdkError::InternalFailure(
+                    e.to_string(),
+                ))));
             }
         };
         match serde_json::to_writer(writer.get_mut(), &data) {
-            Ok(()) => (),
+            Ok(()) => Box::pin(std::future::ready(Ok(()))),
+            Err(e) => Box::pin(std::future::ready(Err(OTelSdkError::InternalFailure(
+                e.to_string(),
+            )))),
+        }
+    }
+
+    fn force_flush(&mut self) -> OTelSdkResult {
+        let mut writer = match self.writer.lock() {
+            Ok(f) => f,
             Err(e) => {
-                return Box::pin(std::future::ready(Err(TraceError::from(e.to_string()))));
+                return Err(OTelSdkError::InternalFailure(e.to_string()));
             }
         };
+
         match writer.flush() {
-            Ok(()) => Box::pin(std::future::ready(Ok(()))),
-            Err(e) => Box::pin(std::future::ready(Err(TraceError::from(e.to_string())))),
+            Ok(()) => Ok(()),
+            Err(e) => Err(OTelSdkError::InternalFailure(e.to_string())),
         }
+    }
+
+    fn set_resource(&mut self, res: &opentelemetry_sdk::Resource) {
+        self.resource = res.clone();
     }
 }
 
