@@ -45,3 +45,4 @@ toml.workspace = true
 
 [dev-dependencies]
 tempfile = "3.14.0"
+serde_json = "1.0.133"
