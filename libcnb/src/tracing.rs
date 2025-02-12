@@ -53,7 +53,7 @@ pub(crate) fn start_trace(buildpack: &Buildpack, phase_name: &'static str) -> Bu
 
     let resource = Resource::builder()
         // Define a resource that defines the trace provider.
-        // The buildpac name/version seems to map well to the suggestion here
+        // The buildpack name/version seems to map well to the suggestion here
         // https://opentelemetry.io/docs/specs/semconv/resource/#service.
         .with_attributes([
             KeyValue::new("service.name", buildpack.id.to_string()),
@@ -69,12 +69,10 @@ pub(crate) fn start_trace(buildpack: &Buildpack, phase_name: &'static str) -> Bu
         .open(&tracing_file_path)
         .map(|file| FileExporter::new(file, resource))
     {
-        // Write tracing data to a file, which may be read by other
-        // services. Wrap with a BufWriter to prevent serde from sending each
-        // JSON token to IO, and instead send entire JSON objects to IO.
-        Ok(exporter) => provider_builder.with_simple_exporter(exporter),
+        // Write tracing data to a file, which may be read by other services
+        Ok(exporter) => provider_builder.with_batch_exporter(exporter),
         // Failed tracing shouldn't fail a build, and any export logging here
-        // would likely confuse the user, so we won't export when the file has IO errors
+        // would likely confuse the user; don't export when the file has IO errors
         Err(_) => provider_builder,
     }
     .build();
