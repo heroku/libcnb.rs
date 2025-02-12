@@ -153,26 +153,21 @@ impl<W: Write + Send + Debug> SpanExporter for FileExporter<W> {
                 ))));
             }
         };
-        match serde_json::to_writer(writer.get_mut(), &data) {
-            Ok(()) => Box::pin(std::future::ready(Ok(()))),
-            Err(e) => Box::pin(std::future::ready(Err(OTelSdkError::InternalFailure(
-                e.to_string(),
-            )))),
-        }
+        Box::pin(std::future::ready(
+            serde_json::to_writer(writer.get_mut(), &data)
+                .map_err(|e| OTelSdkError::InternalFailure(e.to_string())),
+        ))
     }
 
     fn force_flush(&mut self) -> OTelSdkResult {
-        let mut writer = match self.writer.lock() {
-            Ok(f) => f,
-            Err(e) => {
-                return Err(OTelSdkError::InternalFailure(e.to_string()));
-            }
-        };
+        let mut writer = self
+            .writer
+            .lock()
+            .map_err(|e| OTelSdkError::InternalFailure(e.to_string()))?;
 
-        match writer.flush() {
-            Ok(()) => Ok(()),
-            Err(e) => Err(OTelSdkError::InternalFailure(e.to_string())),
-        }
+        writer
+            .flush()
+            .map_err(|e| OTelSdkError::InternalFailure(e.to_string()))
     }
 
     fn set_resource(&mut self, res: &opentelemetry_sdk::Resource) {
