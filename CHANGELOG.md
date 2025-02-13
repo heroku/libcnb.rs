@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Implemented custom OTLP File Exporter instead of `opentelemetry-stdout` and updated `opentelemetry` libraries to `0.28`. ([#909](https://github.com/heroku/libcnb.rs/pull/909/))
 
 ## [0.26.1] - 2024-12-10
 
