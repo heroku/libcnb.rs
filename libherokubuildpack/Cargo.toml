@@ -50,7 +50,7 @@ tar = { version = "0.4.43", default-features = false, optional = true }
 termcolor = { version = "1.4.1", optional = true }
 thiserror = { version = "2.0.6", optional = true }
 toml = { workspace = true, optional = true }
-ureq = { version = "2.12.1", default-features = false, features = ["tls"], optional = true }
+ureq = { version = "3.0.6", default-features = false, features = ["tls"], optional = true }
 
 [dev-dependencies]
 serde_test = "1.0.177"
