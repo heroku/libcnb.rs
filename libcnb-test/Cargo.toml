@@ -27,4 +27,4 @@ thiserror = "2.0.6"
 [dev-dependencies]
 indoc = "2.0.5"
 libcnb.workspace = true
-ureq = { version = "2.12.1", default-features = false }
+ureq = { version = "3.0.6", default-features = false }
