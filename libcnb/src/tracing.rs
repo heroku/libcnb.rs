@@ -1,9 +1,12 @@
 use futures_core::future::BoxFuture;
 use libcnb_data::buildpack::Buildpack;
 use opentelemetry::{
-    InstrumentationScope, KeyValue,
-    global::{self, BoxedSpan},
-    trace::{Span as SpanTrait, Status, Tracer, TracerProvider as TracerProviderTrait},
+    ContextGuard, InstrumentationScope, KeyValue,
+    global::{self},
+    trace::{
+        Span as SpanTrait, Status, Tracer, TracerProvider as TracerProviderTrait, get_active_span,
+        mark_span_as_active,
+    },
 };
 use opentelemetry_proto::transform::trace::tonic::group_spans_by_resource_and_scope;
 use opentelemetry_proto::{
@@ -31,16 +34,34 @@ use std::{
 #[cfg(target_family = "unix")]
 const TELEMETRY_EXPORT_ROOT: &str = "/tmp/libcnb-telemetry";
 
-/// Represents an OpenTelemetry tracer provider and single span tracing
-/// a single CNB build or detect phase.
+/// Represents the base tracing state for libcnb buildpack traces and
+/// includes the trace context and trace provider.
 pub(crate) struct BuildpackTrace {
+    _context: ContextGuard,
     provider: SdkTracerProvider,
-    span: BoxedSpan,
 }
 
-/// Start an OpenTelemetry trace and span that exports to an
-/// OpenTelemetry file export. The resulting trace provider and span are
-/// enriched with data from the buildpack and the rust environment.
+/// Ensure the span is ended and the provider is flushed once the trace is out of scope.
+impl Drop for BuildpackTrace {
+    fn drop(&mut self) {
+        get_active_span(|span| span.end());
+        self.provider.force_flush().ok();
+        self.provider.shutdown().ok();
+    }
+}
+
+/// One-shot function that sets up and/or starts the following opentelemetry
+/// resources:
+/// - `TracerProvider`
+/// - `Tracer`
+/// - `Exporter`
+/// - `Resource`
+/// - `Attributes`
+/// - `Context`
+/// - `Span`
+///
+/// These are setup globally where appropriate. Once the return value (`BuildpackTrace`) goes
+/// out of scope, the resources are cleaned up.
 pub(crate) fn start_trace(buildpack: &Buildpack, phase_name: &'static str) -> BuildpackTrace {
     let trace_name = format!(
         "{}-{phase_name}",
@@ -101,28 +122,29 @@ pub(crate) fn start_trace(buildpack: &Buildpack, phase_name: &'static str) -> Bu
             buildpack.homepage.clone().unwrap_or_default(),
         ),
     ]);
-    BuildpackTrace { provider, span }
-}
 
-impl BuildpackTrace {
-    /// Set the status for the underlying span to error, and record
-    /// an exception on the span.
-    pub(crate) fn set_error(&mut self, err: &dyn std::error::Error) {
-        self.span.set_status(Status::error(format!("{err:?}")));
-        self.span.record_error(err);
-    }
-    /// Add a named event to the underlying span.
-    pub(crate) fn add_event(&mut self, name: &'static str) {
-        self.span.add_event(name, Vec::new());
+    // Set the libcnb span as the active span on this thread so that buildpacks
+    // may nest additional spans within it.
+    let context = mark_span_as_active(span);
+
+    BuildpackTrace {
+        _context: context,
+        provider,
     }
 }
 
-impl Drop for BuildpackTrace {
-    fn drop(&mut self) {
-        self.span.end();
-        self.provider.force_flush().ok();
-        self.provider.shutdown().ok();
-    }
+/// Set the status for the active span to error, and record
+/// an exception on the span.
+pub(crate) fn set_trace_error(err: &dyn std::error::Error) {
+    get_active_span(|span| {
+        span.set_status(Status::error(format!("{err:?}")));
+        span.record_error(err);
+    });
+}
+
+/// Add a named event to the active span.
+pub(crate) fn add_trace_event(name: &'static str) {
+    get_active_span(|span| span.add_event(name, Vec::new()));
 }
 
 #[derive(Debug)]
@@ -181,7 +203,7 @@ impl<W: Write + Send + Debug> SpanExporter for FileExporter<W> {
 
 #[cfg(test)]
 mod tests {
-    use super::start_trace;
+    use super::{add_trace_event, set_trace_error, start_trace};
     use libcnb_data::{
         buildpack::{Buildpack, BuildpackVersion},
         buildpack_id,
@@ -210,9 +232,9 @@ mod tests {
         _ = fs::remove_file(telemetry_path);
 
         {
-            let mut trace = start_trace(&buildpack, "bar");
-            trace.add_event("baz-event");
-            trace.set_error(&Error::new(ErrorKind::Other, "it's broken"));
+            let _trace = start_trace(&buildpack, "bar");
+            add_trace_event("baz-event");
+            set_trace_error(&Error::new(ErrorKind::Other, "it's broken"));
         }
         let tracing_contents = fs::read_to_string(telemetry_path)
             .expect("Expected telemetry file to exist, but couldn't read it");

@@ -6,7 +6,7 @@ use crate::error::Error;
 use crate::platform::Platform;
 use crate::sbom::cnb_sbom_path;
 #[cfg(feature = "trace")]
-use crate::tracing::start_trace;
+use crate::tracing::{add_trace_event, set_trace_error, start_trace};
 use crate::util::is_not_found_error_kind;
 use crate::{LIBCNB_SUPPORTED_BUILDPACK_API, Target, TomlFileError, exit_code};
 use libcnb_common::toml_file::{read_toml_file, write_toml_file};
@@ -134,15 +134,13 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
         read_buildpack_descriptor()?;
 
     #[cfg(feature = "trace")]
-    let mut trace = start_trace(&buildpack_descriptor.buildpack, "detect");
+    let _trace = start_trace(&buildpack_descriptor.buildpack, "detect");
 
     #[cfg(feature = "trace")]
-    let mut trace_error = |err: &dyn std::error::Error| {
-        trace.set_error(err);
-    };
+    let trace_error = |err: &dyn std::error::Error| set_trace_error(err);
 
     #[cfg(not(feature = "trace"))]
-    let mut trace_error = |_: &dyn std::error::Error| {};
+    let trace_error = |_: &dyn std::error::Error| {};
 
     let platform = B::Platform::from_path(&args.platform_dir_path)
         .map_err(Error::CannotCreatePlatformFromPath)
@@ -167,7 +165,7 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
     match detect_result.0 {
         InnerDetectResult::Fail => {
             #[cfg(feature = "trace")]
-            trace.add_event("detect-failed");
+            add_trace_event("detect-failed");
             Ok(exit_code::DETECT_DETECTION_FAILED)
         }
         InnerDetectResult::Pass { build_plan } => {
@@ -177,7 +175,7 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
                     .inspect_err(|err| trace_error(err))?;
             }
             #[cfg(feature = "trace")]
-            trace.add_event("detect-passed");
+            add_trace_event("detect-passed");
             Ok(exit_code::DETECT_DETECTION_PASSED)
         }
     }
@@ -202,15 +200,13 @@ pub fn libcnb_runtime_build<B: Buildpack>(
         read_buildpack_descriptor()?;
 
     #[cfg(feature = "trace")]
-    let mut trace = start_trace(&buildpack_descriptor.buildpack, "build");
+    let _trace = start_trace(&buildpack_descriptor.buildpack, "build");
 
     #[cfg(feature = "trace")]
-    let mut trace_error = |err: &dyn std::error::Error| {
-        trace.set_error(err);
-    };
+    let trace_error = |err: &dyn std::error::Error| set_trace_error(err);
 
     #[cfg(not(feature = "trace"))]
-    let mut trace_error = |_: &dyn std::error::Error| {};
+    let trace_error = |_: &dyn std::error::Error| {};
 
     let platform = Platform::from_path(&args.platform_dir_path)
         .map_err(Error::CannotCreatePlatformFromPath)
@@ -282,7 +278,7 @@ pub fn libcnb_runtime_build<B: Buildpack>(
             }
 
             #[cfg(feature = "trace")]
-            trace.add_event("build-success");
+            add_trace_event("build-success");
             Ok(exit_code::GENERIC_SUCCESS)
         }
     }
