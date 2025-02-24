@@ -11,8 +11,8 @@
 use indoc::{formatdoc, indoc};
 use libcnb_data::buildpack_id;
 use libcnb_test::{
-    assert_contains, assert_empty, assert_not_contains, BuildConfig, BuildpackReference,
-    ContainerConfig, PackResult, TestRunner,
+    BuildConfig, BuildpackReference, ContainerConfig, PackResult, TestRunner, assert_contains,
+    assert_empty, assert_not_contains,
 };
 use std::path::PathBuf;
 use std::time::Duration;
@@ -686,7 +686,7 @@ fn address_for_port_when_port_not_exposed() {
 fn address_for_port_when_container_crashed() {
     let mut container_name = String::new();
 
-    // AssertUnwindSafe is required so that `container_name`` can be mutated across the unwind boundary.
+    // AssertUnwindSafe is required so that `container_name` can be mutated across the unwind boundary.
     let err = panic::catch_unwind(panic::AssertUnwindSafe(|| {
         TestRunner::default().build(
             BuildConfig::new("heroku/builder:22", "tests/fixtures/procfile")

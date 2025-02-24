@@ -114,29 +114,35 @@ fn test() {
         context.rebuild(&build_config, |context| {
             context.download_sbom_files(|sbom_files| {
                 // The buildpack removes restored SBOMs from the 'test' layer.
-                assert!(!sbom_files
-                    .path_for(
-                        &buildpack_id,
-                        SbomType::Layer(layer_name!("test")),
-                        SbomFormat::CycloneDxJson,
-                    )
-                    .exists());
+                assert!(
+                    !sbom_files
+                        .path_for(
+                            &buildpack_id,
+                            SbomType::Layer(layer_name!("test")),
+                            SbomFormat::CycloneDxJson,
+                        )
+                        .exists()
+                );
 
-                assert!(!sbom_files
-                    .path_for(
-                        &buildpack_id,
-                        SbomType::Layer(layer_name!("test")),
-                        SbomFormat::SpdxJson,
-                    )
-                    .exists());
+                assert!(
+                    !sbom_files
+                        .path_for(
+                            &buildpack_id,
+                            SbomType::Layer(layer_name!("test")),
+                            SbomFormat::SpdxJson,
+                        )
+                        .exists()
+                );
 
-                assert!(!sbom_files
-                    .path_for(
-                        &buildpack_id,
-                        SbomType::Layer(layer_name!("test")),
-                        SbomFormat::SyftJson,
-                    )
-                    .exists());
+                assert!(
+                    !sbom_files
+                        .path_for(
+                            &buildpack_id,
+                            SbomType::Layer(layer_name!("test")),
+                            SbomFormat::SyftJson,
+                        )
+                        .exists()
+                );
 
                 // The 'test2' layer will be cached between builds and should remain untouched, SBOM
                 // files included.

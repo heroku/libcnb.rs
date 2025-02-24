@@ -1,5 +1,5 @@
-use serde::ser::Error;
 use serde::Serialize;
+use serde::ser::Error;
 use std::collections::VecDeque;
 use toml::value::Table;
 

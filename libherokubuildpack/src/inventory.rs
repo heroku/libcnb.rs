@@ -233,9 +233,9 @@ where
 
 #[cfg(test)]
 mod test {
+    use crate::inventory::Inventory;
     use crate::inventory::artifact::{Arch, Artifact, Os};
     use crate::inventory::checksum::tests::BogusDigest;
-    use crate::inventory::Inventory;
 
     #[test]
     fn test_matching_artifact_resolution() {
@@ -256,9 +256,11 @@ mod test {
         let mut inventory = Inventory::new();
         inventory.push(create_artifact("foo", Os::Linux, Arch::Arm64));
 
-        assert!(inventory
-            .resolve(Os::Linux, Arch::Amd64, &String::from("foo"))
-            .is_none());
+        assert!(
+            inventory
+                .resolve(Os::Linux, Arch::Amd64, &String::from("foo"))
+                .is_none()
+        );
     }
 
     #[test]
@@ -266,9 +268,11 @@ mod test {
         let mut inventory = Inventory::new();
         inventory.push(create_artifact("foo", Os::Linux, Arch::Arm64));
 
-        assert!(inventory
-            .resolve(Os::Linux, Arch::Arm64, &String::from("bar"))
-            .is_none());
+        assert!(
+            inventory
+                .resolve(Os::Linux, Arch::Arm64, &String::from("bar"))
+                .is_none()
+        );
     }
 
     fn create_artifact(version: &str, os: Os, arch: Arch) -> Artifact<String, BogusDigest, ()> {

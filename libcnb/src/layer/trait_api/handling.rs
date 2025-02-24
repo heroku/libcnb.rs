@@ -2,20 +2,20 @@
 #![allow(clippy::similar_names)]
 
 use super::Layer;
+use crate::Buildpack;
 use crate::build::BuildContext;
 use crate::data::layer::LayerName;
 use crate::data::layer_content_metadata::LayerContentMetadata;
 use crate::generic::GenericMetadata;
 use crate::layer::shared::{
-    delete_layer, replace_layer_exec_d_programs, replace_layer_sboms, ReadLayerError,
-    WriteLayerError,
+    ReadLayerError, WriteLayerError, delete_layer, replace_layer_exec_d_programs,
+    replace_layer_sboms,
 };
 use crate::layer::{ExistingLayerStrategy, LayerData, LayerError, MetadataMigration};
 use crate::layer_env::LayerEnv;
 use crate::sbom::Sbom;
-use crate::Buildpack;
-use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -421,7 +421,7 @@ mod tests {
             other => {
                 panic!("Expected WriteLayerError::MissingExecDFile, but got {other:?}");
             }
-        };
+        }
     }
 
     #[test]

@@ -2,7 +2,7 @@ use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
 use libcnb::data::layer_name;
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::generic::{GenericError, GenericMetadata, GenericPlatform};
-use libcnb::{additional_buildpack_binary_path, buildpack_main, Buildpack};
+use libcnb::{Buildpack, additional_buildpack_binary_path, buildpack_main};
 
 // Suppress warnings due to the `unused_crate_dependencies` lint not handling integration tests well.
 use fastrand as _;

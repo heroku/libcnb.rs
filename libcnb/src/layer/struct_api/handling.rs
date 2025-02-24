@@ -1,18 +1,18 @@
+use crate::Buildpack;
 use crate::layer::shared::{
-    delete_layer, read_layer, replace_layer_metadata, replace_layer_types, ReadLayerError,
-    WriteLayerError,
+    ReadLayerError, WriteLayerError, delete_layer, read_layer, replace_layer_metadata,
+    replace_layer_types,
 };
 use crate::layer::{
     EmptyLayerCause, IntoAction, InvalidMetadataAction, LayerError, LayerRef, LayerState,
     RestoredLayerAction,
 };
-use crate::Buildpack;
 use libcnb_common::toml_file::read_toml_file;
 use libcnb_data::generic::GenericMetadata;
 use libcnb_data::layer::LayerName;
 use libcnb_data::layer_content_metadata::{LayerContentMetadata, LayerTypes};
-use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
@@ -147,11 +147,11 @@ where
 #[cfg(test)]
 mod tests {
     use super::handle_layer;
+    use crate::Buildpack;
     use crate::build::{BuildContext, BuildResult};
     use crate::detect::{DetectContext, DetectResult};
     use crate::generic::{GenericError, GenericPlatform};
     use crate::layer::{EmptyLayerCause, InvalidMetadataAction, LayerState, RestoredLayerAction};
-    use crate::Buildpack;
     use libcnb_common::toml_file::read_toml_file;
     use libcnb_data::generic::GenericMetadata;
     use libcnb_data::layer_content_metadata::{LayerContentMetadata, LayerTypes};

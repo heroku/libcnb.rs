@@ -2,7 +2,7 @@ use libcnb::build::{BuildContext, BuildResult, BuildResultBuilder};
 use libcnb::data::store::Store;
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::generic::{GenericMetadata, GenericPlatform};
-use libcnb::{buildpack_main, Buildpack};
+use libcnb::{Buildpack, buildpack_main};
 use toml::toml;
 
 // Suppress warnings due to the `unused_crate_dependencies` lint not handling integration tests well.

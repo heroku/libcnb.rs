@@ -2,15 +2,16 @@ use crate::cli::PackageArgs;
 use crate::package::error::Error;
 use libcnb_data::buildpack::BuildpackId;
 use libcnb_package::buildpack_dependency_graph::build_libcnb_buildpacks_dependency_graph;
-use libcnb_package::cross_compile::{cross_compile_assistance, CrossCompileAssistance};
+use libcnb_package::cross_compile::{CrossCompileAssistance, cross_compile_assistance};
 use libcnb_package::dependency_graph::get_dependencies;
 use libcnb_package::output::create_packaged_buildpack_dir_resolver;
 use libcnb_package::util::absolutize_path;
-use libcnb_package::{find_cargo_workspace_root_dir, CargoProfile};
+use libcnb_package::{CargoProfile, find_cargo_workspace_root_dir};
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+#[allow(clippy::too_many_lines)]
 pub(crate) fn execute(args: &PackageArgs) -> Result<(), Error> {
     let current_dir = std::env::current_dir().map_err(Error::CannotGetCurrentDir)?;
 
@@ -49,7 +50,9 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<(), Error> {
                     "Couldn't determine automatic cross-compile settings for target triple {}.",
                     args.target
                 );
-                eprintln!("This is not an error, but without proper cross-compile settings in your Cargo manifest and locally installed toolchains, compilation might fail.");
+                eprintln!(
+                    "This is not an error, but without proper cross-compile settings in your Cargo manifest and locally installed toolchains, compilation might fail."
+                );
                 eprintln!("To disable this warning, pass --no-cross-compile-assistance.");
                 Vec::new()
             }

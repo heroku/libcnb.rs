@@ -1,7 +1,7 @@
 use crate::docker::{DockerRemoveImageCommand, DockerRemoveVolumeCommand};
 use crate::pack::PackBuildCommand;
 use crate::util::CommandError;
-use crate::{app, build, util, BuildConfig, BuildpackReference, PackResult, TestContext};
+use crate::{BuildConfig, BuildpackReference, PackResult, TestContext, app, build, util};
 use std::borrow::Borrow;
 use std::env;
 use std::path::PathBuf;
@@ -146,7 +146,7 @@ impl TestRunner {
                 BuildpackReference::Other(id) => {
                     pack_command.buildpack(id.clone());
                 }
-            };
+            }
         }
 
         let pack_result = util::run_command(pack_command);

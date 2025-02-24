@@ -1,9 +1,9 @@
 use crate::build::build_buildpack_binaries;
-use crate::buildpack_kind::{determine_buildpack_kind, BuildpackKind};
-use crate::package_descriptor::{normalize_package_descriptor, NormalizePackageDescriptorError};
-use crate::{assemble_buildpack_directory, CargoProfile};
+use crate::buildpack_kind::{BuildpackKind, determine_buildpack_kind};
+use crate::package_descriptor::{NormalizePackageDescriptorError, normalize_package_descriptor};
+use crate::{CargoProfile, assemble_buildpack_directory};
 use cargo_metadata::MetadataCommand;
-use libcnb_common::toml_file::{read_toml_file, write_toml_file, TomlFileError};
+use libcnb_common::toml_file::{TomlFileError, read_toml_file, write_toml_file};
 use libcnb_data::buildpack::BuildpackId;
 use libcnb_data::package_descriptor::PackageDescriptor;
 use std::collections::BTreeMap;

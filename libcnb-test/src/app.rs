@@ -1,7 +1,7 @@
 use fs_extra::dir::CopyOptions;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
-use tempfile::{tempdir, TempDir};
+use tempfile::{TempDir, tempdir};
 
 /// Copies an application directory to a temporary location.
 pub(crate) fn copy_app(app_dir: impl AsRef<Path>) -> Result<AppDir, PrepareAppError> {

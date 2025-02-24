@@ -1,14 +1,14 @@
 // This lint triggers when both layer_dir and layers_dir are present which are quite common.
 #![allow(clippy::similar_names)]
 
-use crate::sbom::{cnb_sbom_path, Sbom};
+use crate::sbom::{Sbom, cnb_sbom_path};
 use crate::util::{default_on_not_found, remove_dir_recursively};
-use libcnb_common::toml_file::{read_toml_file, write_toml_file, TomlFileError};
+use libcnb_common::toml_file::{TomlFileError, read_toml_file, write_toml_file};
 use libcnb_data::layer::LayerName;
 use libcnb_data::layer_content_metadata::{LayerContentMetadata, LayerTypes};
 use libcnb_data::sbom::SBOM_FORMATS;
-use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};

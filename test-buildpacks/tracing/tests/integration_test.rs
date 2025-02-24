@@ -1,7 +1,7 @@
 // Required due to: https://github.com/rust-lang/rust/issues/95513
 #![allow(unused_crate_dependencies)]
 
-use libcnb_test::{assert_contains, BuildConfig, BuildpackReference, TestRunner};
+use libcnb_test::{BuildConfig, BuildpackReference, TestRunner, assert_contains};
 use std::env::temp_dir;
 use std::fs;
 

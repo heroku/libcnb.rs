@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Raised Minimum Supported Rust Version (MSRV) to `1.85`. ([#913](https://github.com/heroku/libcnb.rs/pull/913))
+- Updated to Rust 2024 edition. ([#913](https://github.com/heroku/libcnb.rs/pull/913))
 - `libcnb`:
   - Implemented custom OTLP File Exporter instead of `opentelemetry-stdout` and updated `opentelemetry` libraries to `0.28`. ([#909](https://github.com/heroku/libcnb.rs/pull/909/))
 
