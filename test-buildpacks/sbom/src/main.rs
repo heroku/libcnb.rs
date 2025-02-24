@@ -7,7 +7,7 @@ use libcnb::layer::{
     CachedLayerDefinition, InvalidMetadataAction, LayerState, RestoredLayerAction,
 };
 use libcnb::sbom::Sbom;
-use libcnb::{buildpack_main, Buildpack};
+use libcnb::{Buildpack, buildpack_main};
 
 // Suppress warnings due to the `unused_crate_dependencies` lint not handling integration tests well.
 #[cfg(test)]

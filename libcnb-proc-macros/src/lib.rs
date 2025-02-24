@@ -3,9 +3,9 @@
 use proc_macro::TokenStream;
 use quote::quote;
 use std::path::PathBuf;
+use syn::Token;
 use syn::parse::{Parse, ParseStream};
 use syn::parse_macro_input;
-use syn::Token;
 
 /// Compiles the given regex using the `fancy_regex` crate and tries to match the given value. If
 /// the value matches the regex, the macro will expand to the first expression. Otherwise it will

@@ -8,12 +8,12 @@ use crate::sbom::cnb_sbom_path;
 #[cfg(feature = "trace")]
 use crate::tracing::start_trace;
 use crate::util::is_not_found_error_kind;
-use crate::{exit_code, Target, TomlFileError, LIBCNB_SUPPORTED_BUILDPACK_API};
+use crate::{LIBCNB_SUPPORTED_BUILDPACK_API, Target, TomlFileError, exit_code};
 use libcnb_common::toml_file::{read_toml_file, write_toml_file};
 use libcnb_data::buildpack::ComponentBuildpackDescriptor;
 use libcnb_data::store::Store;
-use serde::de::DeserializeOwned;
 use serde::Deserialize;
+use serde::de::DeserializeOwned;
 use std::ffi::OsStr;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
@@ -47,7 +47,9 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
                     "This buildpack uses Cloud Native Buildpacks API version {} (specified in buildpack.toml).",
                     &buildpack_descriptor.api,
                 );
-                eprintln!("However, the underlying libcnb.rs library only supports CNB API {LIBCNB_SUPPORTED_BUILDPACK_API}.");
+                eprintln!(
+                    "However, the underlying libcnb.rs library only supports CNB API {LIBCNB_SUPPORTED_BUILDPACK_API}."
+                );
                 exit(exit_code::GENERIC_CNB_API_VERSION_ERROR)
             }
         }
@@ -100,7 +102,9 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
                 other.unwrap_or("<unknown>")
             );
             eprintln!("The executable name is used to determine the current buildpack phase.");
-            eprintln!("You might want to create 'detect' and 'build' links to this executable and run those instead.");
+            eprintln!(
+                "You might want to create 'detect' and 'build' links to this executable and run those instead."
+            );
             exit(exit_code::GENERIC_UNEXPECTED_EXECUTABLE_NAME_ERROR)
         }
     };
@@ -251,13 +255,13 @@ pub fn libcnb_runtime_build<B: Buildpack>(
                 write_toml_file(&launch, layers_dir.join("launch.toml"))
                     .map_err(Error::CannotWriteLaunch)
                     .inspect_err(|err| trace_error(err))?;
-            };
+            }
 
             if let Some(store) = store {
                 write_toml_file(&store, layers_dir.join("store.toml"))
                     .map_err(Error::CannotWriteStore)
                     .inspect_err(|err| trace_error(err))?;
-            };
+            }
 
             for build_sbom in build_sboms {
                 fs::write(

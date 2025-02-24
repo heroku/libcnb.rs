@@ -8,13 +8,13 @@ use libcnb_common::toml_file::read_toml_file;
 use libcnb_data::buildpack::{BuildpackDescriptor, BuildpackId};
 use libcnb_data::buildpack_id;
 use libcnb_data::package_descriptor::{PackageDescriptor, PackageDescriptorDependency};
-use libcnb_package::output::create_packaged_buildpack_dir_resolver;
 use libcnb_package::CargoProfile;
+use libcnb_package::output::create_packaged_buildpack_dir_resolver;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::{env, fs};
-use tempfile::{tempdir_in, TempDir};
+use tempfile::{TempDir, tempdir_in};
 
 #[test]
 #[ignore = "integration test"]
@@ -58,8 +58,9 @@ fn package_single_composite_buildpack_in_monorepo_buildpack_project() {
         .output()
         .unwrap();
 
+    let package_dir = fixture_dir.path().join(DEFAULT_PACKAGE_DIR_NAME);
     let packaged_buildpack_dir_resolver = create_packaged_buildpack_dir_resolver(
-        &fixture_dir.path().join(DEFAULT_PACKAGE_DIR_NAME),
+        &package_dir,
         CargoProfile::Release,
         X86_64_UNKNOWN_LINUX_MUSL,
     );
@@ -144,8 +145,9 @@ fn package_all_buildpacks_in_monorepo_buildpack_project() {
         .output()
         .unwrap();
 
+    let package_dir = fixture_dir.path().join(DEFAULT_PACKAGE_DIR_NAME);
     let packaged_buildpack_dir_resolver = create_packaged_buildpack_dir_resolver(
-        &fixture_dir.path().join(DEFAULT_PACKAGE_DIR_NAME),
+        &package_dir,
         CargoProfile::Release,
         X86_64_UNKNOWN_LINUX_MUSL,
     );

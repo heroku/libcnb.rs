@@ -1,6 +1,6 @@
+use crate::Platform;
 use crate::build::{BuildContext, BuildResult};
 use crate::detect::{DetectContext, DetectResult};
-use crate::Platform;
 use serde::de::DeserializeOwned;
 use std::fmt::Debug;
 

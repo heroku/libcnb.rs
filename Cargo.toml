@@ -19,8 +19,8 @@ members = [
 
 [workspace.package]
 version = "0.26.1"
-rust-version = "1.76"
-edition = "2021"
+rust-version = "1.85"
+edition = "2024"
 license = "BSD-3-Clause"
 
 [workspace.lints.rust]
@@ -35,8 +35,6 @@ pedantic = { level = "warn", priority = -1 }
 unwrap_used = "warn"
 # In most cases adding error docs provides little value.
 missing_errors_doc = "allow"
-# This lint is too noisy and enforces a style that reduces readability in many cases.
-module_name_repetitions = "allow"
 
 [workspace.dependencies]
 libcnb = { version = "=0.26.1", path = "libcnb" }

@@ -1,5 +1,5 @@
-use petgraph::visit::DfsPostOrder;
 use petgraph::Graph;
+use petgraph::visit::DfsPostOrder;
 use std::error::Error;
 
 /// A node of a dependency graph.
@@ -107,7 +107,7 @@ pub enum GetDependenciesError<I> {
 
 #[cfg(test)]
 mod tests {
-    use crate::dependency_graph::{create_dependency_graph, get_dependencies, DependencyNode};
+    use crate::dependency_graph::{DependencyNode, create_dependency_graph, get_dependencies};
     use std::convert::Infallible;
 
     impl DependencyNode<String, Infallible> for (&str, Vec<&str>) {

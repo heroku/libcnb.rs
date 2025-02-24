@@ -234,9 +234,11 @@ mod tests {
         // Assert conditional '--trust-builder' flag works as expected:
         input.trust_builder = false;
         let command: Command = input.clone().into();
-        assert!(!command
-            .get_args()
-            .any(|arg| arg == OsStr::new("--trust-builder")));
+        assert!(
+            !command
+                .get_args()
+                .any(|arg| arg == OsStr::new("--trust-builder"))
+        );
     }
 
     #[test]

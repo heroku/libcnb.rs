@@ -1,11 +1,11 @@
-use crate::buildpack_kind::determine_buildpack_kind;
 use crate::buildpack_kind::BuildpackKind;
+use crate::buildpack_kind::determine_buildpack_kind;
 use crate::dependency_graph::{
-    create_dependency_graph, CreateDependencyGraphError, DependencyNode,
+    CreateDependencyGraphError, DependencyNode, create_dependency_graph,
 };
 use crate::find_buildpack_dirs;
 use crate::package_descriptor::buildpack_id_from_libcnb_dependency;
-use libcnb_common::toml_file::{read_toml_file, TomlFileError};
+use libcnb_common::toml_file::{TomlFileError, read_toml_file};
 use libcnb_data::buildpack::{BuildpackDescriptor, BuildpackId, BuildpackIdError};
 use libcnb_data::package_descriptor::PackageDescriptor;
 use petgraph::Graph;
@@ -58,22 +58,17 @@ fn build_libcnb_buildpack_dependency_graph_node(
             .map_err(BuildBuildpackDependencyGraphError::ReadBuildpackDescriptorError)
             .map(|buildpack_descriptor| buildpack_descriptor.buildpack().id.clone())?;
 
-    let dependencies = {
-        let package_toml_path = buildpack_directory.join("package.toml");
-
-        package_toml_path
-            .is_file()
-            .then(|| {
-                read_toml_file::<PackageDescriptor>(package_toml_path)
-                    .map_err(BuildBuildpackDependencyGraphError::ReadPackageDescriptorError)
-                    .and_then(|package_descriptor| {
-                        get_buildpack_dependencies(&package_descriptor).map_err(
-                            BuildBuildpackDependencyGraphError::InvalidDependencyBuildpackId,
-                        )
-                    })
-            })
-            .unwrap_or(Ok(Vec::new()))
-    }?;
+    let package_toml_path = buildpack_directory.join("package.toml");
+    let dependencies = if package_toml_path.is_file() {
+        read_toml_file::<PackageDescriptor>(package_toml_path)
+            .map_err(BuildBuildpackDependencyGraphError::ReadPackageDescriptorError)
+            .and_then(|package_descriptor| {
+                get_buildpack_dependencies(&package_descriptor)
+                    .map_err(BuildBuildpackDependencyGraphError::InvalidDependencyBuildpackId)
+            })?
+    } else {
+        Vec::new()
+    };
 
     Ok(BuildpackDependencyGraphNode {
         buildpack_id,

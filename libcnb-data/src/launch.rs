@@ -312,7 +312,7 @@ libcnb_newtype!(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_test::{assert_ser_tokens, Token};
+    use serde_test::{Token, assert_ser_tokens};
 
     #[test]
     fn launch_builder_add_processes() {

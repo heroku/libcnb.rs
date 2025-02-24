@@ -2,15 +2,15 @@
 // the use of deprecated code is allowed in this module.
 #![allow(deprecated)]
 
+use crate::Buildpack;
 use crate::build::BuildContext;
 use crate::data::layer::LayerName;
 use crate::data::layer_content_metadata::{LayerContentMetadata, LayerTypes};
 use crate::generic::GenericMetadata;
 use crate::layer_env::LayerEnv;
 use crate::sbom::Sbom;
-use crate::Buildpack;
-use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 

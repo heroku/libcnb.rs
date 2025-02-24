@@ -1,4 +1,4 @@
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 use std::{fs, path::Path};
 
 /// An error that occurred during reading or writing a TOML file.

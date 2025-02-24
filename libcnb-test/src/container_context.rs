@@ -3,7 +3,7 @@ use crate::docker::{
 };
 use crate::log::LogOutput;
 use crate::util::CommandError;
-use crate::{util, ContainerConfig};
+use crate::{ContainerConfig, util};
 use std::net::SocketAddr;
 
 /// Context of a launched container.

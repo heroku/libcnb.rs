@@ -299,7 +299,9 @@ impl LayerEnv {
                 let target_delta = match scope {
                     Scope::Build => &mut result_layer_env.layer_paths_build,
                     Scope::Launch => &mut result_layer_env.layer_paths_launch,
-                    _ => unreachable!("Unexpected Scope in read_from_layer_dir implementation. This is a libcnb implementation error!"),
+                    _ => unreachable!(
+                        "Unexpected Scope in read_from_layer_dir implementation. This is a libcnb implementation error!"
+                    ),
                 };
 
                 target_delta.insert(ModificationBehavior::Prepend, name, path);
@@ -448,7 +450,7 @@ impl LayerEnvDelta {
                 ModificationBehavior::Append => {
                     let mut previous_value = result_env.get(name).cloned().unwrap_or_default();
 
-                    if previous_value.len() > 0 {
+                    if !previous_value.is_empty() {
                         previous_value.push(self.delimiter_for(name));
                     }
 
@@ -470,7 +472,7 @@ impl LayerEnvDelta {
                     result_env.insert(name, new_value);
                 }
                 ModificationBehavior::Delimiter => (),
-            };
+            }
         }
 
         result_env

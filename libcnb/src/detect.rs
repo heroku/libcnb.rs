@@ -1,7 +1,7 @@
 //! Provides detect phase specific types and helpers.
 
-use crate::buildpack::Buildpack;
 use crate::Target;
+use crate::buildpack::Buildpack;
 use crate::{data::build_plan::BuildPlan, data::buildpack::ComponentBuildpackDescriptor};
 use std::fmt::Debug;
 use std::path::PathBuf;

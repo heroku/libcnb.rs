@@ -4,7 +4,7 @@
 // Required due to: https://github.com/rust-lang/rust/issues/95513
 #![allow(unused_crate_dependencies)]
 
-use libcnb_test::{assert_contains, assert_empty, BuildConfig, TestRunner};
+use libcnb_test::{BuildConfig, TestRunner, assert_contains, assert_empty};
 
 #[test]
 #[ignore = "integration test"]

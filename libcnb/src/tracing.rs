@@ -1,17 +1,17 @@
 use futures_core::future::BoxFuture;
 use libcnb_data::buildpack::Buildpack;
 use opentelemetry::{
+    InstrumentationScope, KeyValue,
     global::{self, BoxedSpan},
     trace::{Span as SpanTrait, Status, Tracer, TracerProvider as TracerProviderTrait},
-    InstrumentationScope, KeyValue,
 };
 use opentelemetry_proto::transform::common::tonic::ResourceAttributesWithSchema;
 use opentelemetry_proto::transform::trace::tonic::group_spans_by_resource_and_scope;
 use opentelemetry_sdk::{
+    Resource,
     error::{OTelSdkError, OTelSdkResult},
     trace::SdkTracerProvider,
     trace::SpanExporter,
-    Resource,
 };
 use std::{
     fmt::Debug,
@@ -221,8 +221,10 @@ mod tests {
         assert!(tracing_contents.contains(
             "{\"key\":\"service.name\",\"value\":{\"stringValue\":\"company.com/foo\"}}"
         ));
-        assert!(tracing_contents
-            .contains("{\"key\":\"service.version\",\"value\":{\"stringValue\":\"0.0.99\"}}"));
+        assert!(
+            tracing_contents
+                .contains("{\"key\":\"service.version\",\"value\":{\"stringValue\":\"0.0.99\"}}")
+        );
 
         // Check span name
         assert!(tracing_contents.contains("\"name\":\"company_com_foo-bar\""));
@@ -231,8 +233,10 @@ mod tests {
         assert!(tracing_contents.contains(
             "{\"key\":\"buildpack_id\",\"value\":{\"stringValue\":\"company.com/foo\"}}"
         ));
-        assert!(tracing_contents
-            .contains("{\"key\":\"buildpack_version\",\"value\":{\"stringValue\":\"0.0.99\"}}"));
+        assert!(
+            tracing_contents
+                .contains("{\"key\":\"buildpack_version\",\"value\":{\"stringValue\":\"0.0.99\"}}")
+        );
         assert!(tracing_contents.contains(
                 "{\"key\":\"buildpack_name\",\"value\":{\"stringValue\":\"Foo buildpack for company.com\"}}"
         ));
@@ -247,8 +251,10 @@ mod tests {
         ));
 
         // Check error status
-        assert!(tracing_contents
-            .contains("\"message\":\"Custom { kind: Other, error: \\\"it's broken\\\" }"));
+        assert!(
+            tracing_contents
+                .contains("\"message\":\"Custom { kind: Other, error: \\\"it's broken\\\" }")
+        );
         assert!(tracing_contents.contains("\"code\":2"));
     }
 }

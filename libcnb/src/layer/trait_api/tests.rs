@@ -19,7 +19,7 @@ use crate::layer::{
     ExistingLayerStrategy, Layer, LayerData, LayerResult, LayerResultBuilder, MetadataMigration,
 };
 use crate::layer_env::{LayerEnv, ModificationBehavior, Scope};
-use crate::{read_toml_file, Buildpack, Env, Target, LIBCNB_SUPPORTED_BUILDPACK_API};
+use crate::{Buildpack, Env, LIBCNB_SUPPORTED_BUILDPACK_API, Target, read_toml_file};
 use libcnb_data::buildpack::{BuildpackTarget, BuildpackVersion, ComponentBuildpackDescriptor};
 use libcnb_data::buildpack_plan::BuildpackPlan;
 use libcnb_data::layer_content_metadata::LayerContentMetadata;
@@ -29,7 +29,7 @@ use serde::Serialize;
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
-use tempfile::{tempdir, TempDir};
+use tempfile::{TempDir, tempdir};
 
 const TEST_LAYER_LAUNCH: bool = true;
 const TEST_LAYER_BUILD: bool = true;

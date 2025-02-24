@@ -1,13 +1,13 @@
 pub(crate) mod handling;
 
 // BuildContext is only used in RustDoc (https://github.com/rust-lang/rust/issues/79542)
+use crate::Buildpack;
 #[allow(unused)]
 use crate::build::BuildContext;
-use crate::layer::shared::{replace_layer_exec_d_programs, replace_layer_sboms, WriteLayerError};
+use crate::layer::shared::{WriteLayerError, replace_layer_exec_d_programs, replace_layer_sboms};
 use crate::layer::{LayerError, ReadLayerError};
 use crate::layer_env::LayerEnv;
 use crate::sbom::Sbom;
-use crate::Buildpack;
 use libcnb_data::generic::GenericMetadata;
 use libcnb_data::layer::LayerName;
 use serde::Serialize;

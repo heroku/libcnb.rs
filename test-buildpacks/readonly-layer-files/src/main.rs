@@ -3,7 +3,7 @@ use libcnb::data::layer_name;
 use libcnb::detect::{DetectContext, DetectResult, DetectResultBuilder};
 use libcnb::generic::{GenericMetadata, GenericPlatform};
 use libcnb::layer::{CachedLayerDefinition, InvalidMetadataAction, RestoredLayerAction};
-use libcnb::{buildpack_main, Buildpack};
+use libcnb::{Buildpack, buildpack_main};
 use std::fs;
 use std::fs::Permissions;
 use std::os::unix::fs::PermissionsExt;
