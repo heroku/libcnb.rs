@@ -21,8 +21,8 @@ libcnb-common.workspace = true
 libcnb-data.workspace = true
 libcnb-package.workspace = true
 regex = "1.11.1"
-tempfile = "3.14.0"
-thiserror = "2.0.6"
+tempfile = "3.17.1"
+thiserror = "2.0.11"
 
 [dev-dependencies]
 indoc = "2.0.5"

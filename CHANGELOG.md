@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [0.27.0] - 2025-02-27
+
 ### Changed
 
 - Raised Minimum Supported Rust Version (MSRV) to `1.85`. ([#913](https://github.com/heroku/libcnb.rs/pull/913))
@@ -354,7 +357,8 @@ version number. See the changelog below for other changes.
 
 - Remove support for legacy BOM. Remove `Launch::bom`, `Build::bom`, `bom::Bom`, `bom::Entry`. ([#489](https://github.com/heroku/libcnb.rs/pull/489))
 
-[unreleased]: https://github.com/heroku/libcnb.rs/compare/v0.26.1...HEAD
+[unreleased]: https://github.com/heroku/libcnb.rs/compare/v0.27.0...HEAD
+[0.27.0]: https://github.com/heroku/libcnb.rs/compare/v0.26.1...v0.27.0
 [0.26.1]: https://github.com/heroku/libcnb.rs/compare/v0.26.0...v0.26.1
 [0.26.0]: https://github.com/heroku/libcnb.rs/compare/v0.25.0...v0.26.0
 [0.25.0]: https://github.com/heroku/libcnb.rs/compare/v0.24.0...v0.25.0
