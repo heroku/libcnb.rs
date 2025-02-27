@@ -33,25 +33,25 @@ command = ["write", "dep:crossbeam-utils"]
 write = []
 
 [dependencies]
-crossbeam-utils = { version = "0.8.20", optional = true }
+crossbeam-utils = { version = "0.8.21", optional = true }
 # The default `miniz_oxide` flate2 backend has poor performance in debug/under QEMU:
 # https://github.com/rust-lang/flate2-rs/issues/297
 # Ideally we'd use the fastest `zlib-ng` backend, however it fails to cross-compile:
 # https://github.com/rust-lang/libz-sys/issues/93
 # As such we have to use the next best alternate backend, which is `zlib`.
-flate2 = { version = "1.0.35", default-features = false, features = ["zlib"], optional = true }
+flate2 = { version = "1.1.0", default-features = false, features = ["zlib"], optional = true }
 hex = { version = "0.4.3", optional = true }
 libcnb = { workspace = true, optional = true }
 pathdiff = { version = "0.2.3", optional = true }
-semver = { version = "1.0.23", features = ["serde"], optional = true }
-serde = { version = "1.0.215", features = ["derive"], optional = true }
+semver = { version = "1.0.25", features = ["serde"], optional = true }
+serde = { version = "1.0.218", features = ["derive"], optional = true }
 sha2 = { version = "0.10.8", optional = true }
-tar = { version = "0.4.43", default-features = false, optional = true }
+tar = { version = "0.4.44", default-features = false, optional = true }
 termcolor = { version = "1.4.1", optional = true }
-thiserror = { version = "2.0.6", optional = true }
+thiserror = { version = "2.0.11", optional = true }
 toml = { workspace = true, optional = true }
 ureq = { version = "2.12.1", default-features = false, features = ["tls"], optional = true }
 
 [dev-dependencies]
 serde_test = "1.0.177"
-tempfile = "3.14.0"
+tempfile = "3.17.1"
