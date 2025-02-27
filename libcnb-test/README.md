@@ -136,8 +136,8 @@ fn starting_web_server_container() {
                         &format!("Listening on port {TEST_PORT}")
                     );
 
-                    let response = ureq::get(&url).call().unwrap();
-                    let body = response.into_string().unwrap();
+                    let mut response = ureq::get(&url).call().unwrap();
+                    let body = response.body_mut().read_to_string().unwrap();
                     assert_contains!(body, "Expected response substring");
                 },
             );

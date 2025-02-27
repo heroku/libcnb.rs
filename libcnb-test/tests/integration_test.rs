@@ -473,7 +473,7 @@ fn starting_containers() {
 
                     // Retries needed since the server takes a moment to start up.
                     let mut attempts_remaining = 5;
-                    let response = loop {
+                    let mut response = loop {
                         let response = ureq::get(&url).call();
                         if response.is_ok() || attempts_remaining == 0 {
                             break response;
@@ -483,7 +483,7 @@ fn starting_containers() {
                     }
                     .unwrap();
 
-                    let body = response.into_string().unwrap();
+                    let body = response.body_mut().read_to_string().unwrap();
                     assert_contains!(body, "Directory listing for /");
 
                     let server_log_output = container.logs_now();
