@@ -2,7 +2,7 @@ use futures_core::future::BoxFuture;
 use libcnb_data::buildpack::Buildpack;
 use opentelemetry::{
     InstrumentationScope, KeyValue,
-    global::{self, BoxedSpan},
+    global::{self},
     trace::{Span as SpanTrait, Status, Tracer, TracerProvider as TracerProviderTrait},
 };
 use opentelemetry_proto::transform::trace::tonic::group_spans_by_resource_and_scope;
@@ -21,6 +21,10 @@ use std::{
     path::Path,
     sync::{Arc, Mutex},
 };
+use tracing::{Level, Span, span::Entered};
+use tracing_subscriber::Registry;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::prelude::*;
 
 // This is the directory in which `BuildpackTrace` stores OpenTelemetry File
 // Exports. Services which intend to export the tracing data from libcnb.rs
@@ -33,15 +37,19 @@ const TELEMETRY_EXPORT_ROOT: &str = "/tmp/libcnb-telemetry";
 
 /// Represents an OpenTelemetry tracer provider and single span tracing
 /// a single CNB build or detect phase.
-pub(crate) struct BuildpackTrace {
+pub(crate) struct BuildpackTrace<'a> {
     provider: SdkTracerProvider,
-    span: BoxedSpan,
+    span: Span,
+    span_guard: Entered<'a>,
 }
 
 /// Start an OpenTelemetry trace and span that exports to an
 /// OpenTelemetry file export. The resulting trace provider and span are
 /// enriched with data from the buildpack and the rust environment.
-pub(crate) fn start_trace(buildpack: &Buildpack, phase_name: &'static str) -> BuildpackTrace {
+pub(crate) fn start_trace<'a>(
+    buildpack: &Buildpack,
+    phase_name: &'static str,
+) -> BuildpackTrace<'a> {
     let trace_name = format!(
         "{}-{phase_name}",
         buildpack.id.replace(['/', '.', '-'], "_")
@@ -85,23 +93,33 @@ pub(crate) fn start_trace(buildpack: &Buildpack, phase_name: &'static str) -> Bu
     // Get a tracer identified by the instrumentation scope/library. The libcnb
     // crate name/version seems to map well to the suggestion here:
     // https://opentelemetry.io/docs/specs/otel/trace/api/#get-a-tracer.
-    let tracer = global::tracer_provider().tracer_with_scope(
+    let tracer = provider.tracer_with_scope(
         InstrumentationScope::builder(env!("CARGO_PKG_NAME"))
             .with_version(env!("CARGO_PKG_VERSION"))
             .build(),
     );
 
-    let mut span = tracer.start(trace_name);
-    span.set_attributes([
-        KeyValue::new("buildpack_id", buildpack.id.to_string()),
-        KeyValue::new("buildpack_name", buildpack.name.clone().unwrap_or_default()),
-        KeyValue::new("buildpack_version", buildpack.version.to_string()),
-        KeyValue::new(
-            "buildpack_homepage",
-            buildpack.homepage.clone().unwrap_or_default(),
-        ),
-    ]);
-    BuildpackTrace { provider, span }
+    // Create a tracing layer with the configured tracer
+    let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);
+
+    // Ensure tracing can find the tracer by default
+    Registry::default().with(telemetry).try_init();
+
+    let span = tracing::span!(
+        Level::INFO,
+        "libcnb-{phase_name}",
+        buildpack_id = buildpack.id.to_string(),
+        buildpack_name = buildpack.name.clone().unwrap_or_default(),
+        buildpack_version = buildpack.version.to_string(),
+        buildpack_homepage = buildpack.homepage.clone().unwrap_or_default(),
+    );
+    let span_guard = span.enter();
+
+    BuildpackTrace {
+        provider,
+        span,
+        span_guard,
+    }
 }
 
 impl BuildpackTrace {
