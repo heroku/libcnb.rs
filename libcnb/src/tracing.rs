@@ -5,8 +5,10 @@ use opentelemetry::{
     global::{self, BoxedSpan},
     trace::{Span as SpanTrait, Status, Tracer, TracerProvider as TracerProviderTrait},
 };
-use opentelemetry_proto::transform::common::tonic::ResourceAttributesWithSchema;
 use opentelemetry_proto::transform::trace::tonic::group_spans_by_resource_and_scope;
+use opentelemetry_proto::{
+    tonic::trace::v1::TracesData, transform::common::tonic::ResourceAttributesWithSchema,
+};
 use opentelemetry_sdk::{
     Resource,
     error::{OTelSdkError, OTelSdkResult},
@@ -144,7 +146,9 @@ impl<W: Write + Send + Debug> SpanExporter for FileExporter<W> {
         batch: Vec<opentelemetry_sdk::trace::SpanData>,
     ) -> BoxFuture<'static, OTelSdkResult> {
         let resource = ResourceAttributesWithSchema::from(&self.resource);
-        let data = group_spans_by_resource_and_scope(batch, &resource);
+        let resource_spans = group_spans_by_resource_and_scope(batch, &resource);
+        let data = TracesData { resource_spans };
+
         let mut writer = match self.writer.lock() {
             Ok(f) => f,
             Err(e) => {
@@ -216,6 +220,9 @@ mod tests {
         println!("tracing_contents: {tracing_contents}");
         let _tracing_data: Value = serde_json::from_str(&tracing_contents)
             .expect("Expected tracing export file contents to be valid json");
+
+        // Check top level structure
+        assert!(tracing_contents.contains("{\"resourceSpans\":[{\"resource\":"));
 
         // Check resource attributes
         assert!(tracing_contents.contains(
