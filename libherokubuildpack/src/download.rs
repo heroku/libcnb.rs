@@ -32,7 +32,7 @@ pub fn download_file(
     destination: impl AsRef<std::path::Path>,
 ) -> Result<(), DownloadError> {
     let response = ureq::get(uri.as_ref()).call().map_err(Box::new)?;
-    let mut reader = response.into_reader();
+    let mut reader = response.into_body().into_reader();
     let mut file = fs::File::create(destination.as_ref())?;
     io::copy(&mut reader, &mut file)?;
 

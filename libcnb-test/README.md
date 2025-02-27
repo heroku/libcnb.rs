@@ -3,6 +3,7 @@
 An integration testing framework for Cloud Native Buildpacks written in Rust with [libcnb.rs](https://github.com/heroku/libcnb.rs).
 
 The framework:
+
 - Automatically cross-compiles and packages the buildpack under test
 - Performs a build with specified configuration using `pack build`
 - Supports starting containers using the resultant application image
@@ -16,7 +17,8 @@ Integration tests require the following to be available on the host:
 
 - [Docker](https://docs.docker.com/engine/install/)
 - [Pack CLI](https://buildpacks.io/docs/install-pack/) v0.35.1+
-- [Cross-compilation prerequisites](https://docs.rs/libcnb/latest/libcnb/#cross-compilation-prerequisites) (however `libcnb-cargo` itself is not required)
+- [Cross-compilation prerequisites](https://docs.rs/libcnb/latest/libcnb/#cross-compilation-prerequisites) (however
+  `libcnb-cargo` itself is not required)
 
 Only local Docker daemons are fully supported. As such, if you are using Circle CI you must use the
 [`machine` executor](https://circleci.com/docs/2.0/executor-types/#using-machine) rather than the
@@ -103,7 +105,8 @@ fn run_shell_command() {
 }
 ```
 
-Starting a container using the default process with an exposed port to test a web server, using [`TestContext::start_container`]:
+Starting a container using the default process with an exposed port to test a web server, using [
+`TestContext::start_container`]:
 
 ```rust,no_run
 use libcnb_test::{assert_contains, assert_empty, BuildConfig, ContainerConfig, TestRunner};
@@ -136,8 +139,8 @@ fn starting_web_server_container() {
                         &format!("Listening on port {TEST_PORT}")
                     );
 
-                    let response = ureq::get(&url).call().unwrap();
-                    let body = response.into_string().unwrap();
+                    let mut response = ureq::get(&url).call().unwrap();
+                    let body = response.body_mut().read_to_string().unwrap();
                     assert_contains!(body, "Expected response substring");
                 },
             );
@@ -223,8 +226,13 @@ fn additional_buildpacks() {
 - If you wish to assert against multi-line log output, see the [indoc](https://crates.io/crates/indoc) crate.
 
 [Docs]: https://img.shields.io/docsrs/libcnb-test
+
 [docs.rs]: https://docs.rs/libcnb-test/latest/libcnb_test/
+
 [Latest Version]: https://img.shields.io/crates/v/libcnb-test.svg
+
 [crates.io]: https://crates.io/crates/libcnb-test
+
 [MSRV]: https://img.shields.io/badge/MSRV-rustc_1.76+-lightgray.svg
+
 [install-rust]: https://www.rust-lang.org/tools/install
