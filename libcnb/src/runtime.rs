@@ -6,7 +6,7 @@ use crate::error::Error;
 use crate::platform::Platform;
 use crate::sbom::cnb_sbom_path;
 #[cfg(feature = "trace")]
-use crate::tracing::start_trace;
+use crate::tracing::init_tracing;
 use crate::util::is_not_found_error_kind;
 use crate::{LIBCNB_SUPPORTED_BUILDPACK_API, Target, TomlFileError, exit_code};
 use libcnb_common::toml_file::{read_toml_file, write_toml_file};
@@ -19,6 +19,7 @@ use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::process::exit;
 use std::{env, fs};
+use tracing::Level;
 
 /// Main entry point for this framework.
 ///
@@ -134,12 +135,15 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
         read_buildpack_descriptor()?;
 
     #[cfg(feature = "trace")]
-    let mut trace = start_trace(&buildpack_descriptor.buildpack, "detect");
+    let _trace_guard = init_tracing(&buildpack_descriptor.buildpack, "detect");
+    #[cfg(feature = "trace")]
+    let span = tracing::span!(Level::INFO, "libcnb-detect");
+    #[cfg(feature = "trace")]
+    let _span_guard = span.enter();
 
     #[cfg(feature = "trace")]
-    let mut trace_error = |err: &dyn std::error::Error| {
-        trace.set_error(err);
-    };
+    let trace_error =
+        |error: &dyn std::error::Error| tracing::error!(?error, "libcnb-detect-error");
 
     #[cfg(not(feature = "trace"))]
     let mut trace_error = |_: &dyn std::error::Error| {};
@@ -167,7 +171,7 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
     match detect_result.0 {
         InnerDetectResult::Fail => {
             #[cfg(feature = "trace")]
-            trace.add_event("detect-failed");
+            tracing::event!(Level::INFO, "libcnb-detect-failed");
             Ok(exit_code::DETECT_DETECTION_FAILED)
         }
         InnerDetectResult::Pass { build_plan } => {
@@ -177,7 +181,7 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
                     .inspect_err(|err| trace_error(err))?;
             }
             #[cfg(feature = "trace")]
-            trace.add_event("detect-passed");
+            tracing::event!(Level::INFO, "libcnb-detect-passed");
             Ok(exit_code::DETECT_DETECTION_PASSED)
         }
     }
@@ -202,11 +206,15 @@ pub fn libcnb_runtime_build<B: Buildpack>(
         read_buildpack_descriptor()?;
 
     #[cfg(feature = "trace")]
-    let mut trace = start_trace(&buildpack_descriptor.buildpack, "build");
+    let _trace_guard = init_tracing(&buildpack_descriptor.buildpack, "build");
+    #[cfg(feature = "trace")]
+    let span = tracing::span!(Level::INFO, "libcnb-build");
+    #[cfg(feature = "trace")]
+    let _span_guard = span.enter();
 
     #[cfg(feature = "trace")]
-    let mut trace_error = |err: &dyn std::error::Error| {
-        trace.set_error(err);
+    let trace_error = |error: &dyn std::error::Error| {
+        tracing::error!(?error, "libcnb-build-error");
     };
 
     #[cfg(not(feature = "trace"))]
@@ -282,7 +290,7 @@ pub fn libcnb_runtime_build<B: Buildpack>(
             }
 
             #[cfg(feature = "trace")]
-            trace.add_event("build-success");
+            tracing::event!(Level::INFO, "libcnb-build-success");
             Ok(exit_code::GENERIC_SUCCESS)
         }
     }
