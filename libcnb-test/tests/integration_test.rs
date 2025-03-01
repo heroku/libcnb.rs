@@ -23,7 +23,7 @@ const TEST_PORT: u16 = 12345;
 
 // Note: Since the `libcnb-test` crate isn't a buildpack itself, we can't test a successful
 // build using `BuildpackReference::CurrentCrate` here, but we still have test coverage of it
-// thanks to the integration tests under `examples/` and `test-buildpacks/`.
+// thanks to the integration tests under `examples/` and `test-buildpacks/`.
 
 #[test]
 #[ignore = "integration test"]

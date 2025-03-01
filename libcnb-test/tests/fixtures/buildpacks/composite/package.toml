@@ -8,4 +8,4 @@ uri = "libcnb:libcnb-test/a"
 uri = "libcnb:libcnb-test/b"
 
 [[dependencies]]
-uri = "docker://docker.io/heroku/buildpack-procfile:3.0.1"
+uri = "docker://docker.io/heroku/buildpack-procfile:4.1.0"
