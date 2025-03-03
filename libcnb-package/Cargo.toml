@@ -15,12 +15,12 @@ include = ["src/**/*", "LICENSE", "README.md"]
 workspace = true
 
 [dependencies]
-cargo_metadata = "0.19.1"
+cargo_metadata = "0.19.2"
 ignore = "0.4.23"
 indoc = "2.0.5"
 libcnb-common.workspace = true
 libcnb-data.workspace = true
 petgraph = { version = "0.7.1", default-features = false }
-thiserror = "2.0.11"
+thiserror = "2.0.12"
 uriparse = "0.6.4"
 which = "7.0.2"
