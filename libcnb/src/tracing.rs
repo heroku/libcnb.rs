@@ -21,6 +21,7 @@ use std::{
     path::Path,
     sync::{Arc, Mutex},
 };
+use tracing::Level;
 use tracing_opentelemetry::OpenTelemetryLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -106,6 +107,10 @@ pub(crate) fn init_tracing(buildpack: &Buildpack, phase_name: &'static str) -> B
 
     tracing_subscriber::registry()
         .with(OpenTelemetryLayer::new(tracer))
+        // Filter out noisy trace and debug spans from libraries like ureq
+        .with(tracing_subscriber::filter::LevelFilter::from_level(
+            Level::INFO,
+        ))
         .init();
 
     BuildpackTrace { provider }
