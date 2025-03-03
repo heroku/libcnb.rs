@@ -19,7 +19,6 @@ use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::process::exit;
 use std::{env, fs};
-use tracing::Level;
 
 /// Main entry point for this framework.
 ///
@@ -137,13 +136,13 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
     #[cfg(feature = "trace")]
     let _trace_guard = init_tracing(&buildpack_descriptor.buildpack, "detect");
     #[cfg(feature = "trace")]
-    let _span_guard = tracing::span!(Level::INFO, "libcnb-detect").entered();
+    let _span_guard = tracing::span!(tracing::Level::INFO, "libcnb-detect").entered();
     #[cfg(feature = "trace")]
     let trace_error =
         |error: &dyn std::error::Error| tracing::error!(?error, "libcnb-detect-error");
 
     #[cfg(not(feature = "trace"))]
-    let mut trace_error = |_: &dyn std::error::Error| {};
+    let trace_error = |_: &dyn std::error::Error| {};
 
     let platform = B::Platform::from_path(&args.platform_dir_path)
         .map_err(Error::CannotCreatePlatformFromPath)
@@ -168,7 +167,7 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
     match detect_result.0 {
         InnerDetectResult::Fail => {
             #[cfg(feature = "trace")]
-            tracing::event!(Level::INFO, "libcnb-detect-failed");
+            tracing::event!(tracing::Level::INFO, "libcnb-detect-failed");
             Ok(exit_code::DETECT_DETECTION_FAILED)
         }
         InnerDetectResult::Pass { build_plan } => {
@@ -178,7 +177,7 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
                     .inspect_err(|err| trace_error(err))?;
             }
             #[cfg(feature = "trace")]
-            tracing::event!(Level::INFO, "libcnb-detect-passed");
+            tracing::event!(tracing::Level::INFO, "libcnb-detect-passed");
             Ok(exit_code::DETECT_DETECTION_PASSED)
         }
     }
@@ -205,7 +204,7 @@ pub fn libcnb_runtime_build<B: Buildpack>(
     #[cfg(feature = "trace")]
     let _trace_guard = init_tracing(&buildpack_descriptor.buildpack, "build");
     #[cfg(feature = "trace")]
-    let _span_guard = tracing::span!(Level::INFO, "libcnb-build").entered();
+    let _span_guard = tracing::span!(tracing::Level::INFO, "libcnb-build").entered();
 
     #[cfg(feature = "trace")]
     let trace_error = |error: &dyn std::error::Error| {
@@ -213,7 +212,7 @@ pub fn libcnb_runtime_build<B: Buildpack>(
     };
 
     #[cfg(not(feature = "trace"))]
-    let mut trace_error = |_: &dyn std::error::Error| {};
+    let trace_error = |_: &dyn std::error::Error| {};
 
     let platform = Platform::from_path(&args.platform_dir_path)
         .map_err(Error::CannotCreatePlatformFromPath)
@@ -285,7 +284,7 @@ pub fn libcnb_runtime_build<B: Buildpack>(
             }
 
             #[cfg(feature = "trace")]
-            tracing::event!(Level::INFO, "libcnb-build-success");
+            tracing::event!(tracing::Level::INFO, "libcnb-build-success");
             Ok(exit_code::GENERIC_SUCCESS)
         }
     }
