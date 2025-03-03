@@ -174,13 +174,14 @@ impl<W: Write + Send + Debug> SpanExporter for FileExporter<W> {
 
 #[cfg(test)]
 mod tests {
+
     use super::init_tracing;
     use libcnb_data::{
         buildpack::{Buildpack, BuildpackVersion},
         buildpack_id,
     };
     use serde_json::Value;
-    use std::{collections::HashSet, fs};
+    use std::{collections::HashSet, fs, io::ErrorKind};
     use tracing::Level;
 
     #[test]
@@ -204,7 +205,11 @@ mod tests {
             let span = tracing::span!(Level::INFO, "span-name");
             let _span_guard = span.enter();
             tracing::event!(Level::INFO, "baz-event");
-            tracing::error!(error = "SomeError{}", "it's broken");
+            let err = std::io::Error::new(ErrorKind::Unsupported, "oh no!");
+            tracing::error!(
+                error = &err as &(dyn std::error::Error + 'static),
+                "it's broken"
+            );
         }
         let tracing_contents = fs::read_to_string(telemetry_path)
             .expect("Expected telemetry file to exist, but couldn't read it");
@@ -244,16 +249,13 @@ mod tests {
         assert!(tracing_contents.contains("\"name\":\"baz-event\""));
 
         // Check exception event
-        assert!(tracing_contents.contains("\"name\":\"exception\""));
-        assert!(tracing_contents.contains(
-            "{\"key\":\"exception.message\",\"value\":{\"stringValue\":\"it's broken\"}}"
-        ));
-
-        // Check error status
+        assert!(tracing_contents.contains("\"name\":\"it's broken\""));
         assert!(
             tracing_contents
-                .contains("\"message\":\"Custom { kind: Other, error: \\\"it's broken\\\" }")
+                .contains("{\"key\":\"exception.message\",\"value\":{\"stringValue\":\"oh no!\"}}")
         );
+
+        // Check error status
         assert!(tracing_contents.contains("\"code\":2"));
     }
 }
