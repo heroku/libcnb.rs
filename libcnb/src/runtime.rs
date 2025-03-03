@@ -138,10 +138,11 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
     #[cfg(feature = "trace")]
     let _span_guard = tracing::span!(tracing::Level::INFO, "libcnb-detect").entered();
 
-    let trace_error = |error: &Error<<B as Buildpack>::Error>| {
-        #[cfg(feature = "trace")]
-        tracing::error!(?error, "libcnb-detect-error");
-    };
+    #[cfg(feature = "trace")]
+    let trace_error =
+        |error: &Error<<B as Buildpack>::Error>| tracing::error!(?error, "libcnb-detect-error");
+    #[cfg(not(feature = "trace"))]
+    let trace_error = |_: &Error<<B as Buildpack>::Error>| {};
 
     let platform = B::Platform::from_path(&args.platform_dir_path)
         .map_err(Error::CannotCreatePlatformFromPath)
@@ -202,10 +203,11 @@ pub fn libcnb_runtime_build<B: Buildpack>(
     #[cfg(feature = "trace")]
     let _span_guard = tracing::span!(tracing::Level::INFO, "libcnb-build").entered();
 
-    let trace_error = |error: &Error<<B as Buildpack>::Error>| {
-        #[cfg(feature = "trace")]
-        tracing::error!(?error, "libcnb-build-error");
-    };
+    #[cfg(feature = "trace")]
+    let trace_error =
+        |error: &Error<<B as Buildpack>::Error>| tracing::error!(?error, "libcnb-build-error");
+    #[cfg(not(feature = "trace"))]
+    let trace_error = |_: &Error<<B as Buildpack>::Error>| {};
 
     let platform = Platform::from_path(&args.platform_dir_path)
         .map_err(Error::CannotCreatePlatformFromPath)
