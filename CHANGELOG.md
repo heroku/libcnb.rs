@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - libcnb:
-  - Tracing spans, events, and errors from libcnb.rs are now generated via the `tracing` library. ([#918](https://github.com/heroku/libcnb.rs/pull/918))
+  - Tracing spans, events, and errors from libcnb.rs are now generated via the `tracing` library, and tracing data output has changed. ([#918](https://github.com/heroku/libcnb.rs/pull/918))
 
 ## [0.27.0] - 2025-02-27
 
