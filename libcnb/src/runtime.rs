@@ -6,7 +6,7 @@ use crate::error::Error;
 use crate::platform::Platform;
 use crate::sbom::cnb_sbom_path;
 #[cfg(feature = "trace")]
-use crate::tracing::start_trace;
+use crate::tracing::init_tracing;
 use crate::util::is_not_found_error_kind;
 use crate::{LIBCNB_SUPPORTED_BUILDPACK_API, Target, TomlFileError, exit_code};
 use libcnb_common::toml_file::{read_toml_file, write_toml_file};
@@ -134,23 +134,23 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
         read_buildpack_descriptor()?;
 
     #[cfg(feature = "trace")]
-    let mut trace = start_trace(&buildpack_descriptor.buildpack, "detect");
+    let _trace_guard = init_tracing(&buildpack_descriptor.buildpack, "detect");
+    #[cfg(feature = "trace")]
+    let _span_guard = tracing::span!(tracing::Level::INFO, "libcnb-detect").entered();
 
     #[cfg(feature = "trace")]
-    let mut trace_error = |err: &dyn std::error::Error| {
-        trace.set_error(err);
-    };
-
+    let trace_error =
+        |error: &Error<<B as Buildpack>::Error>| tracing::error!(?error, "libcnb-detect-error");
     #[cfg(not(feature = "trace"))]
-    let mut trace_error = |_: &dyn std::error::Error| {};
+    let trace_error = |_: &Error<<B as Buildpack>::Error>| {};
 
     let platform = B::Platform::from_path(&args.platform_dir_path)
         .map_err(Error::CannotCreatePlatformFromPath)
-        .inspect_err(|err| trace_error(err))?;
+        .inspect_err(trace_error)?;
 
     let build_plan_path = args.build_plan_path;
 
-    let target = context_target().inspect_err(|err| trace_error(err))?;
+    let target = context_target().inspect_err(trace_error)?;
 
     let detect_context = DetectContext {
         app_dir,
@@ -160,24 +160,22 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
         buildpack_descriptor,
     };
 
-    let detect_result = buildpack
-        .detect(detect_context)
-        .inspect_err(|err| trace_error(err))?;
+    let detect_result = buildpack.detect(detect_context).inspect_err(trace_error)?;
 
     match detect_result.0 {
         InnerDetectResult::Fail => {
             #[cfg(feature = "trace")]
-            trace.add_event("detect-failed");
+            tracing::event!(tracing::Level::INFO, "libcnb-detect-failed");
             Ok(exit_code::DETECT_DETECTION_FAILED)
         }
         InnerDetectResult::Pass { build_plan } => {
             if let Some(build_plan) = build_plan {
                 write_toml_file(&build_plan, build_plan_path)
                     .map_err(Error::CannotWriteBuildPlan)
-                    .inspect_err(|err| trace_error(err))?;
+                    .inspect_err(trace_error)?;
             }
             #[cfg(feature = "trace")]
-            trace.add_event("detect-passed");
+            tracing::event!(tracing::Level::INFO, "libcnb-detect-passed");
             Ok(exit_code::DETECT_DETECTION_PASSED)
         }
     }
@@ -187,7 +185,6 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
 ///
 /// Exposed only to allow for advanced use-cases where build is programmatically invoked.
 #[doc(hidden)]
-#[allow(clippy::too_many_lines)]
 pub fn libcnb_runtime_build<B: Buildpack>(
     buildpack: &B,
     args: BuildArgs,
@@ -202,32 +199,32 @@ pub fn libcnb_runtime_build<B: Buildpack>(
         read_buildpack_descriptor()?;
 
     #[cfg(feature = "trace")]
-    let mut trace = start_trace(&buildpack_descriptor.buildpack, "build");
+    let _trace_guard = init_tracing(&buildpack_descriptor.buildpack, "build");
+    #[cfg(feature = "trace")]
+    let _span_guard = tracing::span!(tracing::Level::INFO, "libcnb-build").entered();
 
     #[cfg(feature = "trace")]
-    let mut trace_error = |err: &dyn std::error::Error| {
-        trace.set_error(err);
-    };
-
+    let trace_error =
+        |error: &Error<<B as Buildpack>::Error>| tracing::error!(?error, "libcnb-build-error");
     #[cfg(not(feature = "trace"))]
-    let mut trace_error = |_: &dyn std::error::Error| {};
+    let trace_error = |_: &Error<<B as Buildpack>::Error>| {};
 
     let platform = Platform::from_path(&args.platform_dir_path)
         .map_err(Error::CannotCreatePlatformFromPath)
-        .inspect_err(|err| trace_error(err))?;
+        .inspect_err(trace_error)?;
 
     let buildpack_plan = read_toml_file(&args.buildpack_plan_path)
         .map_err(Error::CannotReadBuildpackPlan)
-        .inspect_err(|err| trace_error(err))?;
+        .inspect_err(trace_error)?;
 
     let store = match read_toml_file::<Store>(layers_dir.join("store.toml")) {
         Err(TomlFileError::IoError(io_error)) if is_not_found_error_kind(&io_error) => Ok(None),
         other => other.map(Some),
     }
     .map_err(Error::CannotReadStore)
-    .inspect_err(|err| trace_error(err))?;
+    .inspect_err(trace_error)?;
 
-    let target = context_target().inspect_err(|err| trace_error(err))?;
+    let target = context_target().inspect_err(trace_error)?;
 
     let build_context = BuildContext {
         layers_dir: layers_dir.clone(),
@@ -240,9 +237,7 @@ pub fn libcnb_runtime_build<B: Buildpack>(
         store,
     };
 
-    let build_result = buildpack
-        .build(build_context)
-        .inspect_err(|err| trace_error(err))?;
+    let build_result = buildpack.build(build_context).inspect_err(trace_error)?;
 
     match build_result.0 {
         InnerBuildResult::Pass {
@@ -254,13 +249,13 @@ pub fn libcnb_runtime_build<B: Buildpack>(
             if let Some(launch) = launch {
                 write_toml_file(&launch, layers_dir.join("launch.toml"))
                     .map_err(Error::CannotWriteLaunch)
-                    .inspect_err(|err| trace_error(err))?;
+                    .inspect_err(trace_error)?;
             }
 
             if let Some(store) = store {
                 write_toml_file(&store, layers_dir.join("store.toml"))
                     .map_err(Error::CannotWriteStore)
-                    .inspect_err(|err| trace_error(err))?;
+                    .inspect_err(trace_error)?;
             }
 
             for build_sbom in build_sboms {
@@ -269,7 +264,7 @@ pub fn libcnb_runtime_build<B: Buildpack>(
                     &build_sbom.data,
                 )
                 .map_err(Error::CannotWriteBuildSbom)
-                .inspect_err(|err| trace_error(err))?;
+                .inspect_err(trace_error)?;
             }
 
             for launch_sbom in launch_sboms {
@@ -278,11 +273,11 @@ pub fn libcnb_runtime_build<B: Buildpack>(
                     &launch_sbom.data,
                 )
                 .map_err(Error::CannotWriteLaunchSbom)
-                .inspect_err(|err| trace_error(err))?;
+                .inspect_err(trace_error)?;
             }
 
             #[cfg(feature = "trace")]
-            trace.add_event("build-success");
+            tracing::event!(tracing::Level::INFO, "libcnb-build-success");
             Ok(exit_code::GENERIC_SUCCESS)
         }
     }

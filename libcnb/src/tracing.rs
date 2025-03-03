@@ -2,8 +2,8 @@ use futures_core::future::BoxFuture;
 use libcnb_data::buildpack::Buildpack;
 use opentelemetry::{
     InstrumentationScope, KeyValue,
-    global::{self, BoxedSpan},
-    trace::{Span as SpanTrait, Status, Tracer, TracerProvider as TracerProviderTrait},
+    global::{self},
+    trace::TracerProvider as TracerProviderTrait,
 };
 use opentelemetry_proto::transform::trace::tonic::group_spans_by_resource_and_scope;
 use opentelemetry_proto::{
@@ -21,6 +21,9 @@ use std::{
     path::Path,
     sync::{Arc, Mutex},
 };
+use tracing::Level;
+use tracing_opentelemetry::OpenTelemetryLayer;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 // This is the directory in which `BuildpackTrace` stores OpenTelemetry File
 // Exports. Services which intend to export the tracing data from libcnb.rs
@@ -31,17 +34,16 @@ use std::{
 #[cfg(target_family = "unix")]
 const TELEMETRY_EXPORT_ROOT: &str = "/tmp/libcnb-telemetry";
 
-/// Represents an OpenTelemetry tracer provider and single span tracing
+/// Represents an OpenTelemetry tracer provider configured for
 /// a single CNB build or detect phase.
 pub(crate) struct BuildpackTrace {
     provider: SdkTracerProvider,
-    span: BoxedSpan,
 }
 
 /// Start an OpenTelemetry trace and span that exports to an
 /// OpenTelemetry file export. The resulting trace provider and span are
 /// enriched with data from the buildpack and the rust environment.
-pub(crate) fn start_trace(buildpack: &Buildpack, phase_name: &'static str) -> BuildpackTrace {
+pub(crate) fn init_tracing(buildpack: &Buildpack, phase_name: &'static str) -> BuildpackTrace {
     let trace_name = format!(
         "{}-{phase_name}",
         buildpack.id.replace(['/', '.', '-'], "_")
@@ -53,6 +55,16 @@ pub(crate) fn start_trace(buildpack: &Buildpack, phase_name: &'static str) -> Bu
         let _ = std::fs::create_dir_all(parent_dir);
     }
 
+    let bp_attributes = [
+        KeyValue::new("buildpack_id", buildpack.id.to_string()),
+        KeyValue::new("buildpack_name", buildpack.name.clone().unwrap_or_default()),
+        KeyValue::new("buildpack_version", buildpack.version.to_string()),
+        KeyValue::new(
+            "buildpack_homepage",
+            buildpack.homepage.clone().unwrap_or_default(),
+        ),
+    ];
+
     let resource = Resource::builder()
         // Define a resource that defines the trace provider.
         // The buildpack name/version seems to map well to the suggestion here
@@ -61,6 +73,7 @@ pub(crate) fn start_trace(buildpack: &Buildpack, phase_name: &'static str) -> Bu
             KeyValue::new("service.name", buildpack.id.to_string()),
             KeyValue::new("service.version", buildpack.version.to_string()),
         ])
+        .with_attributes(bp_attributes.clone())
         .build();
 
     let provider_builder = SdkTracerProvider::builder().with_resource(resource.clone());
@@ -85,41 +98,26 @@ pub(crate) fn start_trace(buildpack: &Buildpack, phase_name: &'static str) -> Bu
     // Get a tracer identified by the instrumentation scope/library. The libcnb
     // crate name/version seems to map well to the suggestion here:
     // https://opentelemetry.io/docs/specs/otel/trace/api/#get-a-tracer.
-    let tracer = global::tracer_provider().tracer_with_scope(
+    let tracer = provider.tracer_with_scope(
         InstrumentationScope::builder(env!("CARGO_PKG_NAME"))
             .with_version(env!("CARGO_PKG_VERSION"))
+            .with_attributes(bp_attributes)
             .build(),
     );
 
-    let mut span = tracer.start(trace_name);
-    span.set_attributes([
-        KeyValue::new("buildpack_id", buildpack.id.to_string()),
-        KeyValue::new("buildpack_name", buildpack.name.clone().unwrap_or_default()),
-        KeyValue::new("buildpack_version", buildpack.version.to_string()),
-        KeyValue::new(
-            "buildpack_homepage",
-            buildpack.homepage.clone().unwrap_or_default(),
-        ),
-    ]);
-    BuildpackTrace { provider, span }
-}
+    tracing_subscriber::registry()
+        .with(OpenTelemetryLayer::new(tracer))
+        // Filter out noisy trace and debug spans from libraries like ureq
+        .with(tracing_subscriber::filter::LevelFilter::from_level(
+            Level::INFO,
+        ))
+        .init();
 
-impl BuildpackTrace {
-    /// Set the status for the underlying span to error, and record
-    /// an exception on the span.
-    pub(crate) fn set_error(&mut self, err: &dyn std::error::Error) {
-        self.span.set_status(Status::error(format!("{err:?}")));
-        self.span.record_error(err);
-    }
-    /// Add a named event to the underlying span.
-    pub(crate) fn add_event(&mut self, name: &'static str) {
-        self.span.add_event(name, Vec::new());
-    }
+    BuildpackTrace { provider }
 }
 
 impl Drop for BuildpackTrace {
     fn drop(&mut self) {
-        self.span.end();
         self.provider.force_flush().ok();
         self.provider.shutdown().ok();
     }
@@ -181,17 +179,15 @@ impl<W: Write + Send + Debug> SpanExporter for FileExporter<W> {
 
 #[cfg(test)]
 mod tests {
-    use super::start_trace;
+
+    use super::init_tracing;
     use libcnb_data::{
         buildpack::{Buildpack, BuildpackVersion},
         buildpack_id,
     };
     use serde_json::Value;
-    use std::{
-        collections::HashSet,
-        fs,
-        io::{Error, ErrorKind},
-    };
+    use std::{collections::HashSet, fs, io::ErrorKind};
+    use tracing::Level;
 
     #[test]
     fn test_tracing() {
@@ -210,9 +206,14 @@ mod tests {
         _ = fs::remove_file(telemetry_path);
 
         {
-            let mut trace = start_trace(&buildpack, "bar");
-            trace.add_event("baz-event");
-            trace.set_error(&Error::new(ErrorKind::Other, "it's broken"));
+            let _trace_guard = init_tracing(&buildpack, "bar");
+            let _span_guard = tracing::span!(Level::INFO, "span-name").entered();
+            tracing::event!(Level::INFO, "baz-event");
+            let err = std::io::Error::new(ErrorKind::Unsupported, "oh no!");
+            tracing::error!(
+                error = &err as &(dyn std::error::Error + 'static),
+                "it's broken"
+            );
         }
         let tracing_contents = fs::read_to_string(telemetry_path)
             .expect("Expected telemetry file to exist, but couldn't read it");
@@ -234,7 +235,7 @@ mod tests {
         );
 
         // Check span name
-        assert!(tracing_contents.contains("\"name\":\"company_com_foo-bar\""));
+        assert!(tracing_contents.contains("\"name\":\"span-name\""));
 
         // Check span attributes
         assert!(tracing_contents.contains(
@@ -252,16 +253,13 @@ mod tests {
         assert!(tracing_contents.contains("\"name\":\"baz-event\""));
 
         // Check exception event
-        assert!(tracing_contents.contains("\"name\":\"exception\""));
-        assert!(tracing_contents.contains(
-            "{\"key\":\"exception.message\",\"value\":{\"stringValue\":\"it's broken\"}}"
-        ));
-
-        // Check error status
+        assert!(tracing_contents.contains("\"name\":\"it's broken\""));
         assert!(
             tracing_contents
-                .contains("\"message\":\"Custom { kind: Other, error: \\\"it's broken\\\" }")
+                .contains("{\"key\":\"exception.message\",\"value\":{\"stringValue\":\"oh no!\"}}")
         );
+
+        // Check error status
         assert!(tracing_contents.contains("\"code\":2"));
     }
 }

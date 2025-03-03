@@ -27,7 +27,7 @@ fn test_tracing_export_file() {
     TestRunner::default().build(&build_config, |context| {
         // Ensure expected span names for detect and build phases are present
         // in the file export contents.
-        assert_contains!(context.pack_stdout, "libcnb_test_buildpacks_tracing-detect");
-        assert_contains!(context.pack_stdout, "libcnb_test_buildpacks_tracing-build");
+        assert_contains!(context.pack_stdout, "libcnb-detect");
+        assert_contains!(context.pack_stdout, "libcnb-build");
     });
 }

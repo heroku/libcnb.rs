@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- libcnb:
+  - The `tracing` crate is now setup for OTLP File Exports. Buildpacks using `tracing` will inherit tracing context from `libcnb.rs`. ([#918](https://github.com/heroku/libcnb.rs/pull/918))
+
+### Changed
+
+- libcnb:
+  - Tracing spans, events, and errors from libcnb.rs are now generated via the `tracing` library, and tracing data output has changed. ([#918](https://github.com/heroku/libcnb.rs/pull/918))
 
 ## [0.27.0] - 2025-02-27
 
@@ -274,7 +283,7 @@ Highlight of this release is the bump to [Buildpack API 0.9](https://github.com/
 ### Changed
 
 - Update `toml` to `0.7.1`. If your buildpack interacts with TOML data directly, you probably want to bump
-the `toml` version in your buildpack as well. ([#556](https://github.com/heroku/libcnb.rs/pull/556))
+  the `toml` version in your buildpack as well. ([#556](https://github.com/heroku/libcnb.rs/pull/556))
 
 ## [0.11.4] - 2023-01-11
 
