@@ -202,8 +202,7 @@ mod tests {
 
         {
             let _trace_guard = init_tracing(&buildpack, "bar");
-            let span = tracing::span!(Level::INFO, "span-name");
-            let _span_guard = span.enter();
+            let _span_guard = tracing::span!(Level::INFO, "span-name").entered();
             tracing::event!(Level::INFO, "baz-event");
             let err = std::io::Error::new(ErrorKind::Unsupported, "oh no!");
             tracing::error!(

@@ -137,10 +137,7 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
     #[cfg(feature = "trace")]
     let _trace_guard = init_tracing(&buildpack_descriptor.buildpack, "detect");
     #[cfg(feature = "trace")]
-    let span = tracing::span!(Level::INFO, "libcnb-detect");
-    #[cfg(feature = "trace")]
-    let _span_guard = span.enter();
-
+    let _span_guard = tracing::span!(Level::INFO, "libcnb-detect").entered();
     #[cfg(feature = "trace")]
     let trace_error =
         |error: &dyn std::error::Error| tracing::error!(?error, "libcnb-detect-error");
@@ -208,9 +205,7 @@ pub fn libcnb_runtime_build<B: Buildpack>(
     #[cfg(feature = "trace")]
     let _trace_guard = init_tracing(&buildpack_descriptor.buildpack, "build");
     #[cfg(feature = "trace")]
-    let span = tracing::span!(Level::INFO, "libcnb-build");
-    #[cfg(feature = "trace")]
-    let _span_guard = span.enter();
+    let _span_guard = tracing::span!(Level::INFO, "libcnb-build").entered();
 
     #[cfg(feature = "trace")]
     let trace_error = |error: &dyn std::error::Error| {
