@@ -108,8 +108,8 @@ pub enum CrossCompileAssistance {
 }
 
 // Constants for supported target triples
-const AARCH64_UNKNOWN_LINUX_MUSL: &str = "aarch64-unknown-linux-musl";
-const X86_64_UNKNOWN_LINUX_MUSL: &str = "x86_64-unknown-linux-musl";
+pub const AARCH64_UNKNOWN_LINUX_MUSL: &str = "aarch64-unknown-linux-musl";
+pub const X86_64_UNKNOWN_LINUX_MUSL: &str = "x86_64-unknown-linux-musl";
 
 // Constants for `std::env::consts::OS` and `std::env::consts::ARCH`
 const OS_LINUX: &str = "linux";

@@ -108,6 +108,7 @@ impl TestRunner {
             &docker_resources.image_name,
             &docker_resources.build_cache_volume_name,
             &docker_resources.launch_cache_volume_name,
+            &config.platform,
         );
 
         config.env.iter().for_each(|(key, value)| {

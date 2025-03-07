@@ -15,6 +15,7 @@ pub(crate) struct PackBuildCommand {
     pull_policy: PullPolicy,
     trust_builder: bool,
     trust_extra_buildpacks: bool,
+    platform: String,
 }
 
 #[derive(Clone, Debug)]
@@ -54,6 +55,7 @@ impl PackBuildCommand {
         image_name: impl Into<String>,
         build_cache_volume_name: impl Into<String>,
         launch_cache_volume_name: impl Into<String>,
+        platform: impl Into<String>,
     ) -> Self {
         Self {
             build_cache_volume_name: build_cache_volume_name.into(),
@@ -67,6 +69,7 @@ impl PackBuildCommand {
             pull_policy: PullPolicy::IfNotPresent,
             trust_builder: true,
             trust_extra_buildpacks: true,
+            platform: platform.into(),
         }
     }
 
@@ -102,6 +105,8 @@ impl From<PackBuildCommand> for Command {
             ),
             "--path",
             &pack_build_command.path.to_string_lossy(),
+            "--platform",
+            &pack_build_command.platform,
             "--pull-policy",
             match pack_build_command.pull_policy {
                 PullPolicy::Always => "always",
@@ -195,6 +200,7 @@ mod tests {
             pull_policy: PullPolicy::IfNotPresent,
             trust_builder: true,
             trust_extra_buildpacks: true,
+            platform: String::from("linux/amd64"),
         };
 
         let command: Command = input.clone().into();
@@ -214,6 +220,8 @@ mod tests {
                 "type=launch;format=volume;name=launch-cache-volume",
                 "--path",
                 "/tmp/foo/bar",
+                "--platform",
+                "linux/amd64",
                 "--pull-policy",
                 "if-not-present",
                 "--buildpack",
