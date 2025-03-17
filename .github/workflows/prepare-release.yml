@@ -13,6 +13,9 @@ on:
           - minor
           - patch
 
+# Disable all GITHUB_TOKEN permissions, since the GitHub App token is used instead.
+permissions: {}
+
 env:
   CARGO_TERM_COLOR: always
 
