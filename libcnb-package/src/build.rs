@@ -5,6 +5,7 @@ use crate::cargo::{
 };
 use cargo_metadata::Metadata;
 use std::collections::HashMap;
+use std::env;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus};
@@ -104,6 +105,11 @@ fn build_binary(
     target_name: impl AsRef<str>,
 ) -> Result<PathBuf, BuildError> {
     let mut cargo_args = vec!["build", "--target", target_triple.as_ref()];
+
+    if env::var_os("CI").is_some() {
+        cargo_args.push("--locked");
+    }
+
     match cargo_profile {
         CargoProfile::Dev => {
             // We enable stripping for dev builds too, since debug builds are extremely

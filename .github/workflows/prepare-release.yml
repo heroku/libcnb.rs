@@ -47,7 +47,7 @@ jobs:
         uses: Swatinem/rust-cache@f0deed1e0edfc6a9be95417288c0e1099b1eeec3 # v2.7.7
 
       - name: Install cargo-edit
-        run: cargo install cargo-edit
+        run: cargo install --locked cargo-edit
 
       - name: Record old crate version
         id: old-version
