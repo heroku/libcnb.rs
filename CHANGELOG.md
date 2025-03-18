@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- libcnb-package:
+  - The `cargo build` command used when packing the buildpack is now run using `--locked` when the `CI` env var is set. ([#924](https://github.com/heroku/libcnb.rs/pull/924))
 
 ## [0.28.0] - 2025-03-03
 
