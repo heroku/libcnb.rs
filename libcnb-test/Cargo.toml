@@ -21,10 +21,10 @@ libcnb-common.workspace = true
 libcnb-data.workspace = true
 libcnb-package.workspace = true
 regex = "1.11.1"
-tempfile = "3.17.1"
+tempfile = "3.19.1"
 thiserror = "2.0.12"
 
 [dev-dependencies]
-indoc = "2.0.5"
+indoc = "2.0.6"
 libcnb.workspace = true
-ureq = { version = "3.0.8", default-features = false }
+ureq = { version = "3.0.10", default-features = false }
