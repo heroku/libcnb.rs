@@ -155,6 +155,7 @@ impl<W: Write + Send + Debug> SpanExporter for FileExporter<W> {
                 ))));
             }
         };
+
         Box::pin(std::future::ready(
             serde_json::to_writer(writer.get_mut(), &data)
                 .map_err(|e| OTelSdkError::InternalFailure(e.to_string())),
@@ -261,5 +262,8 @@ mod tests {
 
         // Check error status
         assert!(tracing_contents.contains("\"code\":2"));
+
+        // Ensure tracing ends with a newline
+        assert!(tracing_contents.ends_with("\n"));
     }
 }
