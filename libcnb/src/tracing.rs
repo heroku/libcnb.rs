@@ -265,6 +265,6 @@ mod tests {
         assert!(tracing_contents.contains("\"code\":2"));
 
         // Ensure tracing ends with a newline
-        assert!(tracing_contents.ends_with("\n"));
+        assert!(tracing_contents.ends_with('\n'));
     }
 }
