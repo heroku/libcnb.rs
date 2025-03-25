@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- libcnb:
+  - OTLP File Exports are now correctly newline-separated. ([#926](https://github.com/heroku/libcnb.rs/pull/926))
 - libcnb-package:
   - The `cargo build` command used when packing the buildpack is now run using `--locked` when the `CI` env var is set. ([#925](https://github.com/heroku/libcnb.rs/pull/925))
 
