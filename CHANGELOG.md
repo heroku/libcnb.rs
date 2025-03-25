@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [0.28.1] - 2025-03-25
+
 ### Changed
 
 - libcnb:
@@ -375,7 +378,8 @@ version number. See the changelog below for other changes.
 
 - Remove support for legacy BOM. Remove `Launch::bom`, `Build::bom`, `bom::Bom`, `bom::Entry`. ([#489](https://github.com/heroku/libcnb.rs/pull/489))
 
-[unreleased]: https://github.com/heroku/libcnb.rs/compare/v0.28.0...HEAD
+[unreleased]: https://github.com/heroku/libcnb.rs/compare/v0.28.1...HEAD
+[0.28.1]: https://github.com/heroku/libcnb.rs/compare/v0.28.0...v0.28.1
 [0.28.0]: https://github.com/heroku/libcnb.rs/compare/v0.27.0...v0.28.0
 [0.27.0]: https://github.com/heroku/libcnb.rs/compare/v0.26.1...v0.27.0
 [0.26.1]: https://github.com/heroku/libcnb.rs/compare/v0.26.0...v0.26.1
