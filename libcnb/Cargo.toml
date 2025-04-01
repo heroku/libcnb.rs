@@ -45,7 +45,7 @@ serde = { version = "1.0.219", features = ["derive"] }
 serde_json = { version = "1.0.140", optional = true }
 thiserror = "2.0.12"
 tracing = { version = "0.1", optional = true }
-tracing-opentelemetry = { version = "0.29", optional = true }
+tracing-opentelemetry = { version = "0.30", optional = true }
 tracing-subscriber = { version = "0.3", optional = true }
 toml.workspace = true
 
