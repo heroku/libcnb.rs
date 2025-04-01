@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.28.2] - 2025-04-01
+
+### Changed
+
+- CODEOWNERS metadata added. ([#933](https://github.com/heroku/libcnb.rs/pull/933))
 
 ## [0.28.1] - 2025-03-25
 
