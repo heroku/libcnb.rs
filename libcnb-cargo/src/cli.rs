@@ -24,8 +24,8 @@ pub(crate) struct PackageArgs {
     #[arg(long)]
     pub(crate) release: bool,
     /// Build for the target triple
-    #[arg(long, default_value = "x86_64-unknown-linux-musl")]
-    pub(crate) target: String,
+    #[arg(long)]
+    pub(crate) target: Option<String>,
     /// Directory for packaged buildpacks, defaults to 'packaged' in Cargo workspace root
     #[arg(long)]
     pub(crate) package_dir: Option<PathBuf>,
