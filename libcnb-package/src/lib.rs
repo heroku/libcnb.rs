@@ -9,7 +9,6 @@ pub mod dependency_graph;
 pub mod output;
 pub mod package;
 pub mod package_descriptor;
-pub mod target_platform;
 pub mod util;
 
 use crate::build::BuildpackBinaries;

@@ -8,7 +8,6 @@ use libcnb_package::cross_compile::{
 };
 use libcnb_package::dependency_graph::get_dependencies;
 use libcnb_package::output::create_packaged_buildpack_dir_resolver;
-use libcnb_package::target_platform::{TargetArch, TargetPlatform};
 use libcnb_package::util::absolutize_path;
 use libcnb_package::{CargoProfile, find_cargo_workspace_root_dir};
 use std::collections::BTreeMap;
@@ -26,11 +25,8 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<(), Error> {
     };
 
     let target_triple = match &args.target {
-        Some(target) => target,
-        None => match TargetPlatform::default().arch {
-            TargetArch::Amd64 => X86_64_UNKNOWN_LINUX_MUSL,
-            TargetArch::Arm64 => AARCH64_UNKNOWN_LINUX_MUSL,
-        },
+        Some(target) => target.to_string(),
+        None => determine_target_triple_from_host_arch()?,
     };
 
     let workspace_root_path =
@@ -49,13 +45,13 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<(), Error> {
         .map_err(|error| Error::CannotCreatePackageDirectory(package_dir.clone(), error))?;
 
     let buildpack_dir_resolver =
-        create_packaged_buildpack_dir_resolver(&package_dir, cargo_profile, target_triple);
+        create_packaged_buildpack_dir_resolver(&package_dir, cargo_profile, &target_triple);
 
     eprintln!("🖥️ Gathering Cargo configuration (for {target_triple})");
     let cargo_build_env = if args.no_cross_compile_assistance {
         Vec::new()
     } else {
-        match cross_compile_assistance(target_triple) {
+        match cross_compile_assistance(&target_triple) {
             CrossCompileAssistance::Configuration { cargo_env } => cargo_env,
             CrossCompileAssistance::NoAssistance => {
                 eprintln!(
@@ -121,7 +117,7 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<(), Error> {
         libcnb_package::package::package_buildpack(
             &node.path,
             cargo_profile,
-            target_triple,
+            &target_triple,
             &cargo_build_env,
             &buildpack_destination_dir,
             &packaged_buildpack_dirs,
@@ -205,4 +201,15 @@ fn calculate_dir_size(path: impl AsRef<Path>) -> std::io::Result<u64> {
     }
 
     Ok(size_in_bytes)
+}
+
+// NOTE: The target OS is always assumed to be linux based
+fn determine_target_triple_from_host_arch() -> Result<String, Error> {
+    match std::env::consts::ARCH {
+        "amd64" | "x86_64" => Ok(X86_64_UNKNOWN_LINUX_MUSL.to_string()),
+        "arm64" | "aarch64" => Ok(AARCH64_UNKNOWN_LINUX_MUSL.to_string()),
+        arch => Err(Error::CouldNotDetermineDefaultTargetForArch(
+            arch.to_string(),
+        )),
+    }
 }

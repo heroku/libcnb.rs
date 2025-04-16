@@ -4,7 +4,6 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 pub use libcnb_package::CargoProfile;
-use libcnb_package::target_platform::TargetPlatform;
 
 /// Configuration for a test.
 #[derive(Clone)]
@@ -17,7 +16,6 @@ pub struct BuildConfig {
     pub(crate) env: HashMap<String, String>,
     pub(crate) app_dir_preprocessor: Option<Rc<dyn Fn(PathBuf)>>,
     pub(crate) expected_pack_result: PackResult,
-    pub(crate) platform: TargetPlatform,
 }
 
 impl BuildConfig {
@@ -43,7 +41,6 @@ impl BuildConfig {
             app_dir: PathBuf::from(app_dir.as_ref()),
             cargo_profile: CargoProfile::Dev,
             target_triple: String::from("x86_64-unknown-linux-musl"),
-            platform: TargetPlatform::default(),
             builder_name: builder_name.into(),
             buildpacks: vec![BuildpackReference::CurrentCrate],
             env: HashMap::new(),
@@ -116,11 +113,6 @@ impl BuildConfig {
     /// ```
     pub fn target_triple(&mut self, target_triple: impl Into<String>) -> &mut Self {
         self.target_triple = target_triple.into();
-        self
-    }
-
-    pub fn platform(&mut self, platform: impl Into<TargetPlatform>) -> &mut Self {
-        self.platform = platform.into();
         self
     }
 
