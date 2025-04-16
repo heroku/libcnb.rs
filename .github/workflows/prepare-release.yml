@@ -13,6 +13,9 @@ on:
           - minor
           - patch
 
+# Disable all GITHUB_TOKEN permissions, since the GitHub App token is used instead.
+permissions: {}
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -41,10 +44,10 @@ jobs:
         run: rustup update
 
       - name: Rust Cache
-        uses: Swatinem/rust-cache@v2.7.7
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
 
       - name: Install cargo-edit
-        run: cargo install cargo-edit
+        run: cargo install --locked cargo-edit
 
       - name: Record old crate version
         id: old-version
@@ -79,7 +82,7 @@ jobs:
     
       - name: Create pull request
         id: pr
-        uses: peter-evans/create-pull-request@v7.0.7
+        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.8
         with:
           token: ${{ steps.generate-token.outputs.token }}
           title: Prepare release v${{ steps.new-version.outputs.version }}

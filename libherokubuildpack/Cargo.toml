@@ -43,15 +43,15 @@ flate2 = { version = "1.1.0", default-features = false, features = ["zlib"], opt
 hex = { version = "0.4.3", optional = true }
 libcnb = { workspace = true, optional = true }
 pathdiff = { version = "0.2.3", optional = true }
-semver = { version = "1.0.25", features = ["serde"], optional = true }
-serde = { version = "1.0.218", features = ["derive"], optional = true }
+semver = { version = "1.0.26", features = ["serde"], optional = true }
+serde = { version = "1.0.219", features = ["derive"], optional = true }
 sha2 = { version = "0.10.8", optional = true }
 tar = { version = "0.4.44", default-features = false, optional = true }
 termcolor = { version = "1.4.1", optional = true }
 thiserror = { version = "2.0.12", optional = true }
 toml = { workspace = true, optional = true }
-ureq = { version = "3.0.8", default-features = false, features = ["rustls"], optional = true }
+ureq = { version = "3.0.10", default-features = false, features = ["rustls"], optional = true }
 
 [dev-dependencies]
 serde_test = "1.0.177"
-tempfile = "3.17.1"
+tempfile = "3.19.1"

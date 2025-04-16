@@ -12,6 +12,7 @@ updates:
       opentelemetry:
         patterns:
           - "opentelemetry*"
+          - "tracing-opentelemetry"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -20,3 +21,8 @@ updates:
       - "dependencies"
       - "github actions"
       - "skip changelog"
+    groups:
+      github-actions:
+        update-types:
+          - "minor"
+          - "patch"
