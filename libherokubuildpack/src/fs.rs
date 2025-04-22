@@ -1,5 +1,4 @@
 use std::fs;
-use std::io::ErrorKind;
 use std::path::Path;
 
 /// Moves all contents of a directory into another directory, leaving `src_dir` empty.
@@ -30,7 +29,7 @@ pub fn move_directory_contents(
     for dir_entry in fs::read_dir(src_dir.as_ref())? {
         let dir_entry = dir_entry?;
         let relative_path = pathdiff::diff_paths(dir_entry.path(), src_dir.as_ref())
-            .ok_or_else(|| std::io::Error::new(ErrorKind::Other, "std::fs::read_dir unexpectedly returned an entry that is not in the directory that was read."))?;
+            .ok_or_else(|| std::io::Error::other("std::fs::read_dir unexpectedly returned an entry that is not in the directory that was read."))?;
 
         fs::rename(dir_entry.path(), dst_dir.as_ref().join(relative_path))?;
     }
