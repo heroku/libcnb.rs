@@ -606,6 +606,7 @@ const PATH_LIST_SEPARATOR: &str = ";";
 mod tests {
     use std::cmp::Ordering;
     use std::collections::HashMap;
+    use std::ffi::{OsStr, OsString};
     use std::fs;
 
     use tempfile::tempdir;
@@ -897,6 +898,35 @@ mod tests {
         assert_eq!(env.get("LIBRARY_PATH"), None);
         assert_eq!(env.get("CPATH"), None);
         assert_eq!(env.get("PKG_CONFIG_PATH"), None);
+    }
+
+    #[test]
+    fn bin_on_path_last() {
+        let temp_dir = tempdir().unwrap();
+        let layer_dir = temp_dir.path();
+
+        // https://github.com/heroku/libcnb.rs/issues/900
+        fs::create_dir_all(layer_dir.join("bin")).unwrap();
+        fs::create_dir_all(layer_dir.join("bada/bing")).unwrap();
+
+        let mut layer_env = LayerEnv::read_from_layer_dir(layer_dir).unwrap();
+        layer_env.insert(
+            Scope::Build,
+            ModificationBehavior::Prepend,
+            "PATH",
+            layer_dir.join("bada/bing").as_os_str(),
+        );
+
+        layer_env.write_to_layer_dir(layer_dir).unwrap();
+        let env = layer_env.apply_to_empty(Scope::Build);
+        assert_eq!(
+            env.get("PATH").unwrap(),
+            &[layer_dir.join("bada/bing"), layer_dir.join("bin")]
+                .map(|dir| dir.as_os_str().to_owned())
+                .into_iter()
+                .collect::<Vec<OsString>>()
+                .join(OsStr::new(":"))
+        );
     }
 
     #[test]
