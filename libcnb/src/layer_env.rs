@@ -910,6 +910,7 @@ mod tests {
         fs::create_dir_all(layer_dir.join("bada/bing")).unwrap();
 
         let mut layer_env = LayerEnv::read_from_layer_dir(layer_dir).unwrap();
+        layer_env.insert(Scope::Build, ModificationBehavior::Delimiter, "PATH", ":");
         layer_env.insert(
             Scope::Build,
             ModificationBehavior::Prepend,
