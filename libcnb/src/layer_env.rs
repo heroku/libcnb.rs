@@ -139,8 +139,8 @@ impl LayerEnv {
     pub fn apply(&self, scope: Scope, env: &Env) -> Env {
         let deltas = match scope {
             Scope::All => vec![&self.all],
-            Scope::Build => vec![&self.all, &self.build, &self.layer_paths_build],
-            Scope::Launch => vec![&self.all, &self.launch, &self.layer_paths_launch],
+            Scope::Build => vec![&self.layer_paths_build, &self.all, &self.build],
+            Scope::Launch => vec![&self.layer_paths_launch, &self.all, &self.launch],
             Scope::Process(process) => {
                 let mut process_deltas = vec![&self.all];
                 if let Some(process_specific_delta) = self.process.get(&process) {
