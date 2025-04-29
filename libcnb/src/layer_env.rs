@@ -923,12 +923,12 @@ mod tests {
             layer_env.write_to_layer_dir(layer_dir).unwrap();
             let env = layer_env.apply_to_empty(scope.clone());
             assert_eq!(
-                env.get("PATH").unwrap(),
                 &[layer_dir.join("explicit_path"), layer_dir.join("bin")]
                     .map(|dir| dir.as_os_str().to_owned())
                     .into_iter()
                     .collect::<Vec<OsString>>()
                     .join(OsStr::new(":")),
+                env.get("PATH").unwrap(),
                 "PATH was not prepended correctly for scope: `{scope:?}`"
             );
         }
