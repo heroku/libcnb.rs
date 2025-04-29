@@ -901,33 +901,37 @@ mod tests {
     }
 
     #[test]
-    fn bin_on_path_last() {
+    fn layer_paths_come_before_manually_added_paths() {
         let temp_dir = tempdir().unwrap();
         let layer_dir = temp_dir.path();
 
         // https://github.com/heroku/libcnb.rs/issues/900
         fs::create_dir_all(layer_dir.join("bin")).unwrap();
-        fs::create_dir_all(layer_dir.join("bada/bing")).unwrap();
+        fs::create_dir_all(layer_dir.join("explicit_path")).unwrap();
 
-        let mut layer_env = LayerEnv::read_from_layer_dir(layer_dir).unwrap();
-        layer_env.insert(Scope::Build, ModificationBehavior::Delimiter, "PATH", ":");
-        layer_env.insert(
-            Scope::Build,
-            ModificationBehavior::Prepend,
-            "PATH",
-            layer_dir.join("bada/bing").as_os_str(),
-        );
+        // TODO: Determine desired behavior of Scope::All
+        for scope in [Scope::Build, Scope::Launch] {
+            let mut layer_env = LayerEnv::read_from_layer_dir(layer_dir).unwrap();
+            layer_env.insert(scope.clone(), ModificationBehavior::Delimiter, "PATH", ":");
+            layer_env.insert(
+                scope.clone(),
+                ModificationBehavior::Prepend,
+                "PATH",
+                layer_dir.join("explicit_path").as_os_str(),
+            );
 
-        layer_env.write_to_layer_dir(layer_dir).unwrap();
-        let env = layer_env.apply_to_empty(Scope::Build);
-        assert_eq!(
-            env.get("PATH").unwrap(),
-            &[layer_dir.join("bada/bing"), layer_dir.join("bin")]
-                .map(|dir| dir.as_os_str().to_owned())
-                .into_iter()
-                .collect::<Vec<OsString>>()
-                .join(OsStr::new(":"))
-        );
+            layer_env.write_to_layer_dir(layer_dir).unwrap();
+            let env = layer_env.apply_to_empty(scope.clone());
+            assert_eq!(
+                env.get("PATH").unwrap(),
+                &[layer_dir.join("explicit_path"), layer_dir.join("bin")]
+                    .map(|dir| dir.as_os_str().to_owned())
+                    .into_iter()
+                    .collect::<Vec<OsString>>()
+                    .join(OsStr::new(":")),
+                "PATH was not prepended correctly for scope: `{scope:?}`"
+            );
+        }
     }
 
     #[test]
