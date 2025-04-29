@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- libcnb:
+  - Order of automatically applied environment variables by libcnb, such as `PATH=<layer>/bin`, now matches the upstream CNB lifecycle (Close [#900](https://github.com/heroku/libcnb.rs/issues/900)). ([#938](https://github.com/heroku/libcnb.rs/pull/938))
+
 
 ## [0.28.1] - 2025-03-25
 
