@@ -24,4 +24,8 @@ pub(crate) enum Error {
     CannotConfigureCrossCompilation,
     #[error("No buildpacks found!")]
     NoBuildpacksFound,
+    #[error(
+        "Could not determine a default target triple from the current architecture ({0}), you must explicitly provide the --target argument"
+    )]
+    CouldNotDetermineDefaultTargetForArch(String),
 }

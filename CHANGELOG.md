@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `libcnb-cargo`
+  - The default for the `--target` argument of `cargo libcnb package` will now be based on an architecture that matches the host machine instead of `x86_64-unknown-linux-musl`. ([#922](https://github.com/heroku/libcnb.rs/pull/922))
 
 ## [0.28.1] - 2025-03-25
 

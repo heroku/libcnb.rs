@@ -2,7 +2,10 @@ use crate::cli::PackageArgs;
 use crate::package::error::Error;
 use libcnb_data::buildpack::BuildpackId;
 use libcnb_package::buildpack_dependency_graph::build_libcnb_buildpacks_dependency_graph;
-use libcnb_package::cross_compile::{CrossCompileAssistance, cross_compile_assistance};
+use libcnb_package::cross_compile::{
+    AARCH64_UNKNOWN_LINUX_MUSL, CrossCompileAssistance, X86_64_UNKNOWN_LINUX_MUSL,
+    cross_compile_assistance,
+};
 use libcnb_package::dependency_graph::get_dependencies;
 use libcnb_package::output::create_packaged_buildpack_dir_resolver;
 use libcnb_package::util::absolutize_path;
@@ -21,6 +24,11 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<(), Error> {
         CargoProfile::Dev
     };
 
+    let target_triple = match &args.target {
+        Some(target) => target.to_string(),
+        None => determine_target_triple_from_host_arch()?,
+    };
+
     let workspace_root_path =
         find_cargo_workspace_root_dir(&current_dir).map_err(Error::CannotFindCargoWorkspaceRoot)?;
 
@@ -37,18 +45,17 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<(), Error> {
         .map_err(|error| Error::CannotCreatePackageDirectory(package_dir.clone(), error))?;
 
     let buildpack_dir_resolver =
-        create_packaged_buildpack_dir_resolver(&package_dir, cargo_profile, &args.target);
+        create_packaged_buildpack_dir_resolver(&package_dir, cargo_profile, &target_triple);
 
-    eprintln!("🖥️ Gathering Cargo configuration (for {})", args.target);
+    eprintln!("🖥️ Gathering Cargo configuration (for {target_triple})");
     let cargo_build_env = if args.no_cross_compile_assistance {
         Vec::new()
     } else {
-        match cross_compile_assistance(&args.target) {
+        match cross_compile_assistance(&target_triple) {
             CrossCompileAssistance::Configuration { cargo_env } => cargo_env,
             CrossCompileAssistance::NoAssistance => {
                 eprintln!(
-                    "Couldn't determine automatic cross-compile settings for target triple {}.",
-                    args.target
+                    "Couldn't determine automatic cross-compile settings for target triple {target_triple}."
                 );
                 eprintln!(
                     "This is not an error, but without proper cross-compile settings in your Cargo manifest and locally installed toolchains, compilation might fail."
@@ -110,7 +117,7 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<(), Error> {
         libcnb_package::package::package_buildpack(
             &node.path,
             cargo_profile,
-            &args.target,
+            &target_triple,
             &cargo_build_env,
             &buildpack_destination_dir,
             &packaged_buildpack_dirs,
@@ -194,4 +201,15 @@ fn calculate_dir_size(path: impl AsRef<Path>) -> std::io::Result<u64> {
     }
 
     Ok(size_in_bytes)
+}
+
+// NOTE: The target OS is always assumed to be linux based
+fn determine_target_triple_from_host_arch() -> Result<String, Error> {
+    match std::env::consts::ARCH {
+        "amd64" | "x86_64" => Ok(X86_64_UNKNOWN_LINUX_MUSL.to_string()),
+        "arm64" | "aarch64" => Ok(AARCH64_UNKNOWN_LINUX_MUSL.to_string()),
+        arch => Err(Error::CouldNotDetermineDefaultTargetForArch(
+            arch.to_string(),
+        )),
+    }
 }
