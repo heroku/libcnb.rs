@@ -139,8 +139,8 @@ impl LayerEnv {
     pub fn apply(&self, scope: Scope, env: &Env) -> Env {
         let deltas = match scope {
             Scope::All => vec![&self.all],
-            Scope::Build => vec![&self.all, &self.build, &self.layer_paths_build],
-            Scope::Launch => vec![&self.all, &self.launch, &self.layer_paths_launch],
+            Scope::Build => vec![&self.layer_paths_build, &self.all, &self.build],
+            Scope::Launch => vec![&self.layer_paths_launch, &self.all, &self.launch],
             Scope::Process(process) => {
                 let mut process_deltas = vec![&self.all];
                 if let Some(process_specific_delta) = self.process.get(&process) {
@@ -606,6 +606,7 @@ const PATH_LIST_SEPARATOR: &str = ";";
 mod tests {
     use std::cmp::Ordering;
     use std::collections::HashMap;
+    use std::ffi::{OsStr, OsString};
     use std::fs;
 
     use tempfile::tempdir;
@@ -897,6 +898,68 @@ mod tests {
         assert_eq!(env.get("LIBRARY_PATH"), None);
         assert_eq!(env.get("CPATH"), None);
         assert_eq!(env.get("PKG_CONFIG_PATH"), None);
+    }
+
+    #[test]
+    fn layer_paths_come_before_manually_added_paths() {
+        let temp_dir = tempdir().unwrap();
+        let layer_dir = temp_dir.path();
+
+        // https://github.com/heroku/libcnb.rs/issues/900
+        fs::create_dir_all(layer_dir.join("bin")).unwrap();
+        fs::create_dir_all(layer_dir.join("lib")).unwrap();
+        fs::create_dir_all(layer_dir.join("explicit_path")).unwrap();
+
+        // Test Build and Launch PATH
+        // TODO: Determine desired behavior of Scope::All
+        for scope in [Scope::Build, Scope::Launch] {
+            let mut layer_env = LayerEnv::read_from_layer_dir(layer_dir).unwrap();
+            layer_env.insert(scope.clone(), ModificationBehavior::Delimiter, "PATH", ":");
+            layer_env.insert(
+                scope.clone(),
+                ModificationBehavior::Prepend,
+                "PATH",
+                layer_dir.join("explicit_path").as_os_str(),
+            );
+
+            layer_env.write_to_layer_dir(layer_dir).unwrap();
+            let env = layer_env.apply_to_empty(scope.clone());
+            assert_eq!(
+                &[layer_dir.join("explicit_path"), layer_dir.join("bin")]
+                    .map(|dir| dir.as_os_str().to_owned())
+                    .into_iter()
+                    .collect::<Vec<OsString>>()
+                    .join(OsStr::new(":")),
+                env.get("PATH").unwrap(),
+                "PATH was not prepended correctly for scope: `{scope:?}`"
+            );
+        }
+
+        // Test Build LIBRARY_PATH
+        let mut layer_env = LayerEnv::read_from_layer_dir(layer_dir).unwrap();
+        layer_env.insert(
+            Scope::Build,
+            ModificationBehavior::Delimiter,
+            "LIBRARY_PATH",
+            ":",
+        );
+        layer_env.insert(
+            Scope::Build,
+            ModificationBehavior::Prepend,
+            "LIBRARY_PATH",
+            layer_dir.join("explicit_path").as_os_str(),
+        );
+
+        layer_env.write_to_layer_dir(layer_dir).unwrap();
+        let env = layer_env.apply_to_empty(Scope::Build);
+        assert_eq!(
+            &[layer_dir.join("explicit_path"), layer_dir.join("lib")]
+                .map(|dir| dir.as_os_str().to_owned())
+                .into_iter()
+                .collect::<Vec<OsString>>()
+                .join(OsStr::new(":")),
+            env.get("LIBRARY_PATH").unwrap()
+        );
     }
 
     #[test]
