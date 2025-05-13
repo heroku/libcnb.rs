@@ -57,7 +57,7 @@ use std::path::Path;
 ///
 /// Some directories in a layer directory are implicitly added to the layer environment if they
 /// exist. The prime example for this behaviour is the `bin` directory. If it exists, its path will
-/// be automatically appended to `PATH` using the operating systems path delimiter as the delimiter.
+/// be automatically prepended to `PATH` using the operating systems path delimiter as the delimiter.
 ///
 /// A full list of these special directories can be found in the
 /// [Cloud Native Buildpack specification](https://github.com/buildpacks/spec/blob/main/buildpack.md#layer-paths).
