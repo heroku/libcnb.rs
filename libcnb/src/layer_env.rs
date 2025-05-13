@@ -28,12 +28,14 @@ use std::path::Path;
 /// logic that uses the build tool to download dependencies. The download process does not need to
 /// know the layer name or any of the logic for constructing `PATH`.
 ///
-/// # Applying the delta
+/// ## Applying the delta
+///
 /// `LayerEnv` is not a static set of environment variables, but a delta. Layers can modify existing
 /// variables by appending, prepending or setting variables only if they were not already defined. If you only need a
 /// static set of environment variables, see [`Env`].
 ///
 /// To apply a `LayerEnv` delta to a given `Env`, use [`LayerEnv::apply`] like so:
+///
 /// ```
 /// use libcnb::layer_env::{LayerEnv, ModificationBehavior, Scope};
 /// use libcnb::Env;
@@ -51,7 +53,8 @@ use std::path::Path;
 /// assert_eq!(modified_env.get("VAR2").unwrap(), "previous-value");
 /// ```
 ///
-/// # Implicit Entries
+/// ## Implicit Entries
+///
 /// Some directories in a layer directory are implicitly added to the layer environment if they
 /// exist. The prime example for this behaviour is the `bin` directory. If it exists, its path will
 /// be automatically appended to `PATH` using the operating systems path delimiter as the delimiter.
@@ -61,6 +64,7 @@ use std::path::Path;
 ///
 /// libcnb supports these, including all precedence and lifecycle rules, when a `LayerEnv` is read
 /// from disk:
+///
 /// ```
 /// use libcnb::layer_env::{LayerEnv, Scope};
 /// use std::fs;
