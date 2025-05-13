@@ -34,6 +34,7 @@ use std::path::Path;
 /// static set of environment variables, see [`Env`].
 ///
 /// To apply a `LayerEnv` delta to a given `Env`, use [`LayerEnv::apply`] like so:
+///
 /// ```
 /// use libcnb::layer_env::{LayerEnv, ModificationBehavior, Scope};
 /// use libcnb::Env;
@@ -47,7 +48,7 @@ use std::path::Path;
 /// env.insert("VAR2", "previous-value");
 ///
 /// let modified_env = layer_env.apply(Scope::Build, &env);
-/// assert_eq!(modified_env.get("VAR").unwrap(), "foobar");
+/// assert_eq!(modified_env.get("VAR").unwrap(), "foo:bar");
 /// assert_eq!(modified_env.get("VAR2").unwrap(), "previous-value");
 /// ```
 ///
@@ -132,7 +133,7 @@ impl LayerEnv {
     /// env.insert("VAR2", "previous-value");
     ///
     /// let modified_env = layer_env.apply(Scope::Build, &env);
-    /// assert_eq!(modified_env.get("VAR").unwrap(), "foobar");
+    /// assert_eq!(modified_env.get("VAR").unwrap(), "foo:bar");
     /// assert_eq!(modified_env.get("VAR2").unwrap(), "previous-value");
     /// ```
     #[must_use]
@@ -482,7 +483,7 @@ impl LayerEnvDelta {
         self.entries
             .get(&(ModificationBehavior::Delimiter, key.into()))
             .cloned()
-            .unwrap_or_default()
+            .unwrap_or(OsString::from(PATH_LIST_SEPARATOR))
     }
 
     fn read_from_env_dir(path: impl AsRef<Path>) -> Result<Self, std::io::Error> {
@@ -614,8 +615,11 @@ mod tests {
 
     use super::LayerEnvDelta;
 
-    /// Direct port of a test from the reference lifecycle implementation:
+    /// Port of a test from the reference lifecycle implementation:
     /// See: <https://github.com/buildpacks/lifecycle/blob/a7428a55c2a14d8a37e84285b95dc63192e3264e/env/env_test.go#L105-L154>
+    ///
+    /// Modifications:
+    /// - Default delimiter is now based on OS instead of an empty string
     #[test]
     fn reference_impl_env_files_have_a_suffix_it_performs_the_matching_action() {
         let temp_dir = tempdir().unwrap();
@@ -660,7 +664,7 @@ mod tests {
 
         assert_eq!(
             vec![
-                ("VAR_APPEND", "value-append-origvalue-append"),
+                ("VAR_APPEND", "value-append-orig:value-append"),
                 (
                     "VAR_APPEND_DELIM",
                     "value-append-delim-orig[]value-append-delim"
@@ -671,7 +675,7 @@ mod tests {
                 ("VAR_DEFAULT_NEW", "value-default"),
                 ("VAR_OVERRIDE", "value-override"),
                 ("VAR_OVERRIDE_NEW", "value-override"),
-                ("VAR_PREPEND", "value-prependvalue-prepend-orig"),
+                ("VAR_PREPEND", "value-prepend:value-prepend-orig"),
                 (
                     "VAR_PREPEND_DELIM",
                     "value-prepend-delim[]value-prepend-delim-orig"
