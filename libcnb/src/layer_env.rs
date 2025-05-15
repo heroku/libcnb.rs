@@ -610,9 +610,8 @@ const PATH_LIST_SEPARATOR: &str = ";";
 mod tests {
     use std::cmp::Ordering;
     use std::collections::HashMap;
-    use std::ffi::{OsStr, OsString};
+    use std::ffi::OsString;
     use std::fs;
-
     use tempfile::tempdir;
 
     use crate::layer_env::{Env, LayerEnv, ModificationBehavior, Scope};
@@ -904,66 +903,46 @@ mod tests {
         assert_eq!(env.get("PKG_CONFIG_PATH"), None);
     }
 
+    // https://github.com/heroku/libcnb.rs/issues/900
     #[test]
     fn layer_paths_come_before_manually_added_paths() {
-        let temp_dir = tempdir().unwrap();
-        let layer_dir = temp_dir.path();
+        const TEST_ENV_VALUE: &str = "test-value";
 
-        // https://github.com/heroku/libcnb.rs/issues/900
-        fs::create_dir_all(layer_dir.join("bin")).unwrap();
-        fs::create_dir_all(layer_dir.join("lib")).unwrap();
-        fs::create_dir_all(layer_dir.join("explicit_path")).unwrap();
+        let test_cases = [
+            ("bin", "PATH", Scope::Build),
+            ("bin", "PATH", Scope::Launch),
+            ("lib", "LIBRARY_PATH", Scope::Build),
+        ];
 
-        // Test Build and Launch PATH
-        // TODO: Determine desired behavior of Scope::All
-        for scope in [Scope::Build, Scope::Launch] {
-            let mut layer_env = LayerEnv::read_from_layer_dir(layer_dir).unwrap();
-            layer_env.insert(scope.clone(), ModificationBehavior::Delimiter, "PATH", ":");
+        for (path, name, scope) in test_cases {
+            // Construct test layer environment on disk
+            let temp_dir = tempdir().unwrap();
+            let layer_dir = temp_dir.path();
+
+            let absolute_path = layer_dir.join(path);
+            fs::create_dir_all(&absolute_path).unwrap();
+
+            let mut layer_env = LayerEnv::new();
             layer_env.insert(
                 scope.clone(),
                 ModificationBehavior::Prepend,
-                "PATH",
-                layer_dir.join("explicit_path").as_os_str(),
+                name,
+                TEST_ENV_VALUE,
             );
 
             layer_env.write_to_layer_dir(layer_dir).unwrap();
-            let env = layer_env.apply_to_empty(scope.clone());
-            assert_eq!(
-                &[layer_dir.join("explicit_path"), layer_dir.join("bin")]
-                    .map(|dir| dir.as_os_str().to_owned())
-                    .into_iter()
-                    .collect::<Vec<OsString>>()
-                    .join(OsStr::new(":")),
-                env.get("PATH").unwrap(),
-                "PATH was not prepended correctly for scope: `{scope:?}`"
-            );
+
+            // Validate LayerEnv after reading it from disk
+            let env = LayerEnv::read_from_layer_dir(layer_dir)
+                .unwrap()
+                .apply_to_empty(scope);
+
+            let mut expected_env_value = OsString::new();
+            expected_env_value.push(TEST_ENV_VALUE);
+            expected_env_value.push(absolute_path.into_os_string());
+
+            assert_eq!(env.get(name), Some(&expected_env_value));
         }
-
-        // Test Build LIBRARY_PATH
-        let mut layer_env = LayerEnv::read_from_layer_dir(layer_dir).unwrap();
-        layer_env.insert(
-            Scope::Build,
-            ModificationBehavior::Delimiter,
-            "LIBRARY_PATH",
-            ":",
-        );
-        layer_env.insert(
-            Scope::Build,
-            ModificationBehavior::Prepend,
-            "LIBRARY_PATH",
-            layer_dir.join("explicit_path").as_os_str(),
-        );
-
-        layer_env.write_to_layer_dir(layer_dir).unwrap();
-        let env = layer_env.apply_to_empty(Scope::Build);
-        assert_eq!(
-            &[layer_dir.join("explicit_path"), layer_dir.join("lib")]
-                .map(|dir| dir.as_os_str().to_owned())
-                .into_iter()
-                .collect::<Vec<OsString>>()
-                .join(OsStr::new(":")),
-            env.get("LIBRARY_PATH").unwrap()
-        );
     }
 
     #[test]
