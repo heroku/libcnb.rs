@@ -935,13 +935,17 @@ mod tests {
             // Validate LayerEnv after reading it from disk
             let env = LayerEnv::read_from_layer_dir(layer_dir)
                 .unwrap()
-                .apply_to_empty(scope);
+                .apply_to_empty(scope.clone());
 
             let mut expected_env_value = OsString::new();
             expected_env_value.push(TEST_ENV_VALUE);
             expected_env_value.push(absolute_path.into_os_string());
 
-            assert_eq!(env.get(name), Some(&expected_env_value));
+            assert_eq!(
+                env.get(name),
+                Some(&expected_env_value),
+                "For ENV var `{name}` scope `{scope:?}`"
+            );
         }
     }
 
