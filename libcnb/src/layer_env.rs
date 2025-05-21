@@ -28,12 +28,14 @@ use std::path::Path;
 /// logic that uses the build tool to download dependencies. The download process does not need to
 /// know the layer name or any of the logic for constructing `PATH`.
 ///
-/// # Applying the delta
+/// ## Applying the delta
+///
 /// `LayerEnv` is not a static set of environment variables, but a delta. Layers can modify existing
 /// variables by appending, prepending or setting variables only if they were not already defined. If you only need a
 /// static set of environment variables, see [`Env`].
 ///
 /// To apply a `LayerEnv` delta to a given `Env`, use [`LayerEnv::apply`] like so:
+///
 /// ```
 /// use libcnb::layer_env::{LayerEnv, ModificationBehavior, Scope};
 /// use libcnb::Env;
@@ -51,16 +53,18 @@ use std::path::Path;
 /// assert_eq!(modified_env.get("VAR2").unwrap(), "previous-value");
 /// ```
 ///
-/// # Implicit Entries
+/// ## Implicit Entries
+///
 /// Some directories in a layer directory are implicitly added to the layer environment if they
 /// exist. The prime example for this behaviour is the `bin` directory. If it exists, its path will
-/// be automatically appended to `PATH` using the operating systems path delimiter as the delimiter.
+/// be automatically added to `PATH` using the operating systems path delimiter as the delimiter.
 ///
 /// A full list of these special directories can be found in the
 /// [Cloud Native Buildpack specification](https://github.com/buildpacks/spec/blob/main/buildpack.md#layer-paths).
 ///
 /// libcnb supports these, including all precedence and lifecycle rules, when a `LayerEnv` is read
 /// from disk:
+///
 /// ```
 /// use libcnb::layer_env::{LayerEnv, Scope};
 /// use std::fs;
@@ -139,8 +143,8 @@ impl LayerEnv {
     pub fn apply(&self, scope: Scope, env: &Env) -> Env {
         let deltas = match scope {
             Scope::All => vec![&self.all],
-            Scope::Build => vec![&self.all, &self.build, &self.layer_paths_build],
-            Scope::Launch => vec![&self.all, &self.launch, &self.layer_paths_launch],
+            Scope::Build => vec![&self.layer_paths_build, &self.all, &self.build],
+            Scope::Launch => vec![&self.layer_paths_launch, &self.all, &self.launch],
             Scope::Process(process) => {
                 let mut process_deltas = vec![&self.all];
                 if let Some(process_specific_delta) = self.process.get(&process) {
@@ -606,8 +610,8 @@ const PATH_LIST_SEPARATOR: &str = ";";
 mod tests {
     use std::cmp::Ordering;
     use std::collections::HashMap;
+    use std::ffi::OsString;
     use std::fs;
-
     use tempfile::tempdir;
 
     use crate::layer_env::{Env, LayerEnv, ModificationBehavior, Scope};
@@ -897,6 +901,52 @@ mod tests {
         assert_eq!(env.get("LIBRARY_PATH"), None);
         assert_eq!(env.get("CPATH"), None);
         assert_eq!(env.get("PKG_CONFIG_PATH"), None);
+    }
+
+    // https://github.com/heroku/libcnb.rs/issues/900
+    #[test]
+    fn layer_paths_come_before_manually_added_paths() {
+        const TEST_ENV_VALUE: &str = "test-value";
+
+        let test_cases = [
+            ("bin", "PATH", Scope::Build),
+            ("bin", "PATH", Scope::Launch),
+            ("lib", "LIBRARY_PATH", Scope::Build),
+        ];
+
+        for (path, name, scope) in test_cases {
+            // Construct test layer environment on disk
+            let temp_dir = tempdir().unwrap();
+            let layer_dir = temp_dir.path();
+
+            let absolute_path = layer_dir.join(path);
+            fs::create_dir_all(&absolute_path).unwrap();
+
+            let mut layer_env = LayerEnv::new();
+            layer_env.insert(
+                scope.clone(),
+                ModificationBehavior::Prepend,
+                name,
+                TEST_ENV_VALUE,
+            );
+
+            layer_env.write_to_layer_dir(layer_dir).unwrap();
+
+            // Validate LayerEnv after reading it from disk
+            let env = LayerEnv::read_from_layer_dir(layer_dir)
+                .unwrap()
+                .apply_to_empty(scope.clone());
+
+            let mut expected_env_value = OsString::new();
+            expected_env_value.push(TEST_ENV_VALUE);
+            expected_env_value.push(absolute_path.into_os_string());
+
+            assert_eq!(
+                env.get(name),
+                Some(&expected_env_value),
+                "For ENV var `{name}` scope `{scope:?}`"
+            );
+        }
     }
 
     #[test]
