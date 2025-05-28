@@ -54,10 +54,9 @@ pub fn download_file(
         .map_err(|_| DownloadError::HeaderEncodingError(CONTENT_LENGTH))?
         .parse()
         .map_err(DownloadError::CannotParseInteger)?;
-    let mut reader = response.into_body().into_reader();
     let mut file = fs::File::create(destination.as_ref())?;
 
-    let received = io::copy(&mut reader, &mut file)?;
+    let received = io::copy(&mut response.into_body().into_reader(), &mut file)?;
     if received == expected {
         Ok(())
     } else {
