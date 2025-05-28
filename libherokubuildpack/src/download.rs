@@ -21,7 +21,12 @@ pub enum DownloadError {
     CannotParseInteger(ParseIntError),
 
     #[error("Expected `{expected}` bytes received `{received}`")]
-    UnexpectedBytes { expected: u64, received: u64 },
+    UnexpectedBytes {
+        expected: u64,
+        received: u64,
+        path_deleted: Result<(), std::io::Error>,
+    },
+}
 }
 
 /// Downloads a file via HTTP(S) to a local path
@@ -54,12 +59,19 @@ pub fn download_file(
         .map_err(|_| DownloadError::HeaderEncodingError(CONTENT_LENGTH))?
         .parse()
         .map_err(DownloadError::CannotParseInteger)?;
-    let mut file = fs::File::create(destination.as_ref())?;
 
+    let mut file = fs::File::create(destination.as_ref())?;
     let received = io::copy(&mut response.into_body().into_reader(), &mut file)?;
+    // Ensure file is closed
+    drop(file);
     if received == expected {
         Ok(())
     } else {
-        Err(DownloadError::UnexpectedBytes { expected, received })
+        let path_deleted = fs::remove_file(&destination);
+        Err(DownloadError::UnexpectedBytes {
+            expected,
+            received,
+            path_deleted,
+        })
     }
 }
