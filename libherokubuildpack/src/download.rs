@@ -1,3 +1,5 @@
+use http::{HeaderName, header::CONTENT_LENGTH};
+use std::num::ParseIntError;
 use std::{fs, io};
 
 #[derive(thiserror::Error, Debug)]
@@ -8,6 +10,18 @@ pub enum DownloadError {
 
     #[error("I/O error while downloading file: {0}")]
     IoError(#[from] std::io::Error),
+
+    #[error("Missing required header: `{0}`")]
+    MissingRequiredHeader(HeaderName),
+
+    #[error("Failed to convert header value for `{0}` into a string")]
+    HeaderEncodingError(HeaderName),
+
+    #[error("Cannot parse into an integer: {0}")]
+    CannotParseInteger(ParseIntError),
+
+    #[error("Expected `{expected}` bytes received `{received}`")]
+    UnexpectedBytes { expected: u64, received: u64 },
 }
 
 /// Downloads a file via HTTP(S) to a local path
@@ -32,9 +46,21 @@ pub fn download_file(
     destination: impl AsRef<std::path::Path>,
 ) -> Result<(), DownloadError> {
     let response = ureq::get(uri.as_ref()).call().map_err(Box::new)?;
+    let expected: u64 = response
+        .headers()
+        .get(CONTENT_LENGTH)
+        .ok_or_else(|| DownloadError::MissingRequiredHeader(CONTENT_LENGTH))?
+        .to_str()
+        .map_err(|_| DownloadError::HeaderEncodingError(CONTENT_LENGTH))?
+        .parse()
+        .map_err(DownloadError::CannotParseInteger)?;
     let mut reader = response.into_body().into_reader();
     let mut file = fs::File::create(destination.as_ref())?;
-    io::copy(&mut reader, &mut file)?;
 
-    Ok(())
+    let received = io::copy(&mut reader, &mut file)?;
+    if received == expected {
+        Ok(())
+    } else {
+        Err(DownloadError::UnexpectedBytes { expected, received })
+    }
 }

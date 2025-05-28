@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - libcnb:
   - Order of automatically applied environment variables by libcnb, such as `PATH=<layer>/bin`, now matches the upstream CNB lifecycle. ([#938](https://github.com/heroku/libcnb.rs/pull/938))
-
+- libherokubuildpack:
+  - The `download_file` function now errors if bytes received does not match the content length header. ([#947](https://github.com/heroku/libcnb.rs/pull/947))
 
 ## [0.29.0] - 2025-05-02
 
