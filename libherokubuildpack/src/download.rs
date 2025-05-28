@@ -27,6 +27,18 @@ pub enum DownloadError {
         path_deleted: Result<(), std::io::Error>,
     },
 }
+
+impl DownloadError {
+    /// Do not suggest a retry if the failure is due to disk error or if the path could not be cleaned
+    pub fn retry_suggested(&self) -> bool {
+        !matches!(
+            self,
+            DownloadError::UnexpectedBytes {
+                path_deleted: Err(_),
+                ..
+            } | DownloadError::IoError(_)
+        )
+    }
 }
 
 /// Downloads a file via HTTP(S) to a local path
