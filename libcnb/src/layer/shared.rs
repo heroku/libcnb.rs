@@ -363,7 +363,7 @@ mod test {
 
         match super::read_layer::<GenericMetadata, _>(layers_dir, &layer_name) {
             Err(ReadLayerError::LayerContentMetadataParseError(toml_error)) => {
-                assert_eq!(toml_error.span(), Some(19..20));
+                assert_eq!(toml_error.span(), Some(19..19));
             }
             _ => panic!("Expected ReadLayerError::LayerContentMetadataParseError!"),
         }
@@ -399,7 +399,7 @@ mod test {
 
         match super::read_layer::<TestLayerMetadata, _>(layers_dir, &layer_name) {
             Err(ReadLayerError::LayerContentMetadataParseError(toml_error)) => {
-                assert_eq!(toml_error.span(), Some(110..148));
+                assert_eq!(toml_error.span(), Some(110..120));
             }
             _ => panic!("Expected ReadLayerError::LayerContentMetadataParseError!"),
         }
