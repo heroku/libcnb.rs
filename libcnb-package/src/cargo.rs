@@ -14,7 +14,7 @@ pub(crate) fn determine_buildpack_cargo_target_name(
             .ok_or(DetermineBuildpackCargoTargetNameError::NoBinTargets),
         _ => binary_target_names
             .contains(&root_package.name)
-            .then_some(root_package.name.clone())
+            .then_some(root_package.name.to_string())
             .ok_or(DetermineBuildpackCargoTargetNameError::AmbiguousBinTargets),
     }
 }
