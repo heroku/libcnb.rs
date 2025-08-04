@@ -140,7 +140,7 @@ impl<W: Write + Send + Debug> FileExporter<W> {
 
 impl<W: Write + Send + Debug> SpanExporter for FileExporter<W> {
     fn export(
-        &mut self,
+        &self,
         batch: Vec<opentelemetry_sdk::trace::SpanData>,
     ) -> BoxFuture<'static, OTelSdkResult> {
         let resource = ResourceAttributesWithSchema::from(&self.resource);
