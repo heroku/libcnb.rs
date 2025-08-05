@@ -1,4 +1,3 @@
-use futures_core::future::BoxFuture;
 use libcnb_data::buildpack::Buildpack;
 use opentelemetry::{
     InstrumentationScope, KeyValue,
@@ -139,10 +138,7 @@ impl<W: Write + Send + Debug> FileExporter<W> {
 }
 
 impl<W: Write + Send + Debug> SpanExporter for FileExporter<W> {
-    fn export(
-        &mut self,
-        batch: Vec<opentelemetry_sdk::trace::SpanData>,
-    ) -> BoxFuture<'static, OTelSdkResult> {
+    async fn export(&self, batch: Vec<opentelemetry_sdk::trace::SpanData>) -> OTelSdkResult {
         let resource = ResourceAttributesWithSchema::from(&self.resource);
         let resource_spans = group_spans_by_resource_and_scope(batch, &resource);
         let data = TracesData { resource_spans };
@@ -150,17 +146,13 @@ impl<W: Write + Send + Debug> SpanExporter for FileExporter<W> {
         let mut writer = match self.writer.lock() {
             Ok(f) => f,
             Err(e) => {
-                return Box::pin(std::future::ready(Err(OTelSdkError::InternalFailure(
-                    e.to_string(),
-                ))));
+                return Err(OTelSdkError::InternalFailure(e.to_string()));
             }
         };
 
-        Box::pin(std::future::ready(
-            serde_json::to_writer(writer.get_mut(), &data)
-                .map_err(|e| OTelSdkError::InternalFailure(e.to_string()))
-                .and(writeln!(writer).map_err(|e| OTelSdkError::InternalFailure(e.to_string()))),
-        ))
+        serde_json::to_writer(writer.get_mut(), &data)
+            .map_err(|e| OTelSdkError::InternalFailure(e.to_string()))
+            .and(writeln!(writer).map_err(|e| OTelSdkError::InternalFailure(e.to_string())))
     }
 
     fn force_flush(&mut self) -> OTelSdkResult {
