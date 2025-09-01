@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Update Rust toolchain
         # Most of the time this will be a no-op, since GitHub releases new images every week
         # which include the latest stable release of Rust, Rustup, Clippy and rustfmt.
@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Update Rust toolchain
         run: rustup update
       - name: Rust Cache
@@ -52,7 +52,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install musl-tools
         run: sudo apt-get install musl-tools --no-install-recommends
       - name: Update Rust toolchain
