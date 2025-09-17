@@ -2,7 +2,7 @@ use crate::http::{HttpError, ResponseExt, get};
 use std::path::Path;
 
 #[deprecated(
-    note = "This has been replaced by `HttpError` and currently does nothing other than wrap `HttpError`"
+    note = "This has been replaced by `libherokubuildpack::http::HttpError` and currently does nothing other than wrap `libherokubuildpack::http::HttpError`"
 )]
 #[derive(thiserror::Error, Debug)]
 pub enum DownloadError {
@@ -28,7 +28,7 @@ pub enum DownloadError {
 /// );
 /// ```
 #[deprecated(
-    note = "Use `get(uri).call_sync().and_then(|res| res.download_to_file_sync(destination)` instead"
+    note = "Use `libherokubuildpack::http::get(uri).call_sync().and_then(|res| res.download_to_file_sync(destination)` instead"
 )]
 #[allow(deprecated)]
 pub fn download_file(
