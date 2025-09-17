@@ -19,7 +19,7 @@ workspace = true
 
 [features]
 default = ["command", "download", "digest", "error", "inventory", "log", "inventory-semver", "inventory-sha2", "tar", "toml", "fs", "write"]
-download = ["dep:async-trait", "dep:bon", "dep:bullet_stream", "dep:futures", "dep:http", "dep:reqwest", "dep:reqwest-middleware", "dep:reqwest-retry", "dep:reqwest-tracing", "dep:tokio", "dep:tokio-util"]
+download = ["dep:async-trait", "dep:bon", "dep:bullet_stream", "dep:futures", "dep:http", "dep:reqwest", "dep:reqwest-middleware", "dep:reqwest-retry", "dep:reqwest-tracing", "dep:thiserror", "dep:tokio", "dep:tokio-util"]
 digest = ["dep:sha2"]
 error = ["log", "dep:libcnb"]
 inventory = ["dep:hex", "dep:serde", "dep:thiserror", "dep:toml"]
