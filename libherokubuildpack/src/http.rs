@@ -32,7 +32,7 @@ pub async fn get<U>(
     read_timeout: Duration,
     #[builder(default = DEFAULT_RETRIES)] //
     max_retries: u32,
-) -> Result<Response, Error>
+) -> Result<Response, HttpError>
 where
     U: IntoUrl + std::fmt::Display + Clone,
 {
@@ -64,7 +64,7 @@ where
             res.error_for_status()
                 .map_err(reqwest_middleware::Error::Reqwest)
         })
-        .map_err(|e| Error::Request(url.to_string(), e))
+        .map_err(|e| HttpError::Request(url.to_string(), e))
 }
 
 /// Extend the [`bon::builder`] for [`get`]
@@ -73,7 +73,7 @@ where
     U: IntoUrl + std::fmt::Display + Clone,
     State: get_builder::State,
 {
-    pub fn call_sync(self) -> Result<Response, Error>
+    pub fn call_sync(self) -> Result<Response, HttpError>
     where
         State: get_builder::IsComplete,
     {
@@ -82,7 +82,7 @@ where
 }
 
 #[derive(Debug, thiserror::Error)]
-pub enum Error {
+pub enum HttpError {
     #[error("Request to `{0}` failed\nError: {1}")]
     Request(String, reqwest_middleware::Error),
     #[error("Reading response from request to `{0}` failed\nError: {1}")]
@@ -95,12 +95,12 @@ pub enum Error {
 
 pub trait ResponseExt {
     #[allow(async_fn_in_trait)]
-    async fn download_to_file(self, download_to: impl AsRef<Path>) -> Result<(), Error>;
-    fn download_to_file_sync(self, download_to: impl AsRef<Path>) -> Result<(), Error>;
+    async fn download_to_file(self, download_to: impl AsRef<Path>) -> Result<(), HttpError>;
+    fn download_to_file_sync(self, download_to: impl AsRef<Path>) -> Result<(), HttpError>;
 }
 
 impl ResponseExt for Response {
-    async fn download_to_file(self, download_to: impl AsRef<Path>) -> Result<(), Error> {
+    async fn download_to_file(self, download_to: impl AsRef<Path>) -> Result<(), HttpError> {
         let url = &self.url().clone();
         let to_file = download_to.as_ref();
 
@@ -118,18 +118,18 @@ impl ResponseExt for Response {
             .truncate(true)
             .open(to_file)
             .await
-            .map_err(|e| Error::OpenFile(to_file.to_path_buf(), url.to_string(), e))?;
+            .map_err(|e| HttpError::OpenFile(to_file.to_path_buf(), url.to_string(), e))?;
 
         tokio::io::copy(&mut reader, &mut writer)
             .await
-            .map_err(|e| Error::WriteFile(to_file.to_path_buf(), url.to_string(), e))?;
+            .map_err(|e| HttpError::WriteFile(to_file.to_path_buf(), url.to_string(), e))?;
 
         timer.done();
 
         Ok(())
     }
 
-    fn download_to_file_sync(self, download_to: impl AsRef<Path>) -> Result<(), Error> {
+    fn download_to_file_sync(self, download_to: impl AsRef<Path>) -> Result<(), HttpError> {
         ASYNC_RUNTIME.block_on(async { self.download_to_file(download_to).await })
     }
 }
@@ -195,32 +195,6 @@ static ASYNC_RUNTIME: LazyLock<Runtime> = LazyLock::new(|| {
         .build()
         .expect("Should be able to construct the Async Runtime")
 });
-
-/// Downloads a file via HTTP(S) to a local path
-///
-/// # Examples
-/// ```
-/// use libherokubuildpack::digest::sha256;
-/// use libherokubuildpack::download::download_file;
-/// use tempfile::tempdir;
-///
-/// let temp_dir = tempdir().unwrap();
-/// let temp_file = temp_dir.path().join("result.bin");
-///
-/// download_file("https://example.com/", &temp_file).unwrap();
-/// assert_eq!(
-///     sha256(&temp_file).unwrap(),
-///     "ea8fac7c65fb589b0d53560f5251f74f9e9b243478dcb6b3ea79b5e36449c8d9"
-/// );
-/// ```
-#[deprecated(
-    note = "Use `get(uri).call_sync().and_then(|res| res.download_to_file_sync(destination)` instead"
-)]
-pub fn download_file(uri: impl AsRef<str>, destination: impl AsRef<Path>) -> Result<(), Error> {
-    get(uri.as_ref())
-        .call_sync()
-        .and_then(|res| res.download_to_file_sync(destination))
-}
 
 #[cfg(test)]
 mod test {
