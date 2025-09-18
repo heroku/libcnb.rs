@@ -10,7 +10,7 @@ pub mod download;
 pub mod error;
 #[cfg(feature = "fs")]
 pub mod fs;
-#[cfg(feature = "download")]
+#[cfg(feature = "http")]
 pub mod http;
 #[cfg(feature = "inventory")]
 pub mod inventory;

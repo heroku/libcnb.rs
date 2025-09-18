@@ -1,4 +1,3 @@
-use bullet_stream::style;
 use futures::stream::TryStreamExt;
 use http::{Extensions, HeaderMap};
 use reqwest::{IntoUrl, Request, Response};
@@ -22,7 +21,7 @@ const DEFAULT_READ_TIMEOUT: Duration = Duration::from_secs(10);
 const DEFAULT_RETRIES: u32 = 5;
 
 #[bon::builder]
-pub async fn get<U>(
+pub async fn get<U, T>(
     #[builder(start_fn)] //
     url: U,
     headers: Option<HeaderMap>,
@@ -32,9 +31,11 @@ pub async fn get<U>(
     read_timeout: Duration,
     #[builder(default = DEFAULT_RETRIES)] //
     max_retries: u32,
+    request_logger: RequestLogger<T>,
 ) -> Result<Response, HttpError>
 where
     U: IntoUrl + std::fmt::Display + Clone,
+    RetryLoggingMiddleware<T>: Middleware,
 {
     let client = ClientBuilder::new(
         reqwest::ClientBuilder::new()
@@ -48,7 +49,7 @@ where
         ExponentialBackoff::builder().build_with_max_retries(max_retries),
     ))
     .with(TracingMiddleware::<SpanBackendWithUrl>::new())
-    .with(RetryLoggingMiddleware::new(max_retries))
+    .with(RetryLoggingMiddleware::new(max_retries, request_logger))
     .build();
 
     let mut request_builder = client.get(url.clone());
@@ -68,14 +69,16 @@ where
 }
 
 /// Extend the [`bon::builder`] for [`get`]
-impl<U, State> GetBuilder<U, State>
+impl<U, T, State> GetBuilder<U, T, State>
 where
     U: IntoUrl + std::fmt::Display + Clone,
     State: get_builder::State,
+    RetryLoggingMiddleware<T>: Middleware,
 {
     pub fn call_sync(self) -> Result<Response, HttpError>
     where
         State: get_builder::IsComplete,
+        RetryLoggingMiddleware<T>: Middleware,
     {
         ASYNC_RUNTIME.block_on(async { self.call().await })
     }
@@ -134,22 +137,41 @@ impl ResponseExt for Response {
     }
 }
 
-struct RetryLoggingMiddleware {
-    count: AtomicU32,
-    max_retries: u32,
+pub struct RequestLogger<T> {
+    pub on_request_start: Box<dyn Fn(String) -> T + Send + Sync + 'static>,
+    pub on_request_end: Box<dyn Fn(T, String) + Send + Sync + 'static>,
 }
 
-impl RetryLoggingMiddleware {
-    fn new(max_retries: u32) -> Self {
+#[cfg(feature = "bullet_stream")]
+#[must_use]
+pub fn bullet_stream_request_logger() -> RequestLogger<bullet_stream::GlobalTimer> {
+    RequestLogger {
+        on_request_start: Box::new(bullet_stream::global::print::sub_start_timer),
+        on_request_end: Box::new(bullet_stream::GlobalTimer::cancel),
+    }
+}
+
+pub struct RetryLoggingMiddleware<T> {
+    count: AtomicU32,
+    max_retries: u32,
+    request_logger: RequestLogger<T>,
+}
+
+impl<T> RetryLoggingMiddleware<T> {
+    fn new(max_retries: u32, request_logger: RequestLogger<T>) -> Self {
         Self {
             count: AtomicU32::new(0),
             max_retries,
+            request_logger,
         }
     }
 }
 
 #[async_trait::async_trait]
-impl Middleware for RetryLoggingMiddleware {
+impl<T> Middleware for RetryLoggingMiddleware<T>
+where
+    T: Send + Sync + 'static,
+{
     async fn handle(
         &self,
         req: Request,
@@ -159,18 +181,26 @@ impl Middleware for RetryLoggingMiddleware {
         // increment and acquire the previous value
         let previous_value = self.count.fetch_add(1, SeqCst);
         let message = if previous_value == 0 {
-            format!("{} {}", req.method(), style::url(req.url()))
+            format!("{} {}", req.method(), bullet_stream::style::url(req.url()))
         } else {
             format!("Retry attempt {previous_value} of {}", self.max_retries)
         };
-        let timer = bullet_stream::global::print::sub_start_timer(message);
+        let on_request_start_value = (self.request_logger.on_request_start)(message);
+
         let response = next.run(req, extensions).await;
+
         match &response {
             Ok(response) => {
                 if let Some(reason) = response.status().canonical_reason() {
-                    timer.cancel(reason);
+                    (self.request_logger.on_request_end)(
+                        on_request_start_value,
+                        reason.to_string(),
+                    );
                 } else {
-                    timer.cancel(format!("Status {}", response.status().as_str()));
+                    (self.request_logger.on_request_end)(
+                        on_request_start_value,
+                        format!("Status {}", response.status().as_str()),
+                    );
                 }
             }
             Err(e) => {
@@ -181,7 +211,7 @@ impl Middleware for RetryLoggingMiddleware {
                 } else {
                     e.to_string()
                 };
-                timer.cancel(reason);
+                (self.request_logger.on_request_end)(on_request_start_value, reason);
             }
         }
         response
@@ -199,16 +229,78 @@ static ASYNC_RUNTIME: LazyLock<Runtime> = LazyLock::new(|| {
 #[cfg(test)]
 mod test {
     use super::*;
-    use bullet_stream::{global, strip_ansi};
     use indoc::indoc;
-    use regex::Regex;
     use reqwest::StatusCode;
     use std::future::Future;
     use std::ops::{Div, Mul};
+    use std::sync::{Arc, Mutex};
     use std::{env, fs, net};
     use tempfile::NamedTempFile;
     use wiremock::matchers::{method, path};
     use wiremock::{Mock, MockServer, Respond, ResponseTemplate};
+
+    struct TestLogger {
+        messages: Arc<Mutex<Vec<String>>>,
+    }
+
+    impl TestLogger {
+        fn new() -> Self {
+            Self {
+                messages: Arc::new(Mutex::new(Vec::new())),
+            }
+        }
+
+        fn request_logger(&self) -> RequestLogger<Arc<Mutex<Vec<String>>>> {
+            let messages = self.messages.clone();
+            RequestLogger {
+                on_request_start: Box::new(move |message| {
+                    let mut writer = messages.lock().unwrap();
+                    writer.push(message);
+                    messages.clone()
+                }),
+                on_request_end: Box::new(|messages, message| {
+                    let mut writer = messages.lock().unwrap();
+                    writer.push(format!(" ... ({message})\n"));
+                }),
+            }
+        }
+
+        fn into_lines(self) -> Vec<String> {
+            self.messages
+                .lock()
+                .unwrap()
+                .clone()
+                .join("")
+                .lines()
+                .map(String::from)
+                .map(strip_ansi)
+                .collect()
+        }
+    }
+
+    // XXX: style information is still bleeding into our implementation, we shouldn't need this
+    fn strip_ansi(contents: impl AsRef<str>) -> String {
+        let contents = contents.as_ref();
+        let mut result = String::with_capacity(contents.len());
+        let mut in_sequence = false;
+        for char in contents.chars() {
+            // If current character is an escape, set the escape flag which will begin ignoring characters
+            // until the end of the sequence is found.
+            if char == '\x1B' {
+                in_sequence = true;
+            } else if in_sequence {
+                // If we're in a sequence discard the character, an 'm' indicates the end of the sequence
+                if char == 'm' {
+                    in_sequence = false;
+                }
+            } else {
+                result.push(char);
+            }
+        }
+        result.shrink_to_fit();
+
+        result
+    }
 
     #[test]
     fn test_download_success_no_retry() {
@@ -220,21 +312,19 @@ mod test {
 
         let dst = NamedTempFile::new().unwrap();
 
-        let log = global::with_locked_writer(Vec::<u8>::new(), || {
-            get(mock_download.url())
-                .call_sync()
-                .unwrap()
-                .download_to_file_sync(dst.path())
-                .unwrap();
-        });
+        let log = TestLogger::new();
+
+        get(mock_download.url())
+            .request_logger(log.request_logger())
+            .call_sync()
+            .unwrap()
+            .download_to_file_sync(dst.path())
+            .unwrap();
 
         assert_download_contents(&dst);
-        assert_log_contains_matches(
-            &log,
-            &[
-                request_success_matcher(mock_download.url()),
-                download_file_matcher(),
-            ],
+        assert_eq!(
+            log.into_lines(),
+            &[format!("GET {} ... (OK)", mock_download.url())]
         );
     }
 
@@ -248,22 +338,22 @@ mod test {
 
         let dst = NamedTempFile::new().unwrap();
 
-        let log = global::with_locked_writer(Vec::<u8>::new(), || {
-            get(mock_download.url())
-                .max_retries(2)
-                .call_sync()
-                .unwrap()
-                .download_to_file_sync(dst.path())
-                .unwrap();
-        });
+        let log = TestLogger::new();
+
+        get(mock_download.url())
+            .max_retries(2)
+            .request_logger(log.request_logger())
+            .call_sync()
+            .unwrap()
+            .download_to_file_sync(dst.path())
+            .unwrap();
 
         assert_download_contents(&dst);
-        assert_log_contains_matches(
-            &log,
+        assert_eq!(
+            log.into_lines(),
             &[
-                request_failed_matcher(mock_download.url(), "Internal Server Error"),
-                retry_attempt_success_matcher(1, 2),
-                download_file_matcher(),
+                format!("GET {} ... (Internal Server Error)", mock_download.url()),
+                "Retry attempt 1 of 2 ... (OK)".to_string()
             ],
         );
     }
@@ -280,20 +370,21 @@ mod test {
 
         let dst = NamedTempFile::new().unwrap();
 
-        let log = global::with_locked_writer(Vec::<u8>::new(), || {
-            get(mock_download.url())
-                .max_retries(2)
-                .call_sync()
-                .unwrap_err();
-        });
+        let log = TestLogger::new();
+
+        get(mock_download.url())
+            .max_retries(2)
+            .request_logger(log.request_logger())
+            .call_sync()
+            .unwrap_err();
 
         assert_no_download_contents(&dst);
-        assert_log_contains_matches(
-            &log,
+        assert_eq!(
+            log.into_lines(),
             &[
-                request_failed_matcher(mock_download.url(), "Internal Server Error"),
-                retry_attempt_failed_matcher(1, 2, "Internal Server Error"),
-                retry_attempt_failed_matcher(2, 2, "Internal Server Error"),
+                format!("GET {} ... (Internal Server Error)", mock_download.url()),
+                "Retry attempt 1 of 2 ... (Internal Server Error)".to_string(),
+                "Retry attempt 2 of 2 ... (Internal Server Error)".to_string(),
             ],
         );
     }
@@ -310,22 +401,23 @@ mod test {
 
         let dst = NamedTempFile::new().unwrap();
 
-        let log = global::with_locked_writer(Vec::<u8>::new(), || {
-            get(download_url)
-                .max_retries(2)
-                .connect_timeout(connect_timeout)
-                .read_timeout(read_timeout)
-                .call_sync()
-                .unwrap_err();
-        });
+        let log = TestLogger::new();
+
+        get(download_url)
+            .request_logger(log.request_logger())
+            .max_retries(2)
+            .connect_timeout(connect_timeout)
+            .read_timeout(read_timeout)
+            .call_sync()
+            .unwrap_err();
 
         assert_no_download_contents(&dst);
-        assert_log_contains_matches(
-            &log,
+        assert_eq!(
+            log.into_lines(),
             &[
-                request_failed_matcher(download_url, "connection refused"),
-                retry_attempt_failed_matcher(1, 2, "connection refused"),
-                retry_attempt_failed_matcher(2, 2, "connection refused"),
+                format!("GET {download_url} ... (connection refused)"),
+                "Retry attempt 1 of 2 ... (connection refused)".to_string(),
+                "Retry attempt 2 of 2 ... (connection refused)".to_string(),
             ],
         );
     }
@@ -344,22 +436,22 @@ mod test {
 
         let dst = NamedTempFile::new().unwrap();
 
-        let log = global::with_locked_writer(Vec::<u8>::new(), || {
-            get(server.uri())
-                .max_retries(2)
-                .read_timeout(read_timeout)
-                .call_sync()
-                .unwrap_err();
-        });
+        let log = TestLogger::new();
+
+        get(server.uri())
+            .request_logger(log.request_logger())
+            .max_retries(2)
+            .read_timeout(read_timeout)
+            .call_sync()
+            .unwrap_err();
 
         assert_no_download_contents(&dst);
-
-        assert_log_contains_matches(
-            &log,
+        assert_eq!(
+            log.into_lines(),
             &[
-                request_failed_matcher(server.uri(), "timed out"),
-                retry_attempt_failed_matcher(1, 2, "timed out"),
-                retry_attempt_failed_matcher(2, 2, "timed out"),
+                format!("GET {} ... (timed out)", server.uri()),
+                "Retry attempt 1 of 2 ... (timed out)".to_string(),
+                "Retry attempt 2 of 2 ... (timed out)".to_string()
             ],
         );
     }
@@ -373,14 +465,13 @@ mod test {
             env::remove_var("SSL_CERT_FILE");
         }
 
-        global::with_locked_writer(Vec::<u8>::new(), || {
-            assert!(
-                get("https://self-signed.badssl.com")
-                    .max_retries(0)
-                    .call_sync()
-                    .is_err()
-            );
-        });
+        assert!(
+            get("https://self-signed.badssl.com")
+                .request_logger(TestLogger::new().request_logger())
+                .max_retries(0)
+                .call_sync()
+                .is_err()
+        );
 
         let badssl_self_signed_cert_dir = tempfile::tempdir().unwrap();
         let badssl_self_signed_cert = badssl_self_signed_cert_dir
@@ -420,14 +511,13 @@ mod test {
             env::set_var("SSL_CERT_FILE", badssl_self_signed_cert);
         }
 
-        global::with_locked_writer(Vec::<u8>::new(), || {
-            assert!(
-                get("https://self-signed.badssl.com")
-                    .max_retries(0)
-                    .call_sync()
-                    .is_ok()
-            );
-        });
+        assert!(
+            get("https://self-signed.badssl.com")
+                .max_retries(0)
+                .request_logger(TestLogger::new().request_logger())
+                .call_sync()
+                .is_ok()
+        );
 
         unsafe {
             env::remove_var("SSL_CERT_FILE");
@@ -498,56 +588,6 @@ mod test {
 
     fn assert_no_download_contents(download_file: &NamedTempFile) {
         assert_eq!(download_file.as_file().metadata().unwrap().len(), 0);
-    }
-
-    fn assert_log_contains_matches(log: &[u8], matchers: &[Regex]) {
-        let output = strip_ansi(String::from_utf8_lossy(log));
-        let actual_lines = output.lines().map(str::trim).collect::<Vec<_>>();
-        assert_eq!(
-            matchers.len(),
-            actual_lines.len(),
-            "Expected matchers does not match length of actual logged lines\nMatchers:\n{matchers:?}\nLines: {actual_lines:?}"
-        );
-        actual_lines
-            .iter()
-            .zip(matchers.iter())
-            .for_each(|(actual, matcher)| {
-                assert!(
-                    matcher.is_match(actual),
-                    "Expected matcher did not match line\nMatcher: {matcher:?}\nLine: {actual}"
-                );
-            });
-    }
-
-    const PROGRESS_DOTS: &str = r"\.+";
-    const TIMER: &str = r"\(< \d+\.\d+s\)";
-
-    fn request_success_matcher(url: impl AsRef<str>) -> Regex {
-        let url = url.as_ref().replace('.', r"\.");
-        Regex::new(&format!(r"- GET {url} {PROGRESS_DOTS} \(OK\)")).unwrap()
-    }
-
-    fn request_failed_matcher(url: impl AsRef<str>, reason: &str) -> Regex {
-        let url = url.as_ref().replace('.', r"\.");
-        Regex::new(&format!(r"- GET {url} {PROGRESS_DOTS} \({reason}\)")).unwrap()
-    }
-
-    fn retry_attempt_success_matcher(attempt: u32, max_retries: u32) -> Regex {
-        Regex::new(&format!(
-            r"- Retry attempt {attempt} of {max_retries} {PROGRESS_DOTS} \(OK\)"
-        ))
-        .unwrap()
-    }
-
-    fn retry_attempt_failed_matcher(attempt: u32, max_retries: u32, reason: &str) -> Regex {
-        Regex::new(&format!(
-            r"- Retry attempt {attempt} of {max_retries} {PROGRESS_DOTS} \({reason}\)"
-        ))
-        .unwrap()
-    }
-
-    fn download_file_matcher() -> Regex {
-        Regex::new(&format!(r"- Downloading {PROGRESS_DOTS} {TIMER}")).unwrap()
     }
 
     struct TestServer {

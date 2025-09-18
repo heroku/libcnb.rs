@@ -18,10 +18,12 @@ all-features = true
 workspace = true
 
 [features]
+bullet_stream = ["dep:bullet_stream"]
 default = ["command", "download", "digest", "error", "inventory", "log", "inventory-semver", "inventory-sha2", "tar", "toml", "fs", "write"]
-download = ["dep:async-trait", "dep:bon", "dep:bullet_stream", "dep:futures", "dep:http", "dep:reqwest", "dep:reqwest-middleware", "dep:reqwest-retry", "dep:reqwest-tracing", "dep:thiserror", "dep:tokio", "dep:tokio-util"]
+download = ["http"]
 digest = ["dep:sha2"]
 error = ["log", "dep:libcnb"]
+http = ["bullet_stream", "dep:async-trait", "dep:bon", "dep:futures", "dep:http", "dep:reqwest", "dep:reqwest-middleware", "dep:reqwest-retry", "dep:reqwest-tracing", "dep:thiserror", "dep:tokio", "dep:tokio-util"]
 inventory = ["dep:hex", "dep:serde", "dep:thiserror", "dep:toml"]
 inventory-semver = ["dep:semver"]
 inventory-sha2 = ["dep:sha2"]
@@ -66,7 +68,6 @@ tokio-util = { version = "0.7.16", default-features = false, features = ["compat
 hyper = "1.7.0"
 hyper-util = "0.1.16"
 indoc = "2.0.6"
-regex = "1.11.1"
 serde_test = "1.0.177"
 tempfile = "3.20.0"
 wiremock = "0.6.5"
