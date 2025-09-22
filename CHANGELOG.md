@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Updated `opentelemetry-proto` from 0.28.0 to 0.30.0
     - Updated `tracing-opentelemetry` from 0.29 to 0.31
 
+- libherokubuildpack:
+  - `download::download_file` now uses the operating system's certificate facilities when verifying certificates. ([#959](https://github.com/heroku/libcnb.rs/pull/959))
+
 ## [0.29.1] - 2025-08-01
 
 ### Fixed
