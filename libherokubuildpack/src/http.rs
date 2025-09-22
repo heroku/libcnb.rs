@@ -139,7 +139,7 @@ pub struct RequestLogger<T> {
     pub format_url: Box<dyn Fn(&reqwest::Url) -> String + Send + Sync + 'static>,
 }
 
-#[cfg(feature = "bullet_stream")]
+#[cfg(all(feature = "http", feature = "bullet_stream"))]
 #[must_use]
 pub fn bullet_stream_request_logger() -> RequestLogger<bullet_stream::GlobalTimer> {
     RequestLogger {
