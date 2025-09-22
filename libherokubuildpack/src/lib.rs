@@ -4,8 +4,6 @@
 pub mod command;
 #[cfg(feature = "digest")]
 pub mod digest;
-#[cfg(feature = "download")]
-pub mod download;
 #[cfg(feature = "error")]
 pub mod error;
 #[cfg(feature = "fs")]

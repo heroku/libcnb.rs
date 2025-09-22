@@ -19,11 +19,10 @@ workspace = true
 
 [features]
 bullet_stream = ["dep:bullet_stream"]
-default = ["command", "download", "digest", "error", "inventory", "log", "inventory-semver", "inventory-sha2", "tar", "toml", "fs", "write"]
-download = ["http"]
+default = ["command", "digest", "error", "http", "inventory", "log", "inventory-semver", "inventory-sha2", "tar", "toml", "fs", "write"]
 digest = ["dep:sha2"]
 error = ["log", "dep:libcnb"]
-http = ["bullet_stream", "dep:async-trait", "dep:bon", "dep:futures", "dep:http", "dep:reqwest", "dep:reqwest-middleware", "dep:reqwest-retry", "dep:reqwest-tracing", "dep:thiserror", "dep:tokio", "dep:tokio-util"]
+http = ["dep:async-trait", "dep:bon", "dep:futures", "dep:http", "dep:reqwest", "dep:reqwest-middleware", "dep:reqwest-retry", "dep:reqwest-tracing", "dep:thiserror", "dep:tokio", "dep:tokio-util"]
 inventory = ["dep:hex", "dep:serde", "dep:thiserror", "dep:toml"]
 inventory-semver = ["dep:semver"]
 inventory-sha2 = ["dep:sha2"]

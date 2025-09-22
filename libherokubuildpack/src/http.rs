@@ -107,8 +107,6 @@ impl ResponseExt for Response {
         let url = &self.url().clone();
         let to_file = download_to.as_ref();
 
-        let timer = bullet_stream::global::print::sub_start_timer("Downloading");
-
         let mut reader = FuturesAsyncReadCompatExt::compat(
             self.bytes_stream()
                 .map_err(io::Error::other)
@@ -127,8 +125,6 @@ impl ResponseExt for Response {
             .await
             .map_err(|e| HttpError::WriteFile(to_file.to_path_buf(), url.to_string(), e))?;
 
-        timer.done();
-
         Ok(())
     }
 
@@ -140,6 +136,7 @@ impl ResponseExt for Response {
 pub struct RequestLogger<T> {
     pub on_request_start: Box<dyn Fn(String) -> T + Send + Sync + 'static>,
     pub on_request_end: Box<dyn Fn(T, String) + Send + Sync + 'static>,
+    pub format_url: Box<dyn Fn(&reqwest::Url) -> String + Send + Sync + 'static>,
 }
 
 #[cfg(feature = "bullet_stream")]
@@ -148,6 +145,7 @@ pub fn bullet_stream_request_logger() -> RequestLogger<bullet_stream::GlobalTime
     RequestLogger {
         on_request_start: Box::new(bullet_stream::global::print::sub_start_timer),
         on_request_end: Box::new(bullet_stream::GlobalTimer::cancel),
+        format_url: Box::new(|url| bullet_stream::style::url(url)),
     }
 }
 
@@ -181,7 +179,11 @@ where
         // increment and acquire the previous value
         let previous_value = self.count.fetch_add(1, SeqCst);
         let message = if previous_value == 0 {
-            format!("{} {}", req.method(), bullet_stream::style::url(req.url()))
+            format!(
+                "{} {}",
+                req.method(),
+                (self.request_logger.format_url)(req.url())
+            )
         } else {
             format!("Retry attempt {previous_value} of {}", self.max_retries)
         };
@@ -262,6 +264,7 @@ mod test {
                     let mut writer = messages.lock().unwrap();
                     writer.push(format!(" ... ({message})\n"));
                 }),
+                format_url: Box::new(ToString::to_string),
             }
         }
 
@@ -273,33 +276,8 @@ mod test {
                 .join("")
                 .lines()
                 .map(String::from)
-                .map(strip_ansi)
                 .collect()
         }
-    }
-
-    // XXX: style information is still bleeding into our implementation, we shouldn't need this
-    fn strip_ansi(contents: impl AsRef<str>) -> String {
-        let contents = contents.as_ref();
-        let mut result = String::with_capacity(contents.len());
-        let mut in_sequence = false;
-        for char in contents.chars() {
-            // If current character is an escape, set the escape flag which will begin ignoring characters
-            // until the end of the sequence is found.
-            if char == '\x1B' {
-                in_sequence = true;
-            } else if in_sequence {
-                // If we're in a sequence discard the character, an 'm' indicates the end of the sequence
-                if char == 'm' {
-                    in_sequence = false;
-                }
-            } else {
-                result.push(char);
-            }
-        }
-        result.shrink_to_fit();
-
-        result
     }
 
     #[test]
