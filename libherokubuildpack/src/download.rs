@@ -1,4 +1,6 @@
 use std::{fs, io};
+use ureq::Agent;
+use ureq::tls::{RootCerts, TlsConfig};
 
 #[derive(thiserror::Error, Debug)]
 pub enum DownloadError {
@@ -10,7 +12,11 @@ pub enum DownloadError {
     IoError(#[from] std::io::Error),
 }
 
-/// Downloads a file via HTTP(S) to a local path
+/// Downloads a file via HTTP(S) to a local path.
+///
+/// Verifies certificates with the operating system verifier to allow buildpack users to use their
+/// own certificates when the buildpack makes requests. This can be useful in locked down corporate
+/// environments.
 ///
 /// # Examples
 /// ```
@@ -31,7 +37,16 @@ pub fn download_file(
     uri: impl AsRef<str>,
     destination: impl AsRef<std::path::Path>,
 ) -> Result<(), DownloadError> {
-    let response = ureq::get(uri.as_ref()).call().map_err(Box::new)?;
+    let agent = Agent::config_builder()
+        .tls_config(
+            TlsConfig::builder()
+                .root_certs(RootCerts::PlatformVerifier)
+                .build(),
+        )
+        .build()
+        .new_agent();
+
+    let response = agent.get(uri.as_ref()).call().map_err(Box::new)?;
     let mut reader = response.into_body().into_reader();
     let mut file = fs::File::create(destination.as_ref())?;
     io::copy(&mut reader, &mut file)?;
