@@ -50,7 +50,7 @@ tar = { version = "0.4.44", default-features = false, optional = true }
 termcolor = { version = "1.4.1", optional = true }
 thiserror = { version = "2.0.12", optional = true }
 toml = { workspace = true, optional = true }
-reqwest = { version = "0.12.23", features = ["blocking", "rustls-tls-native-roots"], optional = true }
+reqwest = { version = "0.12.23", default-features = false, features = ["blocking", "rustls-tls-native-roots"], optional = true }
 
 [dev-dependencies]
 serde_test = "1.0.177"
