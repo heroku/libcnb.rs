@@ -15,10 +15,10 @@ include = ["src/**/*", "LICENSE", "README.md"]
 workspace = true
 
 [dependencies]
-fancy-regex = { version = "0.16.0", default-features = false, features = ["std"] }
+fancy-regex = { version = "0.16.2", default-features = false, features = ["std"] }
 libcnb-proc-macros.workspace = true
-serde = { version = "1.0.219", features = ["derive"] }
-thiserror = "2.0.12"
+serde = { version = "1.0.227", features = ["derive"] }
+thiserror = "2.0.16"
 toml.workspace = true
 uriparse = "0.6.4"
 
