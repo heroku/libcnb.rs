@@ -58,6 +58,7 @@ mod test {
         // since this test needs to simulate custom certificate scenarios and is the only test
         // manipulating SSL_CERT_FILE. Since this test is testing that the function implicitly
         // gets global state from environment variables, there is no other way of testing this.
+        #[allow(unsafe_code)]
         unsafe {
             std::env::remove_var("SSL_CERT_FILE");
         }
@@ -100,12 +101,14 @@ mod test {
         )
         .unwrap();
 
+        #[allow(unsafe_code)]
         unsafe {
             std::env::set_var("SSL_CERT_FILE", badssl_self_signed_cert);
         }
 
         assert!(download_file("https://self-signed.badssl.com", temp_file.path()).is_ok());
 
+        #[allow(unsafe_code)]
         unsafe {
             std::env::remove_var("SSL_CERT_FILE");
         }
