@@ -18,6 +18,6 @@ workspace = true
 
 [dependencies]
 cargo_metadata = "0.22.0"
-fancy-regex = { version = "0.16.0", default-features = false, features = ["std"] }
+fancy-regex = { version = "0.16.2", default-features = false, features = ["std"] }
 quote = "1.0.40"
-syn = { version = "2.0.104", features = ["full"] }
+syn = { version = "2.0.106", features = ["full"] }
