@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `libherokubuildpack`:
-  - `download::download_file` now returns a `DownloadError` for erroneous HTTP status codes again. The behaviour unintentionally changed in `0.29.2`. ([#000](https://github.com/heroku/libcnb.rs/pull/000))
+  - `download::download_file` now returns a `DownloadError` for erroneous HTTP status codes again. The behaviour unintentionally changed in `0.29.2`. ([#961](https://github.com/heroku/libcnb.rs/pull/961))
 
 ## [0.29.2] - 2025-09-26
 
