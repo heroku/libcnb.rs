@@ -9,26 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `libherokubuildpack`:
+  - `download::download_file` now returns a `DownloadError` for erroneous HTTP status codes again. The behaviour unintentionally changed in `0.29.2`. ([#000](https://github.com/heroku/libcnb.rs/pull/000))
 
 ## [0.29.2] - 2025-09-26
 
 ## Changed
 
-- libcnb:
+- `libcnb`:
   - Updated OpenTelemetry dependencies from 0.28.0 to 0.30.0 ([#955](https://github.com/heroku/libcnb.rs/pull/955))
     - Updated `opentelemetry` from 0.28.0 to 0.30.0
     - Updated `opentelemetry_sdk` from 0.28.0 to 0.30.0
     - Updated `opentelemetry-proto` from 0.28.0 to 0.30.0
     - Updated `tracing-opentelemetry` from 0.29 to 0.31
 
-- libherokubuildpack:
+- `libherokubuildpack`:
   - `download::download_file` now uses the operating system's certificate facilities when verifying certificates. ([#959](https://github.com/heroku/libcnb.rs/pull/959))
 
 ## [0.29.1] - 2025-08-01
 
 ### Fixed
 
-- libcnb:
+- `libcnb`:
   - Order of automatically applied environment variables by libcnb, such as `PATH=<layer>/bin`, now matches the upstream CNB lifecycle. ([#938](https://github.com/heroku/libcnb.rs/pull/938))
 
 
@@ -43,21 +47,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- libcnb:
+- `libcnb`:
   - OTLP File Exports are now correctly newline-separated. ([#926](https://github.com/heroku/libcnb.rs/pull/926))
-- libcnb-package:
+- `libcnb-package`:
   - The `cargo build` command used when packing the buildpack is now run using `--locked` when the `CI` env var is set. ([#925](https://github.com/heroku/libcnb.rs/pull/925))
 
 ## [0.28.0] - 2025-03-03
 
 ### Added
 
-- libcnb:
+- `libcnb`:
   - The `tracing` crate is now setup for OTLP File Exports. Buildpacks using `tracing` will inherit tracing context from `libcnb.rs`. ([#918](https://github.com/heroku/libcnb.rs/pull/918))
 
 ### Changed
 
-- libcnb:
+- `libcnb`:
   - Tracing spans, events, and errors from libcnb.rs are now generated via the `tracing` library, and tracing data output has changed. ([#918](https://github.com/heroku/libcnb.rs/pull/918))
 
 ## [0.27.0] - 2025-02-27

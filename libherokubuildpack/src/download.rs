@@ -38,7 +38,7 @@ pub fn download_file(
         .use_rustls_tls()
         .build()?;
 
-    let mut response = client.get(uri.as_ref()).send()?;
+    let mut response = client.get(uri.as_ref()).send()?.error_for_status()?;
     let mut file = fs::File::create(destination.as_ref())?;
 
     io::copy(&mut response, &mut file)?;
@@ -48,8 +48,9 @@ pub fn download_file(
 
 #[cfg(test)]
 mod test {
-    use super::download_file;
+    use super::{DownloadError, download_file};
     use indoc::indoc;
+    use reqwest::StatusCode;
     use tempfile::NamedTempFile;
 
     #[test]
@@ -111,6 +112,21 @@ mod test {
         #[allow(unsafe_code)]
         unsafe {
             std::env::remove_var("SSL_CERT_FILE");
+        }
+    }
+
+    #[test]
+    fn test_404() {
+        let temp_file = NamedTempFile::new().unwrap();
+
+        let result = download_file("https://www.google.com/404", temp_file.path());
+
+        // The reqwest crate hides the actual error hierarchy so we neither can match against it
+        // nor create an instance for usage with assert_eq.
+        match result {
+            Err(DownloadError::HttpError(error))
+                if error.is_status() && error.status() == Some(StatusCode::NOT_FOUND) => {}
+            result => panic!("Unexpected result: {result:?}"),
         }
     }
 }
