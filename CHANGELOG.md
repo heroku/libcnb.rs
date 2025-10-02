@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.30.0] - 2025-10-02
 
-## Changed
+### Changed
 
 - `libcnb`:
   - Updated OpenTelemetry dependencies from 0.30 to 0.31 ([#964](https://github.com/heroku/libcnb.rs/pull/964))
@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.29.2] - 2025-09-26
 
-## Changed
+### Changed
 
 - `libcnb`:
   - Updated OpenTelemetry dependencies from 0.28.0 to 0.30.0 ([#955](https://github.com/heroku/libcnb.rs/pull/955))
