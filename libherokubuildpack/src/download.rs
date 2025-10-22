@@ -24,10 +24,10 @@ pub enum DownloadError {
 /// let temp_dir = tempdir().unwrap();
 /// let temp_file = temp_dir.path().join("result.bin");
 ///
-/// download_file("https://example.com/", &temp_file).unwrap();
+/// download_file("https://raw.githubusercontent.com/heroku/libcnb.rs/refs/heads/main/libherokubuildpack/LICENSE", &temp_file).unwrap();
 /// assert_eq!(
 ///     sha256(&temp_file).unwrap(),
-///     "ea8fac7c65fb589b0d53560f5251f74f9e9b243478dcb6b3ea79b5e36449c8d9"
+///     "1e881ecf2862d01e6e5bc2b861e46886d2a6fb01499c0c508a209a7271b13cf2" // digest for "../LICENSE"
 /// );
 /// ```
 pub fn download_file(
