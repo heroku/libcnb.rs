@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- `libcnb`:
+  - Added `failed` field to the metadata of the `libcnb-detect` and `libcnb-build` instrumentation spans ([#970](https://github.com/heroku/libcnb.rs/pull/970))
 
 ## [0.30.0] - 2025-10-02
 

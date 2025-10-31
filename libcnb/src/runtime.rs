@@ -136,7 +136,7 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
     #[cfg(feature = "trace")]
     let _trace_guard = init_tracing(&buildpack_descriptor.buildpack, "detect");
     #[cfg(feature = "trace")]
-    let _span_guard = tracing::span!(tracing::Level::INFO, "libcnb-detect").entered();
+    let detect_span = tracing::info_span!("libcnb-detect", failed = true).entered();
 
     #[cfg(feature = "trace")]
     let trace_error =
@@ -165,7 +165,7 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
     match detect_result.0 {
         InnerDetectResult::Fail => {
             #[cfg(feature = "trace")]
-            tracing::event!(tracing::Level::INFO, "libcnb-detect-failed");
+            tracing::info!("libcnb-detect-failed");
             Ok(exit_code::DETECT_DETECTION_FAILED)
         }
         InnerDetectResult::Pass { build_plan } => {
@@ -175,7 +175,10 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
                     .inspect_err(trace_error)?;
             }
             #[cfg(feature = "trace")]
-            tracing::event!(tracing::Level::INFO, "libcnb-detect-passed");
+            {
+                detect_span.record("failed", false);
+                tracing::info!("libcnb-detect-passed");
+            }
             Ok(exit_code::DETECT_DETECTION_PASSED)
         }
     }
@@ -201,7 +204,7 @@ pub fn libcnb_runtime_build<B: Buildpack>(
     #[cfg(feature = "trace")]
     let _trace_guard = init_tracing(&buildpack_descriptor.buildpack, "build");
     #[cfg(feature = "trace")]
-    let _span_guard = tracing::span!(tracing::Level::INFO, "libcnb-build").entered();
+    let build_span = tracing::info_span!("libcnb-build", failed = true).entered();
 
     #[cfg(feature = "trace")]
     let trace_error =
@@ -277,7 +280,10 @@ pub fn libcnb_runtime_build<B: Buildpack>(
             }
 
             #[cfg(feature = "trace")]
-            tracing::event!(tracing::Level::INFO, "libcnb-build-success");
+            {
+                build_span.record("failed", false);
+                tracing::info!("libcnb-build-success");
+            }
             Ok(exit_code::GENERIC_SUCCESS)
         }
     }
