@@ -39,7 +39,7 @@ crossbeam-utils = { version = "0.8.21", optional = true }
 # Ideally we'd use the fastest `zlib-ng` backend, however it fails to cross-compile:
 # https://github.com/rust-lang/libz-sys/issues/93
 # As such we have to use the next best alternate backend, which is `zlib`.
-flate2 = { version = "1.1.2", default-features = false, features = ["zlib"], optional = true }
+flate2 = { version = "1.1.5", default-features = false, features = ["zlib"], optional = true }
 hex = { version = "0.4.3", optional = true }
 libcnb = { workspace = true, optional = true }
 pathdiff = { version = "0.2.3", optional = true }
@@ -50,9 +50,9 @@ tar = { version = "0.4.44", default-features = false, optional = true }
 termcolor = { version = "1.4.1", optional = true }
 thiserror = { version = "2.0.17", optional = true }
 toml = { workspace = true, optional = true }
-reqwest = { version = "0.12.23", default-features = false, features = ["blocking", "rustls-tls-native-roots"], optional = true }
+reqwest = { version = "0.12.24", default-features = false, features = ["blocking", "rustls-tls-native-roots"], optional = true }
 
 [dev-dependencies]
 serde_test = "1.0.177"
 tempfile = "3.23.0"
-indoc = "2.0.6"
+indoc = "2.0.7"

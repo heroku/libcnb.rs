@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [0.30.1] - 2025-11-04
+
 - `libcnb`:
   - Added `failed` field to the metadata of the `libcnb-detect` and `libcnb-build` instrumentation spans ([#970](https://github.com/heroku/libcnb.rs/pull/970))
 
@@ -427,7 +430,8 @@ version number. See the changelog below for other changes.
 
 - Remove support for legacy BOM. Remove `Launch::bom`, `Build::bom`, `bom::Bom`, `bom::Entry`. ([#489](https://github.com/heroku/libcnb.rs/pull/489))
 
-[unreleased]: https://github.com/heroku/libcnb.rs/compare/v0.30.0...HEAD
+[unreleased]: https://github.com/heroku/libcnb.rs/compare/v0.30.1...HEAD
+[0.30.1]: https://github.com/heroku/libcnb.rs/compare/v0.30.0...v0.30.1
 [0.30.0]: https://github.com/heroku/libcnb.rs/compare/v0.29.3...v0.30.0
 [0.29.3]: https://github.com/heroku/libcnb.rs/compare/v0.29.2...v0.29.3
 [0.29.2]: https://github.com/heroku/libcnb.rs/compare/v0.29.1...v0.29.2
