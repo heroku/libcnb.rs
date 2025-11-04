@@ -121,7 +121,7 @@ pub struct Process {
     pub working_directory: WorkingDirectory,
 }
 
-#[derive(Deserialize, Debug, Clone, PartialEq, Eq)]
+#[derive(Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[serde(untagged)]
 pub enum WorkingDirectory {
     // There is no explicitly defined value in the CNB spec that denotes the app directory. Since
@@ -130,6 +130,7 @@ pub enum WorkingDirectory {
     // relative to the app directory, so "." will be the app directory itself. However, types that
     // contain this type (i.e. Process), should always add
     // `#[serde(skip_serializing_if = "WorkingDirectory::is_app")]` to a field of this type.
+    #[default]
     App,
     Directory(PathBuf),
 }
@@ -154,12 +155,6 @@ impl Serialize for WorkingDirectory {
             Self::App => serializer.serialize_str("."),
             Self::Directory(path) => path.serialize(serializer),
         }
-    }
-}
-
-impl Default for WorkingDirectory {
-    fn default() -> Self {
-        Self::App
     }
 }
 

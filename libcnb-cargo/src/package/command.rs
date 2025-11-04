@@ -25,7 +25,7 @@ pub(crate) fn execute(args: &PackageArgs) -> Result<(), Error> {
     };
 
     let target_triple = match &args.target {
-        Some(target) => target.to_string(),
+        Some(target) => target.clone(),
         None => determine_target_triple_from_host_arch()?,
     };
 

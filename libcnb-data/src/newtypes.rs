@@ -14,7 +14,7 @@
 /// - [`FromStr`](std::str::FromStr)
 /// - [`Borrow<String>`](std::borrow::Borrow<String>)
 /// - [`Borrow<str>`](std::borrow::Borrow<str>)
-/// - [`Deref<Target=String>`]
+/// - [`Deref<Target=String>`](std::ops::Deref)
 /// - [`AsRef<String>`]
 ///
 /// This macro also generates another macro that can be used to construct values of the newtype from
