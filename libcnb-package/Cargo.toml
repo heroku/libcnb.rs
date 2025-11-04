@@ -16,8 +16,8 @@ workspace = true
 
 [dependencies]
 cargo_metadata = "0.23.0"
-ignore = "0.4.23"
-indoc = "2.0.6"
+ignore = "0.4.25"
+indoc = "2.0.7"
 libcnb-common.workspace = true
 libcnb-data.workspace = true
 petgraph = { version = "0.8.3", default-features = false, features = ["std"] }
