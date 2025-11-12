@@ -20,17 +20,16 @@ use std::path::{Path, PathBuf};
 use std::process::exit;
 use std::{env, fs};
 
-#[derive(Debug)]
 enum ExecutionPhase {
-    Detect,
-    Build,
+    Detect(DetectArgs),
+    Build(BuildArgs),
 }
 
 impl AsRef<str> for &ExecutionPhase {
     fn as_ref(&self) -> &str {
         match self {
-            ExecutionPhase::Detect => "detect",
-            ExecutionPhase::Build => "build",
+            ExecutionPhase::Detect(_) => "detect",
+            ExecutionPhase::Build(_) => "build",
         }
     }
 }
@@ -89,8 +88,32 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
         .and_then(OsStr::to_str);
 
     let execution_phase = match current_exe_file_name {
-        Some("detect") => ExecutionPhase::Detect,
-        Some("build") => ExecutionPhase::Build,
+        Some("detect") => {
+            ExecutionPhase::Detect(DetectArgs::parse(&args).unwrap_or_else(|parse_error| {
+                match parse_error {
+                    DetectArgsParseError::InvalidArguments => {
+                        eprintln!("Usage: detect <platform_dir> <buildplan>");
+                        eprintln!(
+                            "https://github.com/buildpacks/spec/blob/main/buildpack.md#detection"
+                        );
+                        exit(exit_code::GENERIC_UNSPECIFIED_ERROR);
+                    }
+                }
+            }))
+        }
+        Some("build") => {
+            ExecutionPhase::Build(BuildArgs::parse(&args).unwrap_or_else(|parse_error| {
+                match parse_error {
+                    BuildArgsParseError::InvalidArguments => {
+                        eprintln!("Usage: build <layers> <platform> <plan>");
+                        eprintln!(
+                            "https://github.com/buildpacks/spec/blob/main/buildpack.md#build"
+                        );
+                        exit(exit_code::GENERIC_UNSPECIFIED_ERROR);
+                    }
+                }
+            }))
+        }
         other => {
             eprintln!(
                 "Error: Expected the name of this executable to be 'detect' or 'build', but it was '{}'",
@@ -115,44 +138,30 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
             }
         };
 
-    // The guard must persist until after error handling to capture tracing in buildpack.on_error(...).
+    // IMPORTANT: You must drop this before calling exit(<code>)
     #[cfg(feature = "trace")]
-    let _trace_guard = init_tracing(&buildpack_descriptor.buildpack, &execution_phase);
+    let buildpack_trace = init_tracing(&buildpack_descriptor.buildpack, &execution_phase);
 
     let result = match execution_phase {
-        ExecutionPhase::Detect => libcnb_runtime_detect(
-            buildpack,
-            buildpack_descriptor,
-            DetectArgs::parse(&args).unwrap_or_else(|parse_error| match parse_error {
-                DetectArgsParseError::InvalidArguments => {
-                    eprintln!("Usage: detect <platform_dir> <buildplan>");
-                    eprintln!(
-                        "https://github.com/buildpacks/spec/blob/main/buildpack.md#detection"
-                    );
-                    exit(exit_code::GENERIC_UNSPECIFIED_ERROR);
-                }
-            }),
-        ),
-        ExecutionPhase::Build => libcnb_runtime_build(
-            buildpack,
-            buildpack_descriptor,
-            BuildArgs::parse(&args).unwrap_or_else(|parse_error| match parse_error {
-                BuildArgsParseError::InvalidArguments => {
-                    eprintln!("Usage: build <layers> <platform> <plan>");
-                    eprintln!("https://github.com/buildpacks/spec/blob/main/buildpack.md#build");
-                    exit(exit_code::GENERIC_UNSPECIFIED_ERROR);
-                }
-            }),
-        ),
+        ExecutionPhase::Detect(detect_args) => {
+            libcnb_runtime_detect(buildpack, buildpack_descriptor, detect_args)
+        }
+        ExecutionPhase::Build(build_args) => {
+            libcnb_runtime_build(buildpack, buildpack_descriptor, build_args)
+        }
     };
 
-    match result {
-        Ok(code) => exit(code),
+    let exit_code = match result {
+        Ok(code) => code,
         Err(libcnb_error) => {
             buildpack.on_error(libcnb_error);
-            exit(exit_code::GENERIC_UNSPECIFIED_ERROR);
+            exit_code::GENERIC_UNSPECIFIED_ERROR
         }
-    }
+    };
+
+    #[cfg(feature = "trace")]
+    drop(buildpack_trace);
+    exit(exit_code)
 }
 
 /// Detect entry point for this framework.
