@@ -20,6 +20,21 @@ use std::path::{Path, PathBuf};
 use std::process::exit;
 use std::{env, fs};
 
+#[derive(Debug)]
+enum ExecutionPhase {
+    Detect,
+    Build,
+}
+
+impl AsRef<str> for &ExecutionPhase {
+    fn as_ref(&self) -> &str {
+        match self {
+            ExecutionPhase::Detect => "detect",
+            ExecutionPhase::Build => "build",
+        }
+    }
+}
+
 /// Main entry point for this framework.
 ///
 /// The Buildpack API requires us to have separate entry points for each of `bin/{detect,build}`.
@@ -73,29 +88,9 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
         .and_then(Path::file_name)
         .and_then(OsStr::to_str);
 
-    let result = match current_exe_file_name {
-        Some("detect") => libcnb_runtime_detect(
-            buildpack,
-            DetectArgs::parse(&args).unwrap_or_else(|parse_error| match parse_error {
-                DetectArgsParseError::InvalidArguments => {
-                    eprintln!("Usage: detect <platform_dir> <buildplan>");
-                    eprintln!(
-                        "https://github.com/buildpacks/spec/blob/main/buildpack.md#detection"
-                    );
-                    exit(exit_code::GENERIC_UNSPECIFIED_ERROR);
-                }
-            }),
-        ),
-        Some("build") => libcnb_runtime_build(
-            buildpack,
-            BuildArgs::parse(&args).unwrap_or_else(|parse_error| match parse_error {
-                BuildArgsParseError::InvalidArguments => {
-                    eprintln!("Usage: build <layers> <platform> <plan>");
-                    eprintln!("https://github.com/buildpacks/spec/blob/main/buildpack.md#build");
-                    exit(exit_code::GENERIC_UNSPECIFIED_ERROR);
-                }
-            }),
-        ),
+    let execution_phase = match current_exe_file_name {
+        Some("detect") => ExecutionPhase::Detect,
+        Some("build") => ExecutionPhase::Build,
         other => {
             eprintln!(
                 "Error: Expected the name of this executable to be 'detect' or 'build', but it was '{}'",
@@ -107,6 +102,48 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
             );
             exit(exit_code::GENERIC_UNEXPECTED_EXECUTABLE_NAME_ERROR)
         }
+    };
+
+    // read the buildpack descriptor early so we can initialize tracing
+    let buildpack_descriptor: ComponentBuildpackDescriptor<<B as Buildpack>::Metadata> =
+        match read_buildpack_descriptor() {
+            Ok(descriptor) => descriptor,
+            Err(libcnb_error) => {
+                // note: we won't get tracing here since we haven't initialized it yet
+                buildpack.on_error(libcnb_error);
+                exit(exit_code::GENERIC_UNSPECIFIED_ERROR);
+            }
+        };
+
+    // The guard must persist until after error handling to capture tracing in buildpack.on_error(...).
+    #[cfg(feature = "trace")]
+    let _trace_guard = init_tracing(&buildpack_descriptor.buildpack, &execution_phase);
+
+    let result = match execution_phase {
+        ExecutionPhase::Detect => libcnb_runtime_detect(
+            buildpack,
+            buildpack_descriptor,
+            DetectArgs::parse(&args).unwrap_or_else(|parse_error| match parse_error {
+                DetectArgsParseError::InvalidArguments => {
+                    eprintln!("Usage: detect <platform_dir> <buildplan>");
+                    eprintln!(
+                        "https://github.com/buildpacks/spec/blob/main/buildpack.md#detection"
+                    );
+                    exit(exit_code::GENERIC_UNSPECIFIED_ERROR);
+                }
+            }),
+        ),
+        ExecutionPhase::Build => libcnb_runtime_build(
+            buildpack,
+            buildpack_descriptor,
+            BuildArgs::parse(&args).unwrap_or_else(|parse_error| match parse_error {
+                BuildArgsParseError::InvalidArguments => {
+                    eprintln!("Usage: build <layers> <platform> <plan>");
+                    eprintln!("https://github.com/buildpacks/spec/blob/main/buildpack.md#build");
+                    exit(exit_code::GENERIC_UNSPECIFIED_ERROR);
+                }
+            }),
+        ),
     };
 
     match result {
@@ -124,17 +161,13 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
 #[doc(hidden)]
 pub fn libcnb_runtime_detect<B: Buildpack>(
     buildpack: &B,
+    buildpack_descriptor: ComponentBuildpackDescriptor<<B as Buildpack>::Metadata>,
     args: DetectArgs,
 ) -> crate::Result<i32, B::Error> {
     let app_dir = env::current_dir().map_err(Error::CannotDetermineAppDirectory)?;
 
     let buildpack_dir = read_buildpack_dir()?;
 
-    let buildpack_descriptor: ComponentBuildpackDescriptor<<B as Buildpack>::Metadata> =
-        read_buildpack_descriptor()?;
-
-    #[cfg(feature = "trace")]
-    let _trace_guard = init_tracing(&buildpack_descriptor.buildpack, "detect");
     #[cfg(feature = "trace")]
     let detect_span = tracing::info_span!("libcnb-detect", failed = true).entered();
 
@@ -190,6 +223,7 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
 #[doc(hidden)]
 pub fn libcnb_runtime_build<B: Buildpack>(
     buildpack: &B,
+    buildpack_descriptor: ComponentBuildpackDescriptor<<B as Buildpack>::Metadata>,
     args: BuildArgs,
 ) -> crate::Result<i32, B::Error> {
     let layers_dir = args.layers_dir_path;
@@ -198,11 +232,6 @@ pub fn libcnb_runtime_build<B: Buildpack>(
 
     let buildpack_dir = read_buildpack_dir()?;
 
-    let buildpack_descriptor: ComponentBuildpackDescriptor<<B as Buildpack>::Metadata> =
-        read_buildpack_descriptor()?;
-
-    #[cfg(feature = "trace")]
-    let _trace_guard = init_tracing(&buildpack_descriptor.buildpack, "build");
     #[cfg(feature = "trace")]
     let build_span = tracing::info_span!("libcnb-build", failed = true).entered();
 

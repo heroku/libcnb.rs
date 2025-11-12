@@ -42,7 +42,8 @@ pub(crate) struct BuildpackTrace {
 /// Start an OpenTelemetry trace and span that exports to an
 /// OpenTelemetry file export. The resulting trace provider and span are
 /// enriched with data from the buildpack and the rust environment.
-pub(crate) fn init_tracing(buildpack: &Buildpack, phase_name: &'static str) -> BuildpackTrace {
+pub(crate) fn init_tracing(buildpack: &Buildpack, phase_name: impl AsRef<str>) -> BuildpackTrace {
+    let phase_name = phase_name.as_ref();
     let trace_name = format!(
         "{}-{phase_name}",
         buildpack.id.replace(['/', '.', '-'], "_")
