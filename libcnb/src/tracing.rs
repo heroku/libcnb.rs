@@ -1,3 +1,4 @@
+use crate::runtime::ExecutionPhase;
 use libcnb_data::buildpack::Buildpack;
 use opentelemetry::{
     InstrumentationScope, KeyValue,
@@ -42,7 +43,14 @@ pub(crate) struct BuildpackTrace {
 /// Start an OpenTelemetry trace and span that exports to an
 /// OpenTelemetry file export. The resulting trace provider and span are
 /// enriched with data from the buildpack and the rust environment.
-pub(crate) fn init_tracing(buildpack: &Buildpack, phase_name: &'static str) -> BuildpackTrace {
+pub(crate) fn init_tracing(
+    buildpack: &Buildpack,
+    execution_phase: &ExecutionPhase,
+) -> BuildpackTrace {
+    let phase_name = match execution_phase {
+        ExecutionPhase::Detect(_) => "detect",
+        ExecutionPhase::Build(_) => "build",
+    };
     let trace_name = format!(
         "{}-{phase_name}",
         buildpack.id.replace(['/', '.', '-'], "_")
@@ -175,11 +183,14 @@ impl<W: Write + Send + Debug> SpanExporter for FileExporter<W> {
 mod tests {
 
     use super::init_tracing;
+    use crate::BuildArgs;
+    use crate::runtime::ExecutionPhase;
     use libcnb_data::{
         buildpack::{Buildpack, BuildpackVersion},
         buildpack_id,
     };
     use serde_json::Value;
+    use std::path::PathBuf;
     use std::{collections::HashSet, fs, io::ErrorKind};
     use tracing::Level;
 
@@ -196,11 +207,18 @@ mod tests {
             licenses: Vec::new(),
             sbom_formats: HashSet::new(),
         };
-        let telemetry_path = "/tmp/libcnb-telemetry/company_com_foo-bar.jsonl";
+        let telemetry_path = "/tmp/libcnb-telemetry/company_com_foo-build.jsonl";
         _ = fs::remove_file(telemetry_path);
 
         {
-            let _trace_guard = init_tracing(&buildpack, "bar");
+            let _trace_guard = init_tracing(
+                &buildpack,
+                &ExecutionPhase::Build(BuildArgs {
+                    layers_dir_path: PathBuf::from("./layers/dir"),
+                    platform_dir_path: PathBuf::from("./platform/dir"),
+                    buildpack_plan_path: PathBuf::from("./buildpack_plan"),
+                }),
+            );
             let _span_guard = tracing::span!(Level::INFO, "span-name").entered();
             tracing::event!(Level::INFO, "baz-event");
             let err = std::io::Error::new(ErrorKind::Unsupported, "oh no!");
