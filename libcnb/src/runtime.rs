@@ -20,20 +20,10 @@ use std::path::{Path, PathBuf};
 use std::process::exit;
 use std::{env, fs};
 
-enum ExecutionPhase {
+pub(crate) enum ExecutionPhase {
     Detect(DetectArgs),
     Build(BuildArgs),
 }
-
-impl AsRef<str> for &ExecutionPhase {
-    fn as_ref(&self) -> &str {
-        match self {
-            ExecutionPhase::Detect(_) => "detect",
-            ExecutionPhase::Build(_) => "build",
-        }
-    }
-}
-
 /// Main entry point for this framework.
 ///
 /// The Buildpack API requires us to have separate entry points for each of `bin/{detect,build}`.

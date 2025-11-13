@@ -23,6 +23,7 @@ use std::{
 use tracing::Level;
 use tracing_opentelemetry::OpenTelemetryLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use crate::runtime::ExecutionPhase;
 
 // This is the directory in which `BuildpackTrace` stores OpenTelemetry File
 // Exports. Services which intend to export the tracing data from libcnb.rs
@@ -42,8 +43,11 @@ pub(crate) struct BuildpackTrace {
 /// Start an OpenTelemetry trace and span that exports to an
 /// OpenTelemetry file export. The resulting trace provider and span are
 /// enriched with data from the buildpack and the rust environment.
-pub(crate) fn init_tracing(buildpack: &Buildpack, phase_name: impl AsRef<str>) -> BuildpackTrace {
-    let phase_name = phase_name.as_ref();
+pub(crate) fn init_tracing(buildpack: &Buildpack, execution_phase: &ExecutionPhase) -> BuildpackTrace {
+    let phase_name = match execution_phase {
+        ExecutionPhase::Detect(_) => "detect",
+        ExecutionPhase::Build(_) => "build",
+    };
     let trace_name = format!(
         "{}-{phase_name}",
         buildpack.id.replace(['/', '.', '-'], "_")
