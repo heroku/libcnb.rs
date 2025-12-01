@@ -24,7 +24,7 @@ jobs:
         # which include the latest stable release of Rust, Rustup, Clippy and rustfmt.
         run: rustup update
       - name: Rust Cache
-        uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
+        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
       - name: Clippy
         # Using --all-targets so tests are checked and --deny to fail on warnings.
         # Not using --locked here and below since Cargo.lock is in .gitignore.
@@ -44,7 +44,7 @@ jobs:
       - name: Update Rust toolchain
         run: rustup update
       - name: Rust Cache
-        uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
+        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
       - name: Run unit tests
         run: cargo test --all-features
 
@@ -66,9 +66,9 @@ jobs:
       - name: Install Rust linux-musl target
         run: rustup target add x86_64-unknown-linux-musl
       - name: Rust Cache
-        uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
+        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
       - name: Install Pack CLI
-        uses: buildpacks/github-actions/setup-pack@2d58ee348f9a2c381888bfe3dfe99caffdddc84f # v5.9.6
+        uses: buildpacks/github-actions/setup-pack@88d61b2f0183a156d3e0526e95cc19ab55daae5c # v5.9.7
       - name: Run integration tests
         # Runs only tests annotated with the `ignore` attribute (which in this repo, are the integration tests).
         run: cargo test -- --ignored
