@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `libcnb`
+  - The default delimiter for PATH based `LayerEnv` operations is now colon (`:`) for unix and semi-colon (`;`) for windows rather than an empty string. Developers relying on this behavior should use an explicit empty delimiter.
+    This value is subject to change if the [upstream spec changes the default value](https://github.com/buildpacks/spec/issues/285). ([#945](https://github.com/heroku/libcnb.rs/pull/945))
 
 ## [0.30.2] - 2025-11-13
 
