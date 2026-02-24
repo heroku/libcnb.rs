@@ -5,6 +5,7 @@ use crate::{BuildConfig, BuildpackReference, PackResult, TestContext, app, build
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::env;
+use std::fs;
 use std::path::{Path, PathBuf};
 use tempfile::tempdir;
 
@@ -103,8 +104,7 @@ impl TestRunner {
         let buildpacks_target_dir =
             tempdir().expect("Error creating temporary directory for compiled buildpacks");
 
-        let telemetry_dir =
-            tempdir().expect("Error creating temporary directory for telemetry files");
+        let telemetry_dir = create_telemetry_dir();
 
         let mut pack_command = PackBuildCommand::new(
             &config.builder_name,
@@ -189,6 +189,21 @@ pub(crate) struct TemporaryDockerResources {
     pub(crate) build_cache_volume_name: String,
     pub(crate) image_name: String,
     pub(crate) launch_cache_volume_name: String,
+}
+
+/// Creates a temporary directory for telemetry files with permissions that allow the CNB
+/// lifecycle (which runs as a non-root user inside the container) to write to it.
+fn create_telemetry_dir() -> tempfile::TempDir {
+    let dir = tempdir().expect("Error creating temporary directory for telemetry files");
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(dir.path(), fs::Permissions::from_mode(0o777))
+            .expect("Error setting telemetry directory permissions");
+    }
+
+    dir
 }
 
 fn read_telemetry_files(dir: &Path) -> HashMap<String, String> {
