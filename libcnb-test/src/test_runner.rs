@@ -3,8 +3,9 @@ use crate::pack::PackBuildCommand;
 use crate::util::CommandError;
 use crate::{BuildConfig, BuildpackReference, PackResult, TestContext, app, build, util};
 use std::borrow::Borrow;
+use std::collections::HashMap;
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tempfile::tempdir;
 
 /// Runner for libcnb integration tests.
@@ -102,12 +103,16 @@ impl TestRunner {
         let buildpacks_target_dir =
             tempdir().expect("Error creating temporary directory for compiled buildpacks");
 
+        let telemetry_dir =
+            tempdir().expect("Error creating temporary directory for telemetry files");
+
         let mut pack_command = PackBuildCommand::new(
             &config.builder_name,
             &app_dir,
             &docker_resources.image_name,
             &docker_resources.build_cache_volume_name,
             &docker_resources.launch_cache_volume_name,
+            telemetry_dir.path(),
         );
 
         config.env.iter().for_each(|(key, value)| {
@@ -164,12 +169,15 @@ impl TestRunner {
             }
         };
 
+        let telemetry_files = read_telemetry_files(telemetry_dir.path());
+
         let test_context = TestContext {
             pack_stdout: output.stdout,
             pack_stderr: output.stderr,
             docker_resources,
             config: config.clone(),
             runner: self,
+            telemetry_files,
         };
 
         f(test_context);
@@ -181,6 +189,25 @@ pub(crate) struct TemporaryDockerResources {
     pub(crate) build_cache_volume_name: String,
     pub(crate) image_name: String,
     pub(crate) launch_cache_volume_name: String,
+}
+
+fn read_telemetry_files(dir: &Path) -> HashMap<String, String> {
+    let mut files = HashMap::new();
+
+    if let Ok(entries) = std::fs::read_dir(dir) {
+        for entry in entries.filter_map(Result::ok) {
+            let path = entry.path();
+            if path.extension().and_then(|s| s.to_str()) == Some("jsonl") {
+                if let Ok(contents) = std::fs::read_to_string(&path) {
+                    if let Some(filename) = path.file_name().and_then(|s| s.to_str()) {
+                        files.insert(filename.to_string(), contents);
+                    }
+                }
+            }
+        }
+    }
+
+    files
 }
 
 impl Drop for TemporaryDockerResources {
