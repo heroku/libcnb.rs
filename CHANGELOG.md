@@ -12,13 +12,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.30.3] - 2026-03-02
 
+### Changed
+
+- Updated `toml` crate from `0.9.x` to `1.x`. ([#986](https://github.com/heroku/libcnb.rs/pull/986))
 
 ## [0.30.2] - 2025-11-13
+
+### Fixed
 
 - `libcnb`:
   - Ensure instrumentation covers `buildpack.on_error()` functionality ([#974](https://github.com/heroku/libcnb.rs/pull/974))
 
 ## [0.30.1] - 2025-11-04
+
+### Added
 
 - `libcnb`:
   - Added `failed` field to the metadata of the `libcnb-detect` and `libcnb-build` instrumentation spans ([#970](https://github.com/heroku/libcnb.rs/pull/970))
