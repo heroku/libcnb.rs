@@ -792,6 +792,20 @@ mod tests {
     }
 
     #[test]
+    fn layer_env_double_path_insert() {
+        let mut layer_env = LayerEnv::new();
+        layer_env.insert(Scope::Build, ModificationBehavior::Delimiter, "PATH", ":");
+        layer_env.insert(Scope::Build, ModificationBehavior::Prepend, "PATH", "two");
+        layer_env.insert(Scope::Build, ModificationBehavior::Prepend, "PATH", "one");
+
+        let result_env = layer_env.apply_to_empty(Scope::Build);
+        assert_eq!(
+            vec![("PATH", "one:two")],
+            environment_as_sorted_vector(&result_env)
+        );
+    }
+
+    #[test]
     fn layer_env_insert() {
         let mut layer_env = LayerEnv::new();
         layer_env.insert(
