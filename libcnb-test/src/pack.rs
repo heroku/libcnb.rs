@@ -2,6 +2,9 @@ use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::process::Command;
 
+// Must match `TELEMETRY_EXPORT_ROOT` in `libcnb::tracing`.
+const TELEMETRY_CONTAINER_PATH: &str = "/tmp/libcnb-telemetry";
+
 /// Represents a `pack build` command.
 #[derive(Clone, Debug)]
 pub(crate) struct PackBuildCommand {
@@ -13,6 +16,7 @@ pub(crate) struct PackBuildCommand {
     launch_cache_volume_name: String,
     path: PathBuf,
     pull_policy: PullPolicy,
+    telemetry_dir: PathBuf,
     trust_builder: bool,
     trust_extra_buildpacks: bool,
 }
@@ -54,6 +58,7 @@ impl PackBuildCommand {
         image_name: impl Into<String>,
         build_cache_volume_name: impl Into<String>,
         launch_cache_volume_name: impl Into<String>,
+        telemetry_dir: impl Into<PathBuf>,
     ) -> Self {
         Self {
             build_cache_volume_name: build_cache_volume_name.into(),
@@ -65,6 +70,7 @@ impl PackBuildCommand {
             path: path.into(),
             // Prevent redundant image-pulling, which slows tests and risks hitting registry rate limits.
             pull_policy: PullPolicy::IfNotPresent,
+            telemetry_dir: telemetry_dir.into(),
             trust_builder: true,
             trust_extra_buildpacks: true,
         }
@@ -132,6 +138,14 @@ impl From<PackBuildCommand> for Command {
             command.arg("--trust-extra-buildpacks");
         }
 
+        command.args([
+            "--volume",
+            &format!(
+                "{}:{TELEMETRY_CONTAINER_PATH}:rw",
+                pack_build_command.telemetry_dir.to_string_lossy()
+            ),
+        ]);
+
         command
     }
 }
@@ -193,6 +207,7 @@ mod tests {
             launch_cache_volume_name: String::from("launch-cache-volume"),
             path: PathBuf::from("/tmp/foo/bar"),
             pull_policy: PullPolicy::IfNotPresent,
+            telemetry_dir: PathBuf::from("/tmp/telemetry"),
             trust_builder: true,
             trust_extra_buildpacks: true,
         };
@@ -226,6 +241,8 @@ mod tests {
                 "ENV_FOO=FOO_VALUE",
                 "--trust-builder",
                 "--trust-extra-buildpacks",
+                "--volume",
+                "/tmp/telemetry:/tmp/libcnb-telemetry:rw",
             ]
         );
 
