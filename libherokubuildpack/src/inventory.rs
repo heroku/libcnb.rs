@@ -24,6 +24,13 @@
 //! - Extensible with metadata: The default inventory format covers a lot of common use cases,
 //!   but if you need more, you can extend it by adding custom metadata to each artifact.
 //!
+//! ## Schedule
+//!
+//! The [`schedule`] sub-module provides [`schedule::Schedule`] and [`schedule::Release`] types
+//! for associating version requirements with release lifecycle data such as end-of-life dates. It
+//! uses the [`version::VersionRequirement`] trait for version matching, and each release
+//! can carry arbitrary metadata for additional information such as support tier or channel name.
+//!
 //! ## Example usage
 //!
 //! This example demonstrates:
@@ -91,6 +98,7 @@
 //! ```
 pub mod artifact;
 pub mod checksum;
+pub mod schedule;
 pub mod version;
 
 #[cfg(feature = "inventory-semver")]
