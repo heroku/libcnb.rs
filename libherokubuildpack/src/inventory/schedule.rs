@@ -122,9 +122,8 @@ where
     E: Serialize,
     M: Serialize,
 {
-    #![allow(clippy::unwrap_used)]
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&toml::to_string(self).unwrap())
+        f.write_str(&toml::to_string(self).expect("should serialize to TOML string"))
     }
 }
 
