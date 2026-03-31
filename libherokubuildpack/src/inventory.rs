@@ -98,7 +98,7 @@
 //! ```
 pub mod artifact;
 pub mod checksum;
-pub mod schedule;
+pub mod warning;
 pub mod version;
 
 #[cfg(feature = "inventory-semver")]
