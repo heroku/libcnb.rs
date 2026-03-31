@@ -4,123 +4,116 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Formatter;
 use std::str::FromStr;
 
-/// Represents a release schedule for a set of version requirements.
+/// A collection of version-specific warnings that can be resolved against a version.
 ///
-/// A schedule maps version requirements to release lifecycle data such as end-of-life
-/// dates. It can be used by a buildpack to determine support status for a resolved version.
+/// Warnings are matched in declaration order, and all matching warnings are returned
+/// by [`resolve`](Self::resolve).
 ///
-/// The schedule can be manipulated in-memory and then re-serialized to disk to facilitate
-/// both reading and writing schedule files.
+/// The collection can be manipulated in-memory and then re-serialized to disk to facilitate
+/// both reading and writing warning files.
 ///
 /// # Example
 ///
 /// ```rust
-/// use libherokubuildpack::inventory::schedule::{Schedule, Release};
+/// use libherokubuildpack::inventory::warning::{VersionWarning, VersionWarnings};
 /// use semver::{Version, VersionReq};
 ///
-/// // Create a release and add it to a schedule
-/// let new_release = Release {
+/// // Create a warning and add it to the collection
+/// let warning = VersionWarning {
 ///     requirement: VersionReq::parse("^1.0").unwrap(),
-///     end_of_life: "2025-01-01".to_string(),
-///     metadata: None,
+///     message: "Version 1.x will reach end-of-life on 2025-01-01.".to_string(),
 /// };
-/// let mut schedule = Schedule::<VersionReq, String, Option<()>>::new();
-/// schedule.push(new_release.clone());
+/// let mut warnings = VersionWarnings::<VersionReq>::new();
+/// warnings.push(warning.clone());
 ///
-/// // Serialize the schedule to TOML
-/// let schedule_toml = schedule.to_string();
+/// // Serialize to TOML
+/// let warnings_toml = warnings.to_string();
 /// assert_eq!(
-///     r#"[[releases]]
+///     r#"[[warnings]]
 /// requirement = "^1.0"
-/// end_of_life = "2025-01-01"
+/// message = "Version 1.x will reach end-of-life on 2025-01-01."
 /// "#,
-///     schedule_toml
+///     warnings_toml
 /// );
 ///
-/// // Deserialize the schedule from TOML
-/// let parsed_schedule = schedule_toml
-///     .parse::<Schedule<VersionReq, String, Option<()>>>()
-///     .unwrap();
+/// // Deserialize from TOML
+/// let parsed = warnings_toml.parse::<VersionWarnings<VersionReq>>().unwrap();
 ///
-/// // Resolve a release for a given version
-/// let resolved_release = parsed_schedule.resolve(&Version::new(1, 2, 3)).unwrap();
-/// assert_eq!(resolved_release.end_of_life, "2025-01-01");
+/// // Resolve warnings for a given version
+/// let matched = parsed.resolve(&Version::new(1, 2, 3));
+/// assert_eq!(matched.len(), 1);
+/// assert_eq!(
+///     matched[0].message,
+///     "Version 1.x will reach end-of-life on 2025-01-01."
+/// );
 /// ```
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Schedule<R, E, M> {
-    pub releases: Vec<Release<R, E, M>>,
+pub struct VersionWarnings<R> {
+    pub warnings: Vec<VersionWarning<R>>,
 }
 
-/// A single entry in a [`Schedule`], covering versions that match `requirement`.
+/// A single warning associated with a version requirement.
 ///
-/// Each release carries an end-of-life value that can be used to determine
-/// when a release is no longer supported.
-///
-/// Metadata can be used to store additional information about the release.
+/// When a resolved version satisfies the [`requirement`](Self::requirement), the
+/// [`message`](Self::message) should be displayed to the user.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Release<R, E, M> {
+pub struct VersionWarning<R> {
     pub requirement: R,
-    pub end_of_life: E,
-    pub metadata: M,
+    pub message: String,
 }
 
-impl<R, E, M> Default for Schedule<R, E, M> {
+impl<R> Default for VersionWarnings<R> {
     fn default() -> Self {
-        Self { releases: vec![] }
+        Self { warnings: vec![] }
     }
 }
 
-impl<R, E, M> Schedule<R, E, M> {
-    /// Creates a new empty schedule
+impl<R> VersionWarnings<R> {
+    /// Creates a new empty collection of version warnings.
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Add a new release to the in-memory schedule
-    pub fn push(&mut self, release: Release<R, E, M>) {
-        self.releases.push(release);
+    /// Add a new warning to the in-memory collection.
+    pub fn push(&mut self, warning: VersionWarning<R>) {
+        self.warnings.push(warning);
     }
 
-    /// Return a single release as the first match for the given version.
+    /// Return all warnings whose requirement matches the given version.
     ///
-    /// If multiple releases match the version, the first one in declaration order is returned.
-    /// This differs from [`Inventory::resolve`](super::Inventory::resolve), which returns the
-    /// highest matching version.
-    pub fn resolve<V>(&self, version: &V) -> Option<&Release<R, E, M>>
+    /// If no warnings match, an empty vector is returned.
+    pub fn resolve<V>(&self, version: &V) -> Vec<&VersionWarning<R>>
     where
         R: VersionRequirement<V>,
     {
-        self.releases
+        self.warnings
             .iter()
-            .find(|release| release.requirement.satisfies(version))
+            .filter(|warning| warning.requirement.satisfies(version))
+            .collect()
     }
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum ParseScheduleError {
+pub enum ParseWarningsError {
     #[error("TOML parsing error: {0}")]
     TomlError(toml::de::Error),
 }
 
-impl<R, E, M> FromStr for Schedule<R, E, M>
+impl<R> FromStr for VersionWarnings<R>
 where
     R: DeserializeOwned,
-    E: DeserializeOwned,
-    M: DeserializeOwned,
 {
-    type Err = ParseScheduleError;
+    type Err = ParseWarningsError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        toml::from_str(s).map_err(ParseScheduleError::TomlError)
+        toml::from_str(s).map_err(ParseWarningsError::TomlError)
     }
 }
 
-impl<R, E, M> std::fmt::Display for Schedule<R, E, M>
+impl<R> std::fmt::Display for VersionWarnings<R>
 where
     R: Serialize,
-    E: Serialize,
-    M: Serialize,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_str(&toml::to_string(self).expect("should serialize to TOML string"))
@@ -132,48 +125,54 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_matching_release_resolution() {
-        let mut schedule = Schedule::new();
-        schedule.push(create_release("v1", "2025-01-01"));
-        schedule.push(create_release("v2", "2026-01-01"));
+    fn test_matching_warning_resolution() {
+        let mut warnings = VersionWarnings::new();
+        warnings.push(create_warning("v1", "Warning for v1"));
+        warnings.push(create_warning("v2", "Warning for v2"));
 
-        assert_eq!(
-            "2026-01-01",
-            &schedule
-                .resolve(&String::from("v2"))
-                .expect("should resolve matching release")
-                .end_of_life,
-        );
+        let matched = warnings.resolve(&String::from("v2"));
+        assert_eq!(matched.len(), 1);
+        assert_eq!(matched[0].message, "Warning for v2");
     }
 
     #[test]
-    fn test_dont_resolve_release_with_wrong_version() {
-        let mut schedule = Schedule::new();
-        schedule.push(create_release("v1", "2025-01-01"));
+    fn test_no_matching_warnings() {
+        let mut warnings = VersionWarnings::new();
+        warnings.push(create_warning("v1", "Warning for v1"));
 
-        assert!(schedule.resolve(&String::from("v9")).is_none());
+        let matched = warnings.resolve(&String::from("v9"));
+        assert!(matched.is_empty());
     }
 
     #[test]
-    fn test_resolve_returns_first_match() {
-        let mut schedule = Schedule::new();
-        schedule.push(create_release("v1", "first"));
-        schedule.push(create_release("v1", "second"));
+    fn test_resolve_returns_all_matches() {
+        let mut warnings = VersionWarnings::new();
+        warnings.push(create_warning("v1", "first"));
+        warnings.push(create_warning("v1", "second"));
 
-        assert_eq!(
-            "first",
-            &schedule
-                .resolve(&String::from("v1"))
-                .expect("should resolve matching release")
-                .end_of_life,
-        );
+        let matched = warnings.resolve(&String::from("v1"));
+        assert_eq!(matched.len(), 2);
+        assert_eq!(matched[0].message, "first");
+        assert_eq!(matched[1].message, "second");
     }
 
-    fn create_release(requirement: &str, eol: &str) -> Release<String, String, Option<()>> {
-        Release {
+    #[test]
+    fn test_toml_round_trip() {
+        let mut warnings = VersionWarnings::new();
+        warnings.push(create_warning("v1", "Warning for v1"));
+
+        let toml_string = warnings.to_string();
+        let parsed: VersionWarnings<String> = toml_string.parse().unwrap();
+
+        assert_eq!(parsed.warnings.len(), 1);
+        assert_eq!(parsed.warnings[0].requirement, "v1");
+        assert_eq!(parsed.warnings[0].message, "Warning for v1");
+    }
+
+    fn create_warning(requirement: &str, message: &str) -> VersionWarning<String> {
+        VersionWarning {
             requirement: requirement.to_string(),
-            end_of_life: eol.to_string(),
-            metadata: None,
+            message: message.to_string(),
         }
     }
 }

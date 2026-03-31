@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `libherokubuildpack`:
-  - Added `inventory::schedule` module with `Schedule` and `Release` types for tracking version lifecycle data such as end-of-life dates. ([#989](https://github.com/heroku/libcnb.rs/pull/989))
+  - Added `inventory::warning` module with `VersionWarnings` and `VersionWarning` types for associating version requirements with warning messages. ([#991](https://github.com/heroku/libcnb.rs/pull/991))
 
 ## [0.30.3] - 2026-03-02
 

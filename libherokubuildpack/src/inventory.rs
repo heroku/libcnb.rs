@@ -24,12 +24,12 @@
 //! - Extensible with metadata: The default inventory format covers a lot of common use cases,
 //!   but if you need more, you can extend it by adding custom metadata to each artifact.
 //!
-//! ## Schedule
+//! ## Warnings
 //!
-//! The [`schedule`] sub-module provides [`schedule::Schedule`] and [`schedule::Release`] types
-//! for associating version requirements with release lifecycle data such as end-of-life dates. It
-//! uses the [`version::VersionRequirement`] trait for version matching, and each release
-//! can carry arbitrary metadata for additional information such as support tier or channel name.
+//! The [`warning`] sub-module provides [`warning::VersionWarnings`] and [`warning::VersionWarning`]
+//! types for associating version requirements with warning messages. It uses the
+//! [`version::VersionRequirement`] trait for version matching. This can be used to display
+//! end-of-life notices, security advisories, or other version-specific messages to users.
 //!
 //! ## Example usage
 //!
@@ -98,8 +98,8 @@
 //! ```
 pub mod artifact;
 pub mod checksum;
-pub mod warning;
 pub mod version;
+pub mod warning;
 
 #[cfg(feature = "inventory-semver")]
 mod semver;
