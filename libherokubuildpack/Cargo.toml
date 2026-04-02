@@ -20,7 +20,7 @@ workspace = true
 [features]
 default = ["command", "download", "digest", "error", "inventory", "log", "inventory-semver", "inventory-sha2", "tar", "toml", "fs", "write"]
 download = ["dep:reqwest", "dep:thiserror"]
-digest = ["dep:sha2"]
+digest = ["dep:hex", "dep:sha2"]
 error = ["log", "dep:libcnb"]
 inventory = ["dep:hex", "dep:serde", "dep:thiserror", "dep:toml"]
 inventory-semver = ["dep:semver"]
