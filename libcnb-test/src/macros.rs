@@ -251,6 +251,55 @@ right: `{:?}`: {}",
     }};
 }
 
+/// Asserts that an expression matches a given pattern.
+///
+/// This is a polyfill for `assert_matches!` to ensure 100% region coverage.
+/// Unlike the crate or standard macros, this implementation is stable and avoids
+/// generating unreachable panic branches that `llvm-cov` flags as uncovered regions.
+///
+/// Additionally, for expressions with a guard, this macro improves test error output
+/// by explicitly printing the pattern, guard condition, and actual value on failure.
+///
+/// # Example
+///
+/// ```
+/// use libcnb_test::assert_matches;
+///
+/// let result: Result<i32, String> = Ok(42);
+/// assert_matches!(result, Ok(x) if *x > 40);
+/// ```
+#[macro_export]
+macro_rules! assert_matches {
+    // With a guard (e.g. `Ok(x) if x > 10`)
+    ($expression:expr, $pattern:pat if $guard:expr $(,)?) => {
+        assert!(
+            matches!(&$expression, $pattern if $guard),
+            "Expected match pattern: {} where {}, but got {:?}",
+            stringify!($pattern),
+            stringify!($guard),
+            $expression
+        );
+    };
+
+    // Without a guard (injects `if true` to force branch coverage)
+    ($expression:expr, $pattern:pat $(,)?) => {{
+        // Suppress clippy::redundant_pattern_matching within the macro expansion.
+        // This macro is designed to work with arbitrary patterns (e.g., `Some(x) if x > 5`),
+        // but clippy complains when users write simple patterns like `Ok(_)` or `Err(_)`,
+        // suggesting `.is_ok()` or `.is_err()` instead. Since this is a generic assertion
+        // macro for pattern matching, we suppress the lint here so external consumers
+        // don't need to add #[allow] attributes to their tests.
+        #[allow(clippy::redundant_pattern_matching)]
+        let result = matches!(&$expression, $pattern if true);
+        assert!(
+            result,
+            "Expected match pattern: {}, but got {:?}",
+            stringify!($pattern),
+            $expression
+        );
+    }};
+}
+
 #[cfg(test)]
 mod tests {
     #[test]
@@ -635,5 +684,49 @@ error: unclosed group
 )")]
     fn not_contains_match_with_invalid_regex_and_args() {
         assert_not_contains_match!("Hello World!", "(unclosed group", "This will fail");
+    }
+
+    #[test]
+    fn assert_matches_ok_simple() {
+        let result: Result<i32, String> = Ok(42);
+        assert_matches!(result, Ok(_));
+    }
+
+    #[test]
+    fn assert_matches_ok_with_guard() {
+        let result: Result<i32, String> = Ok(42);
+        assert_matches!(result, Ok(x) if *x > 40);
+    }
+
+    #[test]
+    fn assert_matches_err_simple() {
+        let result: Result<i32, String> = Err("error".to_string());
+        assert_matches!(result, Err(_));
+    }
+
+    #[test]
+    #[should_panic(expected = "Expected match pattern: Ok(_), but got Err(\"error\")")]
+    fn assert_matches_failure_simple() {
+        let result: Result<i32, String> = Err("error".to_string());
+        assert_matches!(result, Ok(_));
+    }
+
+    #[test]
+    #[should_panic(expected = "Expected match pattern: Ok(x) where *x > 50, but got Ok(42)")]
+    fn assert_matches_failure_with_guard() {
+        let result: Result<i32, String> = Ok(42);
+        assert_matches!(result, Ok(x) if *x > 50);
+    }
+
+    #[test]
+    fn assert_matches_option_some() {
+        let value: Option<&str> = Some("hello");
+        assert_matches!(value, Some("hello"));
+    }
+
+    #[test]
+    fn assert_matches_option_none() {
+        let value: Option<&str> = None;
+        assert_matches!(value, None);
     }
 }
