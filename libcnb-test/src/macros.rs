@@ -266,38 +266,38 @@ right: `{:?}`: {}",
 /// use libcnb_test::assert_matches;
 ///
 /// let result: Result<i32, String> = Ok(42);
-/// assert_matches!(result, Ok(x) if *x > 40);
+/// assert_matches!(result, Ok(x) if x > 40);
 /// ```
 #[macro_export]
 macro_rules! assert_matches {
     // With a guard (e.g. `Ok(x) if x > 10`)
     ($expression:expr, $pattern:pat if $guard:expr $(,)?) => {
-        assert!(
-            matches!(&$expression, $pattern if $guard),
-            "Expected match pattern: {} where {}, but got {:?}",
-            stringify!($pattern),
-            stringify!($guard),
-            $expression
-        );
+        match $expression {
+            $pattern if $guard => {}
+            ref _actual => {
+                ::std::panic!(
+                    "Expected match pattern: {} where {}, but got {:?}",
+                    stringify!($pattern),
+                    stringify!($guard),
+                    _actual
+                );
+            }
+        }
     };
 
     // Without a guard (injects `if true` to force branch coverage)
-    ($expression:expr, $pattern:pat $(,)?) => {{
-        // Suppress clippy::redundant_pattern_matching within the macro expansion.
-        // This macro is designed to work with arbitrary patterns (e.g., `Some(x) if x > 5`),
-        // but clippy complains when users write simple patterns like `Ok(_)` or `Err(_)`,
-        // suggesting `.is_ok()` or `.is_err()` instead. Since this is a generic assertion
-        // macro for pattern matching, we suppress the lint here so external consumers
-        // don't need to add #[allow] attributes to their tests.
-        #[allow(clippy::redundant_pattern_matching)]
-        let result = matches!(&$expression, $pattern if true);
-        assert!(
-            result,
-            "Expected match pattern: {}, but got {:?}",
-            stringify!($pattern),
-            $expression
-        );
-    }};
+    ($expression:expr, $pattern:pat $(,)?) => {
+        match $expression {
+            $pattern if true => {}
+            ref _actual => {
+                ::std::panic!(
+                    "Expected match pattern: {}, but got {:?}",
+                    stringify!($pattern),
+                    _actual
+                );
+            }
+        }
+    };
 }
 
 #[cfg(test)]
@@ -695,7 +695,7 @@ error: unclosed group
     #[test]
     fn assert_matches_ok_with_guard() {
         let result: Result<i32, String> = Ok(42);
-        assert_matches!(result, Ok(x) if *x > 40);
+        assert_matches!(result, Ok(x) if x > 40);
     }
 
     #[test]
@@ -712,10 +712,10 @@ error: unclosed group
     }
 
     #[test]
-    #[should_panic(expected = "Expected match pattern: Ok(x) where *x > 50, but got Ok(42)")]
+    #[should_panic(expected = "Expected match pattern: Ok(x) where x > 50, but got Ok(42)")]
     fn assert_matches_failure_with_guard() {
         let result: Result<i32, String> = Ok(42);
-        assert_matches!(result, Ok(x) if *x > 50);
+        assert_matches!(result, Ok(x) if x > 50);
     }
 
     #[test]
