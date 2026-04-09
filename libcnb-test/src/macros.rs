@@ -253,23 +253,44 @@ right: `{:?}`: {}",
 
 /// Asserts that an expression matches a given pattern.
 ///
-/// This is a polyfill for `assert_matches!` to ensure 100% region coverage.
-/// Unlike the crate or standard macros, this implementation is stable and avoids
-/// generating unreachable panic branches that `llvm-cov` flags as uncovered regions.
+/// This is a stable polyfill for `assert_matches!` that ensures 100% region coverage.
+/// Unlike the crate or standard library macros, this implementation avoids generating
+/// unreachable panic branches that `llvm-cov` flags as uncovered regions.
 ///
-/// Additionally, for expressions with a guard, this macro improves test error output
-/// by explicitly printing the pattern, guard condition, and actual value on failure.
-///
-/// # Example
+/// # Examples
 ///
 /// ```
 /// use libcnb_test::assert_matches;
 ///
 /// let result: Result<i32, String> = Ok(42);
+///
+/// // Simple pattern matching
+/// assert_matches!(result, Ok(_));
+///
+/// // With guard
 /// assert_matches!(result, Ok(x) if x > 40);
+///
+/// // With custom error message
+/// assert_matches!(result, Ok(x) if x > 40, "value should be greater than 40");
 /// ```
 #[macro_export]
 macro_rules! assert_matches {
+    // With a guard and custom message
+    ($expression:expr, $pattern:pat if $guard:expr, $($arg:tt)+) => {
+        match $expression {
+            $pattern if $guard => {}
+            ref _actual => {
+                ::std::panic!(
+                    "Expected match pattern: {} where {}, but got {:?}: {}",
+                    stringify!($pattern),
+                    stringify!($guard),
+                    _actual,
+                    ::core::format_args!($($arg)+)
+                );
+            }
+        }
+    };
+
     // With a guard (e.g. `Ok(x) if x > 10`)
     ($expression:expr, $pattern:pat if $guard:expr $(,)?) => {
         match $expression {
@@ -280,6 +301,21 @@ macro_rules! assert_matches {
                     stringify!($pattern),
                     stringify!($guard),
                     _actual
+                );
+            }
+        }
+    };
+
+    // Without a guard, with custom message
+    ($expression:expr, $pattern:pat, $($arg:tt)+) => {
+        match $expression {
+            $pattern if true => {}
+            ref _actual => {
+                ::std::panic!(
+                    "Expected match pattern: {}, but got {:?}: {}",
+                    stringify!($pattern),
+                    _actual,
+                    ::core::format_args!($($arg)+)
                 );
             }
         }
@@ -728,5 +764,35 @@ error: unclosed group
     fn assert_matches_option_none() {
         let value: Option<&str> = None;
         assert_matches!(value, None);
+    }
+
+    #[test]
+    fn assert_matches_ok_simple_with_message() {
+        let result: Result<i32, String> = Ok(42);
+        assert_matches!(result, Ok(_), "result should be Ok");
+    }
+
+    #[test]
+    fn assert_matches_ok_with_guard_and_message() {
+        let result: Result<i32, String> = Ok(42);
+        assert_matches!(result, Ok(x) if x > 40, "value should be greater than 40");
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "Expected match pattern: Ok(_), but got Err(\"error\"): result must be Ok"
+    )]
+    fn assert_matches_failure_simple_with_message() {
+        let result: Result<i32, String> = Err("error".to_string());
+        assert_matches!(result, Ok(_), "result must be Ok");
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "Expected match pattern: Ok(x) where x > 50, but got Ok(42): value must exceed threshold"
+    )]
+    fn assert_matches_failure_with_guard_and_message() {
+        let result: Result<i32, String> = Ok(42);
+        assert_matches!(result, Ok(x) if x > 50, "value must exceed threshold");
     }
 }
