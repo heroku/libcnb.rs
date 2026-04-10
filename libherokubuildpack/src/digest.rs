@@ -33,5 +33,5 @@ pub fn sha256(path: impl AsRef<Path>) -> Result<String, std::io::Error> {
         read = file.read(&mut buffer)?;
     }
 
-    Ok(format!("{:x}", sha256.finalize()))
+    Ok(hex::encode(sha256.finalize()))
 }
