@@ -13,6 +13,7 @@ pub struct BuildConfig {
     pub(crate) target_triple: String,
     pub(crate) builder_name: String,
     pub(crate) buildpacks: Vec<BuildpackReference>,
+    pub(crate) coverage: bool,
     pub(crate) env: HashMap<String, String>,
     pub(crate) app_dir_preprocessor: Option<Rc<dyn Fn(PathBuf)>>,
     pub(crate) expected_pack_result: PackResult,
@@ -43,6 +44,7 @@ impl BuildConfig {
             target_triple: String::from("x86_64-unknown-linux-musl"),
             builder_name: builder_name.into(),
             buildpacks: vec![BuildpackReference::CurrentCrate],
+            coverage: false,
             env: HashMap::new(),
             app_dir_preprocessor: None,
             expected_pack_result: PackResult::Success,
@@ -92,6 +94,31 @@ impl BuildConfig {
     /// ```
     pub fn cargo_profile(&mut self, cargo_profile: CargoProfile) -> &mut Self {
         self.cargo_profile = cargo_profile;
+        self
+    }
+
+    /// Enables LLVM source-based code coverage collection for this build.
+    ///
+    /// When enabled, the buildpack binary is compiled with `-C instrument-coverage`
+    /// and `.profraw` files are extracted from the container via a volume mount
+    /// to `{workspace_root}/target/coverage/profraw/`.
+    ///
+    /// Can also be enabled globally by setting `LIBCNB_COVERAGE=1`.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use libcnb_test::{BuildConfig, TestRunner};
+    ///
+    /// TestRunner::default().build(
+    ///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app")
+    ///         .enable_coverage(),
+    ///     |context| {
+    ///         // ...
+    ///     },
+    /// );
+    /// ```
+    pub fn enable_coverage(&mut self) -> &mut Self {
+        self.coverage = true;
         self
     }
 
