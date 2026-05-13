@@ -728,3 +728,45 @@ fn address_for_port_when_container_crashed() {
         "}
     );
 }
+
+#[test]
+#[ignore = "integration test"]
+fn build_with_coverage_produces_profraw() {
+    let coverage_dir = env::var("CARGO_MANIFEST_DIR")
+        .map(PathBuf::from)
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("target/coverage/profraw");
+
+    if coverage_dir.exists() {
+        fs::remove_dir_all(&coverage_dir).unwrap();
+    }
+
+    TestRunner::default().build(
+        BuildConfig::new("heroku/builder:22", "tests/fixtures/empty")
+            .buildpacks([BuildpackReference::WorkspaceBuildpack(buildpack_id!(
+                "libcnb-test/a"
+            ))])
+            .enable_coverage(),
+        |context| {
+            assert_empty!(context.pack_stderr);
+            assert_contains!(context.pack_stdout, "Buildpack A");
+        },
+    );
+
+    assert!(
+        coverage_dir.exists(),
+        "Coverage directory should exist when coverage is enabled"
+    );
+    let profraw_files: Vec<_> = fs::read_dir(&coverage_dir)
+        .unwrap()
+        .filter_map(Result::ok)
+        .filter(|e| e.path().extension().is_some_and(|ext| ext == "profraw"))
+        .collect();
+    assert!(
+        !profraw_files.is_empty(),
+        "Expected at least one .profraw file in {}, found none",
+        coverage_dir.display()
+    );
+}
