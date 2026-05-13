@@ -8,6 +8,7 @@ use libcnb_package::dependency_graph::{GetDependenciesError, get_dependencies};
 use libcnb_package::output::create_packaged_buildpack_dir_resolver;
 use libcnb_package::{CargoProfile, FindCargoWorkspaceRootError, find_cargo_workspace_root_dir};
 use std::collections::BTreeMap;
+use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::{fs, io};
 
@@ -17,6 +18,7 @@ pub(crate) fn package_crate_buildpack(
     target_triple: impl AsRef<str>,
     cargo_manifest_dir: &Path,
     target_buildpack_dir: &Path,
+    coverage: bool,
 ) -> Result<PathBuf, PackageBuildpackError> {
     let buildpack_toml = cargo_manifest_dir.join("buildpack.toml");
 
@@ -35,6 +37,7 @@ pub(crate) fn package_crate_buildpack(
         target_triple,
         cargo_manifest_dir,
         target_buildpack_dir,
+        coverage,
     )
 }
 
@@ -44,8 +47,9 @@ pub(crate) fn package_buildpack(
     target_triple: impl AsRef<str>,
     cargo_manifest_dir: &Path,
     target_buildpack_dir: &Path,
+    coverage: bool,
 ) -> Result<PathBuf, PackageBuildpackError> {
-    let cargo_build_env = match cross_compile_assistance(target_triple.as_ref()) {
+    let mut cargo_build_env = match cross_compile_assistance(target_triple.as_ref()) {
         CrossCompileAssistance::HelpText(help_text) => {
             return Err(PackageBuildpackError::CrossCompileToolchainNotFound(
                 help_text,
@@ -54,6 +58,16 @@ pub(crate) fn package_buildpack(
         CrossCompileAssistance::NoAssistance => Vec::new(),
         CrossCompileAssistance::Configuration { cargo_env } => cargo_env,
     };
+
+    if coverage {
+        let coverage_flag = OsString::from("-C instrument-coverage");
+        if let Some(existing) = cargo_build_env.iter_mut().find(|(k, _)| k == "RUSTFLAGS") {
+            existing.1.push(" ");
+            existing.1.push(&coverage_flag);
+        } else {
+            cargo_build_env.push((OsString::from("RUSTFLAGS"), coverage_flag));
+        }
+    }
 
     let workspace_root_path = find_cargo_workspace_root_dir(cargo_manifest_dir)
         .map_err(PackageBuildpackError::FindCargoWorkspaceRoot)?;

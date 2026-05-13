@@ -122,6 +122,7 @@ impl TestRunner {
                         &config.target_triple,
                         &cargo_manifest_dir,
                         buildpacks_target_dir.path(),
+                        false,
                     )
                     .unwrap_or_else(|error| {
                         panic!("Error packaging current crate as buildpack: {error}")
@@ -136,6 +137,7 @@ impl TestRunner {
                         &config.target_triple,
                         &cargo_manifest_dir,
                         buildpacks_target_dir.path(),
+                        false,
                     )
                     .unwrap_or_else(|error| {
                         panic!("Error packaging buildpack '{buildpack_id}': {error}")
