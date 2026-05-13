@@ -1,5 +1,5 @@
 use crate::docker::{DockerRemoveImageCommand, DockerRemoveVolumeCommand};
-use crate::pack::PackBuildCommand;
+use crate::pack::{PackBuildCommand, VolumeMount};
 use crate::util::CommandError;
 use crate::{BuildConfig, BuildpackReference, PackResult, TestContext, app, build, util};
 use std::borrow::Borrow;
@@ -59,6 +59,7 @@ impl TestRunner {
         self.build_internal(docker_resources, config, f);
     }
 
+    #[allow(clippy::too_many_lines)]
     pub(crate) fn build_internal<C: Borrow<BuildConfig>, F: FnOnce(TestContext)>(
         &self,
         docker_resources: TemporaryDockerResources,
@@ -66,6 +67,9 @@ impl TestRunner {
         f: F,
     ) {
         let config = config.borrow();
+
+        let coverage_enabled = config.coverage
+            || env::var("LIBCNB_COVERAGE").is_ok_and(|v| v == "1");
 
         let cargo_manifest_dir = env::var("CARGO_MANIFEST_DIR").map_or_else(
             |error| panic!("Error determining Cargo manifest directory: {error}"),
@@ -114,6 +118,25 @@ impl TestRunner {
             pack_command.env(key, value);
         });
 
+        if coverage_enabled {
+            let workspace_root = cargo_manifest_dir
+                .ancestors()
+                .find(|p| p.join("Cargo.lock").exists())
+                .unwrap_or_else(|| panic!("Could not find workspace root"))
+                .to_path_buf();
+
+            let dir = workspace_root.join("target/coverage/profraw");
+            std::fs::create_dir_all(&dir)
+                .expect("Failed to create coverage output directory");
+
+            pack_command.volume(VolumeMount {
+                source: dir,
+                target: PathBuf::from("/tmp/llvm-cov"),
+                options: Some(String::from("rw")),
+            });
+            pack_command.env("LLVM_PROFILE_FILE", "/tmp/llvm-cov/%p-%m.profraw");
+        }
+
         for buildpack in &config.buildpacks {
             match buildpack {
                 BuildpackReference::CurrentCrate => {
@@ -122,7 +145,7 @@ impl TestRunner {
                         &config.target_triple,
                         &cargo_manifest_dir,
                         buildpacks_target_dir.path(),
-                        false,
+                        coverage_enabled,
                     )
                     .unwrap_or_else(|error| {
                         panic!("Error packaging current crate as buildpack: {error}")
@@ -137,7 +160,7 @@ impl TestRunner {
                         &config.target_triple,
                         &cargo_manifest_dir,
                         buildpacks_target_dir.path(),
-                        false,
+                        coverage_enabled,
                     )
                     .unwrap_or_else(|error| {
                         panic!("Error packaging buildpack '{buildpack_id}': {error}")
