@@ -2,6 +2,24 @@ use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::process::Command;
 
+/// Represents a volume mount for Docker containers.
+#[derive(Clone, Debug)]
+pub(crate) struct VolumeMount {
+    pub(crate) source: PathBuf,
+    pub(crate) target: PathBuf,
+    pub(crate) options: Option<String>,
+}
+
+impl std::fmt::Display for VolumeMount {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}:{}", self.source.display(), self.target.display())?;
+        if let Some(ref opts) = self.options {
+            write!(f, ":{opts}")?;
+        }
+        Ok(())
+    }
+}
+
 /// Represents a `pack build` command.
 #[derive(Clone, Debug)]
 pub(crate) struct PackBuildCommand {
@@ -15,6 +33,7 @@ pub(crate) struct PackBuildCommand {
     pull_policy: PullPolicy,
     trust_builder: bool,
     trust_extra_buildpacks: bool,
+    volumes: Vec<VolumeMount>,
 }
 
 #[derive(Clone, Debug)]
@@ -67,6 +86,7 @@ impl PackBuildCommand {
             pull_policy: PullPolicy::IfNotPresent,
             trust_builder: true,
             trust_extra_buildpacks: true,
+            volumes: Vec::new(),
         }
     }
 
@@ -77,6 +97,12 @@ impl PackBuildCommand {
 
     pub(crate) fn env(&mut self, k: impl Into<String>, v: impl Into<String>) -> &mut Self {
         self.env.insert(k.into(), v.into());
+        self
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn volume(&mut self, v: VolumeMount) -> &mut Self {
+        self.volumes.push(v);
         self
     }
 }
@@ -130,6 +156,10 @@ impl From<PackBuildCommand> for Command {
 
         if pack_build_command.trust_extra_buildpacks {
             command.arg("--trust-extra-buildpacks");
+        }
+
+        for volume in &pack_build_command.volumes {
+            command.args(["--volume", &volume.to_string()]);
         }
 
         command
@@ -195,6 +225,7 @@ mod tests {
             pull_policy: PullPolicy::IfNotPresent,
             trust_builder: true,
             trust_extra_buildpacks: true,
+            volumes: Vec::new(),
         };
 
         let command: Command = input.clone().into();
@@ -271,5 +302,33 @@ mod tests {
         );
 
         assert_eq!(command.get_envs().collect::<Vec<_>>(), Vec::new());
+    }
+
+    #[test]
+    fn from_pack_build_command_with_volumes() {
+        let mut input = PackBuildCommand::new(
+            "builder:22",
+            "/tmp/app",
+            "my-image",
+            "build-cache",
+            "launch-cache",
+        );
+        input.volume(VolumeMount {
+            source: PathBuf::from("/host/path"),
+            target: PathBuf::from("/container/path"),
+            options: None,
+        });
+        input.volume(VolumeMount {
+            source: PathBuf::from("/other"),
+            target: PathBuf::from("/mnt"),
+            options: Some(String::from("ro")),
+        });
+
+        let command: Command = input.into();
+
+        let args: Vec<&OsStr> = command.get_args().collect();
+        assert!(args.contains(&OsStr::new("--volume")));
+        assert!(args.contains(&OsStr::new("/host/path:/container/path")));
+        assert!(args.contains(&OsStr::new("/other:/mnt:ro")));
     }
 }
