@@ -12,18 +12,35 @@ use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::{fs, io};
 
-/// Merges additional env vars into the cargo build env, appending to existing values with a space
-/// separator (e.g. for RUSTFLAGS) or inserting new entries.
-fn merge_cargo_env(
+/// Describes how to merge an env var into the cargo build environment.
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) enum CargoEnvUpdate {
+    /// Append the value to any existing value using the given separator (e.g. `" "` for RUSTFLAGS).
+    Append {
+        key: OsString,
+        value: OsString,
+        separator: OsString,
+    },
+}
+
+fn apply_cargo_env_updates(
     cargo_build_env: &mut Vec<(OsString, OsString)>,
-    additional: &[(OsString, OsString)],
+    updates: &[CargoEnvUpdate],
 ) {
-    for (key, value) in additional {
-        if let Some(existing) = cargo_build_env.iter_mut().find(|(k, _)| k == key) {
-            existing.1.push(" ");
-            existing.1.push(value);
-        } else {
-            cargo_build_env.push((key.clone(), value.clone()));
+    for update in updates {
+        match update {
+            CargoEnvUpdate::Append {
+                key,
+                value,
+                separator,
+            } => {
+                if let Some(existing) = cargo_build_env.iter_mut().find(|(k, _)| k == key) {
+                    existing.1.push(separator);
+                    existing.1.push(value);
+                } else {
+                    cargo_build_env.push((key.clone(), value.clone()));
+                }
+            }
         }
     }
 }
@@ -34,7 +51,7 @@ pub(crate) fn package_crate_buildpack(
     target_triple: impl AsRef<str>,
     cargo_manifest_dir: &Path,
     target_buildpack_dir: &Path,
-    additional_cargo_env: &[(OsString, OsString)],
+    additional_cargo_env: &[CargoEnvUpdate],
 ) -> Result<PathBuf, PackageBuildpackError> {
     let buildpack_toml = cargo_manifest_dir.join("buildpack.toml");
 
@@ -63,7 +80,7 @@ pub(crate) fn package_buildpack(
     target_triple: impl AsRef<str>,
     cargo_manifest_dir: &Path,
     target_buildpack_dir: &Path,
-    additional_cargo_env: &[(OsString, OsString)],
+    additional_cargo_env: &[CargoEnvUpdate],
 ) -> Result<PathBuf, PackageBuildpackError> {
     let mut cargo_build_env = match cross_compile_assistance(target_triple.as_ref()) {
         CrossCompileAssistance::HelpText(help_text) => {
@@ -75,7 +92,7 @@ pub(crate) fn package_buildpack(
         CrossCompileAssistance::Configuration { cargo_env } => cargo_env,
     };
 
-    merge_cargo_env(&mut cargo_build_env, additional_cargo_env);
+    apply_cargo_env_updates(&mut cargo_build_env, additional_cargo_env);
 
     let workspace_root_path = find_cargo_workspace_root_dir(cargo_manifest_dir)
         .map_err(PackageBuildpackError::FindCargoWorkspaceRoot)?;
@@ -150,14 +167,15 @@ mod tests {
     use super::*;
 
     #[test]
-    fn merge_cargo_env_inserts_into_empty() {
+    fn apply_cargo_env_append_inserts_into_empty() {
         let mut env = Vec::new();
-        merge_cargo_env(
+        apply_cargo_env_updates(
             &mut env,
-            &[(
-                OsString::from("RUSTFLAGS"),
-                OsString::from("-C opt-level=3"),
-            )],
+            &[CargoEnvUpdate::Append {
+                key: OsString::from("RUSTFLAGS"),
+                value: OsString::from("-C opt-level=3"),
+                separator: OsString::from(" "),
+            }],
         );
         assert_eq!(env.len(), 1);
         assert_eq!(env[0].0, "RUSTFLAGS");
@@ -165,11 +183,15 @@ mod tests {
     }
 
     #[test]
-    fn merge_cargo_env_inserts_new_key_alongside_existing() {
+    fn apply_cargo_env_append_inserts_new_key_alongside_existing() {
         let mut env = vec![(OsString::from("CC"), OsString::from("clang"))];
-        merge_cargo_env(
+        apply_cargo_env_updates(
             &mut env,
-            &[(OsString::from("RUSTFLAGS"), OsString::from("-C lto"))],
+            &[CargoEnvUpdate::Append {
+                key: OsString::from("RUSTFLAGS"),
+                value: OsString::from("-C lto"),
+                separator: OsString::from(" "),
+            }],
         );
         assert_eq!(env.len(), 2);
         assert_eq!(env[0], (OsString::from("CC"), OsString::from("clang")));
@@ -180,17 +202,19 @@ mod tests {
     }
 
     #[test]
-    fn merge_cargo_env_appends_to_existing_key() {
+    fn apply_cargo_env_append_joins_existing_key() {
         let mut env = vec![(OsString::from("RUSTFLAGS"), OsString::from("-C linker=lld"))];
-        merge_cargo_env(
+        apply_cargo_env_updates(
             &mut env,
-            &[(
-                OsString::from("RUSTFLAGS"),
-                OsString::from("-C instrument-coverage"),
-            )],
+            &[CargoEnvUpdate::Append {
+                key: OsString::from("RUSTFLAGS"),
+                value: OsString::from("-C instrument-coverage"),
+                separator: OsString::from(" "),
+            }],
         );
         assert_eq!(env.len(), 1);
         assert_eq!(env[0].0, "RUSTFLAGS");
         assert_eq!(env[0].1, "-C linker=lld -C instrument-coverage");
     }
+
 }

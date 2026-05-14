@@ -1,6 +1,7 @@
 use crate::docker::{DockerRemoveImageCommand, DockerRemoveVolumeCommand};
 use crate::pack::{PackBuildCommand, VolumeMount};
 use crate::util::CommandError;
+use crate::build::CargoEnvUpdate;
 use crate::{BuildConfig, BuildpackReference, PackResult, TestContext, app, build, util};
 use libcnb_package::find_cargo_workspace_root_dir;
 use std::borrow::Borrow;
@@ -120,7 +121,7 @@ impl TestRunner {
             pack_command.env(key, value);
         });
 
-        let additional_cargo_env = if coverage_enabled {
+        let additional_cargo_env: Vec<CargoEnvUpdate> = if coverage_enabled {
             configure_coverage(&cargo_manifest_dir, &mut pack_command)
         } else {
             Vec::new()
@@ -193,12 +194,13 @@ impl TestRunner {
 fn configure_coverage(
     cargo_manifest_dir: &Path,
     pack_command: &mut PackBuildCommand,
-) -> Vec<(OsString, OsString)> {
+) -> Vec<CargoEnvUpdate> {
     let workspace_root = find_cargo_workspace_root_dir(cargo_manifest_dir)
         .unwrap_or_else(|error| panic!("Error finding Cargo workspace root: {error}"));
 
     let dir = workspace_root.join("target/coverage/profraw");
     std::fs::create_dir_all(&dir).expect("Failed to create coverage output directory");
+    let dir = std::fs::canonicalize(&dir).expect("Failed to canonicalize coverage output directory");
 
     pack_command.volume(VolumeMount {
         source: dir,
@@ -209,10 +211,11 @@ fn configure_coverage(
     // See: https://doc.rust-lang.org/rustc/instrument-coverage.html
     pack_command.env("LLVM_PROFILE_FILE", "/tmp/llvm-cov/%p-%m.profraw");
 
-    vec![(
-        OsString::from("RUSTFLAGS"),
-        OsString::from("-C instrument-coverage"),
-    )]
+    vec![CargoEnvUpdate::Append {
+        key: OsString::from("RUSTFLAGS"),
+        value: OsString::from("-C instrument-coverage"),
+        separator: OsString::from(" "),
+    }]
 }
 
 #[allow(clippy::struct_field_names)]

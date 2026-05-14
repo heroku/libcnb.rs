@@ -100,8 +100,11 @@ impl BuildConfig {
     /// Enables LLVM source-based code coverage collection for this build.
     ///
     /// When enabled, the buildpack binary is compiled with `-C instrument-coverage`
-    /// and `.profraw` files are extracted from the container via a volume mount
-    /// to `{workspace_root}/target/coverage/profraw/`.
+    /// and `.profraw` files generated during the buildpack's detect/build phases
+    /// are written to `{workspace_root}/target/coverage/profraw/` via a volume mount.
+    ///
+    /// Note: `.profraw` files accumulate across runs. Clean the output directory
+    /// before a fresh coverage collection if stale data is a concern.
     ///
     /// Can also be enabled globally by setting `LIBCNB_COVERAGE` to `1`, `true`, or `yes`
     /// (case-insensitive).
