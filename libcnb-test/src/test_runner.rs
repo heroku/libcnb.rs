@@ -2,9 +2,11 @@ use crate::docker::{DockerRemoveImageCommand, DockerRemoveVolumeCommand};
 use crate::pack::{PackBuildCommand, VolumeMount};
 use crate::util::CommandError;
 use crate::{BuildConfig, BuildpackReference, PackResult, TestContext, app, build, util};
+use libcnb_package::find_cargo_workspace_root_dir;
 use std::borrow::Borrow;
 use std::env;
-use std::path::PathBuf;
+use std::ffi::OsString;
+use std::path::{Path, PathBuf};
 use tempfile::tempdir;
 
 /// Runner for libcnb integration tests.
@@ -59,7 +61,6 @@ impl TestRunner {
         self.build_internal(docker_resources, config, f);
     }
 
-    #[allow(clippy::too_many_lines)]
     pub(crate) fn build_internal<C: Borrow<BuildConfig>, F: FnOnce(TestContext)>(
         &self,
         docker_resources: TemporaryDockerResources,
@@ -69,7 +70,8 @@ impl TestRunner {
         let config = config.borrow();
 
         let coverage_enabled = config.coverage
-            || env::var("LIBCNB_COVERAGE").is_ok_and(|v| v == "1");
+            || env::var("LIBCNB_COVERAGE")
+                .is_ok_and(|v| matches!(v.to_ascii_lowercase().as_str(), "1" | "true" | "yes"));
 
         let cargo_manifest_dir = env::var("CARGO_MANIFEST_DIR").map_or_else(
             |error| panic!("Error determining Cargo manifest directory: {error}"),
@@ -118,24 +120,11 @@ impl TestRunner {
             pack_command.env(key, value);
         });
 
-        if coverage_enabled {
-            let workspace_root = cargo_manifest_dir
-                .ancestors()
-                .find(|p| p.join("Cargo.lock").exists())
-                .unwrap_or_else(|| panic!("Could not find workspace root"))
-                .to_path_buf();
-
-            let dir = workspace_root.join("target/coverage/profraw");
-            std::fs::create_dir_all(&dir)
-                .expect("Failed to create coverage output directory");
-
-            pack_command.volume(VolumeMount {
-                source: dir,
-                target: PathBuf::from("/tmp/llvm-cov"),
-                options: Some(String::from("rw")),
-            });
-            pack_command.env("LLVM_PROFILE_FILE", "/tmp/llvm-cov/%p-%m.profraw");
-        }
+        let additional_cargo_env = if coverage_enabled {
+            configure_coverage(&cargo_manifest_dir, &mut pack_command)
+        } else {
+            Vec::new()
+        };
 
         for buildpack in &config.buildpacks {
             match buildpack {
@@ -145,7 +134,7 @@ impl TestRunner {
                         &config.target_triple,
                         &cargo_manifest_dir,
                         buildpacks_target_dir.path(),
-                        coverage_enabled,
+                        &additional_cargo_env,
                     )
                     .unwrap_or_else(|error| {
                         panic!("Error packaging current crate as buildpack: {error}")
@@ -160,7 +149,7 @@ impl TestRunner {
                         &config.target_triple,
                         &cargo_manifest_dir,
                         buildpacks_target_dir.path(),
-                        coverage_enabled,
+                        &additional_cargo_env,
                     )
                     .unwrap_or_else(|error| {
                         panic!("Error packaging buildpack '{buildpack_id}': {error}")
@@ -199,6 +188,31 @@ impl TestRunner {
 
         f(test_context);
     }
+}
+
+fn configure_coverage(
+    cargo_manifest_dir: &Path,
+    pack_command: &mut PackBuildCommand,
+) -> Vec<(OsString, OsString)> {
+    let workspace_root = find_cargo_workspace_root_dir(cargo_manifest_dir)
+        .unwrap_or_else(|error| panic!("Error finding Cargo workspace root: {error}"));
+
+    let dir = workspace_root.join("target/coverage/profraw");
+    std::fs::create_dir_all(&dir).expect("Failed to create coverage output directory");
+
+    pack_command.volume(VolumeMount {
+        source: dir,
+        target: PathBuf::from("/tmp/llvm-cov"),
+        options: Some(String::from("rw")),
+    });
+    // %p = PID, %m = binary signature hash — prevents clobbering across concurrent runs.
+    // See: https://doc.rust-lang.org/rustc/instrument-coverage.html
+    pack_command.env("LLVM_PROFILE_FILE", "/tmp/llvm-cov/%p-%m.profraw");
+
+    vec![(
+        OsString::from("RUSTFLAGS"),
+        OsString::from("-C instrument-coverage"),
+    )]
 }
 
 #[allow(clippy::struct_field_names)]

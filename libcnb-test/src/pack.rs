@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::ffi::OsString;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -10,13 +11,16 @@ pub(crate) struct VolumeMount {
     pub(crate) options: Option<String>,
 }
 
-impl std::fmt::Display for VolumeMount {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}:{}", self.source.display(), self.target.display())?;
-        if let Some(ref opts) = self.options {
-            write!(f, ":{opts}")?;
+impl From<&VolumeMount> for OsString {
+    fn from(mount: &VolumeMount) -> Self {
+        let mut s = OsString::from(&mount.source);
+        s.push(":");
+        s.push(&mount.target);
+        if let Some(ref opts) = mount.options {
+            s.push(":");
+            s.push(opts);
         }
-        Ok(())
+        s
     }
 }
 
@@ -100,7 +104,6 @@ impl PackBuildCommand {
         self
     }
 
-    #[allow(dead_code)]
     pub(crate) fn volume(&mut self, v: VolumeMount) -> &mut Self {
         self.volumes.push(v);
         self
@@ -159,7 +162,8 @@ impl From<PackBuildCommand> for Command {
         }
 
         for volume in &pack_build_command.volumes {
-            command.args(["--volume", &volume.to_string()]);
+            command.arg("--volume");
+            command.arg(OsString::from(volume));
         }
 
         command

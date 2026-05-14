@@ -103,7 +103,8 @@ impl BuildConfig {
     /// and `.profraw` files are extracted from the container via a volume mount
     /// to `{workspace_root}/target/coverage/profraw/`.
     ///
-    /// Can also be enabled globally by setting `LIBCNB_COVERAGE=1`.
+    /// Can also be enabled globally by setting `LIBCNB_COVERAGE` to `1`, `true`, or `yes`
+    /// (case-insensitive).
     ///
     /// # Example
     /// ```no_run

@@ -12,13 +12,29 @@ use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::{fs, io};
 
+/// Merges additional env vars into the cargo build env, appending to existing values with a space
+/// separator (e.g. for RUSTFLAGS) or inserting new entries.
+fn merge_cargo_env(
+    cargo_build_env: &mut Vec<(OsString, OsString)>,
+    additional: &[(OsString, OsString)],
+) {
+    for (key, value) in additional {
+        if let Some(existing) = cargo_build_env.iter_mut().find(|(k, _)| k == key) {
+            existing.1.push(" ");
+            existing.1.push(value);
+        } else {
+            cargo_build_env.push((key.clone(), value.clone()));
+        }
+    }
+}
+
 /// Packages the current crate as a buildpack into the provided directory.
 pub(crate) fn package_crate_buildpack(
     cargo_profile: CargoProfile,
     target_triple: impl AsRef<str>,
     cargo_manifest_dir: &Path,
     target_buildpack_dir: &Path,
-    coverage: bool,
+    additional_cargo_env: &[(OsString, OsString)],
 ) -> Result<PathBuf, PackageBuildpackError> {
     let buildpack_toml = cargo_manifest_dir.join("buildpack.toml");
 
@@ -37,7 +53,7 @@ pub(crate) fn package_crate_buildpack(
         target_triple,
         cargo_manifest_dir,
         target_buildpack_dir,
-        coverage,
+        additional_cargo_env,
     )
 }
 
@@ -47,7 +63,7 @@ pub(crate) fn package_buildpack(
     target_triple: impl AsRef<str>,
     cargo_manifest_dir: &Path,
     target_buildpack_dir: &Path,
-    coverage: bool,
+    additional_cargo_env: &[(OsString, OsString)],
 ) -> Result<PathBuf, PackageBuildpackError> {
     let mut cargo_build_env = match cross_compile_assistance(target_triple.as_ref()) {
         CrossCompileAssistance::HelpText(help_text) => {
@@ -59,15 +75,7 @@ pub(crate) fn package_buildpack(
         CrossCompileAssistance::Configuration { cargo_env } => cargo_env,
     };
 
-    if coverage {
-        let coverage_flag = OsString::from("-C instrument-coverage");
-        if let Some(existing) = cargo_build_env.iter_mut().find(|(k, _)| k == "RUSTFLAGS") {
-            existing.1.push(" ");
-            existing.1.push(&coverage_flag);
-        } else {
-            cargo_build_env.push((OsString::from("RUSTFLAGS"), coverage_flag));
-        }
-    }
+    merge_cargo_env(&mut cargo_build_env, additional_cargo_env);
 
     let workspace_root_path = find_cargo_workspace_root_dir(cargo_manifest_dir)
         .map_err(PackageBuildpackError::FindCargoWorkspaceRoot)?;

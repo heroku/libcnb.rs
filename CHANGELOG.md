@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `libcnb-test`:
+  - Added `BuildConfig::enable_coverage()` method and `LIBCNB_COVERAGE` env var for collecting LLVM source-based code coverage from integration tests. ([#1002](https://github.com/heroku/libcnb.rs/pull/1002))
 
 ## [0.30.4] - 2026-04-13
 
