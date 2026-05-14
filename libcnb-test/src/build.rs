@@ -144,3 +144,53 @@ pub(crate) enum PackageBuildpackError {
     #[error(transparent)]
     PackageBuildpack(libcnb_package::package::PackageBuildpackError),
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn merge_cargo_env_inserts_into_empty() {
+        let mut env = Vec::new();
+        merge_cargo_env(
+            &mut env,
+            &[(
+                OsString::from("RUSTFLAGS"),
+                OsString::from("-C opt-level=3"),
+            )],
+        );
+        assert_eq!(env.len(), 1);
+        assert_eq!(env[0].0, "RUSTFLAGS");
+        assert_eq!(env[0].1, "-C opt-level=3");
+    }
+
+    #[test]
+    fn merge_cargo_env_inserts_new_key_alongside_existing() {
+        let mut env = vec![(OsString::from("CC"), OsString::from("clang"))];
+        merge_cargo_env(
+            &mut env,
+            &[(OsString::from("RUSTFLAGS"), OsString::from("-C lto"))],
+        );
+        assert_eq!(env.len(), 2);
+        assert_eq!(env[0], (OsString::from("CC"), OsString::from("clang")));
+        assert_eq!(
+            env[1],
+            (OsString::from("RUSTFLAGS"), OsString::from("-C lto"))
+        );
+    }
+
+    #[test]
+    fn merge_cargo_env_appends_to_existing_key() {
+        let mut env = vec![(OsString::from("RUSTFLAGS"), OsString::from("-C linker=lld"))];
+        merge_cargo_env(
+            &mut env,
+            &[(
+                OsString::from("RUSTFLAGS"),
+                OsString::from("-C instrument-coverage"),
+            )],
+        );
+        assert_eq!(env.len(), 1);
+        assert_eq!(env[0].0, "RUSTFLAGS");
+        assert_eq!(env[0].1, "-C linker=lld -C instrument-coverage");
+    }
+}
