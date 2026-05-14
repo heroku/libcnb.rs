@@ -216,5 +216,4 @@ mod tests {
         assert_eq!(env[0].0, "RUSTFLAGS");
         assert_eq!(env[0].1, "-C linker=lld -C instrument-coverage");
     }
-
 }

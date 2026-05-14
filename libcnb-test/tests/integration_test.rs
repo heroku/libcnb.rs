@@ -746,12 +746,12 @@ fn build_with_coverage_produces_profraw() {
     TestRunner::default().build(
         BuildConfig::new("heroku/builder:22", "tests/fixtures/empty")
             .buildpacks([BuildpackReference::WorkspaceBuildpack(buildpack_id!(
-                "libcnb-test/a"
+                "libcnb-test/coverage"
             ))])
             .enable_coverage(),
         |context| {
             assert_empty!(context.pack_stderr);
-            assert_contains!(context.pack_stdout, "Buildpack A");
+            assert_contains!(context.pack_stdout, "Coverage Buildpack");
         },
     );
 

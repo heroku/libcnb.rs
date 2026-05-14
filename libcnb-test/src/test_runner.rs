@@ -1,7 +1,7 @@
+use crate::build::CargoEnvUpdate;
 use crate::docker::{DockerRemoveImageCommand, DockerRemoveVolumeCommand};
 use crate::pack::{PackBuildCommand, VolumeMount};
 use crate::util::CommandError;
-use crate::build::CargoEnvUpdate;
 use crate::{BuildConfig, BuildpackReference, PackResult, TestContext, app, build, util};
 use libcnb_package::find_cargo_workspace_root_dir;
 use std::borrow::Borrow;
@@ -200,7 +200,16 @@ fn configure_coverage(
 
     let dir = workspace_root.join("target/coverage/profraw");
     std::fs::create_dir_all(&dir).expect("Failed to create coverage output directory");
-    let dir = std::fs::canonicalize(&dir).expect("Failed to canonicalize coverage output directory");
+    // The CNB lifecycle runs buildpacks as a non-root user (e.g. uid 1000) which may differ
+    // from the host user, so the mounted directory must be world-writable.
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o777))
+            .expect("Failed to set coverage directory permissions");
+    }
+    let dir =
+        std::fs::canonicalize(&dir).expect("Failed to canonicalize coverage output directory");
 
     pack_command.volume(VolumeMount {
         source: dir,
