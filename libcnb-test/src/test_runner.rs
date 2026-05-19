@@ -70,10 +70,6 @@ impl TestRunner {
     ) {
         let config = config.borrow();
 
-        let instrumentation_enabled = config.instrumentation_enabled
-            || env::var("LIBCNB_INSTRUMENTATION")
-                .is_ok_and(|v| matches!(v.to_ascii_lowercase().as_str(), "1" | "true" | "yes"));
-
         let cargo_manifest_dir = env::var("CARGO_MANIFEST_DIR").map_or_else(
             |error| panic!("Error determining Cargo manifest directory: {error}"),
             PathBuf::from,
@@ -121,47 +117,30 @@ impl TestRunner {
             pack_command.env(key, value);
         });
 
-        let cargo_env_additions: Vec<CargoEnvAddition> = if instrumentation_enabled {
-            configure_instrumentation(&cargo_manifest_dir, &mut pack_command)
+        let instrumentation_enabled =
+            config.instrumentation_enabled || instrumentation_enabled_via_env();
+
+        let instrumentation_setup = if instrumentation_enabled {
+            Some(configure_instrumentation(&cargo_manifest_dir))
         } else {
-            Vec::new()
+            None
         };
 
-        for buildpack in &config.buildpacks {
-            match buildpack {
-                BuildpackReference::CurrentCrate => {
-                    let crate_buildpack_dir = build::package_crate_buildpack(
-                        config.cargo_profile,
-                        &config.target_triple,
-                        &cargo_manifest_dir,
-                        buildpacks_target_dir.path(),
-                        &cargo_env_additions,
-                    )
-                    .unwrap_or_else(|error| {
-                        panic!("Error packaging current crate as buildpack: {error}")
-                    });
-                    pack_command.buildpack(crate_buildpack_dir);
-                }
+        if let Some(ref setup) = instrumentation_setup {
+            pack_command.volume(setup.volume.clone());
+            pack_command.env(&setup.pack_env.0, &setup.pack_env.1);
+        }
 
-                BuildpackReference::WorkspaceBuildpack(buildpack_id) => {
-                    let buildpack_dir = build::package_buildpack(
-                        buildpack_id,
-                        config.cargo_profile,
-                        &config.target_triple,
-                        &cargo_manifest_dir,
-                        buildpacks_target_dir.path(),
-                        &cargo_env_additions,
-                    )
-                    .unwrap_or_else(|error| {
-                        panic!("Error packaging buildpack '{buildpack_id}': {error}")
-                    });
-                    pack_command.buildpack(buildpack_dir);
-                }
+        let cargo_env_additions =
+            instrumentation_setup.map_or_else(Vec::new, |setup| setup.cargo_env_additions);
 
-                BuildpackReference::Other(id) => {
-                    pack_command.buildpack(id.clone());
-                }
-            }
+        for reference in create_buildpack_references(
+            config,
+            &cargo_manifest_dir,
+            buildpacks_target_dir.path(),
+            &cargo_env_additions,
+        ) {
+            pack_command.buildpack(reference);
         }
 
         let pack_result = util::run_command(pack_command);
@@ -191,45 +170,100 @@ impl TestRunner {
     }
 }
 
+fn create_buildpack_references(
+    config: &BuildConfig,
+    cargo_manifest_dir: &Path,
+    target_buildpack_dir: &Path,
+    cargo_env_additions: &[CargoEnvAddition],
+) -> Vec<crate::pack::BuildpackReference> {
+    config
+        .buildpacks
+        .iter()
+        .map(|buildpack| match buildpack {
+            BuildpackReference::CurrentCrate => {
+                let dir = build::package_crate_buildpack(
+                    config.cargo_profile,
+                    &config.target_triple,
+                    cargo_manifest_dir,
+                    target_buildpack_dir,
+                    cargo_env_additions,
+                )
+                .unwrap_or_else(|error| {
+                    panic!("Error packaging current crate as buildpack: {error}")
+                });
+                crate::pack::BuildpackReference::from(dir)
+            }
+            BuildpackReference::WorkspaceBuildpack(buildpack_id) => {
+                let dir = build::package_buildpack(
+                    buildpack_id,
+                    config.cargo_profile,
+                    &config.target_triple,
+                    cargo_manifest_dir,
+                    target_buildpack_dir,
+                    cargo_env_additions,
+                )
+                .unwrap_or_else(|error| {
+                    panic!("Error packaging buildpack '{buildpack_id}': {error}")
+                });
+                crate::pack::BuildpackReference::from(dir)
+            }
+            BuildpackReference::Other(id) => crate::pack::BuildpackReference::from(id.clone()),
+        })
+        .collect()
+}
+
+fn instrumentation_enabled_via_env() -> bool {
+    env::var("LIBCNB_INSTRUMENTATION")
+        .is_ok_and(|v| matches!(v.to_ascii_lowercase().as_str(), "1" | "true" | "yes"))
+}
+
 const INSTRUMENTATION_CONTAINER_DIR: &str = "/tmp/llvm-cov";
 
-fn configure_instrumentation(
-    cargo_manifest_dir: &Path,
-    pack_command: &mut PackBuildCommand,
-) -> Vec<CargoEnvAddition> {
+struct InstrumentationSetup {
+    volume: VolumeMount,
+    pack_env: (String, String),
+    cargo_env_additions: Vec<CargoEnvAddition>,
+}
+
+fn configure_instrumentation(cargo_manifest_dir: &Path) -> InstrumentationSetup {
     let workspace_root = find_cargo_workspace_root_dir(cargo_manifest_dir)
         .unwrap_or_else(|error| panic!("Error finding Cargo workspace root: {error}"));
 
     let dir = workspace_root.join("target/coverage/profraw");
-    std::fs::create_dir_all(&dir).expect("Failed to create coverage output directory");
+    std::fs::create_dir_all(&dir)
+        .unwrap_or_else(|error| panic!("Error creating coverage output directory: {error}"));
     // The CNB lifecycle runs buildpacks as a non-root user (e.g. uid 1000) which may differ
     // from the host user, so the mounted directory must be world-writable.
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o777))
-            .expect("Failed to set coverage directory permissions");
+        std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o777)).unwrap_or_else(
+            |error| {
+                panic!("Error setting coverage directory permissions: {error}");
+            },
+        );
     }
-    let dir =
-        std::fs::canonicalize(&dir).expect("Failed to canonicalize coverage output directory");
+    let dir = std::fs::canonicalize(&dir)
+        .unwrap_or_else(|error| panic!("Error canonicalizing coverage output directory: {error}"));
 
-    pack_command.volume(VolumeMount {
-        source: dir,
-        target: PathBuf::from(INSTRUMENTATION_CONTAINER_DIR),
-        options: Some(String::from("rw")),
-    });
-    // %p = PID, %m = binary signature hash — prevents clobbering across concurrent runs.
-    // See: https://doc.rust-lang.org/rustc/instrument-coverage.html
-    pack_command.env(
-        "LLVM_PROFILE_FILE",
-        format!("{INSTRUMENTATION_CONTAINER_DIR}/%p-%m.profraw"),
-    );
-
-    vec![CargoEnvAddition {
-        key: OsString::from("RUSTFLAGS"),
-        value: OsString::from("-C instrument-coverage"),
-        separator: OsString::from(" "),
-    }]
+    InstrumentationSetup {
+        volume: VolumeMount {
+            source: dir,
+            target: PathBuf::from(INSTRUMENTATION_CONTAINER_DIR),
+            options: Some(String::from("rw")),
+        },
+        // %p = PID, %m = binary signature hash — prevents clobbering across concurrent runs.
+        // See: https://doc.rust-lang.org/rustc/instrument-coverage.html
+        pack_env: (
+            String::from("LLVM_PROFILE_FILE"),
+            format!("{INSTRUMENTATION_CONTAINER_DIR}/%p-%m.profraw"),
+        ),
+        cargo_env_additions: vec![CargoEnvAddition {
+            key: OsString::from("RUSTFLAGS"),
+            value: OsString::from("-C instrument-coverage"),
+            separator: OsString::from(" "),
+        }],
+    }
 }
 
 #[allow(clippy::struct_field_names)]
