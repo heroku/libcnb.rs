@@ -144,10 +144,11 @@ impl From<PackBuildCommand> for Command {
             let mut arg = OsString::from(&volume.source);
             arg.push(":");
             arg.push(&volume.target);
-            if let Some(ref opts) = volume.options {
-                arg.push(":");
-                arg.push(opts);
-            }
+            arg.push(":");
+            arg.push(match volume.mode {
+                VolumeMountMode::ReadOnly => "ro",
+                VolumeMountMode::ReadWrite => "rw",
+            });
             command.arg("--volume");
             command.arg(arg);
         }
@@ -161,7 +162,14 @@ impl From<PackBuildCommand> for Command {
 pub(crate) struct VolumeMount {
     pub(crate) source: PathBuf,
     pub(crate) target: PathBuf,
-    pub(crate) options: Option<String>,
+    pub(crate) mode: VolumeMountMode,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) enum VolumeMountMode {
+    #[allow(dead_code)]
+    ReadOnly,
+    ReadWrite,
 }
 
 #[derive(Clone, Debug)]
@@ -314,19 +322,19 @@ mod tests {
         input.volume(VolumeMount {
             source: PathBuf::from("/host/path"),
             target: PathBuf::from("/container/path"),
-            options: None,
+            mode: VolumeMountMode::ReadWrite,
         });
         input.volume(VolumeMount {
             source: PathBuf::from("/other"),
             target: PathBuf::from("/mnt"),
-            options: Some(String::from("ro")),
+            mode: VolumeMountMode::ReadOnly,
         });
 
         let command: Command = input.into();
 
         let args: Vec<&OsStr> = command.get_args().collect();
         assert!(args.contains(&OsStr::new("--volume")));
-        assert!(args.contains(&OsStr::new("/host/path:/container/path")));
+        assert!(args.contains(&OsStr::new("/host/path:/container/path:rw")));
         assert!(args.contains(&OsStr::new("/other:/mnt:ro")));
     }
 }

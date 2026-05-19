@@ -1,6 +1,6 @@
 use crate::build::CargoEnvAddition;
 use crate::docker::{DockerRemoveImageCommand, DockerRemoveVolumeCommand};
-use crate::pack::{PackBuildCommand, VolumeMount};
+use crate::pack::{PackBuildCommand, VolumeMount, VolumeMountMode};
 use crate::util::CommandError;
 use crate::{BuildConfig, BuildpackReference, PackResult, TestContext, app, build, util};
 use libcnb_package::find_cargo_workspace_root_dir;
@@ -271,7 +271,7 @@ fn configure_instrumentation(cargo_manifest_dir: &Path) -> InstrumentationSetup 
         volume: VolumeMount {
             source: dir,
             target: PathBuf::from(INSTRUMENTATION_CONTAINER_DIR),
-            options: Some(String::from("rw")),
+            mode: VolumeMountMode::ReadWrite,
         },
         // %p = PID, %m = binary signature hash — prevents clobbering across concurrent runs.
         // See: https://doc.rust-lang.org/rustc/instrument-coverage.html
