@@ -117,8 +117,8 @@ impl TestRunner {
             pack_command.env(key, value);
         });
 
-        let instrumentation_enabled =
-            config.instrumentation_enabled || instrumentation_enabled_via_env();
+        let instrumentation_enabled = config.instrumentation_enabled
+            || instrumentation_enabled_via_env().unwrap_or_else(|error| panic!("{error}"));
 
         let instrumentation_setup = if instrumentation_enabled {
             Some(configure_instrumentation(&cargo_manifest_dir))
@@ -212,9 +212,30 @@ fn create_buildpack_references(
         .collect()
 }
 
-fn instrumentation_enabled_via_env() -> bool {
-    env::var("LIBCNB_INSTRUMENTATION")
-        .is_ok_and(|v| matches!(v.to_ascii_lowercase().as_str(), "1" | "true" | "yes"))
+#[derive(Debug)]
+struct InvalidInstrumentationEnvVar {
+    value: String,
+}
+
+impl std::fmt::Display for InvalidInstrumentationEnvVar {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Invalid value for LIBCNB_INSTRUMENTATION: {:?}. Expected \"1\", \"true\", \"0\", or \"false\".",
+            self.value
+        )
+    }
+}
+
+fn instrumentation_enabled_via_env() -> Result<bool, InvalidInstrumentationEnvVar> {
+    match env::var("LIBCNB_INSTRUMENTATION") {
+        Err(_) => Ok(false),
+        Ok(v) => match v.to_ascii_lowercase().as_str() {
+            "1" | "true" => Ok(true),
+            "0" | "false" | "" => Ok(false),
+            _ => Err(InvalidInstrumentationEnvVar { value: v }),
+        },
+    }
 }
 
 const INSTRUMENTATION_CONTAINER_DIR: &str = "/tmp/llvm-cov";

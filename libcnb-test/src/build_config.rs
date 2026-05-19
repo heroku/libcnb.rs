@@ -106,8 +106,8 @@ impl BuildConfig {
     /// Note: `.profraw` files accumulate across runs. Clean the output directory
     /// before a fresh coverage collection if stale data is a concern.
     ///
-    /// Can also be enabled globally by setting `LIBCNB_INSTRUMENTATION` to `1`, `true`, or `yes`
-    /// (case-insensitive).
+    /// Can also be enabled globally by setting `LIBCNB_INSTRUMENTATION` to `1` or `true`
+    /// (case-insensitive). Invalid values will cause a panic.
     ///
     /// # Example
     /// ```no_run
