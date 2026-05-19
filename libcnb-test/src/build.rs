@@ -12,27 +12,6 @@ use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::{fs, io};
 
-#[derive(Clone, Debug, PartialEq)]
-pub(crate) struct CargoEnvAddition {
-    pub(crate) key: OsString,
-    pub(crate) value: OsString,
-    pub(crate) separator: OsString,
-}
-
-fn apply_cargo_env_additions(
-    cargo_build_env: &mut Vec<(OsString, OsString)>,
-    additions: &[CargoEnvAddition],
-) {
-    for addition in additions {
-        if let Some(existing) = cargo_build_env.iter_mut().find(|(k, _)| k == &addition.key) {
-            existing.1.push(&addition.separator);
-            existing.1.push(&addition.value);
-        } else {
-            cargo_build_env.push((addition.key.clone(), addition.value.clone()));
-        }
-    }
-}
-
 /// Packages the current crate as a buildpack into the provided directory.
 pub(crate) fn package_crate_buildpack(
     cargo_profile: CargoProfile,
@@ -148,6 +127,27 @@ pub(crate) enum PackageBuildpackError {
     GetDependencies(GetDependenciesError<BuildpackId>),
     #[error(transparent)]
     PackageBuildpack(libcnb_package::package::PackageBuildpackError),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct CargoEnvAddition {
+    pub(crate) key: OsString,
+    pub(crate) value: OsString,
+    pub(crate) separator: OsString,
+}
+
+fn apply_cargo_env_additions(
+    cargo_build_env: &mut Vec<(OsString, OsString)>,
+    additions: &[CargoEnvAddition],
+) {
+    for addition in additions {
+        if let Some(existing) = cargo_build_env.iter_mut().find(|(k, _)| k == &addition.key) {
+            existing.1.push(&addition.separator);
+            existing.1.push(&addition.value);
+        } else {
+            cargo_build_env.push((addition.key.clone(), addition.value.clone()));
+        }
+    }
 }
 
 #[cfg(test)]
