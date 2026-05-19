@@ -70,8 +70,8 @@ impl TestRunner {
     ) {
         let config = config.borrow();
 
-        let coverage_enabled = config.coverage
-            || env::var("LIBCNB_COVERAGE")
+        let instrumentation_enabled = config.instrumentation_enabled
+            || env::var("LIBCNB_INSTRUMENTATION")
                 .is_ok_and(|v| matches!(v.to_ascii_lowercase().as_str(), "1" | "true" | "yes"));
 
         let cargo_manifest_dir = env::var("CARGO_MANIFEST_DIR").map_or_else(
@@ -121,8 +121,8 @@ impl TestRunner {
             pack_command.env(key, value);
         });
 
-        let cargo_env_additions: Vec<CargoEnvAddition> = if coverage_enabled {
-            configure_coverage(&cargo_manifest_dir, &mut pack_command)
+        let cargo_env_additions: Vec<CargoEnvAddition> = if instrumentation_enabled {
+            configure_instrumentation(&cargo_manifest_dir, &mut pack_command)
         } else {
             Vec::new()
         };
@@ -191,9 +191,9 @@ impl TestRunner {
     }
 }
 
-const COVERAGE_CONTAINER_DIR: &str = "/tmp/llvm-cov";
+const INSTRUMENTATION_CONTAINER_DIR: &str = "/tmp/llvm-cov";
 
-fn configure_coverage(
+fn configure_instrumentation(
     cargo_manifest_dir: &Path,
     pack_command: &mut PackBuildCommand,
 ) -> Vec<CargoEnvAddition> {
@@ -215,14 +215,14 @@ fn configure_coverage(
 
     pack_command.volume(VolumeMount {
         source: dir,
-        target: PathBuf::from(COVERAGE_CONTAINER_DIR),
+        target: PathBuf::from(INSTRUMENTATION_CONTAINER_DIR),
         options: Some(String::from("rw")),
     });
     // %p = PID, %m = binary signature hash — prevents clobbering across concurrent runs.
     // See: https://doc.rust-lang.org/rustc/instrument-coverage.html
     pack_command.env(
         "LLVM_PROFILE_FILE",
-        format!("{COVERAGE_CONTAINER_DIR}/%p-%m.profraw"),
+        format!("{INSTRUMENTATION_CONTAINER_DIR}/%p-%m.profraw"),
     );
 
     vec![CargoEnvAddition {

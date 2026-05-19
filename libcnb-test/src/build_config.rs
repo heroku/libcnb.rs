@@ -13,7 +13,7 @@ pub struct BuildConfig {
     pub(crate) target_triple: String,
     pub(crate) builder_name: String,
     pub(crate) buildpacks: Vec<BuildpackReference>,
-    pub(crate) coverage: bool,
+    pub(crate) instrumentation_enabled: bool,
     pub(crate) env: HashMap<String, String>,
     pub(crate) app_dir_preprocessor: Option<Rc<dyn Fn(PathBuf)>>,
     pub(crate) expected_pack_result: PackResult,
@@ -44,7 +44,7 @@ impl BuildConfig {
             target_triple: String::from("x86_64-unknown-linux-musl"),
             builder_name: builder_name.into(),
             buildpacks: vec![BuildpackReference::CurrentCrate],
-            coverage: false,
+            instrumentation_enabled: false,
             env: HashMap::new(),
             app_dir_preprocessor: None,
             expected_pack_result: PackResult::Success,
@@ -97,7 +97,7 @@ impl BuildConfig {
         self
     }
 
-    /// Enables LLVM source-based code coverage collection for this build.
+    /// Enables LLVM source-based coverage instrumentation for this build.
     ///
     /// When enabled, the buildpack binary is compiled with `-C instrument-coverage`
     /// and `.profraw` files generated during the buildpack's detect/build phases
@@ -106,7 +106,7 @@ impl BuildConfig {
     /// Note: `.profraw` files accumulate across runs. Clean the output directory
     /// before a fresh coverage collection if stale data is a concern.
     ///
-    /// Can also be enabled globally by setting `LIBCNB_COVERAGE` to `1`, `true`, or `yes`
+    /// Can also be enabled globally by setting `LIBCNB_INSTRUMENTATION` to `1`, `true`, or `yes`
     /// (case-insensitive).
     ///
     /// # Example
@@ -115,14 +115,14 @@ impl BuildConfig {
     ///
     /// TestRunner::default().build(
     ///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app")
-    ///         .enable_coverage(),
+    ///         .enable_instrumentation(),
     ///     |context| {
     ///         // ...
     ///     },
     /// );
     /// ```
-    pub fn enable_coverage(&mut self) -> &mut Self {
-        self.coverage = true;
+    pub fn enable_instrumentation(&mut self) -> &mut Self {
+        self.instrumentation_enabled = true;
         self
     }
 

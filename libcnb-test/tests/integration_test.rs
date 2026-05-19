@@ -748,7 +748,7 @@ fn build_with_coverage_produces_profraw() {
             .buildpacks([BuildpackReference::WorkspaceBuildpack(buildpack_id!(
                 "libcnb-test/coverage"
             ))])
-            .enable_coverage(),
+            .enable_instrumentation(),
         |context| {
             assert_empty!(context.pack_stderr);
             assert_contains!(context.pack_stdout, "Coverage Buildpack");
