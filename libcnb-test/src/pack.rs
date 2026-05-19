@@ -11,19 +11,6 @@ pub(crate) struct VolumeMount {
     pub(crate) options: Option<String>,
 }
 
-impl From<&VolumeMount> for OsString {
-    fn from(mount: &VolumeMount) -> Self {
-        let mut s = OsString::from(&mount.source);
-        s.push(":");
-        s.push(&mount.target);
-        if let Some(ref opts) = mount.options {
-            s.push(":");
-            s.push(opts);
-        }
-        s
-    }
-}
-
 /// Represents a `pack build` command.
 #[derive(Clone, Debug)]
 pub(crate) struct PackBuildCommand {
@@ -162,8 +149,15 @@ impl From<PackBuildCommand> for Command {
         }
 
         for volume in &pack_build_command.volumes {
+            let mut arg = OsString::from(&volume.source);
+            arg.push(":");
+            arg.push(&volume.target);
+            if let Some(ref opts) = volume.options {
+                arg.push(":");
+                arg.push(opts);
+            }
             command.arg("--volume");
-            command.arg(OsString::from(volume));
+            command.arg(arg);
         }
 
         command
