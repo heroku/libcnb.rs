@@ -1,4 +1,4 @@
-use crate::build::CargoEnvUpdate;
+use crate::build::CargoEnvAddition;
 use crate::docker::{DockerRemoveImageCommand, DockerRemoveVolumeCommand};
 use crate::pack::{PackBuildCommand, VolumeMount};
 use crate::util::CommandError;
@@ -121,7 +121,7 @@ impl TestRunner {
             pack_command.env(key, value);
         });
 
-        let additional_cargo_env: Vec<CargoEnvUpdate> = if coverage_enabled {
+        let cargo_env_additions: Vec<CargoEnvAddition> = if coverage_enabled {
             configure_coverage(&cargo_manifest_dir, &mut pack_command)
         } else {
             Vec::new()
@@ -135,7 +135,7 @@ impl TestRunner {
                         &config.target_triple,
                         &cargo_manifest_dir,
                         buildpacks_target_dir.path(),
-                        &additional_cargo_env,
+                        &cargo_env_additions,
                     )
                     .unwrap_or_else(|error| {
                         panic!("Error packaging current crate as buildpack: {error}")
@@ -150,7 +150,7 @@ impl TestRunner {
                         &config.target_triple,
                         &cargo_manifest_dir,
                         buildpacks_target_dir.path(),
-                        &additional_cargo_env,
+                        &cargo_env_additions,
                     )
                     .unwrap_or_else(|error| {
                         panic!("Error packaging buildpack '{buildpack_id}': {error}")
@@ -194,7 +194,7 @@ impl TestRunner {
 fn configure_coverage(
     cargo_manifest_dir: &Path,
     pack_command: &mut PackBuildCommand,
-) -> Vec<CargoEnvUpdate> {
+) -> Vec<CargoEnvAddition> {
     let workspace_root = find_cargo_workspace_root_dir(cargo_manifest_dir)
         .unwrap_or_else(|error| panic!("Error finding Cargo workspace root: {error}"));
 
@@ -220,7 +220,7 @@ fn configure_coverage(
     // See: https://doc.rust-lang.org/rustc/instrument-coverage.html
     pack_command.env("LLVM_PROFILE_FILE", "/tmp/llvm-cov/%p-%m.profraw");
 
-    vec![CargoEnvUpdate::Append {
+    vec![CargoEnvAddition {
         key: OsString::from("RUSTFLAGS"),
         value: OsString::from("-C instrument-coverage"),
         separator: OsString::from(" "),
