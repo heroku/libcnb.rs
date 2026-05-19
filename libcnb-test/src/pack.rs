@@ -3,14 +3,6 @@ use std::ffi::OsString;
 use std::path::PathBuf;
 use std::process::Command;
 
-/// Represents a volume mount for Docker containers.
-#[derive(Clone, Debug)]
-pub(crate) struct VolumeMount {
-    pub(crate) source: PathBuf,
-    pub(crate) target: PathBuf,
-    pub(crate) options: Option<String>,
-}
-
 /// Represents a `pack build` command.
 #[derive(Clone, Debug)]
 pub(crate) struct PackBuildCommand {
@@ -162,6 +154,14 @@ impl From<PackBuildCommand> for Command {
 
         command
     }
+}
+
+/// Represents a volume mount for Docker containers.
+#[derive(Clone, Debug)]
+pub(crate) struct VolumeMount {
+    pub(crate) source: PathBuf,
+    pub(crate) target: PathBuf,
+    pub(crate) options: Option<String>,
 }
 
 #[derive(Clone, Debug)]
