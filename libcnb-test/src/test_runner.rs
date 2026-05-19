@@ -191,6 +191,8 @@ impl TestRunner {
     }
 }
 
+const COVERAGE_CONTAINER_DIR: &str = "/tmp/llvm-cov";
+
 fn configure_coverage(
     cargo_manifest_dir: &Path,
     pack_command: &mut PackBuildCommand,
@@ -213,12 +215,15 @@ fn configure_coverage(
 
     pack_command.volume(VolumeMount {
         source: dir,
-        target: PathBuf::from("/tmp/llvm-cov"),
+        target: PathBuf::from(COVERAGE_CONTAINER_DIR),
         options: Some(String::from("rw")),
     });
     // %p = PID, %m = binary signature hash — prevents clobbering across concurrent runs.
     // See: https://doc.rust-lang.org/rustc/instrument-coverage.html
-    pack_command.env("LLVM_PROFILE_FILE", "/tmp/llvm-cov/%p-%m.profraw");
+    pack_command.env(
+        "LLVM_PROFILE_FILE",
+        format!("{COVERAGE_CONTAINER_DIR}/%p-%m.profraw"),
+    );
 
     vec![CargoEnvAddition {
         key: OsString::from("RUSTFLAGS"),
