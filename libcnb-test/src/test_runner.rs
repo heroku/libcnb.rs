@@ -8,6 +8,8 @@ use std::borrow::Borrow;
 use std::env;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::{SystemTime, UNIX_EPOCH};
 use tempfile::tempdir;
 
 /// Runner for libcnb integration tests.
@@ -240,6 +242,8 @@ fn instrumentation_enabled_via_env() -> Result<bool, InvalidInstrumentationEnvVa
 
 const INSTRUMENTATION_CONTAINER_DIR: &str = "/tmp/llvm-cov";
 
+static PACK_INVOCATION_COUNTER: AtomicU64 = AtomicU64::new(0);
+
 struct InstrumentationSetup {
     volume: VolumeMount,
     pack_env: (String, String),
@@ -267,17 +271,26 @@ fn configure_instrumentation(cargo_manifest_dir: &Path) -> InstrumentationSetup 
     let dir = std::fs::canonicalize(&dir)
         .unwrap_or_else(|error| panic!("Error canonicalizing coverage output directory: {error}"));
 
+    let test_name = std::thread::current()
+        .name()
+        .unwrap_or("unknown")
+        .replace("::", "_");
+    let timestamp_ns = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |d| d.as_nanos());
+    let invocation_id = PACK_INVOCATION_COUNTER.fetch_add(1, Ordering::Relaxed);
+
     InstrumentationSetup {
         volume: VolumeMount {
             source: dir,
             target: PathBuf::from(INSTRUMENTATION_CONTAINER_DIR),
             mode: VolumeMountMode::ReadWrite,
         },
-        // %p = PID, %m = binary signature hash — prevents clobbering across concurrent runs.
-        // See: https://doc.rust-lang.org/rustc/instrument-coverage.html
         pack_env: (
             String::from("LLVM_PROFILE_FILE"),
-            format!("{INSTRUMENTATION_CONTAINER_DIR}/%p-%m.profraw"),
+            format!(
+                "{INSTRUMENTATION_CONTAINER_DIR}/{test_name}-{timestamp_ns}-{invocation_id}.profraw"
+            ),
         ),
         cargo_env_additions: vec![CargoEnvAddition {
             key: OsString::from("RUSTFLAGS"),
