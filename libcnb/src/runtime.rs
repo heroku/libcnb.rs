@@ -49,7 +49,7 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
                 eprintln!("Error: Cloud Native Buildpack API mismatch");
                 eprintln!(
                     "This buildpack uses Cloud Native Buildpacks API version {} (specified in buildpack.toml).",
-                    &buildpack_descriptor.api,
+                    buildpack_descriptor.api,
                 );
                 eprintln!(
                     "However, the underlying libcnb.rs library only supports CNB API {LIBCNB_SUPPORTED_BUILDPACK_API}."

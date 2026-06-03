@@ -163,15 +163,14 @@ fn eprint_pack_command_hint(
 }
 
 fn eprint_compiled_buildpack_success(current_dir: &Path, target_dir: &Path) {
-    let size_string = calculate_dir_size(target_dir)
-        .map(|size_in_bytes| {
+    let size_string =
+        calculate_dir_size(target_dir).map_or(String::from("<unknown>"), |size_in_bytes| {
             // Precision will only be lost for sizes bigger than 52 bits (~4 Petabytes), and even
             // then will only result in a less precise figure, so is not an issue.
             #[allow(clippy::cast_precision_loss)]
             let size_in_mib = size_in_bytes as f64 / (1024.0 * 1024.0);
             format!("{size_in_mib:.2}")
-        })
-        .unwrap_or(String::from("<unknown>"));
+        });
 
     let relative_output_path =
         pathdiff::diff_paths(target_dir, current_dir).unwrap_or_else(|| target_dir.to_path_buf());
