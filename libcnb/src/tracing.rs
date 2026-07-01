@@ -163,7 +163,7 @@ impl<W: Write + Send + Debug> SpanExporter for FileExporter<W> {
             .and(writeln!(writer).map_err(|e| OTelSdkError::InternalFailure(e.to_string())))
     }
 
-    fn force_flush(&mut self) -> OTelSdkResult {
+    fn force_flush(&self) -> OTelSdkResult {
         let mut writer = self
             .writer
             .lock()
