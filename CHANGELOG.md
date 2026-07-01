@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `libcnb`:
+  - Updated `opentelemetry`, `opentelemetry_sdk` and `opentelemetry-proto` from `0.31` to `0.32`, and `tracing-opentelemetry` from `0.32` to `0.33`. ([#1003](https://github.com/heroku/libcnb.rs/pull/1003))
 
 ## [0.30.4] - 2026-04-13
 
@@ -16,7 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `libcnb-test`:
   - Added `assert_matches!` macro for asserting that expressions match specific patterns, with optional guards. ([#996](https://github.com/heroku/libcnb.rs/pull/996))
-
 
 ## [0.30.3] - 2026-03-02
 
