@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.31.1] - 2026-08-03
 
+### Changed
+
+- `libcnb-data`:
+  - Updated `fancy-regex` from `0.18` to `0.19`. ([#1012](https://github.com/heroku/libcnb.rs/pull/1012))
+- `libcnb-proc-macros`:
+  - Updated `fancy-regex` from `0.18` to `0.19`. ([#1012](https://github.com/heroku/libcnb.rs/pull/1012))
+  - Updated `syn` from `2` to `3`. ([#1011](https://github.com/heroku/libcnb.rs/pull/1011))
 
 ## [0.31.0] - 2026-07-01
 
