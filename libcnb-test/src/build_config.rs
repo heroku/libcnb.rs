@@ -13,6 +13,7 @@ pub struct BuildConfig {
     pub(crate) target_triple: String,
     pub(crate) builder_name: String,
     pub(crate) buildpacks: Vec<BuildpackReference>,
+    pub(crate) instrumentation_enabled: bool,
     pub(crate) env: HashMap<String, String>,
     pub(crate) app_dir_preprocessor: Option<Rc<dyn Fn(PathBuf)>>,
     pub(crate) expected_pack_result: PackResult,
@@ -43,6 +44,7 @@ impl BuildConfig {
             target_triple: String::from("x86_64-unknown-linux-musl"),
             builder_name: builder_name.into(),
             buildpacks: vec![BuildpackReference::CurrentCrate],
+            instrumentation_enabled: false,
             env: HashMap::new(),
             app_dir_preprocessor: None,
             expected_pack_result: PackResult::Success,
@@ -92,6 +94,35 @@ impl BuildConfig {
     /// ```
     pub fn cargo_profile(&mut self, cargo_profile: CargoProfile) -> &mut Self {
         self.cargo_profile = cargo_profile;
+        self
+    }
+
+    /// Enables LLVM source-based coverage instrumentation for this build.
+    ///
+    /// When enabled, the buildpack binary is compiled with `-C instrument-coverage`
+    /// and `.profraw` files generated during the buildpack's detect/build phases
+    /// are written to `{workspace_root}/target/coverage/profraw/` via a volume mount.
+    ///
+    /// Note: `.profraw` files accumulate across runs. Clean the output directory
+    /// before a fresh coverage collection if stale data is a concern.
+    ///
+    /// Can also be enabled globally by setting `LIBCNB_INSTRUMENTATION` to `1` or `true`
+    /// (case-insensitive). Invalid values will cause a panic.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use libcnb_test::{BuildConfig, TestRunner};
+    ///
+    /// TestRunner::default().build(
+    ///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app")
+    ///         .enable_instrumentation(),
+    ///     |context| {
+    ///         // ...
+    ///     },
+    /// );
+    /// ```
+    pub fn enable_instrumentation(&mut self) -> &mut Self {
+        self.instrumentation_enabled = true;
         self
     }
 

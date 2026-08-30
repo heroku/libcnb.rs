@@ -1,10 +1,15 @@
+use crate::build::CargoEnvAddition;
 use crate::docker::{DockerRemoveImageCommand, DockerRemoveVolumeCommand};
-use crate::pack::PackBuildCommand;
+use crate::pack::{PackBuildCommand, VolumeMount, VolumeMountMode};
 use crate::util::CommandError;
 use crate::{BuildConfig, BuildpackReference, PackResult, TestContext, app, build, util};
+use libcnb_package::find_cargo_workspace_root_dir;
 use std::borrow::Borrow;
 use std::env;
-use std::path::PathBuf;
+use std::ffi::OsString;
+use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::{SystemTime, UNIX_EPOCH};
 use tempfile::tempdir;
 
 /// Runner for libcnb integration tests.
@@ -114,39 +119,30 @@ impl TestRunner {
             pack_command.env(key, value);
         });
 
-        for buildpack in &config.buildpacks {
-            match buildpack {
-                BuildpackReference::CurrentCrate => {
-                    let crate_buildpack_dir = build::package_crate_buildpack(
-                        config.cargo_profile,
-                        &config.target_triple,
-                        &cargo_manifest_dir,
-                        buildpacks_target_dir.path(),
-                    )
-                    .unwrap_or_else(|error| {
-                        panic!("Error packaging current crate as buildpack: {error}")
-                    });
-                    pack_command.buildpack(crate_buildpack_dir);
-                }
+        let instrumentation_enabled = config.instrumentation_enabled
+            || instrumentation_enabled_via_env().unwrap_or_else(|error| panic!("{error}"));
 
-                BuildpackReference::WorkspaceBuildpack(buildpack_id) => {
-                    let buildpack_dir = build::package_buildpack(
-                        buildpack_id,
-                        config.cargo_profile,
-                        &config.target_triple,
-                        &cargo_manifest_dir,
-                        buildpacks_target_dir.path(),
-                    )
-                    .unwrap_or_else(|error| {
-                        panic!("Error packaging buildpack '{buildpack_id}': {error}")
-                    });
-                    pack_command.buildpack(buildpack_dir);
-                }
+        let instrumentation_setup = if instrumentation_enabled {
+            Some(configure_instrumentation(&cargo_manifest_dir))
+        } else {
+            None
+        };
 
-                BuildpackReference::Other(id) => {
-                    pack_command.buildpack(id.clone());
-                }
-            }
+        if let Some(ref setup) = instrumentation_setup {
+            pack_command.volume(setup.volume.clone());
+            pack_command.env(&setup.pack_env.0, &setup.pack_env.1);
+        }
+
+        let cargo_env_additions =
+            instrumentation_setup.map_or_else(Vec::new, |setup| setup.cargo_env_additions);
+
+        for reference in create_buildpack_references(
+            config,
+            &cargo_manifest_dir,
+            buildpacks_target_dir.path(),
+            &cargo_env_additions,
+        ) {
+            pack_command.buildpack(reference);
         }
 
         let pack_result = util::run_command(pack_command);
@@ -173,6 +169,134 @@ impl TestRunner {
         };
 
         f(test_context);
+    }
+}
+
+fn create_buildpack_references(
+    config: &BuildConfig,
+    cargo_manifest_dir: &Path,
+    target_buildpack_dir: &Path,
+    cargo_env_additions: &[CargoEnvAddition],
+) -> Vec<crate::pack::BuildpackReference> {
+    config
+        .buildpacks
+        .iter()
+        .map(|buildpack| match buildpack {
+            BuildpackReference::CurrentCrate => {
+                let dir = build::package_crate_buildpack(
+                    config.cargo_profile,
+                    &config.target_triple,
+                    cargo_manifest_dir,
+                    target_buildpack_dir,
+                    cargo_env_additions,
+                )
+                .unwrap_or_else(|error| {
+                    panic!("Error packaging current crate as buildpack: {error}")
+                });
+                crate::pack::BuildpackReference::from(dir)
+            }
+            BuildpackReference::WorkspaceBuildpack(buildpack_id) => {
+                let dir = build::package_buildpack(
+                    buildpack_id,
+                    config.cargo_profile,
+                    &config.target_triple,
+                    cargo_manifest_dir,
+                    target_buildpack_dir,
+                    cargo_env_additions,
+                )
+                .unwrap_or_else(|error| {
+                    panic!("Error packaging buildpack '{buildpack_id}': {error}")
+                });
+                crate::pack::BuildpackReference::from(dir)
+            }
+            BuildpackReference::Other(id) => crate::pack::BuildpackReference::from(id.clone()),
+        })
+        .collect()
+}
+
+#[derive(Debug)]
+struct InvalidInstrumentationEnvVar {
+    value: String,
+}
+
+impl std::fmt::Display for InvalidInstrumentationEnvVar {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Invalid value for LIBCNB_INSTRUMENTATION: {:?}. Expected \"1\", \"true\", \"0\", or \"false\".",
+            self.value
+        )
+    }
+}
+
+fn instrumentation_enabled_via_env() -> Result<bool, InvalidInstrumentationEnvVar> {
+    match env::var("LIBCNB_INSTRUMENTATION") {
+        Err(_) => Ok(false),
+        Ok(v) => match v.to_ascii_lowercase().as_str() {
+            "1" | "true" => Ok(true),
+            "0" | "false" | "" => Ok(false),
+            _ => Err(InvalidInstrumentationEnvVar { value: v }),
+        },
+    }
+}
+
+const INSTRUMENTATION_CONTAINER_DIR: &str = "/tmp/llvm-cov";
+
+static PACK_INVOCATION_COUNTER: AtomicU64 = AtomicU64::new(0);
+
+struct InstrumentationSetup {
+    volume: VolumeMount,
+    pack_env: (String, String),
+    cargo_env_additions: Vec<CargoEnvAddition>,
+}
+
+fn configure_instrumentation(cargo_manifest_dir: &Path) -> InstrumentationSetup {
+    let workspace_root = find_cargo_workspace_root_dir(cargo_manifest_dir)
+        .unwrap_or_else(|error| panic!("Error finding Cargo workspace root: {error}"));
+
+    let dir = workspace_root.join("target/coverage/profraw");
+    std::fs::create_dir_all(&dir)
+        .unwrap_or_else(|error| panic!("Error creating coverage output directory: {error}"));
+    // The CNB lifecycle runs buildpacks as a non-root user (e.g. uid 1000) which may differ
+    // from the host user, so the mounted directory must be world-writable.
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o777)).unwrap_or_else(
+            |error| {
+                panic!("Error setting coverage directory permissions: {error}");
+            },
+        );
+    }
+    let dir = std::fs::canonicalize(&dir)
+        .unwrap_or_else(|error| panic!("Error canonicalizing coverage output directory: {error}"));
+
+    let test_name = std::thread::current()
+        .name()
+        .unwrap_or("unknown")
+        .replace("::", "_");
+    let timestamp_ns = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |d| d.as_nanos());
+    let invocation_id = PACK_INVOCATION_COUNTER.fetch_add(1, Ordering::Relaxed);
+
+    InstrumentationSetup {
+        volume: VolumeMount {
+            source: dir,
+            target: PathBuf::from(INSTRUMENTATION_CONTAINER_DIR),
+            mode: VolumeMountMode::ReadWrite,
+        },
+        pack_env: (
+            String::from("LLVM_PROFILE_FILE"),
+            format!(
+                "{INSTRUMENTATION_CONTAINER_DIR}/{test_name}-{timestamp_ns}-{invocation_id}.profraw"
+            ),
+        ),
+        cargo_env_additions: vec![CargoEnvAddition {
+            key: OsString::from("RUSTFLAGS"),
+            value: OsString::from("-C instrument-coverage"),
+            separator: OsString::from(" "),
+        }],
     }
 }
 
