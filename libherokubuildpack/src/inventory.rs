@@ -24,6 +24,13 @@
 //! - Extensible with metadata: The default inventory format covers a lot of common use cases,
 //!   but if you need more, you can extend it by adding custom metadata to each artifact.
 //!
+//! ## Warnings
+//!
+//! The [`warning`] sub-module provides [`warning::VersionWarnings`] and [`warning::VersionWarning`]
+//! types for associating version requirements with warning messages. It uses the
+//! [`version::VersionRequirement`] trait for version matching. This can be used to display
+//! end-of-life notices, security advisories, or other version-specific messages to users.
+//!
 //! ## Example usage
 //!
 //! This example demonstrates:
@@ -92,6 +99,7 @@
 pub mod artifact;
 pub mod checksum;
 pub mod version;
+pub mod warning;
 
 #[cfg(feature = "inventory-semver")]
 mod semver;
