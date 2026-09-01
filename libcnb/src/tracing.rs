@@ -146,21 +146,20 @@ impl<W: Write + Send + Debug> FileExporter<W> {
 }
 
 impl<W: Write + Send + Debug> SpanExporter for FileExporter<W> {
-    async fn export(&self, batch: Vec<opentelemetry_sdk::trace::SpanData>) -> OTelSdkResult {
+    fn export(
+        &self,
+        batch: Vec<opentelemetry_sdk::trace::SpanData>,
+    ) -> impl std::future::Future<Output = OTelSdkResult> {
         let resource = ResourceAttributesWithSchema::from(&self.resource);
         let resource_spans = group_spans_by_resource_and_scope(batch, &resource);
         let data = TracesData { resource_spans };
 
-        let mut writer = match self.writer.lock() {
-            Ok(f) => f,
-            Err(e) => {
-                return Err(OTelSdkError::InternalFailure(e.to_string()));
-            }
-        };
-
-        serde_json::to_writer(writer.get_mut(), &data)
-            .map_err(|e| OTelSdkError::InternalFailure(e.to_string()))
-            .and(writeln!(writer).map_err(|e| OTelSdkError::InternalFailure(e.to_string())))
+        std::future::ready(match self.writer.lock() {
+            Ok(mut writer) => serde_json::to_writer(writer.get_mut(), &data)
+                .map_err(|e| OTelSdkError::InternalFailure(e.to_string()))
+                .and(writeln!(writer).map_err(|e| OTelSdkError::InternalFailure(e.to_string()))),
+            Err(e) => Err(OTelSdkError::InternalFailure(e.to_string())),
+        })
     }
 
     fn force_flush(&self) -> OTelSdkResult {
