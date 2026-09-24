@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `libherokubuildpack`:
+  - Added `inventory::warning` module with `VersionWarnings` and `VersionWarning` types for associating version requirements with warning messages. ([#991](https://github.com/heroku/libcnb.rs/pull/991))
 
 ## [0.31.1] - 2026-08-03
 

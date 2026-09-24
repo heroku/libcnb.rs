@@ -115,7 +115,6 @@ impl FromStr for Arch {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::inventory::version::VersionRequirement;
 
     #[test]
     fn test_arch_display_format() {
@@ -159,11 +158,5 @@ mod tests {
             "foo".parse::<Os>().unwrap_err(),
             UnsupportedOsError(..)
         ));
-    }
-
-    impl VersionRequirement<String> for String {
-        fn satisfies(&self, version: &String) -> bool {
-            self == version
-        }
     }
 }
