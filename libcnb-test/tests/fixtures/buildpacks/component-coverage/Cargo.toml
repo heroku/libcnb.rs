@@ -1,0 +1,4 @@
+[package]
+name = "component-coverage"
+
+[workspace]

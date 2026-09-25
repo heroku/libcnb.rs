@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::ffi::OsString;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -15,6 +16,7 @@ pub(crate) struct PackBuildCommand {
     pull_policy: PullPolicy,
     trust_builder: bool,
     trust_extra_buildpacks: bool,
+    volumes: Vec<VolumeMount>,
 }
 
 #[derive(Clone, Debug)]
@@ -67,6 +69,7 @@ impl PackBuildCommand {
             pull_policy: PullPolicy::IfNotPresent,
             trust_builder: true,
             trust_extra_buildpacks: true,
+            volumes: Vec::new(),
         }
     }
 
@@ -77,6 +80,11 @@ impl PackBuildCommand {
 
     pub(crate) fn env(&mut self, k: impl Into<String>, v: impl Into<String>) -> &mut Self {
         self.env.insert(k.into(), v.into());
+        self
+    }
+
+    pub(crate) fn volume(&mut self, v: VolumeMount) -> &mut Self {
+        self.volumes.push(v);
         self
     }
 }
@@ -132,8 +140,36 @@ impl From<PackBuildCommand> for Command {
             command.arg("--trust-extra-buildpacks");
         }
 
+        for volume in &pack_build_command.volumes {
+            let mut arg = OsString::from(&volume.source);
+            arg.push(":");
+            arg.push(&volume.target);
+            arg.push(":");
+            arg.push(match volume.mode {
+                VolumeMountMode::ReadOnly => "ro",
+                VolumeMountMode::ReadWrite => "rw",
+            });
+            command.arg("--volume");
+            command.arg(arg);
+        }
+
         command
     }
+}
+
+/// Represents a volume mount for Docker containers.
+#[derive(Clone, Debug)]
+pub(crate) struct VolumeMount {
+    pub(crate) source: PathBuf,
+    pub(crate) target: PathBuf,
+    pub(crate) mode: VolumeMountMode,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) enum VolumeMountMode {
+    #[allow(dead_code)]
+    ReadOnly,
+    ReadWrite,
 }
 
 #[derive(Clone, Debug)]
@@ -195,6 +231,7 @@ mod tests {
             pull_policy: PullPolicy::IfNotPresent,
             trust_builder: true,
             trust_extra_buildpacks: true,
+            volumes: Vec::new(),
         };
 
         let command: Command = input.clone().into();
@@ -271,5 +308,33 @@ mod tests {
         );
 
         assert_eq!(command.get_envs().collect::<Vec<_>>(), Vec::new());
+    }
+
+    #[test]
+    fn from_pack_build_command_with_volumes() {
+        let mut input = PackBuildCommand::new(
+            "builder:22",
+            "/tmp/app",
+            "my-image",
+            "build-cache",
+            "launch-cache",
+        );
+        input.volume(VolumeMount {
+            source: PathBuf::from("/host/path"),
+            target: PathBuf::from("/container/path"),
+            mode: VolumeMountMode::ReadWrite,
+        });
+        input.volume(VolumeMount {
+            source: PathBuf::from("/other"),
+            target: PathBuf::from("/mnt"),
+            mode: VolumeMountMode::ReadOnly,
+        });
+
+        let command: Command = input.into();
+
+        let args: Vec<&OsStr> = command.get_args().collect();
+        assert!(args.contains(&OsStr::new("--volume")));
+        assert!(args.contains(&OsStr::new("/host/path:/container/path:rw")));
+        assert!(args.contains(&OsStr::new("/other:/mnt:ro")));
     }
 }

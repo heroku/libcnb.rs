@@ -1,0 +1,5 @@
+api = "0.8"
+
+[buildpack]
+id = "libcnb-test/coverage"
+version = "0.0.0"
