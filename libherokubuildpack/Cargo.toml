@@ -19,7 +19,7 @@ workspace = true
 
 [features]
 default = ["command", "download", "digest", "error", "inventory", "log", "inventory-semver", "inventory-sha2", "tar", "toml", "fs", "write"]
-download = ["dep:reqwest", "dep:thiserror"]
+download = ["dep:reqwest", "dep:thiserror", "dep:rustls-native-certs"]
 digest = ["dep:hex", "dep:sha2"]
 error = ["log", "dep:libcnb"]
 inventory = ["dep:hex", "dep:serde", "dep:thiserror", "dep:toml"]
@@ -50,7 +50,8 @@ tar = { version = "0.4.46", default-features = false, optional = true }
 termcolor = { version = "1.4.1", optional = true }
 thiserror = { version = "2.0.19", optional = true }
 toml = { workspace = true, optional = true }
-reqwest = { version = "0.12.28", default-features = false, features = ["blocking", "rustls-tls-native-roots"], optional = true }
+reqwest = { version = "0.13.4", default-features = false, features = ["blocking", "rustls"], optional = true }
+rustls-native-certs = { version = "0.8.4", optional = true }
 
 [dev-dependencies]
 serde_test = "1.0.177"
