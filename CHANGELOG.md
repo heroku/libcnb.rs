@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `libherokubuildpack`:
+  - Updated `reqwest` from `0.12` to `0.13`. ([#1018](https://github.com/heroku/libcnb.rs/pull/1018))
 
 ## [0.32.0] - 2026-10-02
 
