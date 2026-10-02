@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `libcnb`:
   - Updated `opentelemetry`, `opentelemetry_sdk` and `opentelemetry-proto` from `0.32` to `0.33`, and `tracing-opentelemetry` from `0.33` to `0.34`. ([#1019](https://github.com/heroku/libcnb.rs/pull/1019))
+- `libherokubuildpack`:
+  - Switched the `flate2` backend used by the `tar` module to the faster `zlib-rs` backend. ([#1020](https://github.com/heroku/libcnb.rs/pull/1020))
 
 ## [0.31.1] - 2026-08-03
 

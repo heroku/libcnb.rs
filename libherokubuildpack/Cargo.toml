@@ -34,12 +34,10 @@ write = []
 
 [dependencies]
 crossbeam-utils = { version = "0.8.22", optional = true }
-# The default `miniz_oxide` flate2 backend has poor performance in debug/under QEMU:
-# https://github.com/rust-lang/flate2-rs/issues/297
-# Ideally we'd use the fastest `zlib-ng` backend, however it fails to cross-compile:
-# https://github.com/rust-lang/libz-sys/issues/93
-# As such we have to use the next best alternate backend, which is `zlib`.
-flate2 = { version = "1.1.9", default-features = false, features = ["zlib"], optional = true }
+# We use the `zlib-rs` backend, since it's the fastest:
+# https://github.com/rust-lang/flate2-rs#backends
+# https://trifectatech.org/blog/zlib-rs-is-faster-than-c/
+flate2 = { version = "1.1.10", default-features = false, features = ["zlib-rs", "runtime_detection"], optional = true }
 hex = { version = "0.4.3", optional = true }
 libcnb = { workspace = true, optional = true }
 pathdiff = { version = "0.2.3", optional = true }
