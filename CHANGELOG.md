@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `libcnb`:
+  - Updated `opentelemetry`, `opentelemetry_sdk` and `opentelemetry-proto` from `0.32` to `0.33`, and `tracing-opentelemetry` from `0.33` to `0.34`. ([#1019](https://github.com/heroku/libcnb.rs/pull/1019))
 
 ## [0.31.1] - 2026-08-03
 
