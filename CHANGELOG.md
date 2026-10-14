@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `libcnb-test`:
+  - Added `BuildConfig::enable_instrumentation()` method and `LIBCNB_INSTRUMENTATION` env var for enabling LLVM source-based coverage instrumentation in integration tests. ([#1002](https://github.com/heroku/libcnb.rs/pull/1002))
 
 ## [0.32.0] - 2026-10-02
 
