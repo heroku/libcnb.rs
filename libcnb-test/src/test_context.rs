@@ -8,6 +8,7 @@ use libcnb_data::buildpack::BuildpackId;
 use libcnb_data::layer::LayerName;
 use libcnb_data::sbom::SbomFormat;
 use std::borrow::Borrow;
+use std::collections::HashMap;
 use std::path::PathBuf;
 use tempfile::tempdir;
 
@@ -22,9 +23,71 @@ pub struct TestContext<'a> {
 
     pub(crate) docker_resources: TemporaryDockerResources,
     pub(crate) runner: &'a TestRunner,
+    pub(crate) telemetry_files: HashMap<String, String>,
 }
 
 impl TestContext<'_> {
+    /// Returns the JSONL OpenTelemetry trace data written during the `detect` phase for the
+    /// specified buildpack, or `None` if no telemetry was captured.
+    ///
+    /// Telemetry is only available for libcnb buildpacks that have the `trace` feature enabled.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use libcnb_data::buildpack_id;
+    /// use libcnb_test::{BuildConfig, TestRunner, assert_contains};
+    ///
+    /// TestRunner::default().build(
+    ///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app"),
+    ///     |context| {
+    ///         let detect_telemetry = context
+    ///             .detect_telemetry(&buildpack_id!("foo/buildpack"))
+    ///             .expect("Expected detect telemetry");
+    ///
+    ///         assert_contains!(detect_telemetry, "libcnb-detect");
+    ///     },
+    /// );
+    /// ```
+    #[must_use]
+    pub fn detect_telemetry(&self, buildpack_id: &BuildpackId) -> Option<&str> {
+        self.telemetry(buildpack_id, "detect")
+    }
+
+    /// Returns the JSONL OpenTelemetry trace data written during the `build` phase for the
+    /// specified buildpack, or `None` if no telemetry was captured.
+    ///
+    /// Telemetry is only available for libcnb buildpacks that have the `trace` feature enabled.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use libcnb_data::buildpack_id;
+    /// use libcnb_test::{BuildConfig, TestRunner, assert_contains};
+    ///
+    /// TestRunner::default().build(
+    ///     BuildConfig::new("heroku/builder:22", "tests/fixtures/app"),
+    ///     |context| {
+    ///         let build_telemetry = context
+    ///             .build_telemetry(&buildpack_id!("foo/buildpack"))
+    ///             .expect("Expected build telemetry");
+    ///
+    ///         assert_contains!(build_telemetry, "libcnb-build");
+    ///     },
+    /// );
+    /// ```
+    #[must_use]
+    pub fn build_telemetry(&self, buildpack_id: &BuildpackId) -> Option<&str> {
+        self.telemetry(buildpack_id, "build")
+    }
+
+    // The filename convention and ID normalization here must match the logic in
+    // `libcnb::tracing::init_tracing`, which writes these files during the build
+    // and detect phases (when the `trace` feature is enabled).
+    fn telemetry(&self, buildpack_id: &BuildpackId, phase: &str) -> Option<&str> {
+        let normalized_id = buildpack_id.to_string().replace(['/', '.', '-'], "_");
+        let filename = format!("{normalized_id}-{phase}.jsonl");
+        self.telemetry_files.get(&filename).map(String::as_str)
+    }
+
     /// Starts a detached container using the provided [`ContainerConfig`].
     ///
     /// After the passed function has returned, the Docker container is removed.
