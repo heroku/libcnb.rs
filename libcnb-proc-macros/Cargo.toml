@@ -20,4 +20,4 @@ workspace = true
 cargo_metadata = "0.23.1"
 fancy-regex = { version = "0.20.0", default-features = false, features = ["std"] }
 quote = "1.0.47"
-syn = { version = "3.0.6", features = ["full"] }
+syn = { version = "3.0.9", features = ["full"] }
