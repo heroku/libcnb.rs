@@ -34,8 +34,15 @@ pub fn download_file(
     uri: impl AsRef<str>,
     destination: impl AsRef<std::path::Path>,
 ) -> Result<(), DownloadError> {
+    let native_certs = rustls_native_certs::load_native_certs();
+    let root_certificates = native_certs
+        .certs
+        .into_iter()
+        .filter_map(|cert| reqwest::Certificate::from_der(&cert).ok());
+
     let client = reqwest::blocking::ClientBuilder::new()
-        .use_rustls_tls()
+        .tls_backend_rustls()
+        .tls_certs_only(root_certificates)
         .build()?;
 
     let mut response = client.get(uri.as_ref()).send()?.error_for_status()?;
