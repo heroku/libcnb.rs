@@ -37,7 +37,7 @@ crossbeam-utils = { version = "0.8.23", optional = true }
 # We use the `zlib-rs` backend, since it's the fastest:
 # https://github.com/rust-lang/flate2-rs#backends
 # https://trifectatech.org/blog/zlib-rs-is-faster-than-c/
-flate2 = { version = "1.1.10", default-features = false, features = ["zlib-rs", "runtime_detection"], optional = true }
+flate2 = { version = "1.1.11", default-features = false, features = ["zlib-rs", "runtime_detection"], optional = true }
 hex = { version = "0.4.3", optional = true }
 libcnb = { workspace = true, optional = true }
 pathdiff = { version = "0.2.3", optional = true }
