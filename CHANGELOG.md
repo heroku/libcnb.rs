@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `libcnb`:
+  - Run `buildpack.on_error()` within the `libcnb-build` / `libcnb-detect` span so events it emits are exported. Previously these events were emitted outside of any span and dropped. ([#1026](https://github.com/heroku/libcnb.rs/pull/1026))
 
 ## [0.32.1] - 2026-11-02
 

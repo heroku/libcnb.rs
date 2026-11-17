@@ -132,26 +132,51 @@ pub fn libcnb_runtime<B: Buildpack>(buildpack: &B) {
     #[cfg(feature = "trace")]
     let buildpack_trace = init_tracing(&buildpack_descriptor.buildpack, &execution_phase);
 
-    let result = match execution_phase {
-        ExecutionPhase::Detect(detect_args) => {
-            libcnb_runtime_detect(buildpack, buildpack_descriptor, detect_args)
-        }
-        ExecutionPhase::Build(build_args) => {
-            libcnb_runtime_build(buildpack, buildpack_descriptor, build_args)
-        }
-    };
-
-    let exit_code = match result {
-        Ok(code) => code,
-        Err(libcnb_error) => {
-            buildpack.on_error(libcnb_error);
-            exit_code::GENERIC_UNSPECIFIED_ERROR
-        }
-    };
+    let exit_code = run_phase(buildpack, buildpack_descriptor, execution_phase);
 
     #[cfg(feature = "trace")]
     drop(buildpack_trace);
     exit(exit_code)
+}
+
+/// Runs the given phase and returns its exit code, calling [`Buildpack::on_error`] on failure.
+///
+/// `on_error` must run while the phase span is still entered. Events emitted outside of any
+/// span are dropped by the OpenTelemetry layer, so telemetry recorded by `on_error`
+/// implementations would otherwise never be exported.
+fn run_phase<B: Buildpack>(
+    buildpack: &B,
+    buildpack_descriptor: ComponentBuildpackDescriptor<<B as Buildpack>::Metadata>,
+    execution_phase: ExecutionPhase,
+) -> i32 {
+    let on_error = |libcnb_error| {
+        buildpack.on_error(libcnb_error);
+        exit_code::GENERIC_UNSPECIFIED_ERROR
+    };
+
+    match execution_phase {
+        ExecutionPhase::Detect(detect_args) => in_span(detect_span, |span| {
+            run_detect(buildpack, buildpack_descriptor, detect_args, span).unwrap_or_else(on_error)
+        }),
+        ExecutionPhase::Build(build_args) => in_span(build_span, |span| {
+            run_build(buildpack, buildpack_descriptor, build_args, span).unwrap_or_else(on_error)
+        }),
+    }
+}
+
+#[cfg(feature = "trace")]
+type PhaseSpan = tracing::Span;
+#[cfg(not(feature = "trace"))]
+type PhaseSpan = ();
+
+/// Creates a span with `new_span` and calls `f` with it entered, passing the span so `f` can
+/// record fields on it.
+#[cfg_attr(not(feature = "trace"), expect(clippy::let_unit_value))]
+fn in_span<R>(new_span: fn() -> PhaseSpan, f: impl FnOnce(&PhaseSpan) -> R) -> R {
+    let span = new_span();
+    #[cfg(feature = "trace")]
+    let _entered = span.enter();
+    f(&span)
 }
 
 /// Detect entry point for this framework.
@@ -163,18 +188,41 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
     buildpack_descriptor: ComponentBuildpackDescriptor<<B as Buildpack>::Metadata>,
     args: DetectArgs,
 ) -> crate::Result<i32, B::Error> {
-    let app_dir = env::current_dir().map_err(Error::CannotDetermineAppDirectory)?;
+    in_span(detect_span, |span| {
+        run_detect(buildpack, buildpack_descriptor, args, span)
+    })
+}
 
-    let buildpack_dir = read_buildpack_dir()?;
+#[cfg(feature = "trace")]
+fn detect_span() -> PhaseSpan {
+    tracing::info_span!("libcnb-detect", failed = true)
+}
 
-    #[cfg(feature = "trace")]
-    let detect_span = tracing::info_span!("libcnb-detect", failed = true).entered();
+#[cfg(not(feature = "trace"))]
+fn detect_span() -> PhaseSpan {}
 
+/// Runs the detect phase, recording its outcome on `span`.
+#[cfg_attr(
+    not(feature = "trace"),
+    expect(unused_variables, clippy::trivially_copy_pass_by_ref)
+)]
+fn run_detect<B: Buildpack>(
+    buildpack: &B,
+    buildpack_descriptor: ComponentBuildpackDescriptor<<B as Buildpack>::Metadata>,
+    args: DetectArgs,
+    span: &PhaseSpan,
+) -> crate::Result<i32, B::Error> {
     #[cfg(feature = "trace")]
     let trace_error =
         |error: &Error<<B as Buildpack>::Error>| tracing::error!(?error, "libcnb-detect-error");
     #[cfg(not(feature = "trace"))]
     let trace_error = |_: &Error<<B as Buildpack>::Error>| {};
+
+    let app_dir = env::current_dir()
+        .map_err(Error::CannotDetermineAppDirectory)
+        .inspect_err(trace_error)?;
+
+    let buildpack_dir = read_buildpack_dir().inspect_err(trace_error)?;
 
     let platform = B::Platform::from_path(&args.platform_dir_path)
         .map_err(Error::CannotCreatePlatformFromPath)
@@ -208,7 +256,7 @@ pub fn libcnb_runtime_detect<B: Buildpack>(
             }
             #[cfg(feature = "trace")]
             {
-                detect_span.record("failed", false);
+                span.record("failed", false);
                 tracing::info!("libcnb-detect-passed");
             }
             Ok(exit_code::DETECT_DETECTION_PASSED)
@@ -225,20 +273,43 @@ pub fn libcnb_runtime_build<B: Buildpack>(
     buildpack_descriptor: ComponentBuildpackDescriptor<<B as Buildpack>::Metadata>,
     args: BuildArgs,
 ) -> crate::Result<i32, B::Error> {
+    in_span(build_span, |span| {
+        run_build(buildpack, buildpack_descriptor, args, span)
+    })
+}
+
+#[cfg(feature = "trace")]
+fn build_span() -> PhaseSpan {
+    tracing::info_span!("libcnb-build", failed = true)
+}
+
+#[cfg(not(feature = "trace"))]
+fn build_span() -> PhaseSpan {}
+
+/// Runs the build phase, recording its outcome on `span`.
+#[cfg_attr(
+    not(feature = "trace"),
+    expect(unused_variables, clippy::trivially_copy_pass_by_ref)
+)]
+fn run_build<B: Buildpack>(
+    buildpack: &B,
+    buildpack_descriptor: ComponentBuildpackDescriptor<<B as Buildpack>::Metadata>,
+    args: BuildArgs,
+    span: &PhaseSpan,
+) -> crate::Result<i32, B::Error> {
     let layers_dir = args.layers_dir_path;
-
-    let app_dir = env::current_dir().map_err(Error::CannotDetermineAppDirectory)?;
-
-    let buildpack_dir = read_buildpack_dir()?;
-
-    #[cfg(feature = "trace")]
-    let build_span = tracing::info_span!("libcnb-build", failed = true).entered();
 
     #[cfg(feature = "trace")]
     let trace_error =
         |error: &Error<<B as Buildpack>::Error>| tracing::error!(?error, "libcnb-build-error");
     #[cfg(not(feature = "trace"))]
     let trace_error = |_: &Error<<B as Buildpack>::Error>| {};
+
+    let app_dir = env::current_dir()
+        .map_err(Error::CannotDetermineAppDirectory)
+        .inspect_err(trace_error)?;
+
+    let buildpack_dir = read_buildpack_dir().inspect_err(trace_error)?;
 
     let platform = Platform::from_path(&args.platform_dir_path)
         .map_err(Error::CannotCreatePlatformFromPath)
@@ -309,7 +380,7 @@ pub fn libcnb_runtime_build<B: Buildpack>(
 
             #[cfg(feature = "trace")]
             {
-                build_span.record("failed", false);
+                span.record("failed", false);
                 tracing::info!("libcnb-build-success");
             }
             Ok(exit_code::GENERIC_SUCCESS)
@@ -412,4 +483,129 @@ where
         distro_name,
         distro_version,
     })
+}
+
+#[cfg(all(test, feature = "trace"))]
+mod tests {
+    use super::{BuildArgs, DetectArgs, ExecutionPhase, run_phase};
+    use crate::build::{BuildContext, BuildResult, BuildResultBuilder};
+    use crate::detect::{DetectContext, DetectResult, DetectResultBuilder};
+    use crate::generic::{GenericError, GenericMetadata, GenericPlatform};
+    use crate::{Buildpack, Error, LIBCNB_SUPPORTED_BUILDPACK_API, exit_code};
+    use libcnb_data::buildpack::{BuildpackVersion, ComponentBuildpackDescriptor};
+    use libcnb_data::buildpack_id;
+    use std::collections::HashSet;
+    use std::path::PathBuf;
+    use std::sync::{Arc, Mutex};
+    use tracing_subscriber::layer::{Context, SubscriberExt};
+    use tracing_subscriber::registry::LookupSpan;
+
+    struct FailingBuildpack;
+
+    impl Buildpack for FailingBuildpack {
+        type Platform = GenericPlatform;
+        type Metadata = GenericMetadata;
+        type Error = GenericError;
+
+        fn detect(&self, _: DetectContext<Self>) -> crate::Result<DetectResult, Self::Error> {
+            DetectResultBuilder::pass().build()
+        }
+
+        fn build(&self, _: BuildContext<Self>) -> crate::Result<BuildResult, Self::Error> {
+            BuildResultBuilder::new().build()
+        }
+
+        fn on_error(&self, _: Error<Self::Error>) {
+            tracing::error!("on-error-event");
+        }
+    }
+
+    /// Records the names of events and the span they were emitted in. Like
+    /// `tracing_opentelemetry::OpenTelemetryLayer`, events outside of any span are ignored.
+    #[derive(Clone, Default)]
+    struct SpanEventRecorder(Arc<Mutex<Vec<(String, String)>>>);
+
+    impl<S: tracing::Subscriber + for<'a> LookupSpan<'a>> tracing_subscriber::Layer<S>
+        for SpanEventRecorder
+    {
+        fn on_event(&self, event: &tracing::Event<'_>, ctx: Context<'_, S>) {
+            if let Some(span) = ctx.event_span(event) {
+                let mut message = String::new();
+                event.record(
+                    &mut |field: &tracing::field::Field, value: &dyn std::fmt::Debug| {
+                        if field.name() == "message" {
+                            message = format!("{value:?}");
+                        }
+                    },
+                );
+                self.0
+                    .lock()
+                    .expect("recorder mutex should not be poisoned")
+                    .push((span.name().to_string(), message));
+            }
+        }
+    }
+
+    fn descriptor() -> ComponentBuildpackDescriptor<GenericMetadata> {
+        ComponentBuildpackDescriptor {
+            api: LIBCNB_SUPPORTED_BUILDPACK_API,
+            buildpack: crate::data::buildpack::Buildpack {
+                id: buildpack_id!("libcnb/test"),
+                name: None,
+                version: BuildpackVersion::new(1, 0, 0),
+                homepage: None,
+                clear_env: true,
+                description: None,
+                keywords: Vec::new(),
+                licenses: Vec::new(),
+                sbom_formats: HashSet::new(),
+            },
+            stacks: Vec::new(),
+            targets: Vec::new(),
+            metadata: GenericMetadata::default(),
+        }
+    }
+
+    // Both phases fail early here because `CNB_BUILDPACK_DIR` isn't set in unit tests.
+    fn assert_on_error_event_in_span(execution_phase: ExecutionPhase, span_name: &str) {
+        let recorder = SpanEventRecorder::default();
+        let subscriber = tracing_subscriber::registry().with(recorder.clone());
+
+        let exit_code = tracing::subscriber::with_default(subscriber, || {
+            run_phase(&FailingBuildpack, descriptor(), execution_phase)
+        });
+
+        assert_eq!(exit_code, exit_code::GENERIC_UNSPECIFIED_ERROR);
+        assert!(
+            recorder
+                .0
+                .lock()
+                .expect("recorder mutex should not be poisoned")
+                .contains(&(span_name.to_string(), "on-error-event".to_string())),
+            "expected the on_error event to be recorded in the `{span_name}` span"
+        );
+    }
+
+    #[test]
+    fn on_error_runs_within_the_build_span() {
+        assert_on_error_event_in_span(
+            ExecutionPhase::Build(BuildArgs {
+                layers_dir_path: PathBuf::from("layers"),
+                platform_dir_path: PathBuf::from("platform"),
+                buildpack_plan_path: PathBuf::from("plan.toml"),
+            }),
+            "libcnb-build",
+        );
+    }
+
+    #[test]
+    fn on_error_runs_within_the_detect_span() {
+        assert_on_error_event_in_span(
+            ExecutionPhase::Detect(DetectArgs {
+                platform_dir_path: PathBuf::from("platform"),
+                build_plan_path: PathBuf::from("plan.toml"),
+            }),
+            "libcnb-detect",
+        );
+    }
 }
