@@ -29,87 +29,147 @@ where
     MA: IntoAction<InvalidMetadataAction<M>, MAC, B::Error>,
     RA: IntoAction<RestoredLayerAction, RAC, B::Error>,
 {
-    match read_layer::<M, _>(layers_dir, layer_name) {
-        Ok(None) => create_layer(
-            layer_types,
-            layer_name,
-            layers_dir,
-            EmptyLayerCause::NewlyCreated,
-        ),
-        Ok(Some(layer_data)) => {
-            let restored_layer_action =
-                restored_layer_action_fn(&layer_data.metadata.metadata, &layer_data.path)
-                    .into_action()
-                    .map_err(crate::Error::BuildpackError)?;
+    let mut metadata_migrated = false;
 
-            match restored_layer_action {
-                (RestoredLayerAction::DeleteLayer, cause) => {
-                    delete_layer(layers_dir, layer_name).map_err(LayerError::DeleteLayerError)?;
+    // Every successful outcome must leave this block (rather than `return`) so that it's traced
+    // exactly once below. Errors return early via `?` and aren't traced here, since they're
+    // reported through the phase's error event instead.
+    let layer_ref = 'layer_ref: {
+        let layer_data = match read_layer::<M, _>(layers_dir, layer_name) {
+            Ok(None) => {
+                break 'layer_ref create_layer(
+                    layer_types,
+                    layer_name,
+                    layers_dir,
+                    EmptyLayerCause::NewlyCreated,
+                )?;
+            }
+            Ok(Some(layer_data)) => layer_data,
+            Err(ReadLayerError::LayerContentMetadataParseError(_)) => {
+                let layer_content_metadata = read_toml_file::<LayerContentMetadata>(
+                    layers_dir.join(format!("{layer_name}.toml")),
+                )
+                .map_err(LayerError::CouldNotReadGenericLayerMetadata)?;
 
-                    create_layer(
-                        layer_types,
-                        layer_name,
-                        layers_dir,
-                        EmptyLayerCause::RestoredLayerAction { cause },
-                    )
+                let invalid_metadata_action =
+                    invalid_metadata_action_fn(&layer_content_metadata.metadata)
+                        .into_action()
+                        .map_err(crate::Error::BuildpackError)?;
+
+                match invalid_metadata_action {
+                    (InvalidMetadataAction::DeleteLayer, cause) => {
+                        delete_layer(layers_dir, layer_name)
+                            .map_err(LayerError::DeleteLayerError)?;
+
+                        break 'layer_ref create_layer(
+                            layer_types,
+                            layer_name,
+                            layers_dir,
+                            EmptyLayerCause::InvalidMetadataAction { cause },
+                        )?;
+                    }
+                    (InvalidMetadataAction::ReplaceMetadata(metadata), _) => {
+                        replace_layer_metadata(layers_dir, layer_name, metadata).map_err(
+                            |error| {
+                                LayerError::WriteLayerError(
+                                    WriteLayerError::WriteLayerMetadataError(error),
+                                )
+                            },
+                        )?;
+
+                        // The migrated layer continues on to `restored_layer_action_fn` like any
+                        // other restored layer. The replacement metadata was serialized from `M`,
+                        // so it is expected to deserialize. If it doesn't, error rather than
+                        // asking for new metadata again, which could repeat forever.
+                        let layer_data = read_layer::<M, _>(layers_dir, layer_name)
+                            .map_err(LayerError::ReadLayerError)?
+                            .ok_or(LayerError::UnexpectedMissingLayer)?;
+
+                        metadata_migrated = true;
+                        layer_data
+                    }
                 }
-                (RestoredLayerAction::KeepLayer, cause) => {
-                    // Always write the layer types as:
-                    // a) they might be different from what is currently on disk
-                    // b) the cache field will be removed by CNB lifecycle on cache restore
-                    replace_layer_types(layers_dir, layer_name, layer_types).map_err(|error| {
-                        LayerError::WriteLayerError(WriteLayerError::WriteLayerMetadataError(error))
-                    })?;
+            }
+            Err(read_layer_error) => Err(LayerError::ReadLayerError(read_layer_error))?,
+        };
 
-                    Ok(LayerRef {
-                        name: layer_data.name,
-                        layers_dir: PathBuf::from(layers_dir),
-                        buildpack: PhantomData,
-                        state: LayerState::Restored { cause },
-                    })
+        let restored_layer_action =
+            restored_layer_action_fn(&layer_data.metadata.metadata, &layer_data.path)
+                .into_action()
+                .map_err(crate::Error::BuildpackError)?;
+
+        match restored_layer_action {
+            (RestoredLayerAction::DeleteLayer, cause) => {
+                delete_layer(layers_dir, layer_name).map_err(LayerError::DeleteLayerError)?;
+
+                create_layer(
+                    layer_types,
+                    layer_name,
+                    layers_dir,
+                    EmptyLayerCause::RestoredLayerAction { cause },
+                )?
+            }
+            (RestoredLayerAction::KeepLayer, cause) => {
+                // Always write the layer types as:
+                // a) they might be different from what is currently on disk
+                // b) the cache field will be removed by CNB lifecycle on cache restore
+                replace_layer_types(layers_dir, layer_name, layer_types).map_err(|error| {
+                    LayerError::WriteLayerError(WriteLayerError::WriteLayerMetadataError(error))
+                })?;
+
+                LayerRef {
+                    name: layer_data.name,
+                    layers_dir: PathBuf::from(layers_dir),
+                    buildpack: PhantomData,
+                    state: LayerState::Restored { cause },
                 }
             }
         }
-        Err(ReadLayerError::LayerContentMetadataParseError(_)) => {
-            let layer_content_metadata = read_toml_file::<LayerContentMetadata>(
-                layers_dir.join(format!("{layer_name}.toml")),
-            )
-            .map_err(LayerError::CouldNotReadGenericLayerMetadata)?;
+    };
 
-            let invalid_metadata_action =
-                invalid_metadata_action_fn(&layer_content_metadata.metadata)
-                    .into_action()
-                    .map_err(crate::Error::BuildpackError)?;
+    trace_layer(layer_name, layer_types, &layer_ref.state, metadata_migrated);
 
-            match invalid_metadata_action {
-                (InvalidMetadataAction::DeleteLayer, cause) => {
-                    delete_layer(layers_dir, layer_name).map_err(LayerError::DeleteLayerError)?;
-
-                    create_layer(
-                        layer_types,
-                        layer_name,
-                        layers_dir,
-                        EmptyLayerCause::InvalidMetadataAction { cause },
-                    )
-                }
-                (InvalidMetadataAction::ReplaceMetadata(metadata), _) => {
-                    replace_layer_metadata(layers_dir, layer_name, metadata).map_err(|error| {
-                        LayerError::WriteLayerError(WriteLayerError::WriteLayerMetadataError(error))
-                    })?;
-
-                    handle_layer(
-                        layer_types,
-                        invalid_metadata_action_fn,
-                        restored_layer_action_fn,
-                        layer_name,
-                        layers_dir,
-                    )
-                }
-            }
-        }
-        Err(read_layer_error) => Err(LayerError::ReadLayerError(read_layer_error))?,
-    }
+    Ok(layer_ref)
 }
+
+/// Emits an event describing the caching outcome of a layer.
+///
+/// `layer_state` and `layer_empty_cause` mirror [`LayerState`] and [`EmptyLayerCause`].
+/// The event and field names are queried by downstream dashboards, so treat renames as
+/// breaking changes.
+#[cfg(feature = "trace")]
+fn trace_layer<MAC, RAC>(
+    layer_name: &LayerName,
+    layer_types: LayerTypes,
+    state: &LayerState<MAC, RAC>,
+    metadata_migrated: bool,
+) {
+    let (layer_state, empty_cause) = match state {
+        LayerState::Restored { .. } => ("restored", None),
+        LayerState::Empty { cause } => (
+            "empty",
+            Some(match cause {
+                EmptyLayerCause::NewlyCreated => "newly_created",
+                EmptyLayerCause::InvalidMetadataAction { .. } => "invalid_metadata_action",
+                EmptyLayerCause::RestoredLayerAction { .. } => "restored_layer_action",
+            }),
+        ),
+    };
+
+    tracing::info!(
+        layer_name = layer_name.as_str(),
+        layer_build = layer_types.build,
+        layer_launch = layer_types.launch,
+        layer_cache = layer_types.cache,
+        layer_state,
+        layer_empty_cause = empty_cause,
+        layer_metadata_migrated = metadata_migrated,
+        "libcnb-layer"
+    );
+}
+
+#[cfg(not(feature = "trace"))]
+fn trace_layer<MAC, RAC>(_: &LayerName, _: LayerTypes, _: &LayerState<MAC, RAC>, _: bool) {}
 
 fn create_layer<B, MAC, RAC>(
     layer_types: LayerTypes,
@@ -151,12 +211,17 @@ mod tests {
     use crate::build::{BuildContext, BuildResult};
     use crate::detect::{DetectContext, DetectResult};
     use crate::generic::{GenericError, GenericPlatform};
-    use crate::layer::{EmptyLayerCause, InvalidMetadataAction, LayerState, RestoredLayerAction};
+    use crate::layer::{
+        EmptyLayerCause, InvalidMetadataAction, LayerError, LayerState, ReadLayerError,
+        RestoredLayerAction,
+    };
     use libcnb_common::toml_file::read_toml_file;
     use libcnb_data::generic::GenericMetadata;
     use libcnb_data::layer_content_metadata::{LayerContentMetadata, LayerTypes};
     use libcnb_data::layer_name;
     use serde::{Deserialize, Serialize};
+    #[cfg(feature = "trace")]
+    use std::collections::BTreeMap;
     use tempfile::tempdir;
     use toml::toml;
 
@@ -503,6 +568,288 @@ mod tests {
         );
 
         assert_eq!(layer_ref.state, LayerState::Restored { cause: KEEP_CAUSE });
+    }
+
+    #[test]
+    fn handle_layer_cached_invalid_metadata_replace_with_unreadable_metadata() {
+        // Serializes to TOML that it can't deserialize from, so replacement metadata stays invalid.
+        #[derive(Serialize, Deserialize)]
+        struct TestLayerMetadata {
+            #[serde(rename(serialize = "written"))]
+            read: String,
+        }
+
+        let temp_dir = tempdir().unwrap();
+        let layer_name = layer_name!("test_layer");
+
+        std::fs::create_dir_all(temp_dir.path().join(&*layer_name)).unwrap();
+        std::fs::write(
+            temp_dir.path().join(format!("{layer_name}.toml")),
+            "[metadata]\nanswer=42",
+        )
+        .unwrap();
+
+        let invalid_metadata_action_calls = std::cell::Cell::new(0);
+        let result = handle_layer::<TestBuildpack, TestLayerMetadata, _, RestoredLayerAction, (), ()>(
+            LayerTypes {
+                build: true,
+                launch: true,
+                cache: true,
+            },
+            &|_| {
+                invalid_metadata_action_calls.set(invalid_metadata_action_calls.get() + 1);
+                InvalidMetadataAction::ReplaceMetadata(TestLayerMetadata {
+                    read: String::from("LV-246"),
+                })
+            },
+            &|_, _| panic!("restored_layer_action callback should not be called!"),
+            &layer_name,
+            temp_dir.path(),
+        );
+
+        assert!(matches!(
+            result,
+            Err(crate::Error::LayerError(LayerError::ReadLayerError(
+                ReadLayerError::LayerContentMetadataParseError(_)
+            )))
+        ));
+        assert_eq!(invalid_metadata_action_calls.get(), 1);
+    }
+
+    #[cfg(feature = "trace")]
+    const TRACED_LAYER_TYPES: LayerTypes = LayerTypes {
+        build: true,
+        launch: false,
+        cache: true,
+    };
+
+    /// Metadata that `[metadata]\nanswer=42` cannot be deserialized into.
+    #[cfg(feature = "trace")]
+    #[derive(Serialize, Deserialize)]
+    struct TracedLayerMetadata {
+        planet: String,
+    }
+
+    /// Creates a layer as if it was restored by the CNB lifecycle (no layer types, with metadata).
+    #[cfg(feature = "trace")]
+    fn write_restored_layer(layers_dir: &std::path::Path, metadata: &str) {
+        std::fs::create_dir_all(layers_dir.join("test_layer")).unwrap();
+        std::fs::write(layers_dir.join("test_layer.toml"), metadata).unwrap();
+    }
+
+    /// Runs `f` and returns the fields of the `libcnb-layer` events it emitted.
+    #[cfg(feature = "trace")]
+    fn record_layer_events(f: impl FnOnce()) -> Vec<BTreeMap<&'static str, String>> {
+        use std::sync::{Arc, Mutex};
+        use tracing::field::{Field, Visit};
+        use tracing_subscriber::layer::{Context, SubscriberExt};
+
+        #[derive(Default)]
+        struct Fields(BTreeMap<&'static str, String>);
+
+        impl Visit for Fields {
+            fn record_bool(&mut self, field: &Field, value: bool) {
+                self.0.insert(field.name(), value.to_string());
+            }
+
+            fn record_str(&mut self, field: &Field, value: &str) {
+                self.0.insert(field.name(), value.to_string());
+            }
+
+            fn record_debug(&mut self, field: &Field, value: &dyn std::fmt::Debug) {
+                self.0.insert(field.name(), format!("{value:?}"));
+            }
+        }
+
+        #[derive(Clone, Default)]
+        struct Recorder(Arc<Mutex<Vec<BTreeMap<&'static str, String>>>>);
+
+        impl<S: tracing::Subscriber> tracing_subscriber::Layer<S> for Recorder {
+            fn on_event(&self, event: &tracing::Event<'_>, _: Context<'_, S>) {
+                let mut fields = Fields::default();
+                event.record(&mut fields);
+                if fields.0.remove("message").as_deref() == Some("libcnb-layer") {
+                    self.0.lock().unwrap().push(fields.0);
+                }
+            }
+        }
+
+        // With at most one dispatcher registered, tracing caches a callsite's interest based on
+        // the default subscriber of whichever thread hits it first. Tests calling `handle_layer`
+        // in parallel without a subscriber would then disable the event callsite for this test.
+        // Keeping a second dispatcher registered makes tracing consider all dispatchers instead.
+        let _second_dispatcher =
+            tracing::Dispatch::new(tracing::subscriber::NoSubscriber::default());
+
+        let recorder = Recorder::default();
+        tracing::subscriber::with_default(tracing_subscriber::registry().with(recorder.clone()), f);
+        recorder.0.lock().unwrap().clone()
+    }
+
+    #[cfg(feature = "trace")]
+    fn layer_event(
+        layer_state: &str,
+        layer_empty_cause: Option<&str>,
+        layer_metadata_migrated: bool,
+    ) -> BTreeMap<&'static str, String> {
+        let mut fields = BTreeMap::from([
+            ("layer_name", "test_layer".to_string()),
+            ("layer_build", "true".to_string()),
+            ("layer_launch", "false".to_string()),
+            ("layer_cache", "true".to_string()),
+            ("layer_state", layer_state.to_string()),
+            (
+                "layer_metadata_migrated",
+                layer_metadata_migrated.to_string(),
+            ),
+        ]);
+        if let Some(layer_empty_cause) = layer_empty_cause {
+            fields.insert("layer_empty_cause", layer_empty_cause.to_string());
+        }
+        fields
+    }
+
+    #[cfg(feature = "trace")]
+    #[test]
+    fn handle_layer_traces_newly_created_layer() {
+        let temp_dir = tempdir().unwrap();
+
+        let events = record_layer_events(|| {
+            handle_layer::<
+                TestBuildpack,
+                GenericMetadata,
+                InvalidMetadataAction<GenericMetadata>,
+                RestoredLayerAction,
+                (),
+                (),
+            >(
+                TRACED_LAYER_TYPES,
+                &|_| panic!("invalid_metadata_action callback should not be called!"),
+                &|_, _| panic!("restored_layer_action callback should not be called!"),
+                &layer_name!("test_layer"),
+                temp_dir.path(),
+            )
+            .unwrap();
+        });
+
+        assert_eq!(events, [layer_event("empty", Some("newly_created"), false)]);
+    }
+
+    #[cfg(feature = "trace")]
+    #[test]
+    fn handle_layer_traces_restored_layer_kept() {
+        let temp_dir = tempdir().unwrap();
+        write_restored_layer(temp_dir.path(), "[metadata]\nanswer=42");
+
+        let events = record_layer_events(|| {
+            handle_layer::<TestBuildpack, GenericMetadata, InvalidMetadataAction<_>, _, (), ()>(
+                TRACED_LAYER_TYPES,
+                &|_| panic!("invalid_metadata_action callback should not be called!"),
+                &|_, _| RestoredLayerAction::KeepLayer,
+                &layer_name!("test_layer"),
+                temp_dir.path(),
+            )
+            .unwrap();
+        });
+
+        assert_eq!(events, [layer_event("restored", None, false)]);
+    }
+
+    #[cfg(feature = "trace")]
+    #[test]
+    fn handle_layer_traces_restored_layer_deleted() {
+        let temp_dir = tempdir().unwrap();
+        write_restored_layer(temp_dir.path(), "[metadata]\nanswer=42");
+
+        let events = record_layer_events(|| {
+            handle_layer::<TestBuildpack, GenericMetadata, InvalidMetadataAction<_>, _, (), ()>(
+                TRACED_LAYER_TYPES,
+                &|_| panic!("invalid_metadata_action callback should not be called!"),
+                &|_, _| RestoredLayerAction::DeleteLayer,
+                &layer_name!("test_layer"),
+                temp_dir.path(),
+            )
+            .unwrap();
+        });
+
+        assert_eq!(
+            events,
+            [layer_event("empty", Some("restored_layer_action"), false)]
+        );
+    }
+
+    #[cfg(feature = "trace")]
+    #[test]
+    fn handle_layer_traces_invalid_metadata_deleted() {
+        let temp_dir = tempdir().unwrap();
+        write_restored_layer(temp_dir.path(), "[metadata]\nanswer=42");
+
+        let events = record_layer_events(|| {
+            handle_layer::<TestBuildpack, TracedLayerMetadata, _, RestoredLayerAction, (), ()>(
+                TRACED_LAYER_TYPES,
+                &|_| InvalidMetadataAction::DeleteLayer,
+                &|_, _| panic!("restored_layer_action callback should not be called!"),
+                &layer_name!("test_layer"),
+                temp_dir.path(),
+            )
+            .unwrap();
+        });
+
+        assert_eq!(
+            events,
+            [layer_event("empty", Some("invalid_metadata_action"), false)]
+        );
+    }
+
+    #[cfg(feature = "trace")]
+    #[test]
+    fn handle_layer_traces_invalid_metadata_replaced_and_kept() {
+        let temp_dir = tempdir().unwrap();
+        write_restored_layer(temp_dir.path(), "[metadata]\nanswer=42");
+
+        let events = record_layer_events(|| {
+            handle_layer::<TestBuildpack, TracedLayerMetadata, _, _, (), ()>(
+                TRACED_LAYER_TYPES,
+                &|_| {
+                    InvalidMetadataAction::ReplaceMetadata(TracedLayerMetadata {
+                        planet: String::from("LV-246"),
+                    })
+                },
+                &|_, _| RestoredLayerAction::KeepLayer,
+                &layer_name!("test_layer"),
+                temp_dir.path(),
+            )
+            .unwrap();
+        });
+
+        assert_eq!(events, [layer_event("restored", None, true)]);
+    }
+
+    #[cfg(feature = "trace")]
+    #[test]
+    fn handle_layer_traces_invalid_metadata_replaced_and_deleted() {
+        let temp_dir = tempdir().unwrap();
+        write_restored_layer(temp_dir.path(), "[metadata]\nanswer=42");
+
+        let events = record_layer_events(|| {
+            handle_layer::<TestBuildpack, TracedLayerMetadata, _, _, (), ()>(
+                TRACED_LAYER_TYPES,
+                &|_| {
+                    InvalidMetadataAction::ReplaceMetadata(TracedLayerMetadata {
+                        planet: String::from("LV-246"),
+                    })
+                },
+                &|_, _| RestoredLayerAction::DeleteLayer,
+                &layer_name!("test_layer"),
+                temp_dir.path(),
+            )
+            .unwrap();
+        });
+
+        assert_eq!(
+            events,
+            [layer_event("empty", Some("restored_layer_action"), true)]
+        );
     }
 
     struct TestBuildpack;
