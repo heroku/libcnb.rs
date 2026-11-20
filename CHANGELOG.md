@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `libcnb`:
+  - `BuildContext::cached_layer` and `BuildContext::uncached_layer` now emit a `libcnb-layer` tracing event describing the layer's caching outcome. ([#1028](https://github.com/heroku/libcnb.rs/pull/1028))
+
+### Fixed
+
+- `libcnb`:
+  - `BuildContext::cached_layer` no longer overflows the stack when metadata from `InvalidMetadataAction::ReplaceMetadata` can't be deserialized. It now returns an error instead. ([#1028](https://github.com/heroku/libcnb.rs/pull/1028))
 
 ## [0.32.2] - 2026-11-17
 

@@ -183,7 +183,13 @@ mod tests {
 
     use super::init_tracing;
     use crate::BuildArgs;
+    use crate::build::{BuildContext, BuildResult};
+    use crate::detect::{DetectContext, DetectResult};
+    use crate::generic::{GenericError, GenericMetadata, GenericPlatform};
+    use crate::layer::{InvalidMetadataAction, RestoredLayerAction};
     use crate::runtime::ExecutionPhase;
+    use libcnb_data::layer_content_metadata::LayerTypes;
+    use libcnb_data::layer_name;
     use libcnb_data::{
         buildpack::{Buildpack, BuildpackVersion},
         buildpack_id,
@@ -192,6 +198,21 @@ mod tests {
     use std::path::PathBuf;
     use std::{collections::HashSet, fs, io::ErrorKind};
     use tracing::Level;
+
+    struct TestBuildpack;
+    impl crate::Buildpack for TestBuildpack {
+        type Platform = GenericPlatform;
+        type Metadata = GenericMetadata;
+        type Error = GenericError;
+
+        fn detect(&self, _: DetectContext<Self>) -> crate::Result<DetectResult, Self::Error> {
+            unimplemented!()
+        }
+
+        fn build(&self, _: BuildContext<Self>) -> crate::Result<BuildResult, Self::Error> {
+            unimplemented!()
+        }
+    }
 
     #[test]
     fn test_tracing() {
@@ -220,6 +241,26 @@ mod tests {
             );
             let _span_guard = tracing::span!(Level::INFO, "span-name").entered();
             tracing::event!(Level::INFO, "baz-event");
+            let layers_dir = tempfile::tempdir().unwrap();
+            crate::layer::struct_api::handling::handle_layer::<
+                TestBuildpack,
+                GenericMetadata,
+                InvalidMetadataAction<GenericMetadata>,
+                RestoredLayerAction,
+                (),
+                (),
+            >(
+                LayerTypes {
+                    build: false,
+                    launch: true,
+                    cache: true,
+                },
+                &|_| unreachable!(),
+                &|_, _| unreachable!(),
+                &layer_name!("traced_layer"),
+                layers_dir.path(),
+            )
+            .unwrap();
             let err = std::io::Error::new(ErrorKind::Unsupported, "oh no!");
             tracing::error!(
                 error = &err as &(dyn std::error::Error + 'static),
@@ -262,6 +303,24 @@ mod tests {
 
         // Check event name
         assert!(tracing_contents.contains("\"name\":\"baz-event\""));
+
+        // Check layer event
+        assert!(tracing_contents.contains("\"name\":\"libcnb-layer\""));
+        for (key, value) in [
+            ("layer_name", "{\"stringValue\":\"traced_layer\"}"),
+            ("layer_build", "{\"boolValue\":false}"),
+            ("layer_launch", "{\"boolValue\":true}"),
+            ("layer_cache", "{\"boolValue\":true}"),
+            ("layer_state", "{\"stringValue\":\"empty\"}"),
+            ("layer_empty_cause", "{\"stringValue\":\"newly_created\"}"),
+            ("layer_metadata_migrated", "{\"boolValue\":false}"),
+        ] {
+            let attribute = format!("{{\"key\":\"{key}\",\"value\":{value}}}");
+            assert!(
+                tracing_contents.contains(&attribute),
+                "expected layer event attribute {attribute}"
+            );
+        }
 
         // Check exception event
         assert!(tracing_contents.contains("\"name\":\"it's broken\""));
