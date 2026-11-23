@@ -151,7 +151,10 @@ mod tests {
     use crate::build::{BuildContext, BuildResult};
     use crate::detect::{DetectContext, DetectResult};
     use crate::generic::{GenericError, GenericPlatform};
-    use crate::layer::{EmptyLayerCause, InvalidMetadataAction, LayerState, RestoredLayerAction};
+    use crate::layer::{
+        EmptyLayerCause, InvalidMetadataAction, LayerError, LayerState, ReadLayerError,
+        RestoredLayerAction,
+    };
     use libcnb_common::toml_file::read_toml_file;
     use libcnb_data::generic::GenericMetadata;
     use libcnb_data::layer_content_metadata::{LayerContentMetadata, LayerTypes};
@@ -503,6 +506,52 @@ mod tests {
         );
 
         assert_eq!(layer_ref.state, LayerState::Restored { cause: KEEP_CAUSE });
+    }
+
+    #[test]
+    fn handle_layer_cached_invalid_metadata_replace_with_unreadable_metadata() {
+        // Serializes to TOML that it can't deserialize from, so replacement metadata stays invalid.
+        #[derive(Serialize, Deserialize)]
+        struct TestLayerMetadata {
+            #[serde(rename(serialize = "written"))]
+            read: String,
+        }
+
+        let temp_dir = tempdir().unwrap();
+        let layer_name = layer_name!("test_layer");
+
+        std::fs::create_dir_all(temp_dir.path().join(&*layer_name)).unwrap();
+        std::fs::write(
+            temp_dir.path().join(format!("{layer_name}.toml")),
+            "[metadata]\nanswer=42",
+        )
+        .unwrap();
+
+        let invalid_metadata_action_calls = std::cell::Cell::new(0);
+        let result = handle_layer::<TestBuildpack, TestLayerMetadata, _, RestoredLayerAction, (), ()>(
+            LayerTypes {
+                build: true,
+                launch: true,
+                cache: true,
+            },
+            &|_| {
+                invalid_metadata_action_calls.set(invalid_metadata_action_calls.get() + 1);
+                InvalidMetadataAction::ReplaceMetadata(TestLayerMetadata {
+                    read: String::from("LV-246"),
+                })
+            },
+            &|_, _| panic!("restored_layer_action callback should not be called!"),
+            &layer_name,
+            temp_dir.path(),
+        );
+
+        assert!(matches!(
+            result,
+            Err(crate::Error::LayerError(LayerError::ReadLayerError(
+                ReadLayerError::LayerContentMetadataParseError(_)
+            )))
+        ));
+        assert_eq!(invalid_metadata_action_calls.get(), 1);
     }
 
     struct TestBuildpack;
