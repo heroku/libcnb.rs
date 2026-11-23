@@ -65,7 +65,7 @@ pub(in crate::layer) struct ReadLayer<M> {
 
 #[derive(thiserror::Error, Debug)]
 pub enum ReadLayerError {
-    #[error("Layer content metadata couldn't be parsed!")]
+    #[error("Layer content metadata couldn't be parsed: {0}")]
     LayerContentMetadataParseError(toml::de::Error),
 
     #[error("Unexpected I/O error while reading layer: {0}")]
