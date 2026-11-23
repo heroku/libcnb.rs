@@ -1,6 +1,6 @@
 use crate::Buildpack;
 use crate::layer::shared::{
-    ReadLayerError, WriteLayerError, delete_layer, read_layer, replace_layer_metadata,
+    ReadLayer, ReadLayerError, WriteLayerError, delete_layer, read_layer, replace_layer_metadata,
     replace_layer_types,
 };
 use crate::layer::{
@@ -36,40 +36,13 @@ where
             layers_dir,
             EmptyLayerCause::NewlyCreated,
         ),
-        Ok(Some(layer_data)) => {
-            let restored_layer_action =
-                restored_layer_action_fn(&layer_data.metadata.metadata, &layer_data.path)
-                    .into_action()
-                    .map_err(crate::Error::BuildpackError)?;
-
-            match restored_layer_action {
-                (RestoredLayerAction::DeleteLayer, cause) => {
-                    delete_layer(layers_dir, layer_name).map_err(LayerError::DeleteLayerError)?;
-
-                    create_layer(
-                        layer_types,
-                        layer_name,
-                        layers_dir,
-                        EmptyLayerCause::RestoredLayerAction { cause },
-                    )
-                }
-                (RestoredLayerAction::KeepLayer, cause) => {
-                    // Always write the layer types as:
-                    // a) they might be different from what is currently on disk
-                    // b) the cache field will be removed by CNB lifecycle on cache restore
-                    replace_layer_types(layers_dir, layer_name, layer_types).map_err(|error| {
-                        LayerError::WriteLayerError(WriteLayerError::WriteLayerMetadataError(error))
-                    })?;
-
-                    Ok(LayerRef {
-                        name: layer_data.name,
-                        layers_dir: PathBuf::from(layers_dir),
-                        buildpack: PhantomData,
-                        state: LayerState::Restored { cause },
-                    })
-                }
-            }
-        }
+        Ok(Some(layer_data)) => handle_restored_layer(
+            layer_types,
+            restored_layer_action_fn,
+            layer_data,
+            layer_name,
+            layers_dir,
+        ),
         Err(ReadLayerError::LayerContentMetadataParseError(_)) => {
             let layer_content_metadata = read_toml_file::<LayerContentMetadata>(
                 layers_dir.join(format!("{layer_name}.toml")),
@@ -97,10 +70,14 @@ where
                         LayerError::WriteLayerError(WriteLayerError::WriteLayerMetadataError(error))
                     })?;
 
-                    handle_layer(
+                    let layer_data = read_layer::<M, _>(layers_dir, layer_name)
+                        .map_err(LayerError::ReadLayerError)?
+                        .ok_or(LayerError::UnexpectedMissingLayer)?;
+
+                    handle_restored_layer(
                         layer_types,
-                        invalid_metadata_action_fn,
                         restored_layer_action_fn,
+                        layer_data,
                         layer_name,
                         layers_dir,
                     )
@@ -108,6 +85,51 @@ where
             }
         }
         Err(read_layer_error) => Err(LayerError::ReadLayerError(read_layer_error))?,
+    }
+}
+
+fn handle_restored_layer<B, M, RA, MAC, RAC>(
+    layer_types: LayerTypes,
+    restored_layer_action_fn: &dyn Fn(&M, &Path) -> RA,
+    layer_data: ReadLayer<M>,
+    layer_name: &LayerName,
+    layers_dir: &Path,
+) -> crate::Result<LayerRef<B, MAC, RAC>, B::Error>
+where
+    B: Buildpack + ?Sized,
+    RA: IntoAction<RestoredLayerAction, RAC, B::Error>,
+{
+    let restored_layer_action =
+        restored_layer_action_fn(&layer_data.metadata.metadata, &layer_data.path)
+            .into_action()
+            .map_err(crate::Error::BuildpackError)?;
+
+    match restored_layer_action {
+        (RestoredLayerAction::DeleteLayer, cause) => {
+            delete_layer(layers_dir, layer_name).map_err(LayerError::DeleteLayerError)?;
+
+            create_layer(
+                layer_types,
+                layer_name,
+                layers_dir,
+                EmptyLayerCause::RestoredLayerAction { cause },
+            )
+        }
+        (RestoredLayerAction::KeepLayer, cause) => {
+            // Always write the layer types as:
+            // a) they might be different from what is currently on disk
+            // b) the cache field will be removed by CNB lifecycle on cache restore
+            replace_layer_types(layers_dir, layer_name, layer_types).map_err(|error| {
+                LayerError::WriteLayerError(WriteLayerError::WriteLayerMetadataError(error))
+            })?;
+
+            Ok(LayerRef {
+                name: layer_data.name,
+                layers_dir: PathBuf::from(layers_dir),
+                buildpack: PhantomData,
+                state: LayerState::Restored { cause },
+            })
+        }
     }
 }
 
@@ -151,7 +173,10 @@ mod tests {
     use crate::build::{BuildContext, BuildResult};
     use crate::detect::{DetectContext, DetectResult};
     use crate::generic::{GenericError, GenericPlatform};
-    use crate::layer::{EmptyLayerCause, InvalidMetadataAction, LayerState, RestoredLayerAction};
+    use crate::layer::{
+        EmptyLayerCause, InvalidMetadataAction, LayerError, LayerState, ReadLayerError,
+        RestoredLayerAction,
+    };
     use libcnb_common::toml_file::read_toml_file;
     use libcnb_data::generic::GenericMetadata;
     use libcnb_data::layer_content_metadata::{LayerContentMetadata, LayerTypes};
@@ -503,6 +528,52 @@ mod tests {
         );
 
         assert_eq!(layer_ref.state, LayerState::Restored { cause: KEEP_CAUSE });
+    }
+
+    #[test]
+    fn handle_layer_cached_invalid_metadata_replace_with_unreadable_metadata() {
+        // Serializes to TOML that it can't deserialize from, so replacement metadata stays invalid.
+        #[derive(Serialize, Deserialize)]
+        struct TestLayerMetadata {
+            #[serde(rename(serialize = "written"))]
+            read: String,
+        }
+
+        let temp_dir = tempdir().unwrap();
+        let layer_name = layer_name!("test_layer");
+
+        std::fs::create_dir_all(temp_dir.path().join(&*layer_name)).unwrap();
+        std::fs::write(
+            temp_dir.path().join(format!("{layer_name}.toml")),
+            "[metadata]\nanswer=42",
+        )
+        .unwrap();
+
+        let invalid_metadata_action_calls = std::cell::Cell::new(0);
+        let result = handle_layer::<TestBuildpack, TestLayerMetadata, _, RestoredLayerAction, (), ()>(
+            LayerTypes {
+                build: true,
+                launch: true,
+                cache: true,
+            },
+            &|_| {
+                invalid_metadata_action_calls.set(invalid_metadata_action_calls.get() + 1);
+                InvalidMetadataAction::ReplaceMetadata(TestLayerMetadata {
+                    read: String::from("LV-246"),
+                })
+            },
+            &|_, _| panic!("restored_layer_action callback should not be called!"),
+            &layer_name,
+            temp_dir.path(),
+        );
+
+        assert!(matches!(
+            result,
+            Err(crate::Error::LayerError(LayerError::ReadLayerError(
+                ReadLayerError::LayerContentMetadataParseError(_)
+            )))
+        ));
+        assert_eq!(invalid_metadata_action_calls.get(), 1);
     }
 
     struct TestBuildpack;
