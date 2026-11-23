@@ -70,9 +70,6 @@ where
                         LayerError::WriteLayerError(WriteLayerError::WriteLayerMetadataError(error))
                     })?;
 
-                    // The replacement metadata was serialized from `M`, so it's expected to
-                    // deserialize. If it doesn't, return an error instead of asking for
-                    // replacement metadata again, which could loop forever.
                     let layer_data = read_layer::<M, _>(layers_dir, layer_name)
                         .map_err(LayerError::ReadLayerError)?
                         .ok_or(LayerError::UnexpectedMissingLayer)?;
