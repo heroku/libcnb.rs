@@ -273,6 +273,10 @@ pub enum LayerError {
     IoError(#[from] std::io::Error),
     #[error("Unexpected missing layer")]
     UnexpectedMissingLayer,
+    #[error(
+        "Cannot read replacement layer metadata. Check that the metadata type deserializes from the TOML it serializes to: {0}"
+    )]
+    ReplacementMetadataReadError(ReadLayerError),
 }
 
 #[cfg(test)]

@@ -71,7 +71,7 @@ where
                     })?;
 
                     let layer_data = read_layer::<M, _>(layers_dir, layer_name)
-                        .map_err(LayerError::ReadLayerError)?
+                        .map_err(LayerError::ReplacementMetadataReadError)?
                         .ok_or(LayerError::UnexpectedMissingLayer)?;
 
                     handle_restored_layer(
@@ -569,9 +569,11 @@ mod tests {
 
         assert!(matches!(
             result,
-            Err(crate::Error::LayerError(LayerError::ReadLayerError(
-                ReadLayerError::LayerContentMetadataParseError(_)
-            )))
+            Err(crate::Error::LayerError(
+                LayerError::ReplacementMetadataReadError(
+                    ReadLayerError::LayerContentMetadataParseError(_)
+                )
+            ))
         ));
         assert_eq!(invalid_metadata_action_calls.get(), 1);
     }
