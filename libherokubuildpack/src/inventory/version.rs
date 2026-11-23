@@ -27,3 +27,14 @@ where
         self.satisfies(version)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    impl VersionRequirement<String> for String {
+        fn satisfies(&self, version: &String) -> bool {
+            self == version
+        }
+    }
+}
