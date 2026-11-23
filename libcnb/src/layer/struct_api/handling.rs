@@ -170,8 +170,6 @@ where
 /// Emits an event describing the caching outcome of a layer.
 ///
 /// `layer_state` and `layer_empty_cause` mirror [`LayerState`] and [`EmptyLayerCause`].
-/// The event and field names are queried by downstream dashboards, so treat renames as
-/// breaking changes.
 #[cfg(feature = "trace")]
 fn trace_layer<MAC, RAC>(
     layer_name: &LayerName,
