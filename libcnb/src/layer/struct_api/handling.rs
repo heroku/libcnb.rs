@@ -1,6 +1,6 @@
 use crate::Buildpack;
 use crate::layer::shared::{
-    ReadLayerError, WriteLayerError, delete_layer, read_layer, replace_layer_metadata,
+    ReadLayer, ReadLayerError, WriteLayerError, delete_layer, read_layer, replace_layer_metadata,
     replace_layer_types,
 };
 use crate::layer::{
@@ -36,40 +36,13 @@ where
             layers_dir,
             EmptyLayerCause::NewlyCreated,
         ),
-        Ok(Some(layer_data)) => {
-            let restored_layer_action =
-                restored_layer_action_fn(&layer_data.metadata.metadata, &layer_data.path)
-                    .into_action()
-                    .map_err(crate::Error::BuildpackError)?;
-
-            match restored_layer_action {
-                (RestoredLayerAction::DeleteLayer, cause) => {
-                    delete_layer(layers_dir, layer_name).map_err(LayerError::DeleteLayerError)?;
-
-                    create_layer(
-                        layer_types,
-                        layer_name,
-                        layers_dir,
-                        EmptyLayerCause::RestoredLayerAction { cause },
-                    )
-                }
-                (RestoredLayerAction::KeepLayer, cause) => {
-                    // Always write the layer types as:
-                    // a) they might be different from what is currently on disk
-                    // b) the cache field will be removed by CNB lifecycle on cache restore
-                    replace_layer_types(layers_dir, layer_name, layer_types).map_err(|error| {
-                        LayerError::WriteLayerError(WriteLayerError::WriteLayerMetadataError(error))
-                    })?;
-
-                    Ok(LayerRef {
-                        name: layer_data.name,
-                        layers_dir: PathBuf::from(layers_dir),
-                        buildpack: PhantomData,
-                        state: LayerState::Restored { cause },
-                    })
-                }
-            }
-        }
+        Ok(Some(layer_data)) => handle_restored_layer(
+            layer_types,
+            restored_layer_action_fn,
+            layer_name,
+            layers_dir,
+            layer_data,
+        ),
         Err(ReadLayerError::LayerContentMetadataParseError(_)) => {
             let layer_content_metadata = read_toml_file::<LayerContentMetadata>(
                 layers_dir.join(format!("{layer_name}.toml")),
@@ -108,6 +81,51 @@ where
             }
         }
         Err(read_layer_error) => Err(LayerError::ReadLayerError(read_layer_error))?,
+    }
+}
+
+fn handle_restored_layer<B, M, RA, MAC, RAC>(
+    layer_types: LayerTypes,
+    restored_layer_action_fn: &dyn Fn(&M, &Path) -> RA,
+    layer_name: &LayerName,
+    layers_dir: &Path,
+    layer_data: ReadLayer<M>,
+) -> crate::Result<LayerRef<B, MAC, RAC>, B::Error>
+where
+    B: Buildpack + ?Sized,
+    RA: IntoAction<RestoredLayerAction, RAC, B::Error>,
+{
+    let restored_layer_action =
+        restored_layer_action_fn(&layer_data.metadata.metadata, &layer_data.path)
+            .into_action()
+            .map_err(crate::Error::BuildpackError)?;
+
+    match restored_layer_action {
+        (RestoredLayerAction::DeleteLayer, cause) => {
+            delete_layer(layers_dir, layer_name).map_err(LayerError::DeleteLayerError)?;
+
+            create_layer(
+                layer_types,
+                layer_name,
+                layers_dir,
+                EmptyLayerCause::RestoredLayerAction { cause },
+            )
+        }
+        (RestoredLayerAction::KeepLayer, cause) => {
+            // Always write the layer types as:
+            // a) they might be different from what is currently on disk
+            // b) the cache field will be removed by CNB lifecycle on cache restore
+            replace_layer_types(layers_dir, layer_name, layer_types).map_err(|error| {
+                LayerError::WriteLayerError(WriteLayerError::WriteLayerMetadataError(error))
+            })?;
+
+            Ok(LayerRef {
+                name: layer_data.name,
+                layers_dir: PathBuf::from(layers_dir),
+                buildpack: PhantomData,
+                state: LayerState::Restored { cause },
+            })
+        }
     }
 }
 
