@@ -168,8 +168,6 @@ where
 }
 
 /// Emits an event describing the caching outcome of a layer.
-///
-/// `layer_state` and `layer_empty_cause` mirror [`LayerState`] and [`EmptyLayerCause`].
 #[cfg(feature = "trace")]
 fn trace_layer<MAC, RAC>(
     layer_name: &LayerName,
@@ -658,21 +656,18 @@ mod tests {
         cache: true,
     };
 
-    /// Metadata that `[metadata]\nanswer=42` cannot be deserialized into.
     #[cfg(feature = "trace")]
     #[derive(Serialize, Deserialize)]
-    struct TracedLayerMetadata {
+    struct NotAnswerMetadata {
         planet: String,
     }
 
-    /// Creates a layer as if it was restored by the CNB lifecycle (no layer types, with metadata).
     #[cfg(feature = "trace")]
     fn write_restored_layer(layers_dir: &std::path::Path, metadata: &str) {
         std::fs::create_dir_all(layers_dir.join("test_layer")).unwrap();
         std::fs::write(layers_dir.join("test_layer.toml"), metadata).unwrap();
     }
 
-    /// Runs `f` and returns the fields of the `libcnb-layer` events it emitted.
     #[cfg(feature = "trace")]
     fn record_layer_events(f: impl FnOnce()) -> Vec<BTreeMap<&'static str, String>> {
         use std::sync::{Arc, Mutex};
@@ -709,10 +704,7 @@ mod tests {
             }
         }
 
-        // With at most one dispatcher registered, tracing caches a callsite's interest based on
-        // the default subscriber of whichever thread hits it first. Tests calling `handle_layer`
-        // in parallel without a subscriber would then disable the event callsite for this test.
-        // Keeping a second dispatcher registered makes tracing consider all dispatchers instead.
+        // Keeps parallel tests from hiding events from this recorder: <https://github.com/tokio-rs/tracing/issues/2874>
         let _second_dispatcher =
             tracing::Dispatch::new(tracing::subscriber::NoSubscriber::default());
 
@@ -820,7 +812,7 @@ mod tests {
         write_restored_layer(temp_dir.path(), "[metadata]\nanswer=42");
 
         let events = record_layer_events(|| {
-            handle_layer::<TestBuildpack, TracedLayerMetadata, _, RestoredLayerAction, (), ()>(
+            handle_layer::<TestBuildpack, NotAnswerMetadata, _, RestoredLayerAction, (), ()>(
                 TRACED_LAYER_TYPES,
                 &|_| InvalidMetadataAction::DeleteLayer,
                 &|_, _| panic!("restored_layer_action callback should not be called!"),
@@ -843,10 +835,10 @@ mod tests {
         write_restored_layer(temp_dir.path(), "[metadata]\nanswer=42");
 
         let events = record_layer_events(|| {
-            handle_layer::<TestBuildpack, TracedLayerMetadata, _, _, (), ()>(
+            handle_layer::<TestBuildpack, NotAnswerMetadata, _, _, (), ()>(
                 TRACED_LAYER_TYPES,
                 &|_| {
-                    InvalidMetadataAction::ReplaceMetadata(TracedLayerMetadata {
+                    InvalidMetadataAction::ReplaceMetadata(NotAnswerMetadata {
                         planet: String::from("LV-246"),
                     })
                 },
@@ -867,10 +859,10 @@ mod tests {
         write_restored_layer(temp_dir.path(), "[metadata]\nanswer=42");
 
         let events = record_layer_events(|| {
-            handle_layer::<TestBuildpack, TracedLayerMetadata, _, _, (), ()>(
+            handle_layer::<TestBuildpack, NotAnswerMetadata, _, _, (), ()>(
                 TRACED_LAYER_TYPES,
                 &|_| {
-                    InvalidMetadataAction::ReplaceMetadata(TracedLayerMetadata {
+                    InvalidMetadataAction::ReplaceMetadata(NotAnswerMetadata {
                         planet: String::from("LV-246"),
                     })
                 },
